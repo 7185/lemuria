@@ -5,13 +5,16 @@ import {
   MeshBasicMaterial, PerspectiveCamera,
   PlaneGeometry,
   Raycaster, RepeatWrapping, Scene,
-  TextureLoader, Vector2,
+  TextureLoader, Vector2, Vector3,
   WebGLRenderer
 } from 'three'
 import {config} from '../app.config'
 import {RWXLoader} from '../utils/rwxloader'
+import * as JSZip from 'jszip'
+import JSZipUtils from 'jszip-utils'
 
 export const RES_PATH = config.url.resource
+export const enum key { UP = 0, RIGHT, DOWN, LEFT, PGUP, PGDOWN, PLUS, MINUS, CTRL, SHIFT }
 
 @Injectable({providedIn: 'root'})
 export class EngineService implements OnDestroy {
@@ -26,6 +29,7 @@ export class EngineService implements OnDestroy {
 
   private rwxLoader: any
   private selectionBox: LineSegments
+  private controls: boolean[] = Array(9).fill(false)
 
   private mouse = new Vector2()
   private raycaster = new Raycaster()
@@ -57,7 +61,9 @@ export class EngineService implements OnDestroy {
     this.camera = new PerspectiveCamera(
       75, window.innerWidth / window.innerHeight, 0.1, 1000
     )
+    this.camera.rotation.order = 'YXZ'
     this.camera.position.z = 1
+    this.camera.position.y = 0.2
     this.scene.add(this.camera)
 
     this.light = new AmbientLight(0x404040)
@@ -67,30 +73,40 @@ export class EngineService implements OnDestroy {
     const floorTexture = loader.load(`${RES_PATH}/textures/terrain17.jpg`)
     floorTexture.wrapS = RepeatWrapping
     floorTexture.wrapT = RepeatWrapping
-    floorTexture.repeat.set(640, 640)
+    floorTexture.repeat.set(128, 128)
 
     // DoubleSide: render texture on both sides of mesh
     const floorMaterial = new MeshBasicMaterial( { map: floorTexture, side: DoubleSide } )
-    const floorGeometry = new PlaneGeometry(1000, 1000, 1, 1)
+    const floorGeometry = new PlaneGeometry(100, 100, 1, 1)
     const floor = new Mesh(floorGeometry, floorMaterial)
-    floor.position.y = -0.5
+    floor.position.y = 0
     floor.rotation.x = Math.PI / 2
     this.scene.add(floor)
 
     this.tractor = new Mesh(new BoxGeometry(), new MeshBasicMaterial())
+    const three = new Mesh(new BoxGeometry(), new MeshBasicMaterial())
+    const three2 = new Mesh(new BoxGeometry(), new MeshBasicMaterial())
+    const three3 = new Mesh(new BoxGeometry(), new MeshBasicMaterial())
 
     const manager = new LoadingManager()
     this.rwxLoader = new RWXLoader(manager)
-    this.rwxLoader.setPath(`${RES_PATH}/rwx`).setResourcePath(`${RES_PATH}/textures`)
-    this.loadItem('tracteur1.rwx')
-
+    this.rwxLoader.setPath(`${RES_PATH}/rwx`).setResourcePath(`${RES_PATH}/textures`).setJSZip(JSZip, JSZipUtils)
+    this.loadItem(this.tractor, 'tracteur1.rwx', new Vector3(0, 0, 0))
+    this.loadItem(three, 'arbre1.rwx', new Vector3(1, 0, 1))
+    this.loadItem(three2, 'arbre10.rwx', new Vector3(2, 0, 0))
+    this.loadItem(three3, 'arbre20.rwx', new Vector3(2, 0, 3))
   }
 
-  public loadItem(item: string) {
-    this.rwxLoader.load(item, (rwx) => {
-      this.tractor = rwx
-      this.tractor.name = item
-      this.scene.add(this.tractor)
+  public loadItem(mesh: Mesh, item: string, pos: Vector3) {
+    this.rwxLoader.load(item, (rwx: Mesh) => {
+      mesh.geometry.dispose()
+      mesh.geometry = rwx.geometry
+      mesh.material = rwx.material
+      mesh.name = item
+      mesh.position.x = pos.x
+      mesh.position.y = pos.y
+      mesh.position.z = pos.z
+      this.scene.add(mesh)
     })
   }
 
@@ -166,10 +182,87 @@ export class EngineService implements OnDestroy {
       window.addEventListener('resize', () => {
         this.resize()
       })
-      window.addEventListener('contextmenu', (e) => {
+      this.canvas.addEventListener('contextmenu', (e) => {
         this.rightClick(e)
       })
+      window.addEventListener('keydown', (e: KeyboardEvent) => {
+        if ((e.target as HTMLElement).nodeName === 'BODY') {
+          this.handleKeys(e.key, true)
+          e.preventDefault()
+        }
+      })
+      window.addEventListener('keyup', (e: KeyboardEvent) => {
+        if ((e.target as HTMLElement).nodeName === 'BODY') {
+          this.handleKeys(e.key, false)
+          e.preventDefault()
+        }
+      })
     })
+  }
+
+  private handleKeys(k, value) {
+    switch (k) {
+      case 'ArrowUp': {
+        this.controls[key.UP] = value
+        break
+      }
+      case 'ArrowDown': {
+        this.controls[key.DOWN] = value
+        break
+      }
+      case 'ArrowLeft': {
+        this.controls[key.LEFT] = value
+        break
+      }
+      case 'ArrowRight': {
+        this.controls[key.RIGHT] = value
+        break
+      }
+      case 'PageUp': {
+        this.controls[key.PGUP] = value
+        break
+      }
+      case 'PageDown': {
+        this.controls[key.PGDOWN] = value
+        break
+      }
+      case '+': {
+        this.controls[key.PLUS] = value
+        break
+      }
+      case '-': {
+        this.controls[key.MINUS] = value
+        break
+      }
+      case 'Control': {
+        this.controls[key.CTRL] = value
+        break
+      }
+      case 'Shift': {
+        this.controls[key.SHIFT] = value
+        break
+      }
+      default: {
+         break
+      }
+    }
+  }
+
+  private moveCamera() {
+    const cameraDirection = new Vector3()
+    this.camera.getWorldDirection(cameraDirection)
+    if (this.controls[key.UP]) {
+      this.camera.position.addScaledVector(cameraDirection, 0.1)
+    }
+    if (this.controls[key.DOWN]) {
+      this.camera.position.addScaledVector(cameraDirection, -0.1)
+    }
+    if (this.controls[key.LEFT]) {
+      this.camera.rotation.y += 0.1
+    }
+    if (this.controls[key.RIGHT]) {
+      this.camera.rotation.y -= 0.1
+    }
   }
 
   public render(): void {
@@ -177,10 +270,14 @@ export class EngineService implements OnDestroy {
       this.render()
     })
 
-    this.tractor.rotation.x += 0.01
-    this.tractor.rotation.y += 0.01
+    this.tractor.rotation.y += 0.15
+    const d = new Vector3()
+    this.tractor.getWorldDirection(d)
+    this.tractor.position.addScaledVector(d, -0.05)
 
-    this.raycaster.setFromCamera( this.mouse, this.camera )
+
+    this.moveCamera()
+    this.raycaster.setFromCamera(this.mouse, this.camera)
 
     this.renderer.render(this.scene, this.camera)
   }
@@ -201,7 +298,6 @@ export class EngineService implements OnDestroy {
     this.mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1
     this.mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1
     const intersects = this.raycaster.intersectObjects(this.scene.children)
-    console.log(intersects)
     for (const o of intersects) {
       if (o.object.name === 'tracteur1.rwx') {
         this.select(this.tractor)
