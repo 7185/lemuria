@@ -2,7 +2,7 @@ import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
   AmbientLight,
   BoxGeometry, DoubleSide, EdgesGeometry, LineBasicMaterial, LineSegments, LoadingManager, Mesh,
-  MeshBasicMaterial, PerspectiveCamera,
+  MeshBasicMaterial, Object3D, PerspectiveCamera,
   PlaneGeometry,
   Raycaster, RepeatWrapping, Scene,
   TextureLoader, Vector2, Vector3,
@@ -21,10 +21,12 @@ export class EngineService implements OnDestroy {
   private canvas: HTMLCanvasElement
   private renderer: WebGLRenderer
   private camera: PerspectiveCamera
+  private thirdCamera: PerspectiveCamera
+  private activeCamera: PerspectiveCamera
   private scene: Scene
   private light: AmbientLight
+  private avatar: Mesh
 
-  private tractor: Mesh
   private frameId: number = null
 
   private rwxLoader: any
@@ -33,6 +35,7 @@ export class EngineService implements OnDestroy {
 
   private mouse = new Vector2()
   private raycaster = new Raycaster()
+
   public constructor(private ngZone: NgZone) {
   }
 
@@ -62,9 +65,19 @@ export class EngineService implements OnDestroy {
       75, window.innerWidth / window.innerHeight, 0.1, 1000
     )
     this.camera.rotation.order = 'YXZ'
-    this.camera.position.z = 1
+    this.camera.position.z = 0
     this.camera.position.y = 0.2
     this.scene.add(this.camera)
+
+    this.thirdCamera = new PerspectiveCamera(
+      75, window.innerWidth / window.innerHeight, 0.1, 1000
+    )
+    this.thirdCamera.rotation.order = 'YXZ'
+    this.thirdCamera.position.z = 0.5
+    this.thirdCamera.position.y = 0.2
+    this.camera.attach(this.thirdCamera)
+
+    this.activeCamera = this.camera
 
     this.light = new AmbientLight(0x404040)
     this.light.position.z = 10
@@ -83,23 +96,35 @@ export class EngineService implements OnDestroy {
     floor.rotation.x = Math.PI / 2
     this.scene.add(floor)
 
-    this.tractor = new Mesh(new BoxGeometry(), new MeshBasicMaterial())
-    const three = new Mesh(new BoxGeometry(), new MeshBasicMaterial())
-    const three2 = new Mesh(new BoxGeometry(), new MeshBasicMaterial())
-    const three3 = new Mesh(new BoxGeometry(), new MeshBasicMaterial())
-
     const manager = new LoadingManager()
     this.rwxLoader = new RWXLoader(manager)
     this.rwxLoader.setPath(`${RES_PATH}/rwx`).setResourcePath(`${RES_PATH}/textures`).setJSZip(JSZip, JSZipUtils)
-    this.loadItem(this.tractor, 'tracteur1.rwx', new Vector3(0, 0, 0))
-    this.loadItem(three, 'arbre1.rwx', new Vector3(1, 0, 1))
-    this.loadItem(three2, 'arbre10.rwx', new Vector3(2, 0, 0))
-    this.loadItem(three3, 'arbre20.rwx', new Vector3(2, 0, 3))
+
+    this.rwxLoader.load('michel.rwx', (rwx: Mesh) => {
+      this.avatar = new Mesh()
+      this.avatar.geometry = rwx.geometry
+      this.avatar.material = rwx.material
+      this.avatar.name = 'avatar'
+      this.avatar.position.x = 0
+      this.avatar.position.y = 0.12
+      this.avatar.position.z = 0
+      this.avatar.rotation.y = Math.PI
+      this.camera.attach(this.avatar)
+    })
   }
 
-  public loadItem(mesh: Mesh, item: string, pos: Vector3) {
+  public setWorld(data: any) {
+    for (const item of data.objects) {
+      this.loadItem(item[0], new Vector3(item[1], item[2], item[3]))
+    }
+  }
+
+  public loadItem(item: string, pos: Vector3) {
+    if (!item.endsWith('.rwx')) {
+      item += '.rwx'
+    }
     this.rwxLoader.load(item, (rwx: Mesh) => {
-      mesh.geometry.dispose()
+      const mesh = new Mesh()
       mesh.geometry = rwx.geometry
       mesh.material = rwx.material
       mesh.name = item
@@ -156,14 +181,14 @@ export class EngineService implements OnDestroy {
       selectMesh.geometry.dispose()
       selectMesh.material.dispose()
 
-      this.selectionBox = new LineSegments(edges, new LineBasicMaterial( { color: 0xffff00 } ))
+      this.selectionBox = new LineSegments(edges, new LineBasicMaterial( { color: 0xffff00, depthTest: false } ))
+      edges.dispose()
       item.add(this.selectionBox)
 
     } else {
-      // FIXME: actually remove the box
       this.selectionBox.visible = false
-      this.scene.remove(this.selectionBox)
       this.selectionBox.geometry.dispose()
+      this.scene.remove(this.selectionBox)
       this.selectionBox = null
     }
   }
@@ -263,6 +288,16 @@ export class EngineService implements OnDestroy {
     if (this.controls[key.RIGHT]) {
       this.camera.rotation.y -= 0.1
     }
+    if (this.controls[key.PLUS]) {
+      this.camera.position.y += 0.1
+    }
+    if (this.controls[key.MINUS]) {
+      this.camera.position.y -= 0.1
+    }
+  }
+
+  public toggleCamera() {
+    this.activeCamera = this.activeCamera === this.camera ? this.thirdCamera : this.camera
   }
 
   public render(): void {
@@ -270,16 +305,17 @@ export class EngineService implements OnDestroy {
       this.render()
     })
 
-    this.tractor.rotation.y += 0.15
-    const d = new Vector3()
-    this.tractor.getWorldDirection(d)
-    this.tractor.position.addScaledVector(d, -0.05)
-
+    const tractor = this.scene.children.find(o => o.name === 'tracteur1.rwx')
+    if (tractor) {
+      tractor.rotation.y += 0.01
+      const d = new Vector3()
+      tractor.getWorldDirection(d)
+      tractor.position.addScaledVector(d, -0.005)
+    }
 
     this.moveCamera()
-    this.raycaster.setFromCamera(this.mouse, this.camera)
-
-    this.renderer.render(this.scene, this.camera)
+    this.raycaster.setFromCamera(this.mouse, this.activeCamera)
+    this.renderer.render(this.scene, this.activeCamera)
   }
 
   public resize(): void {
@@ -299,8 +335,8 @@ export class EngineService implements OnDestroy {
     this.mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1
     const intersects = this.raycaster.intersectObjects(this.scene.children)
     for (const o of intersects) {
-      if (o.object.name === 'tracteur1.rwx') {
-        this.select(this.tractor)
+      if (o.object.name.length) {
+        this.select(o.object as Mesh)
       }
     }
   }

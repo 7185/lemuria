@@ -1,2 +1,2 @@
 Quart
-Quart-JWT-Extended
+quart-Auth

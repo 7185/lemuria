@@ -14,8 +14,10 @@ export class UiChatZoneComponent implements OnInit {
   }
 
   public ngOnInit(): void {
-    this.socket.connect().subscribe(msg => {
-      this.data.push(msg)
+    this.socket.messages.subscribe(msg => {
+      if (msg.type === 'msg') {
+        this.data.push(msg)
+      }
     })
   }
 }

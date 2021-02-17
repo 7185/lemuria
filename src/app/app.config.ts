@@ -1,6 +1,7 @@
 export const config: any = {
     url: {
-        websocket: 'ws://localhost:8080/ws',
-        resource: 'http://localhost'
+        websocket: 'ws://localhost/ws',
+        server: 'http://localhost/api/v1',
+        resource: 'http://localhost:8080'
     }
 }

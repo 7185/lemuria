@@ -3,9 +3,13 @@
   <div class="form-inline my-2 my-lg-0">
     <input class="form-control mr-sm-2" [(ngModel)]="name" type="text" placeholder="Name" aria-label="Name">
     <input class="form-control mr-sm-2" [(ngModel)]="message" (keydown.enter)="send()" type="text" placeholder="Message" aria-label="Message">
-    <button class="btn btn-primary my-2 my-sm-0" (click)="send()" type="button" [disabled]="message.length === 0">Send</button>
   </div>
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
+  <button class="btn btn-primary my-2 my-sm-0" (click)="toggleCamera()" type="button">{{ camera }}</button>
+  <button class="btn btn-outline-danger my-2 my-sm-0" type="button">{{ userList.length }}</button>
+
+  <button class="btn btn-success my-2 my-sm-0" (click)="login()" type="button">Login</button>
+  <button class="btn btn-success my-2 my-sm-0" (click)="enter()" type="button">Enter</button>
+
+  <button *ngIf="!socket.connected" class="btn btn-success my-2 my-sm-0" (click)="socket.connect()" type="button">Connect</button>
+  <button *ngIf="socket.connected" class="btn btn-danger my-2 my-sm-0" (click)="socket.close()" type="button">Disonnect</button>
 </nav>

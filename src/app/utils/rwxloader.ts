@@ -180,6 +180,7 @@ var RWXLoader = ( function () {
 			this.materialmode = MaterialMode.NONE; // Neither NULL nor DOUBLE: we only render one side of the polygon
 			this.texture = null;
 			this.mask = null;
+			this.collision = true;
 			// End of material related properties
 
 			this.transform = new Matrix4();
@@ -208,6 +209,8 @@ var RWXLoader = ( function () {
 					sign += this.texture;
 
 				}
+
+				sign += this.collision.toString();
 
 				return sign;
 
@@ -470,7 +473,8 @@ var RWXLoader = ( function () {
 				}
 
 				shapes.forEach( ( shape ) => {
-
+					// Collision status of the clump takes precedence over the one from the proto
+					shape.state.collision = this.state.collision;
 					for ( var i = 0; i < shape.verticesId.length; i ++ ) {
 
 						shape.verticesId[ i ] += offset;
@@ -626,6 +630,8 @@ var RWXLoader = ( function () {
 
 				var phongMat = new MeshPhongMaterial( materialDict );
 
+				phongMat.userData[ 'collision' ] = shape.state.collision;
+
 				if ( shape.state.texture == null ) {
 
 					phongMat.color.set( ( Math.trunc( shape.state.color[ 0 ] * 255 ) << 16 ) + ( Math.trunc( shape.state
@@ -756,6 +762,7 @@ var RWXLoader = ( function () {
 		this.diffuseRegex = new RegExp( "^ *(diffuse)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)).*$", 'i' );
 		this.specularRegex = new RegExp( "^ *(specular)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)).*$", 'i' );
 		this.materialModeRegex = new RegExp( "^ *((add)?materialmode(s)?) +([A-Za-z0-9_\\-]+).*$", 'i' );
+		this.collisionRegex = new RegExp( "^ *(collision) +(on|off).*$", 'i' );
 
 	}
 
@@ -1188,6 +1195,25 @@ var RWXLoader = ( function () {
 					} else if ( matMode == "double" ) {
 
 						currentScope.state.materialmode = MaterialMode.DOUBLE;
+
+					}
+
+					continue;
+
+				}
+
+                res = this.collisionRegex.exec( line );
+				if ( res != null ) {
+
+					const collision = res[ 2 ].toLowerCase();
+
+					if ( collision == "on" ) {
+
+						currentScope.state.collision = true;
+
+					} else if ( collision == "off" ) {
+
+						currentScope.state.collision = false;
 
 					}
 
