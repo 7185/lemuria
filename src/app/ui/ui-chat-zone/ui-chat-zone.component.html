@@ -1,5 +1,7 @@
-<div>
-    <span *ngFor="let m of data">
-        <b>{{ m.user }}: </b>{{ m.data }}<br/>
-    </span>
+<div id="chat-zone">
+  <span class="line" *ngFor="let m of data">
+    <ng-container *ngIf="m.user"><b>{{ m.user }}: </b>{{ m.data }}</ng-container>
+    <ng-container *ngIf="!m.user"><b>{{ m.data }}</b></ng-container>
+    <br/>
+  </span>
 </div>

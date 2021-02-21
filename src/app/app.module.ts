@@ -2,11 +2,18 @@ import {NgModule} from '@angular/core'
 import {BrowserModule} from '@angular/platform-browser'
 import {FormsModule} from '@angular/forms'
 import {HttpClientModule} from '@angular/common/http'
+import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {AppComponent} from './app.component'
 import {EngineComponent} from './engine/engine.component'
 import {UiToolbarComponent} from './ui/ui-toolbar/ui-toolbar.component'
 import {UiChatZoneComponent} from './ui/ui-chat-zone/ui-chat-zone.component'
 import {UiComponent} from './ui/ui.component'
+
+import {
+  faEye,
+  faUser,
+  faVideo
+} from '@fortawesome/free-solid-svg-icons'
 
 @NgModule({
   declarations: [
@@ -19,7 +26,8 @@ import {UiComponent} from './ui/ui.component'
   imports: [
     BrowserModule,
     FormsModule,
-    HttpClientModule
+    HttpClientModule,
+    FontAwesomeModule
   ],
   providers: [],
   bootstrap: [
@@ -27,4 +35,11 @@ import {UiComponent} from './ui/ui.component'
   ]
 })
 export class AppModule {
+  constructor(private iconLibrary: FaIconLibrary) {
+    iconLibrary.addIcons(
+      faEye,
+      faUser,
+      faVideo
+    )
+  }
 }

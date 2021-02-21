@@ -1,0 +1,10 @@
+#chat-zone {
+  background-color: #0008;
+  width: 30%;
+  height: calc(100vh - 40px);
+  overflow-y: scroll;
+  .line {
+    color: white;
+    text-shadow: black 0px 0px 10px;
+  }
+}

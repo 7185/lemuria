@@ -2,12 +2,18 @@
   <a class="navbar-brand" href="#">Lemuria</a>
   <div class="form-inline my-2 my-lg-0">
     <input class="form-control mr-sm-2" [(ngModel)]="name" type="text" placeholder="Name" aria-label="Name">
-    <input class="form-control mr-sm-2" [(ngModel)]="message" (keydown.enter)="send()" type="text" placeholder="Message" aria-label="Message">
+    <input class="form-control mr-sm-2" [(ngModel)]="message" (keydown.enter)="send()" type="text" 
+           placeholder="Message" aria-label="Message" [disabled]="!socket.connected">
   </div>
-  <button class="btn btn-primary my-2 my-sm-0" (click)="toggleCamera()" type="button">{{ camera }}</button>
-  <button class="btn btn-outline-danger my-2 my-sm-0" type="button">{{ userList.length }}</button>
+  <button class="btn btn-primary my-2 my-sm-0" (click)="toggleCamera()" type="button">
+    <fa-icon *ngIf="firstPerson" [icon]="['fas', 'eye']"></fa-icon>
+    <fa-icon *ngIf="!firstPerson" [icon]="['fas', 'video']"></fa-icon>
+  </button>
+  <button class="btn btn-outline-info my-2 my-sm-0" type="button">
+    <fa-icon [icon]="['fas', 'user']"></fa-icon> {{ userList.length }}
+  </button>
 
-  <button class="btn btn-success my-2 my-sm-0" (click)="login()" type="button">Login</button>
+  <button *ngIf="!socket.connected" class="btn btn-success my-2 my-sm-0" (click)="login()" type="button">Login</button>
   <button class="btn btn-success my-2 my-sm-0" (click)="enter()" type="button">Enter</button>
 
   <button *ngIf="!socket.connected" class="btn btn-success my-2 my-sm-0" (click)="socket.connect()" type="button">Connect</button>

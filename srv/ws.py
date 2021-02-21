@@ -3,51 +3,51 @@ import asyncio
 import uuid
 from functools import wraps
 from quart import websocket
-from quart_auth import AuthManager, current_user, login_required, _AuthSerializer
+from quart_auth import AuthManager, AuthUser, current_user, login_required, _AuthSerializer
 
-class User(object):
-    """TODO: Inherit from Authuser"""
+class User(AuthUser):
     @staticmethod
     def current():
         token = websocket.cookies['QUART_AUTH']
         serializer = _AuthSerializer('**changeme**', 'quart auth salt')
         user_id = serializer.loads(token)
-        for u in connected_websockets:
-            if u.id == user_id:
+        for u in authorized_users:
+            if u.auth_id == user_id:
                 return u
-        u = User()
-        u.id = user_id
-        u.name = 'Anonymous'+str(user_id)
-        return u
+        return None
 
 
-    def __init__(self):
-        self.id = 0
-        self.name = 'Anonymous'
-        self.queue = asyncio.Queue()
+    def __init__(self, auth_id):
+        super().__init__(auth_id)
+        self.name = 'Anonymous'+str(auth_id)
+        self.queue = None
+        self.connected = False
 
     def to_dict(self):
-        return {'id': self.id, 'name': self.name}
+        return {'id': self.auth_id, 'name': self.name}
 
-connected_websockets = set()
+authorized_users = set()
 
 def collect_websocket(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         u = User.current()
-        connected_websockets.add(u)
+        if u is None:
+            return
+        u.queue = asyncio.Queue()
+        u.connected = True
         await broadcast({'type': 'msg', 'data': u.name + " joined"})
-        await broadcast({'type': 'list', 'data': [u.to_dict() for u in connected_websockets]})
+        await broadcast({'type': 'list', 'data': [u.to_dict() for u in [u for u in authorized_users if u.connected]]})
         try:
             return await func(u, *args, **kwargs)
         finally:
             await broadcast({'type': 'msg', 'data': u.name + " left"})
-            connected_websockets.remove(u)
-            await broadcast({'type': 'list', 'data': [u.to_dict() for u in connected_websockets]})
+            u.connected = False
+            await broadcast({'type': 'list', 'data': [u.to_dict() for u in [u for u in authorized_users if u.connected]]})
     return wrapper
 
 async def broadcast(message):
-    for user in connected_websockets:
+    for user in [u for u in authorized_users if u.connected]:
         await user.queue.put(message)
 
 @collect_websocket
@@ -58,6 +58,8 @@ async def sending(user=None):
 
 async def receiving():
     u = User.current()
+    if u is None:
+        return
     while True:
         data = await websocket.receive_json()
         if data['type'] == 'msg':

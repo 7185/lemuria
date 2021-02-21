@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from quart import Quart, render_template, websocket
+from quart import Quart, render_template, websocket, request
 from functools import wraps
-from ws import sending, receiving
+from ws import sending, receiving, User, authorized_users
 import uuid
 import asyncio
 from quart_auth import AuthUser, AuthManager, login_user, login_required, current_user, Unauthorized
@@ -11,7 +11,9 @@ app.config.from_object('config.Config')
 app.static_folder = app.config['STATIC_PATH']
 app.template_folder = app.config['STATIC_PATH']
 
-AuthManager(app)
+auth_manager = AuthManager()
+auth_manager.user_class = User
+
 app.secret_key = app.config['SECRET_KEY']
 
 @app.route('/')
@@ -20,9 +22,13 @@ async def index():
 
 @app.route('/api/v1/auth', methods=['POST'])
 async def auth():
+    data = await request.json
     user_id = str(uuid.uuid4())[:8]
-    login_user(AuthUser(user_id))
-    return 'Hello'
+    u = User(user_id)
+    u.name = data['login'] or 'Anonymous'+user_id
+    login_user(u)
+    authorized_users.add(u)
+    return {}
 
 @app.route('/api/v1/world/<name>', methods=['GET'])
 @login_required
@@ -53,6 +59,7 @@ async def wsocket():
 async def redirect(e):
     return await render_template("index.html")
 
+auth_manager.init_app(app)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5169)

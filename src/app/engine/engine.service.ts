@@ -114,6 +114,11 @@ export class EngineService implements OnDestroy {
   }
 
   public setWorld(data: any) {
+    for (const item of this.scene.children) {
+      if (item.name.length > 0) {
+        this.scene.remove(item)
+      }
+    }
     for (const item of data.objects) {
       this.loadItem(item[0], new Vector3(item[1], item[2], item[3]))
     }

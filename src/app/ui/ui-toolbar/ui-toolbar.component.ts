@@ -11,7 +11,7 @@ import {SocketService} from 'src/app/network/socket.service'
 export class UiToolbarComponent implements OnInit {
 
   public message = ''
-  public camera = 1
+  public firstPerson = true
   public name = 'Anonymous'
   public userList = []
 
@@ -26,7 +26,7 @@ export class UiToolbarComponent implements OnInit {
   }
 
   public login() {
-    this.http.login('toto', 'titi').subscribe()
+    this.http.login(this.name, 'password').subscribe()
   }
 
   public enter() {
@@ -36,7 +36,7 @@ export class UiToolbarComponent implements OnInit {
   }
 
   public toggleCamera(): void {
-    this.camera = this.camera === 1 ? 3 : 1
+    this.firstPerson = !this.firstPerson
     this.engine.toggleCamera()
   }
 
