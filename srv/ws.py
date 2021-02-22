@@ -22,6 +22,7 @@ class User(AuthUser):
         self.name = 'Anonymous'+str(auth_id)
         self.queue = None
         self.connected = False
+        self.websockets = set()
 
     def to_dict(self):
         return {'id': self.auth_id, 'name': self.name}
@@ -34,16 +35,20 @@ def collect_websocket(func):
         u = User.current()
         if u is None:
             return
-        u.queue = asyncio.Queue()
+        if u.queue is None:
+            u.queue = asyncio.Queue()
+        u.websockets.add(websocket._get_current_object())
         u.connected = True
         await broadcast({'type': 'msg', 'data': u.name + " joined"})
         await broadcast({'type': 'list', 'data': [u.to_dict() for u in [u for u in authorized_users if u.connected]]})
         try:
             return await func(u, *args, **kwargs)
         finally:
-            await broadcast({'type': 'msg', 'data': u.name + " left"})
-            u.connected = False
-            await broadcast({'type': 'list', 'data': [u.to_dict() for u in [u for u in authorized_users if u.connected]]})
+            u.websockets.remove(websocket._get_current_object())
+            if len(u.websockets) == 0:
+                u.connected = False
+                await broadcast({'type': 'msg', 'data': u.name + " left"})
+                await broadcast({'type': 'list', 'data': [u.to_dict() for u in [u for u in authorized_users if u.connected]]})
     return wrapper
 
 async def broadcast(message):
@@ -54,7 +59,8 @@ async def broadcast(message):
 async def sending(user=None):
     while True:
         data = await user.queue.get()
-        await websocket.send_json(data)
+        for s in user.websockets:
+            await s.send_json(data)
 
 async def receiving():
     u = User.current()
