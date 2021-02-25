@@ -15,6 +15,7 @@ export class SocketService {
       this.connected = true
       this.messages.next(msg)
     }, err => {
+      this.messages.next({type: 'err', data: 'Connection lost'})
       this.connected = false
     })
   }

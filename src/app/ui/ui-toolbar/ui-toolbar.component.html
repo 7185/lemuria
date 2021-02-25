@@ -2,8 +2,6 @@
   <a class="navbar-brand" href="#">Lemuria</a>
   <div class="form-inline my-2 my-lg-0">
     <input class="form-control mr-sm-2" [(ngModel)]="name" type="text" placeholder="Name" aria-label="Name">
-    <input class="form-control mr-sm-2" [(ngModel)]="message" (keydown.enter)="send()" type="text" 
-           placeholder="Message" aria-label="Message" [disabled]="!socket.connected">
   </div>
   <button class="btn btn-primary my-2 my-sm-0" (click)="toggleCamera()" type="button">
     <fa-icon *ngIf="firstPerson" [icon]="['fas', 'eye']"></fa-icon>

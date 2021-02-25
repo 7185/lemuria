@@ -1,7 +1,10 @@
 <div id="chat-zone">
-  <span class="line" *ngFor="let m of data">
-    <ng-container *ngIf="m.user"><b>{{ m.user }}: </b>{{ m.data }}</ng-container>
-    <ng-container *ngIf="!m.user"><b>{{ m.data }}</b></ng-container>
-    <br/>
-  </span>
+  <virtual-scroller #scroll [items]="data">
+    <p class="line mx-2" *ngFor="let m of scroll.viewPortItems">
+      <ng-container *ngIf="m.user"><b>{{ m.user }}: </b>{{ m.data }}</ng-container>
+      <ng-container *ngIf="!m.user"><b [class]="m.data.endsWith('joined') ? 'text-success' : 'text-danger'">{{ m.data }}</b></ng-container>
+    </p>
+  </virtual-scroller>
+  <input class="form-control mr-sm-2" [(ngModel)]="message" (keydown.enter)="send()" type="text" 
+         placeholder="Message" aria-label="Message" [disabled]="!socket.connected">
 </div>

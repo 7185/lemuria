@@ -3,6 +3,7 @@ import {BrowserModule} from '@angular/platform-browser'
 import {FormsModule} from '@angular/forms'
 import {HttpClientModule} from '@angular/common/http'
 import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome'
+import {VirtualScrollerModule} from 'ngx-virtual-scroller'
 import {AppComponent} from './app.component'
 import {EngineComponent} from './engine/engine.component'
 import {UiToolbarComponent} from './ui/ui-toolbar/ui-toolbar.component'
@@ -27,7 +28,8 @@ import {
     BrowserModule,
     FormsModule,
     HttpClientModule,
-    FontAwesomeModule
+    FontAwesomeModule,
+    VirtualScrollerModule
   ],
   providers: [],
   bootstrap: [

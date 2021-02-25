@@ -10,19 +10,11 @@ import {SocketService} from 'src/app/network/socket.service'
 })
 export class UiToolbarComponent implements OnInit {
 
-  public message = ''
   public firstPerson = true
   public name = 'Anonymous'
   public userList = []
 
   public constructor(public socket: SocketService, private engine: EngineService, private http: HttpService) {
-  }
-
-  public send(): void {
-    if (this.message.length) {
-      this.socket.sendMessage({type: 'msg', user: this.name, data: this.message})
-      this.message = ''
-    }
   }
 
   public login() {
