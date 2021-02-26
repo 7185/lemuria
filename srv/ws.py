@@ -39,7 +39,7 @@ def collect_websocket(func):
             u.queue = asyncio.Queue()
         u.websockets.add(websocket._get_current_object())
         u.connected = True
-        await broadcast({'type': 'msg', 'data': u.name + " joined"})
+        await broadcast({'type': 'join', 'data': u.name})
         await broadcast({'type': 'list', 'data': [u.to_dict() for u in [u for u in authorized_users if u.connected]]})
         try:
             return await func(u, *args, **kwargs)
@@ -47,7 +47,7 @@ def collect_websocket(func):
             u.websockets.remove(websocket._get_current_object())
             if len(u.websockets) == 0:
                 u.connected = False
-                await broadcast({'type': 'msg', 'data': u.name + " left"})
+                await broadcast({'type': 'part', 'data': u.name})
                 await broadcast({'type': 'list', 'data': [u.to_dict() for u in [u for u in authorized_users if u.connected]]})
     return wrapper
 
