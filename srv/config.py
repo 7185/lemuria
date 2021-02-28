@@ -5,3 +5,4 @@ class Config(object):
     QUART_AUTH_COOKIE_SECURE = False
     QUART_AUTH_COOKIE_HTTP_ONLY = False
     SECRET_KEY = '**changeme**'
+    POSITION_UPDATE_TICK = 200 / 1e3

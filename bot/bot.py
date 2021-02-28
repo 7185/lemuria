@@ -14,10 +14,11 @@ def get_cookie_from_response(response, cookie_name):
 
 SSL_VERIFY = False
 AUTH_COOKIE = 'QUART_AUTH'
+DEBUG = False
 
 class User:
-    def __init__(self, nick: str="") -> None:
-        self.nickname = nick
+    def __init__(self, name: str="") -> None:
+        self.name = name
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
@@ -53,7 +54,8 @@ class Bot(User):
             f = getattr(inst, name, None)
             if not hasattr(f, '__call__'):
                 continue
-            self.log('calling %s() on instance %r' % (name, inst))
+            if DEBUG:
+                self.log('calling %s() on instance %r' % (name, inst))
             if f is not None:
                 await f(*parameters)
 
@@ -73,6 +75,13 @@ class Bot(User):
             await self._callback('on_user_join', msg['data'])
         elif t == 'part':
             await self._callback('on_user_part', msg['data'])
+        elif t == 'pos':
+            for u in self.userlist:
+                if u == msg['user']:
+                    self.userlist[u].x = msg['data']['x']
+                    self.userlist[u].y = msg['data']['y']
+                    self.userlist[u].z = msg['data']['z']
+            await self._callback('on_user_pos', msg['user'], msg['data'])
 
     
     async def send(self, msg: dict) -> None:
@@ -86,6 +95,8 @@ class Bot(User):
         await self.send({'type': 'msg', 'data': msg})
         await self._callback('on_self_msg', msg)
 
+    async def send_position(self) -> None:
+        await self.send({'type': 'pos', 'data': {'x': self.x, 'y': self.y, 'z': self.z}})
 
     async def reader(self, websocket) -> None:
         async for message_raw in websocket:
@@ -93,8 +104,7 @@ class Bot(User):
             await self._process_msg(msg)
 
     async def login(self) -> None:
-        rlogin = requests.post(self.web_url + '/auth', json={'login': self.nickname, 'password': 'password'}, verify=SSL_VERIFY)
-
+        rlogin = requests.post(self.web_url + '/auth', json={'login': self.name, 'password': 'password'}, verify=SSL_VERIFY)
         self.cookiejar = {
             AUTH_COOKIE: get_cookie_from_response(rlogin, AUTH_COOKIE)
         }

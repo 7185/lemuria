@@ -28,7 +28,7 @@ export class UiChatZoneComponent implements OnInit {
 
   public ngOnInit(): void {
     this.socket.messages.subscribe(msg => {
-      if (msg.type != 'list') {
+      if (msg.type !== 'list' && msg.type !== 'pos') {
         this.data.push(msg)
         this.virtualScroller.scrollInto(msg)
       }

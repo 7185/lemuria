@@ -8,12 +8,12 @@
     <fa-icon *ngIf="!firstPerson" [icon]="['fas', 'video']"></fa-icon>
   </button>
   <button class="btn btn-outline-info my-2 my-sm-0" type="button">
-    <fa-icon [icon]="['fas', 'user']"></fa-icon> {{ userList.length }}
+    <fa-icon [icon]="['fas', 'user']"></fa-icon> {{ userSvc.userList.length }}
   </button>
 
   <button *ngIf="!socket.connected" class="btn btn-success my-2 my-sm-0" (click)="login()" type="button">Login</button>
   <button class="btn btn-success my-2 my-sm-0" (click)="enter()" type="button">Enter</button>
 
   <button *ngIf="!socket.connected" class="btn btn-success my-2 my-sm-0" (click)="socket.connect()" type="button">Connect</button>
-  <button *ngIf="socket.connected" class="btn btn-danger my-2 my-sm-0" (click)="socket.close()" type="button">Disonnect</button>
+  <button *ngIf="socket.connected" class="btn btn-danger my-2 my-sm-0" (click)="socket.close()" type="button">Disconnect</button>
 </nav>

@@ -1,5 +1,6 @@
 import {HttpService} from './../../network/http.service'
 import {EngineService} from './../../engine/engine.service'
+import {UserService} from './../../user/user.service'
 import {Component, OnInit} from '@angular/core'
 import {SocketService} from 'src/app/network/socket.service'
 
@@ -12,13 +13,14 @@ export class UiToolbarComponent implements OnInit {
 
   public firstPerson = true
   public name = 'Anonymous'
-  public userList = []
 
-  public constructor(public socket: SocketService, private engine: EngineService, private http: HttpService) {
+  public constructor(public socket: SocketService, private engine: EngineService, private http: HttpService, public userSvc: UserService) {
   }
 
   public login() {
-    this.http.login(this.name, 'password').subscribe()
+    this.http.login(this.name, 'password').subscribe(() => {
+      this.userSvc.currentName = this.name
+    })
   }
 
   public enter() {
@@ -33,11 +35,6 @@ export class UiToolbarComponent implements OnInit {
   }
 
   public ngOnInit(): void {
-    this.socket.messages.subscribe(msg => {
-      if (msg.type === 'list') {
-        this.userList = msg.data
-      }
-    })
   }
 
 }

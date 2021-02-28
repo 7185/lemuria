@@ -7,13 +7,13 @@ import {config} from '../app.config'
 export class HttpService extends HttpClient {
   private baseUrl = config.url.server
 
+  constructor(private httpHandler: HttpHandler) {
+    super(httpHandler)
+  }
+
   public static getCookie(name: string) {
     const c = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')
     return c ? c.pop() : ''
-  }
-
-  constructor(private httpHandler: HttpHandler) {
-    super(httpHandler)
   }
 
   public login(login: string, password: string) {

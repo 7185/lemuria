@@ -40,7 +40,6 @@ async def world(name):
         'objects':  [
             ['tracteur1', 0, 0, 0],
             ['poule1', 1, 0, 0],
-            ['michel', 1, 0.12, 0.5],
             ['arbre1', 1, 0, 1],
             ['arbre10', 2, 0, 0],
             ['arbre17', -1, 0, 1],

@@ -1,20 +1,20 @@
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
-  AmbientLight,
-  BoxGeometry, DoubleSide, EdgesGeometry, LineBasicMaterial, LineSegments, LoadingManager, Mesh,
-  MeshBasicMaterial, Object3D, PerspectiveCamera,
-  PlaneGeometry,
-  Raycaster, RepeatWrapping, Scene,
-  TextureLoader, Vector2, Vector3,
-  WebGLRenderer
+  AmbientLight, BoxGeometry, DoubleSide, EdgesGeometry,
+  LineBasicMaterial, LineSegments, LoadingManager, Mesh,
+  MeshBasicMaterial, PerspectiveCamera, PlaneGeometry,
+  Raycaster, RepeatWrapping, Scene, TextureLoader,
+  Vector2, Vector3, WebGLRenderer
 } from 'three'
-import {config} from '../app.config'
-import {RWXLoader} from '../utils/rwxloader'
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'
+import {UserService} from './../user/user.service'
+import {config} from '../app.config'
+import {RWXLoader} from '../utils/rwxloader'
+import {User} from '../user/user.model'
 
 export const RES_PATH = config.url.resource
-export const enum key { UP = 0, RIGHT, DOWN, LEFT, PGUP, PGDOWN, PLUS, MINUS, CTRL, SHIFT }
+export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, ctrl, shift }
 
 @Injectable({providedIn: 'root'})
 export class EngineService implements OnDestroy {
@@ -36,7 +36,7 @@ export class EngineService implements OnDestroy {
   private mouse = new Vector2()
   private raycaster = new Raycaster()
 
-  public constructor(private ngZone: NgZone) {
+  public constructor(private ngZone: NgZone, private userSvc: UserService) {
   }
 
   public ngOnDestroy(): void {
@@ -111,6 +111,25 @@ export class EngineService implements OnDestroy {
       this.avatar.rotation.y = Math.PI
       this.camera.attach(this.avatar)
     })
+
+    for (const u of this.userSvc.userList) {
+      this.addUser(u)
+    }
+
+    this.userSvc.userMoved.subscribe(u => {
+      const user = this.scene.children.find(o => o.name === u.id)
+      if (user != null) {
+        user.position.x = u.x
+        user.position.y = u.y
+        user.position.z = u.z
+      } else {
+        this.addUser(u)
+      }
+    })
+  }
+
+  public getPosition() {
+    return this.camera.position
   }
 
   public setWorld(data: any) {
@@ -230,77 +249,6 @@ export class EngineService implements OnDestroy {
     })
   }
 
-  private handleKeys(k, value) {
-    switch (k) {
-      case 'ArrowUp': {
-        this.controls[key.UP] = value
-        break
-      }
-      case 'ArrowDown': {
-        this.controls[key.DOWN] = value
-        break
-      }
-      case 'ArrowLeft': {
-        this.controls[key.LEFT] = value
-        break
-      }
-      case 'ArrowRight': {
-        this.controls[key.RIGHT] = value
-        break
-      }
-      case 'PageUp': {
-        this.controls[key.PGUP] = value
-        break
-      }
-      case 'PageDown': {
-        this.controls[key.PGDOWN] = value
-        break
-      }
-      case '+': {
-        this.controls[key.PLUS] = value
-        break
-      }
-      case '-': {
-        this.controls[key.MINUS] = value
-        break
-      }
-      case 'Control': {
-        this.controls[key.CTRL] = value
-        break
-      }
-      case 'Shift': {
-        this.controls[key.SHIFT] = value
-        break
-      }
-      default: {
-         break
-      }
-    }
-  }
-
-  private moveCamera() {
-    const cameraDirection = new Vector3()
-    this.camera.getWorldDirection(cameraDirection)
-    if (this.controls[key.UP]) {
-      this.camera.position.addScaledVector(cameraDirection, 0.1)
-    }
-    if (this.controls[key.DOWN]) {
-      this.camera.position.addScaledVector(cameraDirection, -0.1)
-    }
-    if (this.controls[key.LEFT]) {
-      this.camera.rotation.y += 0.1
-    }
-    if (this.controls[key.RIGHT]) {
-      this.camera.rotation.y -= 0.1
-    }
-    if (this.controls[key.PLUS]) {
-      this.camera.position.y += 0.1
-    }
-    if (this.controls[key.MINUS]) {
-      this.camera.position.y -= 0.1
-    }
-  }
-
   public toggleCamera() {
     this.activeCamera = this.activeCamera === this.camera ? this.thirdCamera : this.camera
   }
@@ -343,6 +291,92 @@ export class EngineService implements OnDestroy {
       if (o.object.name.length) {
         this.select(o.object as Mesh)
       }
+    }
+  }
+
+  private handleKeys(k: string, value: boolean) {
+    switch (k) {
+      case 'ArrowUp': {
+        this.controls[PressedKey.up] = value
+        break
+      }
+      case 'ArrowDown': {
+        this.controls[PressedKey.down] = value
+        break
+      }
+      case 'ArrowLeft': {
+        this.controls[PressedKey.left] = value
+        break
+      }
+      case 'ArrowRight': {
+        this.controls[PressedKey.right] = value
+        break
+      }
+      case 'PageUp': {
+        this.controls[PressedKey.pgUp] = value
+        break
+      }
+      case 'PageDown': {
+        this.controls[PressedKey.pgDown] = value
+        break
+      }
+      case '+': {
+        this.controls[PressedKey.plus] = value
+        break
+      }
+      case '-': {
+        this.controls[PressedKey.minus] = value
+        break
+      }
+      case 'Control': {
+        this.controls[PressedKey.ctrl] = value
+        break
+      }
+      case 'Shift': {
+        this.controls[PressedKey.shift] = value
+        break
+      }
+      default: {
+         break
+      }
+    }
+  }
+
+  private moveCamera() {
+    const cameraDirection = new Vector3()
+    this.camera.getWorldDirection(cameraDirection)
+    if (this.controls[PressedKey.up]) {
+      this.camera.position.addScaledVector(cameraDirection, 0.1)
+    }
+    if (this.controls[PressedKey.down]) {
+      this.camera.position.addScaledVector(cameraDirection, -0.1)
+    }
+    if (this.controls[PressedKey.left]) {
+      this.camera.rotation.y += 0.1
+    }
+    if (this.controls[PressedKey.right]) {
+      this.camera.rotation.y -= 0.1
+    }
+    if (this.controls[PressedKey.plus]) {
+      this.camera.position.y += 0.1
+    }
+    if (this.controls[PressedKey.minus]) {
+      this.camera.position.y -= 0.1
+    }
+  }
+
+  private addUser(u: User) {
+    if (u.name !== this.userSvc.currentName) {
+      this.rwxLoader.load('michel.rwx', (rwx: Mesh) => {
+        const mesh = new Mesh()
+        mesh.geometry = rwx.geometry
+        mesh.material = rwx.material
+        mesh.name = u.id
+        mesh.position.x = u.x
+        mesh.position.y = u.y
+        mesh.position.z = u.z
+        this.scene.add(mesh)
+      })
     }
   }
 }
