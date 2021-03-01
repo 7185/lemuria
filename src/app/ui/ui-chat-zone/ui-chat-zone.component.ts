@@ -1,6 +1,7 @@
 import {Component, OnInit, ViewChild} from '@angular/core'
 import {VirtualScrollerComponent} from 'ngx-virtual-scroller'
 import {SocketService} from '../../network/socket.service'
+import {UserService} from './../../user/user.service'
 
 @Component({
   selector: 'app-ui-chat-zone',
@@ -15,8 +16,9 @@ export class UiChatZoneComponent implements OnInit {
 
   public data = []
   public message = ''
+  public colors = {}
 
-  public constructor(public socket: SocketService) {
+  public constructor(public socket: SocketService, public usrSvc: UserService) {
   }
 
   public send(): void {
@@ -29,6 +31,9 @@ export class UiChatZoneComponent implements OnInit {
   public ngOnInit(): void {
     this.socket.messages.subscribe(msg => {
       if (msg.type !== 'list' && msg.type !== 'pos') {
+        for (const u of this.usrSvc.userList) {
+          this.colors[u.name] = '#' + u.id.substring(0, 6)
+        }
         this.data.push(msg)
         this.virtualScroller.scrollInto(msg)
       }

@@ -12,7 +12,9 @@ class Bobinot(Bot):
         self.name = 'bobinot'
         self.following = None
         self.move_speed = 0.2
+        self.y = 0.12
         self.current_move_thread = 0
+        self.logging_enabled = False
 
     async def move(self, dest_x: float, dest_z: float) -> None:
         thread_id = self.current_move_thread
@@ -47,8 +49,6 @@ class Bobinot(Bot):
                     if u.name == user:
                         self.current_move_thread += 1
                         asyncio.ensure_future(self.move(u.x, u.z))
-            else:
-                await self.send_msg(msg)
 
 b = Bobinot(WEB_URL, WS_URL)
 b.run()

@@ -22,16 +22,17 @@ class User:
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
-        self.pitch = 0.0
+        self.roll = 0.0
         self.yaw = 0.0
+        self.pitch = 0.0
 
-    def set_position(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, pitch: float = 0.0, yaw: float = 0.0):
+    def set_position(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, roll: float = 0.0, yaw: float = 0.0, pitch: float = 0.0,):
         self.x = x
         self.y = y
         self.z = z
-        self.pitch = pitch
+        self.roll = roll
         self.yaw = yaw
-
+        self.pitch = pitch
 
 class Bot(User):
     def __init__(self, web_url: str, ws_url: str, logging_enabled: bool=True) -> None:
@@ -78,9 +79,12 @@ class Bot(User):
         elif t == 'pos':
             for u in self.userlist:
                 if u == msg['user']:
-                    self.userlist[u].x = msg['data']['x']
-                    self.userlist[u].y = msg['data']['y']
-                    self.userlist[u].z = msg['data']['z']
+                    self.userlist[u].x = msg['data']['pos']['x']
+                    self.userlist[u].y = msg['data']['pos']['y']
+                    self.userlist[u].z = msg['data']['pos']['z']
+                    self.userlist[u].roll = msg['data']['ori']['x']
+                    self.userlist[u].yaw = msg['data']['ori']['y']
+                    self.userlist[u].pitch = msg['data']['ori']['z']
             await self._callback('on_user_pos', msg['user'], msg['data'])
 
     
@@ -96,7 +100,8 @@ class Bot(User):
         await self._callback('on_self_msg', msg)
 
     async def send_position(self) -> None:
-        await self.send({'type': 'pos', 'data': {'x': self.x, 'y': self.y, 'z': self.z}})
+        await self.send({'type': 'pos', 'data': {'pos': {'x': self.x, 'y': self.y, 'z': self.z},
+                                                 'ori': {'x': self.roll, 'y': self.yaw, 'z': self.pitch}}})
 
     async def reader(self, websocket) -> None:
         async for message_raw in websocket:

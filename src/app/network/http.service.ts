@@ -17,6 +17,7 @@ export class HttpService extends HttpClient {
   }
 
   public login(login: string, password: string) {
+    localStorage.setItem('login', login)
     return this.post(`${this.baseUrl}/auth`, {login, password})
   }
 

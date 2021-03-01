@@ -5,7 +5,6 @@ import {interval, Subject, Subscription} from 'rxjs'
 import {webSocket, WebSocketSubject} from 'rxjs/webSocket'
 import {Vector3} from 'three'
 import {config} from '../app.config'
-import {User} from '../user/user.model'
 
 @Injectable({providedIn: 'root'})
 export class SocketService {
@@ -14,7 +13,7 @@ export class SocketService {
 
   private socket: WebSocketSubject<any> = webSocket({url: config.url.websocket})
   private posTimer: Subscription
-  private lastSentPos = new Vector3()
+  private lastSentPos = [new Vector3(), new Vector3()]
 
   constructor(private engineSvc: EngineService, private userSvc: UserService) {}
 
@@ -33,10 +32,11 @@ export class SocketService {
         this.connected = false
       })
       this.posTimer = interval(200).subscribe(() => {
-        const pos = this.engineSvc.getPosition()
-        if (!this.lastSentPos.equals(pos)) {
-          this.sendMessage({type: 'pos', data: pos})
-          this.lastSentPos.copy(pos)
+        const pos: [Vector3, Vector3] = this.engineSvc.getPosition()
+        if (!(this.lastSentPos[0].equals(pos[0]) && this.lastSentPos[1].equals(pos[1]))) {
+          this.sendMessage({type: 'pos', data: {pos: pos[0], ori: pos[1]}})
+          this.lastSentPos[0].copy(pos[0])
+          this.lastSentPos[1].copy(pos[1])
         }
       })
     }
@@ -44,12 +44,9 @@ export class SocketService {
 
   handleMessage(msg: any) {
     if (msg.type === 'list') {
-      this.userSvc.userList = []
-      for (const u of msg.data) {
-        this.userSvc.userList.push(new User({id: u.id, name: u.name}))
-      }
+      this.userSvc.refreshList(msg.data)
     } else if (msg.type === 'pos') {
-      this.userSvc.setPosition(msg.user, msg.data)
+      this.userSvc.setPosition(msg.user, [msg.data.pos, msg.data.ori])
     } else {
       this.messages.next(msg)
     }

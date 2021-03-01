@@ -1,6 +1,6 @@
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
-  AmbientLight, BoxGeometry, DoubleSide, EdgesGeometry,
+  AmbientLight, BoxGeometry, Clock, DoubleSide, EdgesGeometry,
   LineBasicMaterial, LineSegments, LoadingManager, Mesh,
   MeshBasicMaterial, PerspectiveCamera, PlaneGeometry,
   Raycaster, RepeatWrapping, Scene, TextureLoader,
@@ -18,8 +18,11 @@ export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, mi
 
 @Injectable({providedIn: 'root'})
 export class EngineService implements OnDestroy {
+  public deltaSinceLastFrame = 0
+
   private canvas: HTMLCanvasElement
   private renderer: WebGLRenderer
+  private clock: Clock
   private camera: PerspectiveCamera
   private thirdCamera: PerspectiveCamera
   private activeCamera: PerspectiveCamera
@@ -116,25 +119,46 @@ export class EngineService implements OnDestroy {
       this.addUser(u)
     }
 
-    this.userSvc.userMoved.subscribe(u => {
-      const user = this.scene.children.find(o => o.name === u.id)
-      if (user != null) {
-        user.position.x = u.x
-        user.position.y = u.y
-        user.position.z = u.z
-      } else {
-        this.addUser(u)
+    this.userSvc.listChanged.subscribe(() => {
+      for (const user of this.scene.children.filter(o => o.userData?.player)) {
+        if (this.userSvc.userList.map(u => u.id).indexOf(user.name) === -1) {
+          this.scene.remove(user)
+        }
+      }
+      for (const u of this.userSvc.userList) {
+        const user = this.scene.children.find(o => o.name === u.id)
+        if (user == null) {
+          this.addUser(u)
+        }
       }
     })
   }
 
-  public getPosition() {
-    return this.camera.position
+  public moveUsers() {
+    for (const u of this.userSvc.userList.filter(usr => usr.completion < 1)) {
+      const user = this.scene.children.find(o => o.name === u.id)
+      if (user != null) {
+        u.completion = (u.completion + this.deltaSinceLastFrame / 0.2) > 1 ? 1 : u.completion + this.deltaSinceLastFrame / 0.2
+        user.position.x = u.oldX + (u.x - u.oldX) * u.completion
+        user.position.y = u.oldY + (u.y - u.oldY) * u.completion
+        user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
+        user.rotation.x = u.oldRoll + (u.roll - u.oldRoll) * u.completion
+        user.rotation.y = u.oldYaw + (u.yaw - u.oldYaw) * u.completion + Math.PI
+        user.rotation.z = u.oldPitch + (u.pitch - u.oldPitch) * u.completion
+      }
+    }
+  }
+
+  public getPosition(): [Vector3, Vector3] {
+    const p = this.camera.position.clone()
+    p.y -= 0.08
+    const o = this.camera.rotation.toVector3()
+    return [p, o]
   }
 
   public setWorld(data: any) {
     for (const item of this.scene.children) {
-      if (item.name.length > 0) {
+      if (item.name.length > 0 && !item.userData?.player) {
         this.scene.remove(item)
       }
     }
@@ -221,6 +245,7 @@ export class EngineService implements OnDestroy {
     // We have to run this outside angular zones,
     // because it could trigger heavy changeDetection cycles.
     this.ngZone.runOutsideAngular(() => {
+      this.clock = new Clock(true)
       if (document.readyState !== 'loading') {
         this.render()
       } else {
@@ -257,6 +282,7 @@ export class EngineService implements OnDestroy {
     this.frameId = requestAnimationFrame(() => {
       this.render()
     })
+    this.deltaSinceLastFrame = this.clock.getDelta()
 
     const tractor = this.scene.children.find(o => o.name === 'tracteur1.rwx')
     if (tractor) {
@@ -267,6 +293,7 @@ export class EngineService implements OnDestroy {
     }
 
     this.moveCamera()
+    this.moveUsers()
     this.raycaster.setFromCamera(this.mouse, this.activeCamera)
     this.renderer.render(this.scene, this.activeCamera)
   }
@@ -375,6 +402,10 @@ export class EngineService implements OnDestroy {
         mesh.position.x = u.x
         mesh.position.y = u.y
         mesh.position.z = u.z
+        mesh.rotation.x = u.roll
+        mesh.rotation.y = u.yaw + Math.PI
+        mesh.rotation.z = u.pitch
+        mesh.userData.player = true
         this.scene.add(mesh)
       })
     }

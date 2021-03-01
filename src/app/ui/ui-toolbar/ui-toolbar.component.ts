@@ -35,6 +35,8 @@ export class UiToolbarComponent implements OnInit {
   }
 
   public ngOnInit(): void {
+    this.name = localStorage.getItem('login') || 'Anonymous'
+    this.userSvc.currentName = this.name
   }
 
 }
