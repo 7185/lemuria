@@ -297,10 +297,11 @@ export class EngineService implements OnDestroy {
       vector.x = (vector.x + 1)/2 * window.innerWidth
       vector.y = -(vector.y - 1)/2 * window.innerHeight
       const div = document.getElementById('label-' + user.name)
-      if (div != null) {
+      if (div != null && vector.z < 1) {
         div.style.left = vector.x + 'px'
         div.style.top = vector.y + 'px'
       }
+      div.style.visibility = vector.z < 1 ? 'visible' : 'hidden'
     }
   }
 
