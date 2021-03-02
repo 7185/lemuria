@@ -21,6 +21,7 @@ export class EngineService implements OnDestroy {
   public deltaSinceLastFrame = 0
 
   private canvas: HTMLCanvasElement
+  private labelZone: HTMLDivElement
   private renderer: WebGLRenderer
   private clock: Clock
   private camera: PerspectiveCamera
@@ -48,8 +49,9 @@ export class EngineService implements OnDestroy {
     }
   }
 
-  public createScene(canvas: ElementRef<HTMLCanvasElement>): void {
+  public createScene(canvas: ElementRef<HTMLCanvasElement>, labelZone: ElementRef<HTMLDivElement>): void {
     this.canvas = canvas.nativeElement
+    this.labelZone = labelZone.nativeElement
 
     this.renderer = new WebGLRenderer({
       canvas: this.canvas,
@@ -123,6 +125,7 @@ export class EngineService implements OnDestroy {
       for (const user of this.scene.children.filter(o => o.userData?.player)) {
         if (this.userSvc.userList.map(u => u.id).indexOf(user.name) === -1) {
           this.scene.remove(user)
+          document.getElementById('label-' + user.name).remove()
         }
       }
       for (const u of this.userSvc.userList) {
@@ -132,6 +135,17 @@ export class EngineService implements OnDestroy {
         }
       }
     })
+  }
+
+  createTextLabel(mesh: Mesh) {
+    const div = document.createElement('div')
+    div.className = 'text-label'
+    div.id = 'label-' + mesh.name
+    div.style.position = 'absolute'
+    div.style.transform = 'translate(-50%, -100%)'
+    const user = this.userSvc.userList.find(u => u.id === mesh.name)
+    div.innerHTML = user ? user.name : ''
+    this.labelZone.appendChild(div)
   }
 
   public moveUsers() {
@@ -274,6 +288,22 @@ export class EngineService implements OnDestroy {
     })
   }
 
+  public moveLabels() {
+    for (const user of this.scene.children.filter(o => o.userData?.player)) {
+      const pos = new Vector3()
+      pos.copy(user.position)
+      pos.y += 0.12
+      const vector = pos.project(this.activeCamera)
+      vector.x = (vector.x + 1)/2 * window.innerWidth
+      vector.y = -(vector.y - 1)/2 * window.innerHeight
+      const div = document.getElementById('label-' + user.name)
+      if (div != null) {
+        div.style.left = vector.x + 'px'
+        div.style.top = vector.y + 'px'
+      }
+    }
+  }
+
   public toggleCamera() {
     this.activeCamera = this.activeCamera === this.camera ? this.thirdCamera : this.camera
   }
@@ -294,6 +324,7 @@ export class EngineService implements OnDestroy {
 
     this.moveCamera()
     this.moveUsers()
+    this.moveLabels()
     this.raycaster.setFromCamera(this.mouse, this.activeCamera)
     this.renderer.render(this.scene, this.activeCamera)
   }
@@ -380,9 +411,25 @@ export class EngineService implements OnDestroy {
     }
     if (this.controls[PressedKey.left]) {
       this.camera.rotation.y += 0.1
+      if (this.camera.rotation.y > Math.PI) {
+        this.camera.rotation.y -= 2 * Math.PI
+      }
     }
     if (this.controls[PressedKey.right]) {
       this.camera.rotation.y -= 0.1
+      if (this.camera.rotation.y < -Math.PI) {
+        this.camera.rotation.y += 2 * Math.PI
+      }
+    }
+    if (this.controls[PressedKey.pgUp]) {
+      if (this.camera.rotation.x < Math.PI / 2) {
+        this.camera.rotation.x += 0.1
+      }
+    }
+    if (this.controls[PressedKey.pgDown]) {
+      if (this.camera.rotation.x > -Math.PI / 2) {
+        this.camera.rotation.x -= 0.1
+      }
     }
     if (this.controls[PressedKey.plus]) {
       this.camera.position.y += 0.1
@@ -407,6 +454,7 @@ export class EngineService implements OnDestroy {
         mesh.rotation.z = u.pitch
         mesh.userData.player = true
         this.scene.add(mesh)
+        this.createTextLabel(mesh)
       })
     }
   }

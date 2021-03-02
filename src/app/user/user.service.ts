@@ -5,11 +5,15 @@ import {User} from 'src/app/user/user.model'
 @Injectable({providedIn: 'root'})
 export class UserService {
   public userList: User[] = []
-  public userMoved: Subject<any> = new Subject()
   public listChanged: Subject<any> = new Subject()
   public currentName = 'Anonymous'
 
   constructor() {
+  }
+
+  clearList() {
+    this.userList = []
+    this.listChanged.next()
   }
 
   refreshList(list: any[]) {
@@ -40,7 +44,6 @@ export class UserService {
           u.yaw = postion[1].y
           u.pitch = postion[1].z
           u.completion = 0
-          this.userMoved.next(u)
         }
       }
     }

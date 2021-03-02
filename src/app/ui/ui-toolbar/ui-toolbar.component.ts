@@ -23,7 +23,8 @@ export class UiToolbarComponent implements OnInit {
     })
   }
 
-  public enter() {
+  public connect() {
+    this.socket.connect()
     this.http.world('lemuria').subscribe(w => {
       this.engine.setWorld(w)
     })

@@ -23,13 +23,11 @@ export class SocketService {
         this.connected = true
         this.handleMessage(msg)
       }, err => {
-        this.posTimer.unsubscribe()
         this.messages.next({type: 'err', data: 'Connection lost'})
-        this.connected = false
+        this.disconnect()
       }, () => {
-        this.posTimer.unsubscribe()
         this.messages.next({type: 'err', data: 'Disconnected'})
-        this.connected = false
+        this.disconnect()
       })
       this.posTimer = interval(200).subscribe(() => {
         const pos: [Vector3, Vector3] = this.engineSvc.getPosition()
@@ -58,9 +56,14 @@ export class SocketService {
     }
   }
 
-  close() {
+  disconnect() {
+    this.userSvc.clearList()
     this.posTimer.unsubscribe()
-    this.socket.complete()
     this.connected = false
+  }
+
+  close() {
+    this.socket.complete()
+    this.disconnect()
   }
 }
