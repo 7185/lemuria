@@ -25,6 +25,7 @@ class User:
         self.roll = 0.0
         self.yaw = 0.0
         self.pitch = 0.0
+        self.avatar = 0
 
     def set_position(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, roll: float = 0.0, yaw: float = 0.0, pitch: float = 0.0,):
         self.x = x
@@ -86,6 +87,11 @@ class Bot(User):
                     self.userlist[u].yaw = msg['data']['ori']['y']
                     self.userlist[u].pitch = msg['data']['ori']['z']
             await self._callback('on_user_pos', msg['user'], msg['data'])
+        elif t == 'avatar':
+            for u in self.userlist:
+                if u == msg['user']:
+                    self.userlist[u].avatar = msg['data']
+            await self._callback('on_user_avatar', msg['user'], msg['data'])
 
     
     async def send(self, msg: dict) -> None:
@@ -102,6 +108,10 @@ class Bot(User):
     async def send_position(self) -> None:
         await self.send({'type': 'pos', 'data': {'pos': {'x': self.x, 'y': self.y, 'z': self.z},
                                                  'ori': {'x': self.roll, 'y': self.yaw, 'z': self.pitch}}})
+
+    async def change_avatar(self, avatar: int) -> None:
+        self.avatar = avatar
+        await self.send({'type': 'avatar', 'data': self.avatar})
 
     async def reader(self, websocket) -> None:
         async for message_raw in websocket:

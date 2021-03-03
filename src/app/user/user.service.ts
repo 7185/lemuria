@@ -6,6 +6,7 @@ import {User} from 'src/app/user/user.model'
 export class UserService {
   public userList: User[] = []
   public listChanged: Subject<any> = new Subject()
+  public avatarChanged: Subject<any> = new Subject()
   public currentName = 'Anonymous'
 
   constructor() {
@@ -20,10 +21,19 @@ export class UserService {
     this.userList = this.userList.filter(u => list.map(c => c.id).indexOf(u.id) > -1)
     for (const u of list) {
       if (this.userList.map(c => c.id).indexOf(u.id) === -1) {
-        this.userList.push(new User({id: u.id, name: u.name}))
+        this.userList.push(new User({id: u.id, name: u.name, avatar: u.avatar}))
       }
     }
     this.listChanged.next()
+  }
+
+  setAvatar(userId: string, avatarId: number) {
+    for (const u of this.userList) {
+      if (u.id === userId) {
+        u.avatar = avatarId
+        this.avatarChanged.next(u)
+      }
+    }
   }
 
   setPosition(userId: string, postion: [THREE.Vector3, THREE.Vector3]) {

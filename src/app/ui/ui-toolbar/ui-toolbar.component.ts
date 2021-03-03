@@ -14,13 +14,21 @@ export class UiToolbarComponent implements OnInit {
   public firstPerson = true
   public name = 'Anonymous'
 
-  public constructor(public socket: SocketService, private engine: EngineService, private http: HttpService, public userSvc: UserService) {
+  public constructor(public socket: SocketService, public engine: EngineService, private http: HttpService, public userSvc: UserService) {
   }
 
   public login() {
     this.http.login(this.name, 'password').subscribe(() => {
       this.userSvc.currentName = this.name
     })
+  }
+
+  public changeAvatar(avatarId: number) {
+    if (avatarId > this.engine.avatarList.length - 1) {
+      avatarId = 0
+    }
+    this.socket.sendMessage({type: 'avatar', data: avatarId})
+    this.engine.setAvatar(this.engine.avatarList[avatarId])
   }
 
   public connect() {

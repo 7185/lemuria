@@ -27,12 +27,14 @@ class User(AuthUser):
         self.websockets = set()
         self.position = [0, 0, 0]
         self.orientation = [0, 0, 0]
+        self.avatar = 0
         self.pos_timer = None
 
     def to_dict(self):
         return {
             'id': self.auth_id,
             'name': self.name,
+            'avatar': self.avatar,
             'x': self.position[0],
             'y': self.position[1],
             'z': self.position[2],
@@ -51,7 +53,9 @@ class User(AuthUser):
         await broadcast({'type': 'pos', 'user': self.auth_id, 'data': {'pos': {'x': self.position[0], 'y': self.position[1], 'z': self.position[2]},
                                                                        'ori': {'x': self.orientation[0], 'y': self.orientation[1], 'z': self.orientation[2]}}})
         await self.init_timer()
-
+    
+    async def send_avatar(self):
+        await broadcast({'type': 'avatar', 'user': self.auth_id, 'data': self.avatar})
 
 async def broadcast(message):
     for user in [u for u in authorized_users if u.connected]:

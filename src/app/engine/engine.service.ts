@@ -1,7 +1,7 @@
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
   AmbientLight, BoxGeometry, Clock, DoubleSide, EdgesGeometry,
-  LineBasicMaterial, LineSegments, LoadingManager, Mesh,
+  Euler, LineBasicMaterial, LineSegments, LoadingManager, Mesh,
   MeshBasicMaterial, PerspectiveCamera, PlaneGeometry,
   Raycaster, RepeatWrapping, Scene, TextureLoader,
   Vector2, Vector3, WebGLRenderer
@@ -18,7 +18,7 @@ export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, mi
 
 @Injectable({providedIn: 'root'})
 export class EngineService implements OnDestroy {
-  public deltaSinceLastFrame = 0
+  public avatarList: string[] = []
 
   private canvas: HTMLCanvasElement
   private labelZone: HTMLDivElement
@@ -32,6 +32,7 @@ export class EngineService implements OnDestroy {
   private avatar: Mesh
 
   private frameId: number = null
+  private deltaSinceLastFrame = 0
 
   private rwxLoader: any
   private selectionBox: LineSegments
@@ -105,17 +106,12 @@ export class EngineService implements OnDestroy {
     this.rwxLoader = new RWXLoader(manager)
     this.rwxLoader.setPath(`${RES_PATH}/rwx`).setResourcePath(`${RES_PATH}/textures`).setJSZip(JSZip, JSZipUtils)
 
-    this.rwxLoader.load('michel.rwx', (rwx: Mesh) => {
-      this.avatar = new Mesh()
-      this.avatar.geometry = rwx.geometry
-      this.avatar.material = rwx.material
-      this.avatar.name = 'avatar'
-      this.avatar.position.x = 0
-      this.avatar.position.y = 0.12
-      this.avatar.position.z = 0
-      this.avatar.rotation.y = Math.PI
-      this.camera.attach(this.avatar)
-    })
+    this.avatar = new Mesh()
+    this.avatar.name = 'avatar'
+    this.avatar.position.copy(new Vector3(0, 0.12, 0))
+    this.avatar.rotation.copy(new Euler(0, Math.PI, 0))
+    this.camera.attach(this.avatar)
+    this.setAvatar('michel.rwx')
 
     for (const u of this.userSvc.userList) {
       this.addUser(u)
@@ -134,6 +130,21 @@ export class EngineService implements OnDestroy {
           this.addUser(u)
         }
       }
+    })
+
+    this.userSvc.avatarChanged.subscribe((u) => {
+      const user = this.scene.children.find(o => o.name === u.id)
+      this.setAvatar(this.avatarList[u.avatar], user as Mesh)
+    })
+  }
+
+  setAvatar(name: string, mesh: Mesh = this.avatar) {
+    if (!name.endsWith('.rwx')) {
+      name += '.rwx'
+    }
+    this.rwxLoader.load(name, (rwx: Mesh) => {
+      mesh.geometry = rwx.geometry
+      mesh.material = rwx.material
     })
   }
 
@@ -171,13 +182,19 @@ export class EngineService implements OnDestroy {
   }
 
   public setWorld(data: any) {
-    for (const item of this.scene.children) {
-      if (item.name.length > 0 && !item.userData?.player) {
-        this.scene.remove(item)
-      }
+    for (const item of this.scene.children.filter(i => i.name.length > 0 && !i.userData?.player)) {
+      this.scene.remove(item)
     }
     for (const item of data.objects) {
       this.loadItem(item[0], new Vector3(item[1], item[2], item[3]))
+    }
+    this.avatarList = data.avatars
+    // Update avatars
+    for (const u of this.userSvc.userList) {
+      const user = this.scene.children.find(o => o.name === u.id)
+      if (user != null) {
+        this.setAvatar(this.avatarList[u.avatar], user as Mesh)
+      }
     }
   }
 
@@ -442,7 +459,11 @@ export class EngineService implements OnDestroy {
 
   private addUser(u: User) {
     if (u.name !== this.userSvc.currentName) {
-      this.rwxLoader.load('michel.rwx', (rwx: Mesh) => {
+      let avatar = this.avatarList[u.avatar] || 'michel'
+      if (!avatar.endsWith('.rwx')) {
+        avatar += '.rwx'
+      }
+      this.rwxLoader.load(avatar, (rwx: Mesh) => {
         const mesh = new Mesh()
         mesh.geometry = rwx.geometry
         mesh.material = rwx.material

@@ -30,7 +30,7 @@ export class UiChatZoneComponent implements OnInit {
 
   public ngOnInit(): void {
     this.socket.messages.subscribe(msg => {
-      if (msg.type !== 'list' && msg.type !== 'pos') {
+      if (['msg', 'err', 'join', 'part'].indexOf(msg.type) > -1) {
         for (const u of this.usrSvc.userList) {
           this.colors[u.name] = '#' + u.id.substring(0, 6)
         }

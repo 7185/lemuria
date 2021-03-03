@@ -2,6 +2,7 @@
 import asyncio
 from math import atan2, pi
 from bot import Bot
+from random import randint
 
 WEB_URL = 'http://localhost:8080/api/v1'
 WS_URL = 'ws://localhost:8080/ws'
@@ -12,6 +13,7 @@ class Bobinot(Bot):
         self.name = 'bobinot'
         self.following = None
         self.move_speed = 0.2
+        self.avatar = 1
         self.y = 0.12
         self.current_move_thread = 0
         self.logging_enabled = False
@@ -36,12 +38,13 @@ class Bobinot(Bot):
             await asyncio.sleep(tick / 1e3)
 
     async def on_connected(self) -> None:
+        await self.change_avatar(self.avatar)
         await self.send_msg('hello')
 
     async def on_msg(self, user: str, msg: str) -> None:
         if user != self.name:
             if msg.startswith('!list'):
-                l = ' '.join([u.name + '(' + i + ')' for i, u in self.userlist.items()])
+                l = ' '.join([u.name + '(' + str(u.avatar) + ':' + i + ')' for i, u in self.userlist.items()])
                 await self.send_msg(l)
             elif msg.startswith('!come'):
                 await self.send_msg('Coming...')
@@ -49,6 +52,8 @@ class Bobinot(Bot):
                     if u.name == user:
                         self.current_move_thread += 1
                         asyncio.ensure_future(self.move(u.x, u.z))
+            elif msg.startswith('!change'):
+                await self.change_avatar(randint(0, 2))
 
 b = Bobinot(WEB_URL, WS_URL)
 b.run()

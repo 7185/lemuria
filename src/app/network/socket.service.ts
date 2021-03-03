@@ -45,6 +45,8 @@ export class SocketService {
       this.userSvc.refreshList(msg.data)
     } else if (msg.type === 'pos') {
       this.userSvc.setPosition(msg.user, [msg.data.pos, msg.data.ori])
+    } else if (msg.type === 'avatar') {
+      this.userSvc.setAvatar(msg.user, msg.data)
     } else {
       this.messages.next(msg)
     }

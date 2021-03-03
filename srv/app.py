@@ -37,6 +37,7 @@ async def world(name):
         return {}
     w = {
         'name': 'lemuria',
+        'avatars': ['michel', 'jeanne', 'robin'],
         'objects':  [
             ['tracteur1', 0, 0, 0],
             ['poule1', 1, 0, 0],

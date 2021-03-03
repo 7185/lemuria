@@ -14,6 +14,7 @@ export class User {
   oldYaw? = 0
   oldPitch? = 0
   completion? = 1
+  avatar? = 0
   constructor(params: User = {}) {
     Object.assign(this, params)
   }
