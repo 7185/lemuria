@@ -1,5 +1,6 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core'
 import {EngineService} from './engine.service'
+import {WorldService} from '../world/world.service'
 
 @Component({
   selector: 'app-engine',
@@ -13,11 +14,12 @@ export class EngineComponent implements OnInit {
   @ViewChild('labelZone', {static: true})
   public labelZone: ElementRef<HTMLDivElement>
 
-  public constructor(private engServ: EngineService) {
+  public constructor(private engServ: EngineService, private world: WorldService) {
   }
 
   public ngOnInit(): void {
     this.engServ.createScene(this.rendererCanvas, this.labelZone)
+    this.world.initWorld()
     this.engServ.animate()
   }
 

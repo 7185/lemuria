@@ -44,7 +44,7 @@ async def world(name):
             ['arbre1', 1, 0, 1],
             ['arbre10', 2, 0, 0],
             ['arbre17', -1, 0, 1],
-            ['arbre20', 2, 0.5, 3],
+            ['arbre20', -3, 0.6, 3],
         ]
     }
     return w

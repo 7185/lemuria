@@ -12,7 +12,7 @@
   </button>
 
   <select class="custom-select w-25" (change)="changeAvatar($event.target.value)">
-    <option *ngFor="let a of engine.avatarList" [value]="engine.avatarList.indexOf(a)">{{ a }}</option>
+    <option *ngFor="let a of world.avatarList" [value]="world.avatarList.indexOf(a)">{{ a }}</option>
   </select>
 
   <button *ngIf="!socket.connected" class="btn btn-success my-2 my-sm-0" (click)="login()" type="button">Login</button>

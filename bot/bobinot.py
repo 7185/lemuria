@@ -14,7 +14,7 @@ class Bobinot(Bot):
         self.following = None
         self.move_speed = 0.2
         self.avatar = 1
-        self.y = 0.12
+        self.y = 0.11
         self.current_move_thread = 0
         self.logging_enabled = False
 
@@ -40,6 +40,7 @@ class Bobinot(Bot):
     async def on_connected(self) -> None:
         await self.change_avatar(self.avatar)
         await self.send_msg('hello')
+        await self.send_position()
 
     async def on_msg(self, user: str, msg: str) -> None:
         if user != self.name:

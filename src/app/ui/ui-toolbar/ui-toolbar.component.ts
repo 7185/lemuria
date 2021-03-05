@@ -1,5 +1,6 @@
 import {HttpService} from './../../network/http.service'
 import {EngineService} from './../../engine/engine.service'
+import {WorldService} from './../../world/world.service'
 import {UserService} from './../../user/user.service'
 import {Component, OnInit} from '@angular/core'
 import {SocketService} from 'src/app/network/socket.service'
@@ -14,7 +15,8 @@ export class UiToolbarComponent implements OnInit {
   public firstPerson = true
   public name = 'Anonymous'
 
-  public constructor(public socket: SocketService, public engine: EngineService, private http: HttpService, public userSvc: UserService) {
+  public constructor(public socket: SocketService, private engine: EngineService, public world: WorldService, private http: HttpService,
+    public userSvc: UserService) {
   }
 
   public login() {
@@ -24,17 +26,17 @@ export class UiToolbarComponent implements OnInit {
   }
 
   public changeAvatar(avatarId: number) {
-    if (avatarId > this.engine.avatarList.length - 1) {
+    if (avatarId > this.world.avatarList.length - 1) {
       avatarId = 0
     }
     this.socket.sendMessage({type: 'avatar', data: avatarId})
-    this.engine.setAvatar(this.engine.avatarList[avatarId])
+    this.world.setAvatar(this.world.avatarList[avatarId])
   }
 
   public connect() {
     this.socket.connect()
     this.http.world('lemuria').subscribe(w => {
-      this.engine.setWorld(w)
+      this.world.setWorld(w)
     })
   }
 

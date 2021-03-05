@@ -1,24 +1,17 @@
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
-  AmbientLight, BoxGeometry, Clock, DoubleSide, EdgesGeometry,
-  Euler, LineBasicMaterial, LineSegments, LoadingManager, Mesh,
-  MeshBasicMaterial, PerspectiveCamera, PlaneGeometry,
-  Raycaster, RepeatWrapping, Scene, TextureLoader,
-  Vector2, Vector3, WebGLRenderer
+  AmbientLight, BoxGeometry, Clock, EdgesGeometry, LineBasicMaterial, LineSegments, Mesh,
+  MeshBasicMaterial, PerspectiveCamera, Raycaster, Scene,
+  Vector2, Vector3, WebGLRenderer, DirectionalLight, PCFSoftShadowMap, CameraHelper
 } from 'three'
-import * as JSZip from 'jszip'
-import JSZipUtils from 'jszip-utils'
+
 import {UserService} from './../user/user.service'
 import {config} from '../app.config'
-import {RWXLoader} from '../utils/rwxloader'
-import {User} from '../user/user.model'
 
-export const RES_PATH = config.url.resource
 export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, ctrl, shift }
 
 @Injectable({providedIn: 'root'})
 export class EngineService implements OnDestroy {
-  public avatarList: string[] = []
 
   private canvas: HTMLCanvasElement
   private labelZone: HTMLDivElement
@@ -29,12 +22,11 @@ export class EngineService implements OnDestroy {
   private activeCamera: PerspectiveCamera
   private scene: Scene
   private light: AmbientLight
-  private avatar: Mesh
+  private dirLight: DirectionalLight
 
   private frameId: number = null
   private deltaSinceLastFrame = 0
 
-  private rwxLoader: any
   private selectionBox: LineSegments
   private controls: boolean[] = Array(9).fill(false)
 
@@ -60,12 +52,10 @@ export class EngineService implements OnDestroy {
       antialias: true // smooth edges
     })
     this.renderer.setSize(window.innerWidth, window.innerHeight)
-
-    const loader = new TextureLoader()
-    const bgTexture = loader.load(`${RES_PATH}/textures/faesky02right.jpg`)
+    this.renderer.shadowMap.enabled = true
+    this.renderer.shadowMap.type = PCFSoftShadowMap
 
     this.scene = new Scene()
-    this.scene.background = bgTexture
 
     this.camera = new PerspectiveCamera(
       75, window.innerWidth / window.innerHeight, 0.1, 1000
@@ -89,66 +79,21 @@ export class EngineService implements OnDestroy {
     this.light.position.z = 10
     this.scene.add(this.light)
 
-    const floorTexture = loader.load(`${RES_PATH}/textures/terrain17.jpg`)
-    floorTexture.wrapS = RepeatWrapping
-    floorTexture.wrapT = RepeatWrapping
-    floorTexture.repeat.set(128, 128)
+    this.dirLight = new DirectionalLight(0x10100f, 10)
+    this.dirLight.position.set(50, 100, 50)
+    this.dirLight.castShadow = true
+    this.dirLight.shadow.mapSize.width = 2048
+    this.dirLight.shadow.mapSize.height = 2048
+    this.dirLight.target = this.camera
+    this.scene.add(this.dirLight)
 
-    // DoubleSide: render texture on both sides of mesh
-    const floorMaterial = new MeshBasicMaterial( { map: floorTexture, side: DoubleSide } )
-    const floorGeometry = new PlaneGeometry(100, 100, 1, 1)
-    const floor = new Mesh(floorGeometry, floorMaterial)
-    floor.position.y = 0
-    floor.rotation.x = Math.PI / 2
-    this.scene.add(floor)
-
-    const manager = new LoadingManager()
-    this.rwxLoader = new RWXLoader(manager)
-    this.rwxLoader.setPath(`${RES_PATH}/rwx`).setResourcePath(`${RES_PATH}/textures`).setJSZip(JSZip, JSZipUtils)
-
-    this.avatar = new Mesh()
-    this.avatar.name = 'avatar'
-    this.avatar.position.copy(new Vector3(0, 0.12, 0))
-    this.avatar.rotation.copy(new Euler(0, Math.PI, 0))
-    this.camera.attach(this.avatar)
-    this.setAvatar('michel.rwx')
-
-    for (const u of this.userSvc.userList) {
-      this.addUser(u)
+    if (config.debug) {
+      const shadowHelper = new CameraHelper(this.dirLight.shadow.camera)
+      this.scene.add(shadowHelper)
     }
-
-    this.userSvc.listChanged.subscribe(() => {
-      for (const user of this.scene.children.filter(o => o.userData?.player)) {
-        if (this.userSvc.userList.map(u => u.id).indexOf(user.name) === -1) {
-          this.scene.remove(user)
-          document.getElementById('label-' + user.name).remove()
-        }
-      }
-      for (const u of this.userSvc.userList) {
-        const user = this.scene.children.find(o => o.name === u.id)
-        if (user == null) {
-          this.addUser(u)
-        }
-      }
-    })
-
-    this.userSvc.avatarChanged.subscribe((u) => {
-      const user = this.scene.children.find(o => o.name === u.id)
-      this.setAvatar(this.avatarList[u.avatar], user as Mesh)
-    })
   }
 
-  setAvatar(name: string, mesh: Mesh = this.avatar) {
-    if (!name.endsWith('.rwx')) {
-      name += '.rwx'
-    }
-    this.rwxLoader.load(name, (rwx: Mesh) => {
-      mesh.geometry = rwx.geometry
-      mesh.material = rwx.material
-    })
-  }
-
-  createTextLabel(mesh: Mesh) {
+  public createTextLabel(mesh: Mesh) {
     const div = document.createElement('div')
     div.className = 'text-label'
     div.id = 'label-' + mesh.name
@@ -159,59 +104,31 @@ export class EngineService implements OnDestroy {
     this.labelZone.appendChild(div)
   }
 
-  public moveUsers() {
-    for (const u of this.userSvc.userList.filter(usr => usr.completion < 1)) {
-      const user = this.scene.children.find(o => o.name === u.id)
-      if (user != null) {
-        u.completion = (u.completion + this.deltaSinceLastFrame / 0.2) > 1 ? 1 : u.completion + this.deltaSinceLastFrame / 0.2
-        user.position.x = u.oldX + (u.x - u.oldX) * u.completion
-        user.position.y = u.oldY + (u.y - u.oldY) * u.completion
-        user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
-        user.rotation.x = u.oldRoll + (u.roll - u.oldRoll) * u.completion
-        user.rotation.y = u.oldYaw + (u.yaw - u.oldYaw) * u.completion + Math.PI
-        user.rotation.z = u.oldPitch + (u.pitch - u.oldPitch) * u.completion
-      }
-    }
-  }
-
   public getPosition(): [Vector3, Vector3] {
     const p = this.camera.position.clone()
-    p.y -= 0.08
+    p.y -= 0.09
     const o = this.camera.rotation.toVector3()
     return [p, o]
   }
 
-  public setWorld(data: any) {
-    for (const item of this.scene.children.filter(i => i.name.length > 0 && !i.userData?.player)) {
-      this.scene.remove(item)
-    }
-    for (const item of data.objects) {
-      this.loadItem(item[0], new Vector3(item[1], item[2], item[3]))
-    }
-    this.avatarList = data.avatars
-    // Update avatars
-    for (const u of this.userSvc.userList) {
-      const user = this.scene.children.find(o => o.name === u.id)
-      if (user != null) {
-        this.setAvatar(this.avatarList[u.avatar], user as Mesh)
-      }
-    }
+  public setBackground(bg) {
+    this.scene.background = bg
   }
 
-  public loadItem(item: string, pos: Vector3) {
-    if (!item.endsWith('.rwx')) {
-      item += '.rwx'
-    }
-    this.rwxLoader.load(item, (rwx: Mesh) => {
-      const mesh = new Mesh()
-      mesh.geometry = rwx.geometry
-      mesh.material = rwx.material
-      mesh.name = item
-      mesh.position.x = pos.x
-      mesh.position.y = pos.y
-      mesh.position.z = pos.z
-      this.scene.add(mesh)
-    })
+  public attachCam(mesh: Mesh) {
+    this.camera.attach(mesh)
+  }
+
+  public addMesh(mesh: Mesh) {
+    this.scene.add(mesh)
+  }
+
+  public removeMesh(mesh: Mesh) {
+    this.scene.remove(mesh)
+  }
+
+  public objects() {
+    return this.scene.children
   }
 
   public select(item: Mesh) {
@@ -305,28 +222,11 @@ export class EngineService implements OnDestroy {
     })
   }
 
-  public moveLabels() {
-    for (const user of this.scene.children.filter(o => o.userData?.player)) {
-      const pos = new Vector3()
-      pos.copy(user.position)
-      pos.y += 0.12
-      const vector = pos.project(this.activeCamera)
-      vector.x = (vector.x + 1)/2 * window.innerWidth
-      vector.y = -(vector.y - 1)/2 * window.innerHeight
-      const div = document.getElementById('label-' + user.name)
-      if (div != null && vector.z < 1) {
-        div.style.left = vector.x + 'px'
-        div.style.top = vector.y + 'px'
-      }
-      div.style.visibility = vector.z < 1 ? 'visible' : 'hidden'
-    }
-  }
-
   public toggleCamera() {
     this.activeCamera = this.activeCamera === this.camera ? this.thirdCamera : this.camera
   }
 
-  public render(): void {
+  private render(): void {
     this.frameId = requestAnimationFrame(() => {
       this.render()
     })
@@ -347,7 +247,7 @@ export class EngineService implements OnDestroy {
     this.renderer.render(this.scene, this.activeCamera)
   }
 
-  public resize(): void {
+  private resize(): void {
     const width = window.innerWidth
     const height = window.innerHeight
 
@@ -357,7 +257,7 @@ export class EngineService implements OnDestroy {
     this.renderer.setSize(width, height)
   }
 
-  public rightClick(event) {
+  private rightClick(event) {
     event.preventDefault()
 
     this.mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1
@@ -455,29 +355,41 @@ export class EngineService implements OnDestroy {
     if (this.controls[PressedKey.minus]) {
       this.camera.position.y -= 0.1
     }
+    const sky = this.scene.children.find(o => o.name === 'skybox')
+    if (sky != null) {
+      sky.position.copy(this.camera.position)
+    }
   }
 
-  private addUser(u: User) {
-    if (u.name !== this.userSvc.currentName) {
-      let avatar = this.avatarList[u.avatar] || 'michel'
-      if (!avatar.endsWith('.rwx')) {
-        avatar += '.rwx'
+  private moveUsers() {
+    for (const u of this.userSvc.userList.filter(usr => usr.completion < 1)) {
+      const user = this.scene.children.find(o => o.name === u.id)
+      if (user != null) {
+        u.completion = (u.completion + this.deltaSinceLastFrame / 0.2) > 1 ? 1 : u.completion + this.deltaSinceLastFrame / 0.2
+        user.position.x = u.oldX + (u.x - u.oldX) * u.completion
+        user.position.y = u.oldY + (u.y - u.oldY) * u.completion
+        user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
+        user.rotation.x = u.oldRoll + (u.roll - u.oldRoll) * u.completion
+        user.rotation.y = u.oldYaw + (u.yaw - u.oldYaw) * u.completion + Math.PI
+        user.rotation.z = u.oldPitch + (u.pitch - u.oldPitch) * u.completion
       }
-      this.rwxLoader.load(avatar, (rwx: Mesh) => {
-        const mesh = new Mesh()
-        mesh.geometry = rwx.geometry
-        mesh.material = rwx.material
-        mesh.name = u.id
-        mesh.position.x = u.x
-        mesh.position.y = u.y
-        mesh.position.z = u.z
-        mesh.rotation.x = u.roll
-        mesh.rotation.y = u.yaw + Math.PI
-        mesh.rotation.z = u.pitch
-        mesh.userData.player = true
-        this.scene.add(mesh)
-        this.createTextLabel(mesh)
-      })
+    }
+  }
+
+  private moveLabels() {
+    for (const user of this.scene.children.filter(o => o.userData?.player)) {
+      const pos = new Vector3()
+      pos.copy(user.position)
+      pos.y += 0.11
+      const vector = pos.project(this.activeCamera)
+      vector.x = (vector.x + 1)/2 * window.innerWidth
+      vector.y = -(vector.y - 1)/2 * window.innerHeight
+      const div = document.getElementById('label-' + user.name)
+      if (div != null && vector.z < 1) {
+        div.style.left = vector.x + 'px'
+        div.style.top = vector.y + 'px'
+      }
+      div.style.visibility = vector.z < 1 ? 'visible' : 'hidden'
     }
   }
 }
