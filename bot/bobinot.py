@@ -13,8 +13,7 @@ class Bobinot(Bot):
         self.name = 'bobinot'
         self.following = None
         self.move_speed = 0.2
-        self.avatar = 1
-        self.y = 0.11
+        self.avatar = 12
         self.current_move_thread = 0
         self.logging_enabled = False
 
@@ -42,11 +41,20 @@ class Bobinot(Bot):
         await self.send_msg('hello')
         await self.send_position()
 
+    async def on_user_join(self, msg: str) -> None:
+        print(f"* {msg} joined")
+
+    async def on_user_part(self, msg:str) -> None:
+        print(f"* {msg} left")
+
     async def on_msg(self, user: str, msg: str) -> None:
+        print(f"<{user}> {msg}")
         if user != self.name:
             if msg.startswith('!list'):
                 l = ' '.join([u.name + '(' + str(u.avatar) + ':' + i + ')' for i, u in self.userlist.items()])
                 await self.send_msg(l)
+            elif msg.startswith('!pos'):
+                await self.send_msg(f'{self.x},{self.y},{self.z}')
             elif msg.startswith('!come'):
                 await self.send_msg('Coming...')
                 for i, u in self.userlist.items():
@@ -54,7 +62,7 @@ class Bobinot(Bot):
                         self.current_move_thread += 1
                         asyncio.ensure_future(self.move(u.x, u.z))
             elif msg.startswith('!change'):
-                await self.change_avatar(randint(0, 2))
+                await self.change_avatar(randint(0, 14))
 
 b = Bobinot(WEB_URL, WS_URL)
 b.run()

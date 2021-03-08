@@ -1,0 +1,24 @@
+{
+  "name": "lemuria",
+  "avatars": [
+    "michel", "jeanne", "robin", "pierre", "steven", "thierry", "julien", "fred",
+    "damien", "eve", "catherine", "mere_noel", "stephanie", "mariee1"],
+  "objects":  [
+      ["tracteur1", 0, 0, 0],
+      ["poule1", 1, 0, 0],
+      ["poule1", 0.8, 0, 0.2],
+      ["homer", 1.2, 0.09, 0.5],
+      ["arbre1", -5, 0, 1],
+      ["arbre2", -5.5, 0, 1.5],
+      ["arbre3", -6, 0, 2],
+      ["arbre4", -6.5, 0, 2.5],
+      ["arbre5", -7, 0, 3],
+      ["arbre6", -7.5, 0, 3.5],
+      ["arbre11", -8, 0, 4],
+      ["arbre10", 2, 0, 0],
+      ["arbre17", -1, 0, 1],
+      ["arbre20", 5, 0.6, 3],
+      ["magasin1", -2, 0, -1],
+      ["piscine2", 4, 0, -1]
+  ]
+}

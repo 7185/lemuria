@@ -4,6 +4,7 @@ from functools import wraps
 from ws import sending, receiving, User, authorized_users
 import uuid
 import asyncio
+import json
 from quart_auth import AuthUser, AuthManager, login_user, login_required, current_user, Unauthorized
 
 app = Quart(__name__)
@@ -35,19 +36,9 @@ async def auth():
 async def world(name):
     if name != 'lemuria':
         return {}
-    w = {
-        'name': 'lemuria',
-        'avatars': ['michel', 'jeanne', 'robin'],
-        'objects':  [
-            ['tracteur1', 0, 0, 0],
-            ['poule1', 1, 0, 0],
-            ['arbre1', 1, 0, 1],
-            ['arbre10', 2, 0, 0],
-            ['arbre17', -1, 0, 1],
-            ['arbre20', -3, 0.6, 3],
-        ]
-    }
-    return w
+    with open(f"{name}.json") as world:
+      w = json.load(world)
+      return w
 
 @app.websocket('/ws')
 async def wsocket():

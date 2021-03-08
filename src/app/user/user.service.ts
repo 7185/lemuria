@@ -1,11 +1,11 @@
 import {Injectable} from '@angular/core'
-import {Subject} from 'rxjs'
-import {User} from 'src/app/user/user.model'
+import {BehaviorSubject, Subject} from 'rxjs'
+import {User} from '../user/user.model'
 
 @Injectable({providedIn: 'root'})
 export class UserService {
   public userList: User[] = []
-  public listChanged: Subject<any> = new Subject()
+  public listChanged: BehaviorSubject<User[]> = new BehaviorSubject([])
   public avatarChanged: Subject<any> = new Subject()
   public currentName = 'Anonymous'
 
@@ -14,7 +14,7 @@ export class UserService {
 
   clearList() {
     this.userList = []
-    this.listChanged.next()
+    this.listChanged.next([])
   }
 
   refreshList(list: any[]) {
@@ -24,15 +24,14 @@ export class UserService {
         this.userList.push(new User({id: u.id, name: u.name, avatar: u.avatar}))
       }
     }
-    this.listChanged.next()
+    this.listChanged.next(this.userList)
   }
 
   setAvatar(userId: string, avatarId: number) {
-    for (const u of this.userList) {
-      if (u.id === userId) {
-        u.avatar = avatarId
-        this.avatarChanged.next(u)
-      }
+    const user = this.userList.find(u => u.id === userId)
+    if (user != null && user.name !== this.currentName) {
+      user.avatar = avatarId
+      this.avatarChanged.next(user)
     }
   }
 

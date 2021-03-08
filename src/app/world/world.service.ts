@@ -4,7 +4,7 @@ import {EngineService} from './../engine/engine.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {Euler, Mesh, LoadingManager, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
-  BoxGeometry, MeshBasicMaterial, BackSide, Vector2} from 'three'
+  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3} from 'three'
 import {RWXLoader} from '../utils/rwxloader'
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'
@@ -67,17 +67,14 @@ export class WorldService {
 
     this.initAvatar()
     this.engine.attachCam(this.avatar)
-    for (const u of this.userSvc.userList) {
-      this.addUser(u)
-    }
-    this.userSvc.listChanged.subscribe(() => {
+    this.userSvc.listChanged.subscribe((userList: User[]) => {
       for (const user of this.engine.objects().filter(o => o.userData?.player)) {
-        if (this.userSvc.userList.map(u => u.id).indexOf(user.name) === -1) {
+        if (userList.map(u => u.id).indexOf(user.name) === -1) {
           this.engine.removeMesh(user as Mesh)
           document.getElementById('label-' + user.name).remove()
         }
       }
-      for (const u of this.userSvc.userList) {
+      for (const u of userList) {
         const user = this.engine.objects().find(o => o.name === u.id)
         if (user == null) {
           this.addUser(u)
@@ -87,14 +84,14 @@ export class WorldService {
 
     this.userSvc.avatarChanged.subscribe((u) => {
       const user = this.engine.objects().find(o => o.name === u.id)
-      this.setAvatar(this.avatarList[u.avatar], user as Mesh)
+      const avatarId = u.avatar >= this.avatarList.length ? 0 : u.avatar
+      this.setAvatar(this.avatarList[avatarId], user as Mesh)
     })
   }
 
   initAvatar() {
     this.avatar = new Mesh()
     this.avatar.name = 'avatar'
-    this.avatar.position.copy(new Vector3(0, 0.11, 0))
     this.avatar.rotation.copy(new Euler(0, Math.PI, 0))
     this.avatar.castShadow = true
     this.avatar.receiveShadow = true
@@ -125,6 +122,13 @@ export class WorldService {
     this.rwxLoader.load(name, (rwx: Mesh) => {
       mesh.geometry = rwx.geometry
       mesh.material = rwx.material
+      const box = new Box3()
+      box.setFromObject(mesh)
+      mesh.userData.height = box.max.y - box.min.y
+      mesh.position.y = mesh.userData.height * 0.55
+      if (mesh.name === 'avatar') {
+        this.engine.setCameraOffset(mesh.userData.height * 0.9)
+      }
     })
   }
 
@@ -140,6 +144,9 @@ export class WorldService {
     for (const u of this.userSvc.userList) {
       const user = this.engine.objects().find(o => o.name === u.id)
       if (user != null) {
+        if (u.avatar >= this.avatarList.length) {
+          u.avatar = 0
+        }
         this.setAvatar(this.avatarList[u.avatar], user as Mesh)
       }
     }

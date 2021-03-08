@@ -2,7 +2,7 @@ import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
   AmbientLight, BoxGeometry, Clock, EdgesGeometry, LineBasicMaterial, LineSegments, Mesh,
   MeshBasicMaterial, PerspectiveCamera, Raycaster, Scene,
-  Vector2, Vector3, WebGLRenderer, DirectionalLight, PCFSoftShadowMap, CameraHelper
+  Vector2, Vector3, WebGLRenderer, DirectionalLight, PCFSoftShadowMap, CameraHelper, Object3D
 } from 'three'
 
 import {UserService} from './../user/user.service'
@@ -20,6 +20,8 @@ export class EngineService implements OnDestroy {
   private camera: PerspectiveCamera
   private thirdCamera: PerspectiveCamera
   private activeCamera: PerspectiveCamera
+  private cameraOffset = 0.11
+  private player: Object3D
   private scene: Scene
   private light: AmbientLight
   private dirLight: DirectionalLight
@@ -57,21 +59,20 @@ export class EngineService implements OnDestroy {
 
     this.scene = new Scene()
 
-    this.camera = new PerspectiveCamera(
-      75, window.innerWidth / window.innerHeight, 0.1, 1000
-    )
-    this.camera.rotation.order = 'YXZ'
-    this.camera.position.z = 0
-    this.camera.position.y = 0.2
-    this.scene.add(this.camera)
+    this.player = new Object3D()
+    this.player.rotation.order = 'YXZ'
+    this.scene.add(this.player)
 
-    this.thirdCamera = new PerspectiveCamera(
-      75, window.innerWidth / window.innerHeight, 0.1, 1000
-    )
+    this.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+    this.camera.rotation.order = 'YXZ'
+    this.camera.position.y = 0
+    this.player.attach(this.camera)
+
+    this.thirdCamera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
     this.thirdCamera.rotation.order = 'YXZ'
     this.thirdCamera.position.z = 0.5
     this.thirdCamera.position.y = 0.2
-    this.camera.attach(this.thirdCamera)
+    this.player.attach(this.thirdCamera)
 
     this.activeCamera = this.camera
 
@@ -80,7 +81,7 @@ export class EngineService implements OnDestroy {
     this.scene.add(this.light)
 
     this.dirLight = new DirectionalLight(0x10100f, 10)
-    this.dirLight.position.set(50, 100, 50)
+    this.dirLight.position.set(-50, 80, 0)
     this.dirLight.castShadow = true
     this.dirLight.shadow.mapSize.width = 2048
     this.dirLight.shadow.mapSize.height = 2048
@@ -105,9 +106,8 @@ export class EngineService implements OnDestroy {
   }
 
   public getPosition(): [Vector3, Vector3] {
-    const p = this.camera.position.clone()
-    p.y -= 0.09
-    const o = this.camera.rotation.toVector3()
+    const p = this.player.position.clone()
+    const o = this.player.rotation.toVector3()
     return [p, o]
   }
 
@@ -116,7 +116,11 @@ export class EngineService implements OnDestroy {
   }
 
   public attachCam(mesh: Mesh) {
-    this.camera.attach(mesh)
+    this.player.attach(mesh)
+  }
+
+  public setCameraOffset(offset) {
+    this.camera.position.y = offset
   }
 
   public addMesh(mesh: Mesh) {
@@ -133,17 +137,17 @@ export class EngineService implements OnDestroy {
 
   public select(item: Mesh) {
     if (this.selectionBox == null) {
-      const selectMesh = new Mesh(new BoxGeometry(1, 1, 1),
-      new MeshBasicMaterial())
+      const selectMesh = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial())
       selectMesh.matrixAutoUpdate = false
       selectMesh.visible = false
 
       const geometry = item.geometry
 
-      if ( geometry.boundingBox === null ) {
+      if (geometry.boundingBox == null) {
         geometry.computeBoundingBox()
       }
 
+      selectMesh.geometry.vertices[0].x = geometry.boundingBox.max.x
       selectMesh.geometry.vertices[0].y = geometry.boundingBox.max.y
       selectMesh.geometry.vertices[0].z = geometry.boundingBox.max.z
       selectMesh.geometry.vertices[1].x = geometry.boundingBox.max.x
@@ -157,7 +161,6 @@ export class EngineService implements OnDestroy {
       selectMesh.geometry.vertices[3].z = geometry.boundingBox.min.z
       selectMesh.geometry.vertices[4].x = geometry.boundingBox.min.x
       selectMesh.geometry.vertices[4].y = geometry.boundingBox.max.y
-      selectMesh.geometry.vertices[0].x = geometry.boundingBox.max.x
       selectMesh.geometry.vertices[4].z = geometry.boundingBox.min.z
       selectMesh.geometry.vertices[5].x = geometry.boundingBox.min.x
       selectMesh.geometry.vertices[5].y = geometry.boundingBox.max.y
@@ -263,10 +266,9 @@ export class EngineService implements OnDestroy {
     this.mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1
     this.mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1
     const intersects = this.raycaster.intersectObjects(this.scene.children)
-    for (const o of intersects) {
-      if (o.object.name.length) {
-        this.select(o.object as Mesh)
-      }
+    const item = intersects.find(o => o.object.name.endsWith('.rwx'))
+    if (item != null) {
+      this.select(item.object as Mesh)
     }
   }
 
@@ -322,21 +324,21 @@ export class EngineService implements OnDestroy {
     const cameraDirection = new Vector3()
     this.camera.getWorldDirection(cameraDirection)
     if (this.controls[PressedKey.up]) {
-      this.camera.position.addScaledVector(cameraDirection, 0.1)
+      this.player.position.addScaledVector(cameraDirection, 0.1)
     }
     if (this.controls[PressedKey.down]) {
-      this.camera.position.addScaledVector(cameraDirection, -0.1)
+      this.player.position.addScaledVector(cameraDirection, -0.1)
     }
     if (this.controls[PressedKey.left]) {
-      this.camera.rotation.y += 0.1
-      if (this.camera.rotation.y > Math.PI) {
-        this.camera.rotation.y -= 2 * Math.PI
+      this.player.rotation.y += 0.1
+      if (this.player.rotation.y > Math.PI) {
+        this.player.rotation.y -= 2 * Math.PI
       }
     }
     if (this.controls[PressedKey.right]) {
-      this.camera.rotation.y -= 0.1
-      if (this.camera.rotation.y < -Math.PI) {
-        this.camera.rotation.y += 2 * Math.PI
+      this.player.rotation.y -= 0.1
+      if (this.player.rotation.y < -Math.PI) {
+        this.player.rotation.y += 2 * Math.PI
       }
     }
     if (this.controls[PressedKey.pgUp]) {
@@ -350,14 +352,14 @@ export class EngineService implements OnDestroy {
       }
     }
     if (this.controls[PressedKey.plus]) {
-      this.camera.position.y += 0.1
+      this.player.position.y += 0.1
     }
     if (this.controls[PressedKey.minus]) {
-      this.camera.position.y -= 0.1
+      this.player.position.y -= 0.1
     }
     const sky = this.scene.children.find(o => o.name === 'skybox')
     if (sky != null) {
-      sky.position.copy(this.camera.position)
+      sky.position.copy(this.player.position)
     }
   }
 
@@ -367,7 +369,7 @@ export class EngineService implements OnDestroy {
       if (user != null) {
         u.completion = (u.completion + this.deltaSinceLastFrame / 0.2) > 1 ? 1 : u.completion + this.deltaSinceLastFrame / 0.2
         user.position.x = u.oldX + (u.x - u.oldX) * u.completion
-        user.position.y = u.oldY + (u.y - u.oldY) * u.completion
+        user.position.y = u.oldY + (u.y - u.oldY) * u.completion + user.userData.height * 0.6
         user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
         user.rotation.x = u.oldRoll + (u.roll - u.oldRoll) * u.completion
         user.rotation.y = u.oldYaw + (u.yaw - u.oldYaw) * u.completion + Math.PI
@@ -380,7 +382,7 @@ export class EngineService implements OnDestroy {
     for (const user of this.scene.children.filter(o => o.userData?.player)) {
       const pos = new Vector3()
       pos.copy(user.position)
-      pos.y += 0.11
+      pos.y += user.userData.height / 2
       const vector = pos.project(this.activeCamera)
       vector.x = (vector.x + 1)/2 * window.innerWidth
       vector.y = -(vector.y - 1)/2 * window.innerHeight

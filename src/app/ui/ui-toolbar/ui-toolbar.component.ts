@@ -3,7 +3,8 @@ import {EngineService} from './../../engine/engine.service'
 import {WorldService} from './../../world/world.service'
 import {UserService} from './../../user/user.service'
 import {Component, OnInit} from '@angular/core'
-import {SocketService} from 'src/app/network/socket.service'
+import {SocketService} from '../../network/socket.service'
+import {User} from '../../user/user.model'
 
 @Component({
   selector: 'app-ui-toolbar',
@@ -14,9 +15,10 @@ export class UiToolbarComponent implements OnInit {
 
   public firstPerson = true
   public name = 'Anonymous'
+  public list: User[] = []
 
   public constructor(public socket: SocketService, private engine: EngineService, public world: WorldService, private http: HttpService,
-    public userSvc: UserService) {
+    private userSvc: UserService) {
   }
 
   public login() {
@@ -26,7 +28,7 @@ export class UiToolbarComponent implements OnInit {
   }
 
   public changeAvatar(avatarId: number) {
-    if (avatarId > this.world.avatarList.length - 1) {
+    if (avatarId >= this.world.avatarList.length) {
       avatarId = 0
     }
     this.socket.sendMessage({type: 'avatar', data: avatarId})
@@ -48,6 +50,9 @@ export class UiToolbarComponent implements OnInit {
   public ngOnInit(): void {
     this.name = localStorage.getItem('login') || 'Anonymous'
     this.userSvc.currentName = this.name
+    this.userSvc.listChanged.subscribe((l) => {
+      this.list = l
+    })
   }
 
 }

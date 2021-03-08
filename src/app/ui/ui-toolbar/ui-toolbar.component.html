@@ -8,7 +8,7 @@
     <fa-icon *ngIf="!firstPerson" [icon]="['fas', 'video']"></fa-icon>
   </button>
   <button class="btn btn-outline-info my-2 my-sm-0" type="button">
-    <fa-icon [icon]="['fas', 'user']"></fa-icon> {{ userSvc.userList.length }}
+    <fa-icon [icon]="['fas', 'user']"></fa-icon> {{ list.length }}
   </button>
 
   <select class="custom-select w-25" (change)="changeAvatar($event.target.value)">
