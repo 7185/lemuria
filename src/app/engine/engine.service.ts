@@ -20,7 +20,6 @@ export class EngineService implements OnDestroy {
   private camera: PerspectiveCamera
   private thirdCamera: PerspectiveCamera
   private activeCamera: PerspectiveCamera
-  private cameraOffset = 0.11
   private player: Object3D
   private scene: Scene
   private light: AmbientLight
@@ -70,9 +69,9 @@ export class EngineService implements OnDestroy {
 
     this.thirdCamera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
     this.thirdCamera.rotation.order = 'YXZ'
-    this.thirdCamera.position.z = 0.5
-    this.thirdCamera.position.y = 0.2
-    this.player.attach(this.thirdCamera)
+    this.thirdCamera.position.z = 0.6
+    this.thirdCamera.position.y = 0.1
+    this.camera.attach(this.thirdCamera)
 
     this.activeCamera = this.camera
 
@@ -322,7 +321,7 @@ export class EngineService implements OnDestroy {
 
   private moveCamera() {
     const cameraDirection = new Vector3()
-    this.camera.getWorldDirection(cameraDirection)
+    this.activeCamera.getWorldDirection(cameraDirection)
     if (this.controls[PressedKey.up]) {
       this.player.position.addScaledVector(cameraDirection, 0.1)
     }
@@ -342,13 +341,13 @@ export class EngineService implements OnDestroy {
       }
     }
     if (this.controls[PressedKey.pgUp]) {
-      if (this.camera.rotation.x < Math.PI / 2) {
-        this.camera.rotation.x += 0.1
+      if (this.player.rotation.x < Math.PI / 2) {
+        this.player.rotation.x += 0.1
       }
     }
     if (this.controls[PressedKey.pgDown]) {
-      if (this.camera.rotation.x > -Math.PI / 2) {
-        this.camera.rotation.x -= 0.1
+      if (this.player.rotation.x > -Math.PI / 2) {
+        this.player.rotation.x -= 0.1
       }
     }
     if (this.controls[PressedKey.plus]) {
@@ -356,6 +355,9 @@ export class EngineService implements OnDestroy {
     }
     if (this.controls[PressedKey.minus]) {
       this.player.position.y -= 0.1
+    }
+    if (this.player.position.y < 0) {
+      this.player.position.y = 0
     }
     const sky = this.scene.children.find(o => o.name === 'skybox')
     if (sky != null) {
