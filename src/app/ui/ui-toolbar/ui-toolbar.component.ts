@@ -37,8 +37,9 @@ export class UiToolbarComponent implements OnInit {
 
   public connect() {
     this.socket.connect()
-    this.http.world('lemuria').subscribe(w => {
+    this.http.world('lemuria').subscribe((w: any) => {
       this.world.setWorld(w)
+      this.socket.messages.next({type: 'info', data: w.welcome})
     })
   }
 

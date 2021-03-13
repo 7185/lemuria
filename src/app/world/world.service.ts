@@ -3,7 +3,7 @@ import {User} from './../user/user.model'
 import {EngineService} from './../engine/engine.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
-import {Euler, Mesh, LoadingManager, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
+import {Euler, Mesh, Group, LoadingManager, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
   BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3} from 'three'
 import {RWXLoader} from '../utils/rwxloader'
 import * as JSZip from 'jszip'
@@ -16,7 +16,7 @@ export const RES_PATH = config.url.resource
 export class WorldService {
 
   public avatarList: string[] = []
-  private avatar: Mesh
+  private avatar: Group
 
   private rwxLoader = new RWXLoader(new LoadingManager())
 
@@ -27,7 +27,7 @@ export class WorldService {
   initWorld() {
     const loader = new TextureLoader()
 
-    const skyGeometry = new BoxGeometry(10, 10, 10)
+    const skyGeometry = new BoxGeometry(100, 100, 100)
 
     const skyMaterials = []
     const textureFt = loader.load(`${RES_PATH}/textures/faesky02back.jpg`)
@@ -48,9 +48,10 @@ export class WorldService {
     skyMaterials.push(new MeshBasicMaterial({map: textureRt, depthWrite: false, side: BackSide}))
     skyMaterials.push(new MeshBasicMaterial({map: textureLf, depthWrite: false, side: BackSide}))
 
-    const skybox = new Mesh(skyGeometry, skyMaterials)
+    const skybox = new Group()
+    skybox.add(new Mesh(skyGeometry, skyMaterials))
     skybox.name = 'skybox'
-    this.engine.addMesh(skybox)
+    this.engine.addObject(skybox)
 
     const floorTexture = loader.load(`${RES_PATH}/textures/terrain17.jpg`)
     floorTexture.wrapS = RepeatWrapping
@@ -58,19 +59,21 @@ export class WorldService {
     floorTexture.repeat.set(128, 128)
 
     const floorMaterial = new MeshPhongMaterial({map: floorTexture, side: DoubleSide})
-    const floorGeometry = new PlaneGeometry(100, 100, 1, 1)
-    const floor = new Mesh(floorGeometry, floorMaterial)
+    const floorGeometry = new PlaneGeometry(1000, 1000, 1, 1)
+    const floor = new Group()
+    const floorMesh = new Mesh(floorGeometry, floorMaterial)
+    floorMesh.receiveShadow = true
+    floor.add(floorMesh)
     floor.position.y = 0
     floor.rotation.x = -Math.PI / 2
-    floor.receiveShadow = true
-    this.engine.addMesh(floor)
+    this.engine.addObject(floor)
 
     this.initAvatar()
     this.engine.attachCam(this.avatar)
     this.userSvc.listChanged.subscribe((userList: User[]) => {
       for (const user of this.engine.objects().filter(o => o.userData?.player)) {
         if (userList.map(u => u.id).indexOf(user.name) === -1) {
-          this.engine.removeMesh(user as Mesh)
+          this.engine.removeObject(user as Group)
           document.getElementById('label-' + user.name).remove()
         }
       }
@@ -85,17 +88,15 @@ export class WorldService {
     this.userSvc.avatarChanged.subscribe((u) => {
       const user = this.engine.objects().find(o => o.name === u.id)
       const avatarId = u.avatar >= this.avatarList.length ? 0 : u.avatar
-      this.setAvatar(this.avatarList[avatarId], user as Mesh)
+      this.setAvatar(this.avatarList[avatarId], user as Group)
     })
   }
 
   initAvatar() {
-    this.avatar = new Mesh()
+    this.avatar = new Group()
     this.avatar.name = 'avatar'
     this.avatar.rotation.copy(new Euler(0, Math.PI, 0))
-    this.avatar.castShadow = true
-    this.avatar.receiveShadow = true
-    this.setAvatar('michel.rwx', this.avatar)
+    this.setAvatar('michel', this.avatar)
   }
 
   public loadItem(item: string, pos: Vector3) {
@@ -103,38 +104,52 @@ export class WorldService {
       item += '.rwx'
     }
     this.rwxLoader.load(item, (rwx: Mesh) => {
-      const mesh = new Mesh()
-      mesh.geometry = rwx.geometry
-      mesh.material = rwx.material
-      mesh.name = item
-      mesh.position.x = pos.x
-      mesh.position.y = pos.y
-      mesh.position.z = pos.z
-      mesh.castShadow = true
-      this.engine.addMesh(mesh)
+      const group = new Group()
+      rwx.traverse((child) => {
+        if (child instanceof Mesh) {
+          child.castShadow = true
+        }
+      })
+      group.add(rwx)
+      group.name = item
+      group.position.x = pos.x
+      group.position.y = pos.y
+      group.position.z = pos.z
+      this.engine.addObject(group)
     })
   }
 
-  setAvatar(name: string, mesh: Mesh = this.avatar) {
+  setAvatar(name: string, group: Group = this.avatar) {
     if (!name.endsWith('.rwx')) {
       name += '.rwx'
     }
     this.rwxLoader.load(name, (rwx: Mesh) => {
-      mesh.geometry = rwx.geometry
-      mesh.material = rwx.material
+      rwx.castShadow = true
+      rwx.traverse((child) => {
+        if (child instanceof Mesh) {
+          child.castShadow = true
+          child.receiveShadow = true
+        }
+      })
+      group.clear()
+      group.add(rwx)
       const box = new Box3()
-      box.setFromObject(mesh)
-      mesh.userData.height = box.max.y - box.min.y
-      mesh.position.y = mesh.userData.height * 0.55
-      if (mesh.name === 'avatar') {
-        this.engine.setCameraOffset(mesh.userData.height * 0.9)
+      box.setFromObject(group)
+      group.userData.height = box.max.y - box.min.y
+      if (group.userData.height > 1.1) {
+        group.position.y = group.userData.height * 0.55
+      } else {
+        group.position.y = 0
+      }
+      if (group.name === 'avatar') {
+        this.engine.setCameraOffset(group.userData.height * 0.9)
       }
     })
   }
 
   public setWorld(data: any) {
     for (const item of this.engine.objects().filter(i => i.name.length > 0 && !i.userData?.player && i.name !== 'skybox')) {
-      this.engine.removeMesh(item as Mesh)
+      this.engine.removeObject(item as Group)
     }
     for (const item of data.objects) {
       this.loadItem(item[0], new Vector3(item[1], item[2], item[3]))
@@ -147,7 +162,7 @@ export class WorldService {
         if (u.avatar >= this.avatarList.length) {
           u.avatar = 0
         }
-        this.setAvatar(this.avatarList[u.avatar], user as Mesh)
+        this.setAvatar(this.avatarList[u.avatar], user as Group)
       }
     }
   }
@@ -158,19 +173,18 @@ export class WorldService {
       if (!avatar.endsWith('.rwx')) {
         avatar += '.rwx'
       }
-      const mesh = new Mesh()
-      mesh.castShadow = true
-      mesh.name = u.id
-      mesh.position.x = u.x
-      mesh.position.y = u.y
-      mesh.position.z = u.z
-      mesh.rotation.x = u.roll
-      mesh.rotation.y = u.yaw + Math.PI
-      mesh.rotation.z = u.pitch
-      mesh.userData.player = true
-      this.engine.createTextLabel(mesh)
-      this.setAvatar(avatar, mesh)
-      this.engine.addMesh(mesh)
+      const group = new Group()
+      group.name = u.id
+      group.position.x = u.x
+      group.position.y = u.y
+      group.position.z = u.z
+      group.rotation.x = u.roll
+      group.rotation.y = u.yaw + Math.PI
+      group.rotation.z = u.pitch
+      group.userData.player = true
+      this.engine.createTextLabel(group)
+      this.setAvatar(avatar, group)
+      this.engine.addObject(group)
     }
   }
 }
