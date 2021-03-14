@@ -71,7 +71,8 @@ class Bot(User):
         elif t == 'list':
             self.userlist.clear()
             for u in msg['data']:
-                self.userlist[u['id']]=(User(u['name']))
+                self.userlist[u['id']] = User(u['name'])
+                self.userlist[u['id']].avatar = u['avatar']
             await self._callback('on_user_list')
         elif t == 'join':
             await self._callback('on_user_join', msg['data'])
