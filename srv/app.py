@@ -53,4 +53,4 @@ async def redirect(e):
 auth_manager.init_app(app)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5169)
+    app.run(host='localhost', port=8080)

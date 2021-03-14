@@ -51,6 +51,7 @@ export class WorldService {
     const skybox = new Group()
     skybox.add(new Mesh(skyGeometry, skyMaterials))
     skybox.name = 'skybox'
+    skybox.userData.persist = true
     this.engine.addObject(skybox)
 
     const floorTexture = loader.load(`${RES_PATH}/textures/terrain17.jpg`)
@@ -148,7 +149,7 @@ export class WorldService {
   }
 
   public setWorld(data: any) {
-    for (const item of this.engine.objects().filter(i => i.name.length > 0 && !i.userData?.player && i.name !== 'skybox')) {
+    for (const item of this.engine.objects().filter(i => i.name.length > 0 && !i.userData?.player && !i.userData?.persist)) {
       this.engine.removeObject(item as Group)
     }
     for (const item of data.objects) {

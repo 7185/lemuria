@@ -82,6 +82,8 @@ export class EngineService implements OnDestroy {
     this.scene.add(this.light)
 
     this.dirLight = new DirectionalLight(0x10100f, 10)
+    this.dirLight.name = 'dirlight'
+    this.dirLight.userData.persist = true
     this.dirLight.position.set(-50, 80, 10)
     this.dirLight.castShadow = true
     this.dirLight.shadow.camera.left = 100
@@ -180,12 +182,12 @@ export class EngineService implements OnDestroy {
       window.addEventListener('resize', () => {
         this.resize()
       })
-      this.canvas.addEventListener('contextmenu', (e) => {
+      this.canvas.addEventListener('contextmenu', (e: MouseEvent) => {
         this.rightClick(e)
       })
       window.addEventListener('keydown', (e: KeyboardEvent) => {
         if ((e.target as HTMLElement).nodeName === 'BODY') {
-          this.handleKeys(e.key, true)
+          this.handleKeys(e.code, true)
           if (this.buildMode) {
             this.moveItem()
           }
@@ -194,7 +196,7 @@ export class EngineService implements OnDestroy {
       })
       window.addEventListener('keyup', (e: KeyboardEvent) => {
         if ((e.target as HTMLElement).nodeName === 'BODY') {
-          this.handleKeys(e.key, false)
+          this.handleKeys(e.code, false)
           e.preventDefault()
         }
       })
@@ -237,9 +239,8 @@ export class EngineService implements OnDestroy {
     this.renderer.setSize(width, height)
   }
 
-  private rightClick(event) {
+  private rightClick(event: MouseEvent) {
     event.preventDefault()
-
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
     const intersects = this.raycaster.intersectObjects(this.scene.children, true)
@@ -251,6 +252,7 @@ export class EngineService implements OnDestroy {
       }
       if (obj.name.endsWith('.rwx')) {
         item = obj
+        break
       }
     }
     if (item != null) {
@@ -284,19 +286,19 @@ export class EngineService implements OnDestroy {
         this.controls[PressedKey.pgDown] = value
         break
       }
-      case '+': {
+      case 'NumpadAdd': {
         this.controls[PressedKey.plus] = value
         break
       }
-      case '-': {
+      case 'NumpadSubtract': {
         this.controls[PressedKey.minus] = value
         break
       }
-      case 'Control': {
+      case 'ControlLeft': {
         this.controls[PressedKey.ctrl] = value
         break
       }
-      case 'Shift': {
+      case 'ShiftLeft': {
         this.controls[PressedKey.shift] = value
         break
       }
@@ -318,13 +320,23 @@ export class EngineService implements OnDestroy {
       this.scene.remove(this.selectionBox)
       return
     }
+    let moveStep = 0.5
+    let rotStep = Math.PI / 12
+    if (this.controls[PressedKey.shift]) {
+      moveStep = 0.05
+      rotStep = Math.PI / 120
+      if (this.controls[PressedKey.ctrl]) {
+        moveStep = 0.01
+        rotStep = Math.PI / 180
+      }
+    }
     const cameraDirection = new Vector3()
     this.activeCamera.getWorldDirection(cameraDirection)
     if (this.controls[PressedKey.plus]) {
-      this.selectedObject.translateY(0.5)
+      this.selectedObject.translateY(moveStep)
     }
     if (this.controls[PressedKey.minus]) {
-      this.selectedObject.translateY(-0.5)
+      this.selectedObject.translateY(-moveStep)
     }
     const v = new Vector3()
     if (Math.abs(cameraDirection.x) >= Math.abs(cameraDirection.z)) {
@@ -333,16 +345,28 @@ export class EngineService implements OnDestroy {
       v.z = Math.sign(cameraDirection.z)
     }
     if (this.controls[PressedKey.up]) {
-      this.selectedObject.position.add(v.multiplyScalar(0.5))
+      this.selectedObject.position.add(v.multiplyScalar(moveStep))
     }
     if (this.controls[PressedKey.down]) {
-      this.selectedObject.position.add(v.multiplyScalar(-0.5))
+      this.selectedObject.position.add(v.multiplyScalar(-moveStep))
     }
     if (this.controls[PressedKey.left]) {
-      this.selectedObject.position.add(new Vector3(v.z * 0.5, 0, v.x * -0.5))
+      this.selectedObject.position.add(new Vector3(v.z * moveStep, 0, v.x * -moveStep))
     }
     if (this.controls[PressedKey.right]) {
-      this.selectedObject.position.add(new Vector3(v.z * -0.5, 0, v.x * 0.5))
+      this.selectedObject.position.add(new Vector3(v.z * -moveStep, 0, v.x * moveStep))
+    }
+    if (this.controls[PressedKey.pgUp]) {
+      this.selectedObject.rotation.y += rotStep
+      if (this.selectedObject.rotation.y > -Math.PI) {
+        this.selectedObject.rotation.y -= 2 * Math.PI
+      }
+    }
+    if (this.controls[PressedKey.pgDown]) {
+      this.selectedObject.rotation.y -= rotStep
+      if (this.selectedObject.rotation.y < -Math.PI) {
+        this.selectedObject.rotation.y += 2 * Math.PI
+      }
     }
     this.selectionBox.update()
   }
@@ -351,39 +375,51 @@ export class EngineService implements OnDestroy {
   private moveCamera() {
     const cameraDirection = new Vector3()
     this.activeCamera.getWorldDirection(cameraDirection)
+    let steps = 1
+    if (this.controls[PressedKey.ctrl]) {
+      steps = 2
+    }
     if (this.controls[PressedKey.up]) {
-      this.player.position.addScaledVector(cameraDirection, 1)
+      this.player.position.addScaledVector(cameraDirection, steps)
     }
     if (this.controls[PressedKey.down]) {
-      this.player.position.addScaledVector(cameraDirection, -1)
+      this.player.position.addScaledVector(cameraDirection, -steps)
     }
     if (this.controls[PressedKey.left]) {
-      this.player.rotation.y += 0.1
-      if (this.player.rotation.y > Math.PI) {
-        this.player.rotation.y -= 2 * Math.PI
+      if (this.controls[PressedKey.shift]) {
+        this.player.position.addScaledVector(new Vector3(cameraDirection.z, 0, -cameraDirection.x), steps)
+      } else {
+        this.player.rotation.y += 0.1 * steps
+        if (this.player.rotation.y > Math.PI) {
+         this.player.rotation.y -= 2 * Math.PI
+        }
       }
     }
     if (this.controls[PressedKey.right]) {
-      this.player.rotation.y -= 0.1
-      if (this.player.rotation.y < -Math.PI) {
-        this.player.rotation.y += 2 * Math.PI
+      if (this.controls[PressedKey.shift]) {
+        this.player.position.addScaledVector(new Vector3(-cameraDirection.z, 0, cameraDirection.x), steps)
+      } else {
+        this.player.rotation.y -= 0.1 * steps
+        if (this.player.rotation.y < -Math.PI) {
+          this.player.rotation.y += 2 * Math.PI
+        }
       }
     }
     if (this.controls[PressedKey.pgUp]) {
       if (this.player.rotation.x < Math.PI / 2) {
-        this.player.rotation.x += 0.1
+        this.player.rotation.x += 0.1 * steps
       }
     }
     if (this.controls[PressedKey.pgDown]) {
       if (this.player.rotation.x > -Math.PI / 2) {
-        this.player.rotation.x -= 0.1
+        this.player.rotation.x -= 0.1 * steps
       }
     }
     if (this.controls[PressedKey.plus]) {
-      this.player.position.y += 1
+      this.player.position.y += steps
     }
     if (this.controls[PressedKey.minus]) {
-      this.player.position.y -= 1
+      this.player.position.y -= steps
     }
     if (this.player.position.y < 0) {
       this.player.position.y = 0
@@ -391,6 +427,10 @@ export class EngineService implements OnDestroy {
     const sky = this.scene.children.find(o => o.name === 'skybox')
     if (sky != null) {
       sky.position.copy(this.player.position)
+    }
+    const dirlight = this.scene.children.find(o => o.name === 'dirlight')
+    if (dirlight != null) {
+      dirlight.position.copy(new Vector3(-50 + this.player.position.x, 80 + this.player.position.y, 10 + this.player.position.z))
     }
   }
 

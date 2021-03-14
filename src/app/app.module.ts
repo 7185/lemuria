@@ -11,8 +11,9 @@ import {UiChatZoneComponent} from './ui/ui-chat-zone/ui-chat-zone.component'
 import {UiComponent} from './ui/ui.component'
 
 import {
+  faComments,
   faEye,
-  faUser,
+  faUsers,
   faVideo
 } from '@fortawesome/free-solid-svg-icons'
 
@@ -39,8 +40,9 @@ import {
 export class AppModule {
   constructor(private iconLibrary: FaIconLibrary) {
     iconLibrary.addIcons(
+      faComments,
       faEye,
-      faUser,
+      faUsers,
       faVideo
     )
   }

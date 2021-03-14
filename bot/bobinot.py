@@ -4,15 +4,15 @@ from math import atan2, pi
 from bot import Bot
 from random import randint
 
-WEB_URL = 'http://localhost:8080/api/v1'
-WS_URL = 'ws://localhost:8080/ws'
+WEB_URL = 'https://lemuria.7185.fr/api/v1'
+WS_URL = 'wss://lemuria.7185.fr/ws'
 
 class Bobinot(Bot):
     def __init__(self, *args, **kwargs):
         super(Bobinot, self).__init__(*args, **kwargs)
         self.name = 'bobinot'
         self.following = None
-        self.move_speed = 0.2
+        self.move_speed = 1
         self.avatar = 12
         self.current_move_thread = 0
         self.logging_enabled = False
@@ -61,8 +61,18 @@ class Bobinot(Bot):
                     if u.name == user:
                         self.current_move_thread += 1
                         asyncio.ensure_future(self.move(u.x, u.z))
+            elif msg.startswith('!whereami'):
+                for i, u in self.userlist.items():
+                    if u.name == user:
+                        await self.send_msg(f'{u.x},{u.y},{u.z}')
+            elif msg.startswith('!speed'):
+                value = 1
+                if len(msg.split(' ')) > 1:
+                    value = msg.split(' ')[1]
+                self.move_speed = int(value)
+                await self.send_msg(f'Running at {self.move_speed}')
             elif msg.startswith('!change'):
-                await self.change_avatar(randint(0, 14))
+                await self.change_avatar(randint(0, 16))
 
 b = Bobinot(WEB_URL, WS_URL)
 b.run()

@@ -1,4 +1,4 @@
-<div id="chat-zone">
+<div id="chat-zone" [class.active]="chatActive">
   <virtual-scroller #scroll [items]="data">
     <p class="line mx-2" *ngFor="let m of scroll.viewPortItems">
       <ng-container *ngIf="m.type == 'msg'">
@@ -10,6 +10,11 @@
       <ng-container *ngIf="m.type == 'info'"><em class="text-info">{{ m.data }}</em></ng-container>
     </p>
   </virtual-scroller>
-  <input class="form-control mr-sm-2" [(ngModel)]="message" (keydown.enter)="send()" type="text" 
-         placeholder="Message" aria-label="Message" [disabled]="!socket.connected">
+  <div class="input-group">
+    <button class="btn btn-outline-secondary" type="button" (click)="activeChat()" [class.active]="chatActive">
+      <fa-icon [icon]="['fas', 'comments']"></fa-icon>
+    </button>
+    <input class="form-control mr-sm-2" [(ngModel)]="message" (keydown.enter)="send()" type="text" 
+           placeholder="Message" aria-label="Message" [disabled]="!socket.connected">
+  </div>
 </div>

@@ -16,9 +16,14 @@ export class UiChatZoneComponent implements OnInit {
 
   public data = []
   public message = ''
+  public chatActive = false
   public colors = {}
 
   public constructor(public socket: SocketService, public usrSvc: UserService) {
+  }
+
+  public activeChat() {
+    this.chatActive = !this.chatActive
   }
 
   public send(): void {

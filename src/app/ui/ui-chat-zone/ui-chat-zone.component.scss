@@ -1,5 +1,5 @@
 #chat-zone {
-  pointer-events: all;
+  pointer-events: none;
   width: 30%;
   height: calc(100vh - 40px);
   p.line {
@@ -22,4 +22,11 @@
   img {
     margin-right: 4px;
   }
+  div.input-group {
+    pointer-events: all;
+  }
+}
+#chat-zone.active {
+  pointer-events: all;
+  background-color: #00000080;
 }
