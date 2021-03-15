@@ -1,14 +1,11 @@
 import {UserService} from './../user/user.service'
 import {User} from './../user/user.model'
 import {EngineService} from './../engine/engine.service'
+import {ObjectService} from './object.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
-import {Euler, Mesh, Group, LoadingManager, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
-  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3} from 'three'
-import {RWXLoader} from '../utils/rwxloader'
-import * as JSZip from 'jszip'
-import JSZipUtils from 'jszip-utils'
-
+import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
+  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, Object3D} from 'three'
 
 export const RES_PATH = config.url.resource
 
@@ -18,10 +15,7 @@ export class WorldService {
   public avatarList: string[] = []
   private avatar: Group
 
-  private rwxLoader = new RWXLoader(new LoadingManager())
-
-  constructor(private engine: EngineService, private userSvc: UserService) {
-    this.rwxLoader.setPath(`${RES_PATH}/rwx`).setResourcePath(`${RES_PATH}/textures`).setJSZip(JSZip, JSZipUtils)
+  constructor(private engine: EngineService, private userSvc: UserService, private objSvc: ObjectService) {
   }
 
   initWorld() {
@@ -104,19 +98,18 @@ export class WorldService {
     if (!item.endsWith('.rwx')) {
       item += '.rwx'
     }
-    this.rwxLoader.load(item, (rwx: Mesh) => {
-      const group = new Group()
-      rwx.traverse((child) => {
+    this.objSvc.loadObject(item).then((o) => {
+      const g = o.clone()
+      g.name = item
+      g.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           child.castShadow = true
         }
       })
-      group.add(rwx)
-      group.name = item
-      group.position.x = pos.x
-      group.position.y = pos.y
-      group.position.z = pos.z
-      this.engine.addObject(group)
+      g.position.x = pos.x / 100
+      g.position.y = pos.y / 100
+      g.position.z = pos.z / 100
+      this.engine.addObject(g)
     })
   }
 
@@ -124,16 +117,16 @@ export class WorldService {
     if (!name.endsWith('.rwx')) {
       name += '.rwx'
     }
-    this.rwxLoader.load(name, (rwx: Mesh) => {
-      rwx.castShadow = true
-      rwx.traverse((child) => {
+    this.objSvc.loadObject(name).then((o) => {
+      const g = o.clone()
+      g.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           child.castShadow = true
           child.receiveShadow = true
         }
       })
       group.clear()
-      group.add(rwx)
+      group.add(g)
       const box = new Box3()
       box.setFromObject(group)
       group.userData.height = box.max.y - box.min.y

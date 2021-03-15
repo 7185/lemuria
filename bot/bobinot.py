@@ -67,8 +67,9 @@ class Bobinot(Bot):
                         await self.send_msg(f'{u.x},{u.y},{u.z}')
             elif msg.startswith('!speed'):
                 value = 1
-                if len(msg.split(' ')) > 1:
-                    value = msg.split(' ')[1]
+                m = msg.split(' ')
+                if len(m) > 1 and m[1].isdigit():
+                    value = m[1]
                 self.move_speed = int(value)
                 await self.send_msg(f'Running at {self.move_speed}')
             elif msg.startswith('!change'):
