@@ -109,6 +109,7 @@ export class WorldService {
       g.position.x = pos.x / 100
       g.position.y = pos.y / 100
       g.position.z = pos.z / 100
+      g.rotation.order = 'ZYX'
       g.rotation.x = rot.x * DEG / 10
       g.rotation.y = rot.y * DEG / 10
       g.rotation.z = rot.z * DEG / 10

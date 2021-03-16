@@ -375,9 +375,9 @@ export class EngineService implements OnDestroy {
   private moveCamera() {
     const cameraDirection = new Vector3()
     this.activeCamera.getWorldDirection(cameraDirection)
-    let steps = 1
+    let steps = 4 * this.deltaSinceLastFrame
     if (this.controls[PressedKey.ctrl]) {
-      steps = 2
+      steps = 16 * this.deltaSinceLastFrame
     }
     if (this.controls[PressedKey.up]) {
       this.player.position.addScaledVector(cameraDirection, steps)
