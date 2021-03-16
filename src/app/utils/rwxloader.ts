@@ -56,11 +56,11 @@ var RWXLoader = ( function () {
 
 		ctx.transformStack.forEach( ( t ) => {
 
-			transform.premultiply( t );
+			transform.multiply( t );
 
 		} );
 
-		return transform.premultiply( ctx.currentTransform );
+		return transform.multiply( ctx.currentTransform );
 
 	};
 
@@ -155,7 +155,7 @@ var RWXLoader = ( function () {
 			const shapePositions = geometry.getAttribute( 'position' ).array;
 			const shapeIndices = geometry.getIndex().array;
 
-			newVertices.push( ...shapePositions as number[] );
+			newVertices.push( ...shapePositions );
 
 			for ( var i = 0, lFaces = shapeIndices.length; i < lFaces; i ++ ) {
 
@@ -1025,7 +1025,7 @@ var RWXLoader = ( function () {
 					if ( tprops.length == 3 ) {
 
 						translateM.makeTranslation( tprops[ 0 ], tprops[ 1 ], tprops[ 2 ] );
-						ctx.currentTransform.premultiply( translateM );
+						ctx.currentTransform.multiply( translateM );
 
 					}
 
@@ -1049,22 +1049,22 @@ var RWXLoader = ( function () {
 
 						if ( rprops[ 0 ] ) {
 
-							rotateM.makeRotationX( MathUtils.degToRad( - rprops[ 3 ] ) );
-							ctx.currentTransform.premultiply( rotateM );
+							rotateM.makeRotationX( MathUtils.degToRad( rprops[ 3 ] ) );
+							ctx.currentTransform.multiply( rotateM );
 
 						}
 
 						if ( rprops[ 1 ] ) {
 
-							rotateM.makeRotationY( MathUtils.degToRad( - rprops[ 3 ] ) );
-							ctx.currentTransform.premultiply( rotateM );
+							rotateM.makeRotationY( MathUtils.degToRad( rprops[ 3 ] ) );
+							ctx.currentTransform.multiply( rotateM );
 
 						}
 
 						if ( rprops[ 2 ] ) {
 
-							rotateM.makeRotationZ( MathUtils.degToRad( - rprops[ 3 ] ) );
-							ctx.currentTransform.premultiply( rotateM );
+							rotateM.makeRotationZ( MathUtils.degToRad( rprops[ 3 ] ) );
+							ctx.currentTransform.multiply( rotateM );
 
 						}
 
@@ -1089,7 +1089,7 @@ var RWXLoader = ( function () {
 					if ( sprops.length == 3 ) {
 
 						scaleM.makeScale( sprops[ 0 ], sprops[ 1 ], sprops[ 2 ] );
-						ctx.currentTransform.premultiply( scaleM );
+						ctx.currentTransform.multiply( scaleM );
 
 					}
 
