@@ -6,8 +6,8 @@ import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
   BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, Object3D} from 'three'
-
 export const RES_PATH = config.url.resource
+export const DEG = Math.PI / 180
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
@@ -94,7 +94,7 @@ export class WorldService {
     this.setAvatar('michel', this.avatar)
   }
 
-  public loadItem(item: string, pos: Vector3) {
+  public loadItem(item: string, pos: Vector3, rot: Vector3) {
     if (!item.endsWith('.rwx')) {
       item += '.rwx'
     }
@@ -109,6 +109,9 @@ export class WorldService {
       g.position.x = pos.x / 100
       g.position.y = pos.y / 100
       g.position.z = pos.z / 100
+      g.rotation.x = rot.x * DEG / 10
+      g.rotation.y = rot.y * DEG / 10
+      g.rotation.z = rot.z * DEG / 10
       this.engine.addObject(g)
     })
   }
@@ -146,7 +149,7 @@ export class WorldService {
       this.engine.removeObject(item as Group)
     }
     for (const item of data.objects) {
-      this.loadItem(item[0], new Vector3(item[1], item[2], item[3]))
+      this.loadItem(item[0], new Vector3(item[1], item[2], item[3]), new Vector3(item[4], item[5], item[6]))
     }
     this.avatarList = data.avatars
     // Update avatars

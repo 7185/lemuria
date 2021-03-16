@@ -34,8 +34,6 @@ async def auth():
 @app.route('/api/v1/world/<name>', methods=['GET'])
 @login_required
 async def world(name):
-    if name != 'lemuria':
-        return {}
     with open(f"{name}.json") as world:
       w = json.load(world)
       return w

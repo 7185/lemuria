@@ -155,7 +155,7 @@ var RWXLoader = ( function () {
 			const shapePositions = geometry.getAttribute( 'position' ).array;
 			const shapeIndices = geometry.getIndex().array;
 
-			newVertices.push( ...shapePositions );
+			newVertices.push( ...shapePositions as number[]);
 
 			for ( var i = 0, lFaces = shapeIndices.length; i < lFaces; i ++ ) {
 
