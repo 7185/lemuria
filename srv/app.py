@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-from quart import Quart, render_template, websocket, request
+from quart import Quart, render_template, websocket, request, jsonify, json
 from functools import wraps
 from ws import sending, receiving, User, authorized_users
 import uuid
 import asyncio
-import json
-from quart_auth import AuthUser, AuthManager, login_user, login_required, current_user, Unauthorized
+from quart_auth import AuthUser, AuthManager, login_user, logout_user, login_required, current_user, Unauthorized
 
 app = Quart(__name__)
 app.config.from_object('config.Config')
@@ -22,21 +21,35 @@ async def index():
     return await render_template("index.html")
 
 @app.route('/api/v1/auth', methods=['POST'])
-async def auth():
+async def auth_login():
     data = await request.json
     user_id = str(uuid.uuid4())[:8]
     u = User(user_id)
     u.name = data['login'] or 'Anonymous'+user_id
-    login_user(u)
+    login_user(u, True)
     authorized_users.add(u)
-    return {}
+    return jsonify({'id': user_id, 'name': u.name}), 200
+
+@app.route('/api/v1/auth', methods=['DELETE'])
+@login_required
+async def auth_logout():
+    logout_user()
+    return {}, 200
+
+@app.route('/api/v1/auth', methods=['GET'])
+@login_required
+async def auth_session():
+    for u in authorized_users:
+        if (u.auth_id == current_user.auth_id):
+            return jsonify({'id': u.auth_id, 'name': u.name}), 200
+    return {}, 401
 
 @app.route('/api/v1/world/<name>', methods=['GET'])
 @login_required
 async def world(name):
     with open(f"{name}.json") as world:
-      w = json.load(world)
-      return w
+       w = json.load(world)
+       return w
 
 @app.websocket('/ws')
 async def wsocket():
@@ -46,6 +59,8 @@ async def wsocket():
 
 @app.errorhandler(404)
 async def redirect(e):
+    if '/api/' in request.url:
+        return jsonify({'error': 'Not found'}), 404
     return await render_template("index.html")
 
 auth_manager.init_app(app)

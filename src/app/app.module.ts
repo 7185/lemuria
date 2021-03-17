@@ -1,6 +1,6 @@
 import {NgModule} from '@angular/core'
 import {BrowserModule} from '@angular/platform-browser'
-import {FormsModule} from '@angular/forms'
+import {FormsModule, ReactiveFormsModule} from '@angular/forms'
 import {HttpClientModule} from '@angular/common/http'
 import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {VirtualScrollerModule} from 'ngx-virtual-scroller'
@@ -8,12 +8,15 @@ import {AppComponent} from './app.component'
 import {EngineComponent} from './engine/engine.component'
 import {UiToolbarComponent} from './ui/ui-toolbar/ui-toolbar.component'
 import {UiChatZoneComponent} from './ui/ui-chat-zone/ui-chat-zone.component'
-import {UiComponent} from './ui/ui.component'
+import {AppRoutingModule, routingComponents} from './app-routing.module'
 
 import {
   faComments,
+  faCircleNotch,
   faEye,
+  faKey,
   faLocationArrow,
+  faUser,
   faUsers,
   faVideo
 } from '@fortawesome/free-solid-svg-icons'
@@ -21,17 +24,19 @@ import {
 @NgModule({
   declarations: [
     AppComponent,
+    routingComponents,
     EngineComponent,
-    UiComponent,
     UiToolbarComponent,
     UiChatZoneComponent
   ],
   imports: [
     BrowserModule,
     FormsModule,
+    ReactiveFormsModule,
     HttpClientModule,
     FontAwesomeModule,
-    VirtualScrollerModule
+    VirtualScrollerModule,
+    AppRoutingModule
   ],
   providers: [],
   bootstrap: [
@@ -42,8 +47,11 @@ export class AppModule {
   constructor(private iconLibrary: FaIconLibrary) {
     iconLibrary.addIcons(
       faComments,
+      faCircleNotch,
       faEye,
+      faKey,
       faLocationArrow,
+      faUser,
       faUsers,
       faVideo
     )

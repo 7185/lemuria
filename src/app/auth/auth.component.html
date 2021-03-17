@@ -1,0 +1,37 @@
+<div class="container">
+  <form class="form-signin" (ngSubmit)="onLogin()" [formGroup]="loginForm">
+    <h2 class="form-signin-heading">Lemuria</h2>
+    <div class="alert" *ngIf="loginError" type="danger">Wrong login or password</div>
+    <div class="p-2 input-group">
+    <div class="input-group-prepend">
+      <div class="input-group-text">
+        <fa-icon [icon]="['fas', 'user']" [fixedWidth]="true"></fa-icon>
+      </div>
+    </div>
+    <input class="form-control" formControlName="username" placeholder="Login">
+    <div *ngIf="usernameCtl.dirty && usernameCtl.hasError('required')">
+      Username is required
+    </div>
+    </div>
+    <div class="p-2 input-group">
+    <div class="input-group-prepend">
+      <div class="input-group-text">
+        <fa-icon [icon]="['fas', 'key']" [fixedWidth]="true"></fa-icon>
+      </div>
+    </div>
+    <input class="form-control" type="password" formControlName="password" placeholder="Password">
+    <div *ngIf="passwordCtl.dirty && passwordCtl.hasError('required')">
+      Password is required
+    </div>
+    </div>
+    <button *ngIf="!processing; else processingTemplate" class="btn btn-lg btn-primary btn-block" type="submit"
+            [disabled]="loginForm.invalid">
+    Sign in
+    </button>
+    <ng-template #processingTemplate>
+    <button class="btn btn-lg btn-primary btn-block" type="submit" disabled>
+      <fa-icon [icon]="['fas', 'circle-notch']" [fixedWidth]="true" [spin]="true"></fa-icon><span class="sr-only">Loading...</span>
+    </button>
+    </ng-template>
+  </form>
+</div>

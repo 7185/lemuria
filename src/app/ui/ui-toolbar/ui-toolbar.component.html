@@ -1,21 +1,21 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-0">
   <div class="container-fluid">
     <a class="navbar-brand" href="#">Lemuria</a>
-    <div class="form-inline my-2 my-lg-0">
-      <input class="form-control mr-sm-2" [(ngModel)]="name" type="text" placeholder="Name" aria-label="Name" [disabled]="socket.connected">
-    </div>
+    <button *ngIf="!socket.connected" class="btn btn-success my-2 my-sm-0" (click)="connect()" type="button">Connect</button>
+    <button *ngIf="socket.connected" class="btn btn-danger my-2 my-sm-0" (click)="socket.close()" type="button">Disconnect</button>
     <button class="btn btn-primary my-2 my-sm-0" (click)="toggleCamera()" type="button">
       <fa-icon *ngIf="firstPerson" [icon]="['fas', 'eye']"></fa-icon>
       <fa-icon *ngIf="!firstPerson" [icon]="['fas', 'video']"></fa-icon>
     </button>
-    <button class="d-inline-block btn btn-danger btn-circle" type="button">
+    <button class="d-inline-block btn btn-dark btn-circle" type="button">
       <div #compass>
         <fa-layers [fixedWidth]="true">
-          <fa-icon class="d-inline-block" [icon]="['fas', 'location-arrow']" transform="rotate-315 down-3"></fa-icon>
-          <fa-layers-text content="N" style="font-weight: bold" transform="shrink-5 up-16"></fa-layers-text>
-          <fa-layers-text content="E" style="font-weight: bold" transform="rotate-90 shrink-5 right-16"></fa-layers-text>
-          <fa-layers-text content="S" style="font-weight: bold" transform="rotate-180 shrink-5 down-17"></fa-layers-text>
-          <fa-layers-text content="W" style="font-weight: bold" transform="rotate-270 shrink-5 left-16"></fa-layers-text>
+          <fa-icon class="d-inline-block" [icon]="['fas', 'location-arrow']" transform="rotate-135 down-5"></fa-icon>
+          <fa-icon class="d-inline-block" [icon]="['fas', 'location-arrow']" class="text-danger" transform="rotate-315 up-4"></fa-icon>
+          <fa-layers-text content="N" class="text-warning" transform="shrink-5 up-16"></fa-layers-text>
+          <fa-layers-text content="E" class="text-warning" transform="rotate-90 shrink-5 right-16"></fa-layers-text>
+          <fa-layers-text content="S" class="text-warning" transform="rotate-180 shrink-5 down-17"></fa-layers-text>
+          <fa-layers-text content="W" class="text-warning" transform="rotate-270 shrink-5 left-16"></fa-layers-text>
         </fa-layers>
       </div>
     </button>
@@ -26,9 +26,9 @@
       <button class="btn btn-info my-2 my-sm-0" type="button">
         <fa-icon [icon]="['fas', 'users']"></fa-icon> {{ list.length }}
       </button>
-      <button *ngIf="!socket.connected" class="btn btn-success my-2 my-sm-0" (click)="login()" type="button">Login</button>
-      <button *ngIf="!socket.connected" class="btn btn-success my-2 my-sm-0" (click)="connect()" type="button">Connect</button>
-      <button *ngIf="socket.connected" class="btn btn-danger my-2 my-sm-0" (click)="socket.close()" type="button">Disconnect</button>
+      <div class="nav-link">
+        <fa-icon [icon]="['fas', 'user']"></fa-icon> {{ name }}
+      </div>
     </div>
   </div>
 </nav>

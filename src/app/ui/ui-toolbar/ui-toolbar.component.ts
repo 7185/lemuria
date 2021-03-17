@@ -28,12 +28,6 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     private userSvc: UserService) {
   }
 
-  public login() {
-    this.http.login(this.name, 'password').subscribe(() => {
-      this.userSvc.currentName = this.name
-    })
-  }
-
   public changeAvatar(avatarId: number) {
     if (avatarId >= this.world.avatarList.length) {
       avatarId = 0
@@ -56,8 +50,10 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public ngOnInit(): void {
-    this.name = localStorage.getItem('login') || 'Anonymous'
-    this.userSvc.currentName = this.name
+    this.http.getLogged().subscribe((u: any) => {
+      this.name = u.name
+      this.userSvc.currentName = u.name
+    })
     this.userSvc.listChanged.subscribe((l) => this.list = l)
   }
 

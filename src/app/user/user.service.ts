@@ -1,5 +1,6 @@
 import {Injectable} from '@angular/core'
 import {BehaviorSubject, Subject} from 'rxjs'
+import {HttpService} from './../network/http.service'
 import {User} from '../user/user.model'
 
 @Injectable({providedIn: 'root'})
@@ -9,7 +10,11 @@ export class UserService {
   public avatarChanged: Subject<any> = new Subject()
   public currentName = 'Anonymous'
 
-  constructor() {
+  constructor(private http: HttpService) {
+  }
+
+  public currentUser() {
+    return this.http.getLogged()
   }
 
   clearList() {

@@ -194,6 +194,16 @@ var RWXLoader = ( function () {
 
 		}
 
+		if ( rwxMaterial.lightsampling == LightSampling.FACET ) {
+
+			materialDict[ 'flatShading' ] = true;
+
+		} else if ( rwxMaterial.lightsampling == LightSampling.VERTEX ) {
+
+			materialDict[ 'flatShading' ] = false;
+
+		}
+
 		materialDict[ 'specular' ] = 0xffffff;
 		materialDict[ 'emissiveIntensity' ] = rwxMaterial.surface[ 1 ];
 		materialDict[ 'shininess' ] = rwxMaterial.surface[ 2 ] *
@@ -292,8 +302,7 @@ var RWXLoader = ( function () {
 
 	var resetGeometry = function ( ctx ) {
 
-		if ( ctx.indexedFaces && ctx.currentBufferFaceCount > 0 ||
-		! ctx.indexedFaces && ctx.currentBufferVertexCount > 0 ) {
+		if ( ctx.currentBufferFaceCount > 0 ) {
 
 			commitBufferGeometryGroup( ctx );
 
@@ -304,14 +313,8 @@ var RWXLoader = ( function () {
 		ctx.currentBufferUVs = [];
 		ctx.currentBufferFaces = [];
 
-		ctx.finalBufferVertices = [];
-		ctx.finalBufferUVs = [];
-
 		ctx.currentBufferFaceCount = 0;
 		ctx.currentBufferGroupFirstFaceID = 0;
-
-		ctx.currentBufferVertexCount = 0;
-		ctx.currentBufferGroupFirstVertexID = 0;
 
 		ctx.previousMaterialID = null;
 
@@ -319,14 +322,13 @@ var RWXLoader = ( function () {
 
 	var makeMeshToCurrentGroup = function ( ctx ) {
 
-		if ( ctx.indexedFaces && ctx.currentBufferFaceCount > 0 ||
-		! ctx.indexedFaces && ctx.currentBufferVertexCount > 0 ) {
+		if ( ctx.currentBufferFaceCount > 0 ) {
 
 			commitBufferGeometryGroup( ctx );
 
 		}
 
-		if ( ctx.indexedFaces && ctx.currentBufferFaces.length > 0 ) {
+		if ( ctx.currentBufferFaces.length > 0 ) {
 
 			ctx.currentBufferGeometry.setAttribute( 'position', new BufferAttribute( new Float32Array( ctx.currentBufferVertices ), 3 ) );
 			ctx.currentBufferGeometry.setAttribute( 'uv', new BufferAttribute( new Float32Array( ctx.currentBufferUVs ), 2 ) );
@@ -334,19 +336,7 @@ var RWXLoader = ( function () {
 
 			ctx.currentBufferGeometry.uvsNeedUpdate = true;
 			ctx.currentBufferGeometry.computeVertexNormals();
-			const mesh = new Mesh( ctx.currentBufferGeometry, ctx.materialManager.getCurrentMaterialList() );
 
-			ctx.currentGroup.add( mesh );
-
-		}
-
-		if ( ! ctx.indexedFaces && ctx.finalBufferVertices.length > 0 ) {
-
-			ctx.currentBufferGeometry.setAttribute( 'position', new BufferAttribute( new Float32Array( ctx.finalBufferVertices ), 3 ) );
-			ctx.currentBufferGeometry.setAttribute( 'uv', new BufferAttribute( new Float32Array( ctx.finalBufferUVs ), 2 ) );
-
-			ctx.currentBufferGeometry.uvsNeedUpdate = true;
-			ctx.currentBufferGeometry.computeVertexNormals();
 			const mesh = new Mesh( ctx.currentBufferGeometry, ctx.materialManager.getCurrentMaterialList() );
 
 			ctx.currentGroup.add( mesh );
@@ -357,27 +347,13 @@ var RWXLoader = ( function () {
 
 	var commitBufferGeometryGroup = function ( ctx ) {
 
-		if ( ctx.indexedFaces ) {
+		// Make new out of group existing data
+		ctx.currentBufferGeometry.addGroup( ctx.currentBufferGroupFirstFaceID, ctx.currentBufferFaceCount * 3, ctx.previousMaterialID );
 
-			// Make new group out of existing data
-			ctx.currentBufferGeometry.addGroup( ctx.currentBufferGroupFirstFaceID, ctx.currentBufferFaceCount * 3, ctx.previousMaterialID );
-
-			// Set everything ready for the next group to start
-			ctx.previousMaterialID = ctx.materialManager.getCurrentMaterialID();
-			ctx.currentBufferGroupFirstFaceID = ctx.currentBufferGroupFirstFaceID + ctx.currentBufferFaceCount * 3;
-			ctx.currentBufferFaceCount = 0;
-
-		} else {
-
-			// Make new group out of group existing data
-			ctx.currentBufferGeometry.addGroup( ctx.currentBufferGroupFirstVertexID, ctx.currentBufferVertexCount, ctx.previousMaterialID );
-
-			// Set everything ready for the next group to start
-			ctx.previousMaterialID = ctx.materialManager.getCurrentMaterialID();
-			ctx.currentBufferGroupFirstVertexID = ctx.currentBufferGroupFirstVertexID + ctx.currentBufferVertexCount;
-			ctx.currentBufferVertexCount = 0;
-
-		}
+		// Set everything ready for the next group to start
+		ctx.previousMaterialID = ctx.materialManager.getCurrentMaterialID();
+		ctx.currentBufferGroupFirstFaceID = ctx.currentBufferGroupFirstFaceID + ctx.currentBufferFaceCount * 3;
+		ctx.currentBufferFaceCount = 0;
 
 	};
 
@@ -390,28 +366,8 @@ var RWXLoader = ( function () {
 		}
 
 		// Add new face
-		if ( ctx.indexedFaces ) {
-
-			ctx.currentBufferFaceCount ++;
-			ctx.currentBufferFaces.push( a, b, c );
-
-		} else {
-
-			ctx.currentBufferVertexCount += 3;
-
-			ctx.finalBufferVertices.push(
-				ctx.currentBufferVertices[ a * 3 ], ctx.currentBufferVertices[ a * 3 + 1 ], ctx.currentBufferVertices[ a * 3 + 2 ],
-				ctx.currentBufferVertices[ b * 3 ], ctx.currentBufferVertices[ b * 3 + 1 ], ctx.currentBufferVertices[ b * 3 + 2 ],
-				ctx.currentBufferVertices[ c * 3 ], ctx.currentBufferVertices[ c * 3 + 1 ], ctx.currentBufferVertices[ c * 3 + 2 ]
-			);
-
-			ctx.finalBufferUVs.push(
-				ctx.currentBufferUVs[ a * 2 ], ctx.currentBufferUVs[ a * 2 + 1 ],
-				ctx.currentBufferUVs[ b * 2 ], ctx.currentBufferUVs[ b * 2 + 1 ],
-				ctx.currentBufferUVs[ c * 2 ], ctx.currentBufferUVs[ c * 2 + 1 ]
-			);
-
-		}
+		ctx.currentBufferFaceCount ++;
+		ctx.currentBufferFaces.push( a, b, c );
 
 	};
 
@@ -637,6 +593,7 @@ var RWXLoader = ( function () {
 		this.specularRegex = new RegExp( "^ *(specular)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)).*$", 'i' );
 		this.materialModeRegex = new RegExp( "^ *((add)?materialmode(s)?) +([A-Za-z0-9_\\-]+).*$", 'i' );
 		this.collisionRegex = new RegExp( "^ *(collision) +(on|off).*$", 'i' );
+		this.lightsamplingRegex = new RegExp( "^ *(lightsampling) +(facet|vertex).*$", 'i' );
 
 	}
 
@@ -651,8 +608,6 @@ var RWXLoader = ( function () {
 		texExtension: 'jpg',
 
 		maskExtension: 'zip',
-
-		indexedFaces: false,
 
 		setJSZip: function ( jsZip, jsZipUtils ) {
 
@@ -674,14 +629,6 @@ var RWXLoader = ( function () {
 		setMaskExtension: function ( maskExtension ) {
 
 			this.maskExtension = maskExtension;
-
-			return this;
-
-		},
-
-		enableIndexedFaces: function ( enabled ) {
-
-			this.indexedFaces = enabled;
 
 			return this;
 
@@ -727,7 +674,6 @@ var RWXLoader = ( function () {
 			// Parsing RWX file content
 
 			var ctx = {
-
 				groupStack: [],
 				currentGroup: null,
 
@@ -740,25 +686,15 @@ var RWXLoader = ( function () {
 				currentBufferUVs: [],
 				currentBufferFaces: [],
 
-				// Only used in case of non-indexed faces
-				finalBufferVertices: [],
-				finalBufferUVs: [],
-
 				currentBufferFaceCount: 0,
 				currentBufferGroupFirstFaceID: 0,
-
-				currentBufferVertexCount: 0,
-				currentBufferGroupFirstVertexID: 0,
 
 				previousMaterialID: null,
 
 				rwxClumpStack: [],
 				rwxProtoDict: {},
 
-				indexedFaces: this.indexedFaces,
-
 				materialManager: new RWXMaterialManager( textureFolderPath, this.texExtension, this.maskExtension, this.jsZip, this.jsZipUtils )
-
 			};
 
 			var transformBeforeProto = null;
@@ -1246,6 +1182,25 @@ var RWXLoader = ( function () {
 					} else if ( collision == "off" ) {
 
 						ctx.materialManager.currentRWXMaterial.collision = false;
+
+					}
+
+					continue;
+
+				}
+
+				res = this.lightsamplingRegex.exec( line );
+				if ( res != null ) {
+
+					const ls = res[ 2 ].toLowerCase();
+
+					if ( ls == "vertex" ) {
+
+						ctx.materialManager.currentRWXMaterial.lightsampling = LightSampling.VERTEX;
+
+					} else {
+
+						ctx.materialManager.currentRWXMaterial.lightsampling = LightSampling.FACET;
 
 					}
 
