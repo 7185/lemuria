@@ -8,11 +8,14 @@
       <fa-icon *ngIf="firstPerson" [icon]="['fas', 'eye']"></fa-icon>
       <fa-icon *ngIf="!firstPerson" [icon]="['fas', 'video']"></fa-icon>
     </button>
-    <button class="btn btn-danger my-2 my-sm-0" type="button">
+    <button class="d-inline-block btn btn-danger btn-circle" type="button">
       <div #compass>
-        <fa-layers>
-          <fa-icon class="d-inline-block" [icon]="['fas', 'location-arrow']"></fa-icon>
-          <fa-layers-text content="N" style="font-weight: bold" transform="rotate-45 shrink-5 left-9 down-9"></fa-layers-text>
+        <fa-layers [fixedWidth]="true">
+          <fa-icon class="d-inline-block" [icon]="['fas', 'location-arrow']" transform="rotate-315 down-3"></fa-icon>
+          <fa-layers-text content="N" style="font-weight: bold" transform="shrink-5 up-16"></fa-layers-text>
+          <fa-layers-text content="E" style="font-weight: bold" transform="rotate-90 shrink-5 right-16"></fa-layers-text>
+          <fa-layers-text content="S" style="font-weight: bold" transform="rotate-180 shrink-5 down-17"></fa-layers-text>
+          <fa-layers-text content="W" style="font-weight: bold" transform="rotate-270 shrink-5 left-16"></fa-layers-text>
         </fa-layers>
       </div>
     </button>

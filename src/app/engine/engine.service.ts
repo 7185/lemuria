@@ -437,7 +437,7 @@ export class EngineService implements OnDestroy {
     }
     const sph = new Spherical()
     sph.setFromVector3(cameraDirection)
-    this.compass.next(Math.round((sph.theta - Math.PI / 4) / DEG))
+    this.compass.next(Math.round(sph.theta / DEG))
   }
 
   private moveUsers() {
