@@ -1,17 +1,20 @@
+import {Subject} from 'rxjs'
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
   AmbientLight, BoxHelper, Clock, Material, PerspectiveCamera, Raycaster, Scene, GridHelper, Group,
-  Vector2, Vector3, WebGLRenderer, DirectionalLight, PCFSoftShadowMap, CameraHelper, Object3D
+  Vector2, Vector3, WebGLRenderer, DirectionalLight, PCFSoftShadowMap, CameraHelper, Object3D, Spherical
 } from 'three'
 
 import {UserService} from './../user/user.service'
 import {config} from '../app.config'
 
 export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, ctrl, shift, esc }
+export const DEG = Math.PI / 180
 
 @Injectable({providedIn: 'root'})
 export class EngineService implements OnDestroy {
 
+  public compass: Subject<any> = new Subject()
   private canvas: HTMLCanvasElement
   private labelZone: HTMLDivElement
   private renderer: WebGLRenderer
@@ -432,6 +435,9 @@ export class EngineService implements OnDestroy {
     if (dirlight != null) {
       dirlight.position.copy(new Vector3(-50 + this.player.position.x, 80 + this.player.position.y, 10 + this.player.position.z))
     }
+    const sph = new Spherical()
+    sph.setFromVector3(cameraDirection)
+    this.compass.next(Math.round((sph.theta - Math.PI / 4) / DEG))
   }
 
   private moveUsers() {

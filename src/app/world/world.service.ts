@@ -1,13 +1,12 @@
 import {UserService} from './../user/user.service'
 import {User} from './../user/user.model'
-import {EngineService} from './../engine/engine.service'
+import {EngineService, DEG} from './../engine/engine.service'
 import {ObjectService} from './object.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
   BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, Object3D} from 'three'
 export const RES_PATH = config.url.resource
-export const DEG = Math.PI / 180
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
@@ -109,7 +108,7 @@ export class WorldService {
       g.position.x = pos.x / 100
       g.position.y = pos.y / 100
       g.position.z = pos.z / 100
-      g.rotation.order = 'ZYX'
+      g.rotation.order = 'YZX'
       g.rotation.x = rot.x * DEG / 10
       g.rotation.y = rot.y * DEG / 10
       g.rotation.z = rot.z * DEG / 10

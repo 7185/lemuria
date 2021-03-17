@@ -292,7 +292,8 @@ var RWXLoader = ( function () {
 
 	var resetGeometry = function ( ctx ) {
 
-		if ( ctx.currentBufferFaceCount > 0 ) {
+		if ( ctx.indexedFaces && ctx.currentBufferFaceCount > 0 ||
+		! ctx.indexedFaces && ctx.currentBufferVertexCount > 0 ) {
 
 			commitBufferGeometryGroup( ctx );
 
@@ -303,8 +304,14 @@ var RWXLoader = ( function () {
 		ctx.currentBufferUVs = [];
 		ctx.currentBufferFaces = [];
 
+		ctx.finalBufferVertices = [];
+		ctx.finalBufferUVs = [];
+
 		ctx.currentBufferFaceCount = 0;
 		ctx.currentBufferGroupFirstFaceID = 0;
+
+		ctx.currentBufferVertexCount = 0;
+		ctx.currentBufferGroupFirstVertexID = 0;
 
 		ctx.previousMaterialID = null;
 
@@ -312,13 +319,14 @@ var RWXLoader = ( function () {
 
 	var makeMeshToCurrentGroup = function ( ctx ) {
 
-		if ( ctx.currentBufferFaceCount > 0 ) {
+		if ( ctx.indexedFaces && ctx.currentBufferFaceCount > 0 ||
+		! ctx.indexedFaces && ctx.currentBufferVertexCount > 0 ) {
 
 			commitBufferGeometryGroup( ctx );
 
 		}
 
-		if ( ctx.currentBufferFaces.length > 0 ) {
+		if ( ctx.indexedFaces && ctx.currentBufferFaces.length > 0 ) {
 
 			ctx.currentBufferGeometry.setAttribute( 'position', new BufferAttribute( new Float32Array( ctx.currentBufferVertices ), 3 ) );
 			ctx.currentBufferGeometry.setAttribute( 'uv', new BufferAttribute( new Float32Array( ctx.currentBufferUVs ), 2 ) );
@@ -326,7 +334,19 @@ var RWXLoader = ( function () {
 
 			ctx.currentBufferGeometry.uvsNeedUpdate = true;
 			ctx.currentBufferGeometry.computeVertexNormals();
+			const mesh = new Mesh( ctx.currentBufferGeometry, ctx.materialManager.getCurrentMaterialList() );
 
+			ctx.currentGroup.add( mesh );
+
+		}
+
+		if ( ! ctx.indexedFaces && ctx.finalBufferVertices.length > 0 ) {
+
+			ctx.currentBufferGeometry.setAttribute( 'position', new BufferAttribute( new Float32Array( ctx.finalBufferVertices ), 3 ) );
+			ctx.currentBufferGeometry.setAttribute( 'uv', new BufferAttribute( new Float32Array( ctx.finalBufferUVs ), 2 ) );
+
+			ctx.currentBufferGeometry.uvsNeedUpdate = true;
+			ctx.currentBufferGeometry.computeVertexNormals();
 			const mesh = new Mesh( ctx.currentBufferGeometry, ctx.materialManager.getCurrentMaterialList() );
 
 			ctx.currentGroup.add( mesh );
@@ -337,13 +357,27 @@ var RWXLoader = ( function () {
 
 	var commitBufferGeometryGroup = function ( ctx ) {
 
-		// Make new out of group existing data
-		ctx.currentBufferGeometry.addGroup( ctx.currentBufferGroupFirstFaceID, ctx.currentBufferFaceCount * 3, ctx.previousMaterialID );
+		if ( ctx.indexedFaces ) {
 
-		// Set everything ready for the next group to start
-		ctx.previousMaterialID = ctx.materialManager.getCurrentMaterialID();
-		ctx.currentBufferGroupFirstFaceID = ctx.currentBufferGroupFirstFaceID + ctx.currentBufferFaceCount * 3;
-		ctx.currentBufferFaceCount = 0;
+			// Make new group out of existing data
+			ctx.currentBufferGeometry.addGroup( ctx.currentBufferGroupFirstFaceID, ctx.currentBufferFaceCount * 3, ctx.previousMaterialID );
+
+			// Set everything ready for the next group to start
+			ctx.previousMaterialID = ctx.materialManager.getCurrentMaterialID();
+			ctx.currentBufferGroupFirstFaceID = ctx.currentBufferGroupFirstFaceID + ctx.currentBufferFaceCount * 3;
+			ctx.currentBufferFaceCount = 0;
+
+		} else {
+
+			// Make new group out of group existing data
+			ctx.currentBufferGeometry.addGroup( ctx.currentBufferGroupFirstVertexID, ctx.currentBufferVertexCount, ctx.previousMaterialID );
+
+			// Set everything ready for the next group to start
+			ctx.previousMaterialID = ctx.materialManager.getCurrentMaterialID();
+			ctx.currentBufferGroupFirstVertexID = ctx.currentBufferGroupFirstVertexID + ctx.currentBufferVertexCount;
+			ctx.currentBufferVertexCount = 0;
+
+		}
 
 	};
 
@@ -356,8 +390,28 @@ var RWXLoader = ( function () {
 		}
 
 		// Add new face
-		ctx.currentBufferFaceCount ++;
-		ctx.currentBufferFaces.push( a, b, c );
+		if ( ctx.indexedFaces ) {
+
+			ctx.currentBufferFaceCount ++;
+			ctx.currentBufferFaces.push( a, b, c );
+
+		} else {
+
+			ctx.currentBufferVertexCount += 3;
+
+			ctx.finalBufferVertices.push(
+				ctx.currentBufferVertices[ a * 3 ], ctx.currentBufferVertices[ a * 3 + 1 ], ctx.currentBufferVertices[ a * 3 + 2 ],
+				ctx.currentBufferVertices[ b * 3 ], ctx.currentBufferVertices[ b * 3 + 1 ], ctx.currentBufferVertices[ b * 3 + 2 ],
+				ctx.currentBufferVertices[ c * 3 ], ctx.currentBufferVertices[ c * 3 + 1 ], ctx.currentBufferVertices[ c * 3 + 2 ]
+			);
+
+			ctx.finalBufferUVs.push(
+				ctx.currentBufferUVs[ a * 2 ], ctx.currentBufferUVs[ a * 2 + 1 ],
+				ctx.currentBufferUVs[ b * 2 ], ctx.currentBufferUVs[ b * 2 + 1 ],
+				ctx.currentBufferUVs[ c * 2 ], ctx.currentBufferUVs[ c * 2 + 1 ]
+			);
+
+		}
 
 	};
 
@@ -368,32 +422,32 @@ var RWXLoader = ( function () {
 		ctx.groupStack.push( ctx.currentGroup );
 		ctx.currentGroup = group;
 
-	}
+	};
 
 	var popCurrentGroup = function ( ctx ) {
 
 		ctx.currentGroup = ctx.groupStack.pop();
 
-	}
+	};
 
 	var pushCurrentTransform = function ( ctx ) {
 
 		ctx.transformStack.push( ctx.currentTransform );
 		ctx.currentTransform = new Matrix4();
 
-	}
+	};
 
 	var popCurrentTransform = function ( ctx ) {
 
 		ctx.currentTransform = ctx.transformStack.pop();
 
-	}
+	};
 
 	var saveCurrentTransform = function ( ctx ) {
 
 		ctx.transformSaves.push( ctx.currentTransform.clone() );
 
-	}
+	};
 
 	var loadCurrentTransform = function ( ctx ) {
 
@@ -407,7 +461,7 @@ var RWXLoader = ( function () {
 
 		}
 
-	}
+	};
 
 	var RWXMaterial = ( function () {
 
@@ -598,6 +652,8 @@ var RWXLoader = ( function () {
 
 		maskExtension: 'zip',
 
+		indexedFaces: false,
+
 		setJSZip: function ( jsZip, jsZipUtils ) {
 
 			this.jsZip = jsZip;
@@ -618,6 +674,14 @@ var RWXLoader = ( function () {
 		setMaskExtension: function ( maskExtension ) {
 
 			this.maskExtension = maskExtension;
+
+			return this;
+
+		},
+
+		enableIndexedFaces: function ( enabled ) {
+
+			this.indexedFaces = enabled;
 
 			return this;
 
@@ -663,6 +727,7 @@ var RWXLoader = ( function () {
 			// Parsing RWX file content
 
 			var ctx = {
+
 				groupStack: [],
 				currentGroup: null,
 
@@ -675,15 +740,25 @@ var RWXLoader = ( function () {
 				currentBufferUVs: [],
 				currentBufferFaces: [],
 
+				// Only used in case of non-indexed faces
+				finalBufferVertices: [],
+				finalBufferUVs: [],
+
 				currentBufferFaceCount: 0,
 				currentBufferGroupFirstFaceID: 0,
+
+				currentBufferVertexCount: 0,
+				currentBufferGroupFirstVertexID: 0,
 
 				previousMaterialID: null,
 
 				rwxClumpStack: [],
 				rwxProtoDict: {},
 
+				indexedFaces: this.indexedFaces,
+
 				materialManager: new RWXMaterialManager( textureFolderPath, this.texExtension, this.maskExtension, this.jsZip, this.jsZipUtils )
+
 			};
 
 			var transformBeforeProto = null;
@@ -996,9 +1071,9 @@ var RWXLoader = ( function () {
 
 						// Important Note: it seems the AW client always acts as if this element (which is related to the projection plane)
 						// was equal to 1 when it was set 0, hence why we always override this.
-						if ( tprops[15] == 0.0  ) {
+						if ( tprops[ 15 ] == 0.0 ) {
 
-							tprops[15] = 1;
+							tprops[ 15 ] = 1;
 
 						}
 
@@ -1181,8 +1256,9 @@ var RWXLoader = ( function () {
 			}
 
 			// We're done, return the root group to get the whole object, we take the decameter unit into account
-			ctx.groupStack[ 0 ].applyMatrix4( scale_ten )
+			ctx.groupStack[ 0 ].applyMatrix4( scale_ten );
 			return ctx.groupStack[ 0 ];
+
 		}
 
 	} );

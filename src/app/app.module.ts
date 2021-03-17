@@ -13,6 +13,7 @@ import {UiComponent} from './ui/ui.component'
 import {
   faComments,
   faEye,
+  faLocationArrow,
   faUsers,
   faVideo
 } from '@fortawesome/free-solid-svg-icons'
@@ -42,6 +43,7 @@ export class AppModule {
     iconLibrary.addIcons(
       faComments,
       faEye,
+      faLocationArrow,
       faUsers,
       faVideo
     )

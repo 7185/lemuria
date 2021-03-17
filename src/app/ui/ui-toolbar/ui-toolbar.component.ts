@@ -2,7 +2,7 @@ import {HttpService} from './../../network/http.service'
 import {EngineService} from './../../engine/engine.service'
 import {WorldService} from './../../world/world.service'
 import {UserService} from './../../user/user.service'
-import {Component, OnInit} from '@angular/core'
+import {AfterViewInit, Component, ElementRef, OnInit, Renderer2, ViewChild} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import {User} from '../../user/user.model'
 
@@ -11,13 +11,20 @@ import {User} from '../../user/user.model'
   templateUrl: './ui-toolbar.component.html',
   styleUrls: ['./ui-toolbar.component.scss']
 })
-export class UiToolbarComponent implements OnInit {
+export class UiToolbarComponent implements OnInit, AfterViewInit {
+
+  @ViewChild('compass', {static: true}) compass: ElementRef
 
   public firstPerson = true
   public name = 'Anonymous'
   public list: User[] = []
 
-  public constructor(public socket: SocketService, private engine: EngineService, public world: WorldService, private http: HttpService,
+  public constructor(
+    private renderer: Renderer2,
+    public socket: SocketService,
+    private engine: EngineService,
+    public world: WorldService,
+    private http: HttpService,
     private userSvc: UserService) {
   }
 
@@ -51,9 +58,12 @@ export class UiToolbarComponent implements OnInit {
   public ngOnInit(): void {
     this.name = localStorage.getItem('login') || 'Anonymous'
     this.userSvc.currentName = this.name
-    this.userSvc.listChanged.subscribe((l) => {
-      this.list = l
-    })
+    this.userSvc.listChanged.subscribe((l) => this.list = l)
   }
 
+  public ngAfterViewInit(): void {
+    this.engine.compass.subscribe((o: number) => {
+      this.renderer.setStyle(this.compass.nativeElement, 'transform', `rotate(${o}deg)`)
+    })
+  }
 }
