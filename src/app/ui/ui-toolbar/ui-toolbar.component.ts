@@ -44,6 +44,10 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     })
   }
 
+  public logout() {
+    this.http.logout().subscribe()
+  }
+
   public toggleCamera(): void {
     this.firstPerson = !this.firstPerson
     this.engine.toggleCamera()

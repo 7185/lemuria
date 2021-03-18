@@ -8,7 +8,7 @@ import {
 import {UserService} from './../user/user.service'
 import {config} from '../app.config'
 
-export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, ctrl, shift, esc }
+export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, ctrl, shift, esc, del }
 export const DEG = Math.PI / 180
 
 @Injectable({providedIn: 'root'})
@@ -301,12 +301,24 @@ export class EngineService implements OnDestroy {
         this.controls[PressedKey.ctrl] = value
         break
       }
+      case 'ControlRight': {
+        this.controls[PressedKey.ctrl] = value
+        break
+      }
       case 'ShiftLeft': {
+        this.controls[PressedKey.shift] = value
+        break
+      }
+      case 'ShiftRight': {
         this.controls[PressedKey.shift] = value
         break
       }
       case 'Escape': {
         this.controls[PressedKey.esc] = value
+        break
+      }
+      case 'Delete': {
+        this.controls[PressedKey.del] = value
         break
       }
       default: {

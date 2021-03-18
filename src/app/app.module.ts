@@ -16,6 +16,7 @@ import {
   faEye,
   faKey,
   faLocationArrow,
+  faSignOutAlt,
   faUser,
   faUsers,
   faVideo
@@ -51,6 +52,7 @@ export class AppModule {
       faEye,
       faKey,
       faLocationArrow,
+      faSignOutAlt,
       faUser,
       faUsers,
       faVideo

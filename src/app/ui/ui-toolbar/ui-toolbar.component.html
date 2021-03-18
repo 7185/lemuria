@@ -29,6 +29,9 @@
       <div class="nav-link">
         <fa-icon [icon]="['fas', 'user']"></fa-icon> {{ name }}
       </div>
+      <button class="btn btn-danger my-2 my-sm-0" type="button" (click)="logout()">
+        <fa-icon [icon]="['fas', 'sign-out-alt']"></fa-icon>
+      </button>
     </div>
   </div>
 </nav>

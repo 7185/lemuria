@@ -62,7 +62,9 @@ export class WorldService {
     floor.rotation.x = -Math.PI / 2
     this.engine.addObject(floor)
 
-    this.initAvatar()
+    this.avatar = new Group()
+    this.avatar.name = 'avatar'
+    this.avatar.rotation.copy(new Euler(0, Math.PI, 0))
     this.engine.attachCam(this.avatar)
     this.userSvc.listChanged.subscribe((userList: User[]) => {
       for (const user of this.engine.objects().filter(o => o.userData?.player)) {
@@ -84,13 +86,6 @@ export class WorldService {
       const avatarId = u.avatar >= this.avatarList.length ? 0 : u.avatar
       this.setAvatar(this.avatarList[avatarId], user as Group)
     })
-  }
-
-  initAvatar() {
-    this.avatar = new Group()
-    this.avatar.name = 'avatar'
-    this.avatar.rotation.copy(new Euler(0, Math.PI, 0))
-    this.setAvatar('michel', this.avatar)
   }
 
   public loadItem(item: string, pos: Vector3, rot: Vector3) {
@@ -145,13 +140,15 @@ export class WorldService {
   }
 
   public setWorld(data: any) {
-    for (const item of this.engine.objects().filter(i => i.name.length > 0 && !i.userData?.player && !i.userData?.persist)) {
+    for (const item of this.engine.objects().filter(i => i.name.length > 0 && !i.userData?.persist)) {
       this.engine.removeObject(item as Group)
     }
+    this.objSvc.setPath(data.path)
+    this.avatarList = data.avatars
+    this.setAvatar(this.avatarList[0], this.avatar)
     for (const item of data.objects) {
       this.loadItem(item[0], new Vector3(item[1], item[2], item[3]), new Vector3(item[4], item[5], item[6]))
     }
-    this.avatarList = data.avatars
     // Update avatars
     for (const u of this.userSvc.userList) {
       const user = this.engine.objects().find(o => o.name === u.id)
