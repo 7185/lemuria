@@ -47,9 +47,13 @@ async def auth_session():
 @app.route('/api/v1/world/<name>', methods=['GET'])
 @login_required
 async def world(name):
-    with open(f"{name}.json") as world:
-       w = json.load(world)
-       return w
+    for u in authorized_users:
+        if (u.auth_id == current_user.auth_id):
+            with open(f"{name}.json") as world:
+                w = json.load(world)
+                return w
+    return {}, 401
+
 
 @app.websocket('/ws')
 async def wsocket():
