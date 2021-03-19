@@ -39,7 +39,7 @@ async def auth_logout():
 @app.route('/api/v1/auth', methods=['GET'])
 @login_required
 async def auth_session():
-    if current_user.name:
+    if await current_user.name:
         return jsonify({'id': current_user.auth_id, 'name': await current_user.name}), 200
     return {}, 401
 

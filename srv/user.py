@@ -22,7 +22,7 @@ class User(AuthUser):
     def __init__(self, auth_id):
         super().__init__(auth_id)
         self._resolved = False
-        self._name = 'Anonymous'+str(auth_id)
+        self._name = None
         self.queue = None
         self.connected = False
         self.websockets = set()
