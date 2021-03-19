@@ -21,7 +21,8 @@ class User(AuthUser):
 
     def __init__(self, auth_id):
         super().__init__(auth_id)
-        self.name = 'Anonymous'+str(auth_id)
+        self._resolved = False
+        self._name = 'Anonymous'+str(auth_id)
         self.queue = None
         self.connected = False
         self.websockets = set()
@@ -30,10 +31,22 @@ class User(AuthUser):
         self.avatar = 0
         self.pos_timer = None
 
-    def to_dict(self):
+    async def _resolve(self):
+        if not self._resolved:
+            for u in authorized_users:
+                if (u.auth_id == self.auth_id):
+                    self._name = u._name
+                    self._resolved = True
+    
+    @property
+    async def name(self):
+        await self._resolve()
+        return self._name
+
+    async def to_dict(self):
         return {
             'id': self.auth_id,
-            'name': self.name,
+            'name': await self.name,
             'avatar': self.avatar,
             'x': self.position[0],
             'y': self.position[1],

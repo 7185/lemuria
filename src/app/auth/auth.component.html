@@ -1,6 +1,8 @@
 <div class="container">
   <form class="form-signin" (ngSubmit)="onLogin()" [formGroup]="loginForm">
-    <h2 class="form-signin-heading">Lemuria</h2>
+    <div class="mx-auto">
+      <app-logo></app-logo>
+    </div>
     <div class="alert" *ngIf="loginError" type="danger">Wrong login or password</div>
     <div class="p-2 input-group">
     <div class="input-group-prepend">

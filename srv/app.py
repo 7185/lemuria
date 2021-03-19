@@ -25,10 +25,10 @@ async def auth_login():
     data = await request.json
     user_id = str(uuid.uuid4())[:8]
     u = User(user_id)
-    u.name = data['login'] or 'Anonymous'+user_id
+    u._name = data['login'] or 'Anonymous'+user_id
     login_user(u, True)
     authorized_users.add(u)
-    return jsonify({'id': user_id, 'name': u.name}), 200
+    return jsonify({'id': user_id, 'name': await u.name}), 200
 
 @app.route('/api/v1/auth', methods=['DELETE'])
 @login_required
@@ -39,9 +39,8 @@ async def auth_logout():
 @app.route('/api/v1/auth', methods=['GET'])
 @login_required
 async def auth_session():
-    for u in authorized_users:
-        if (u.auth_id == current_user.auth_id):
-            return jsonify({'id': u.auth_id, 'name': u.name}), 200
+    if current_user.name:
+        return jsonify({'id': current_user.auth_id, 'name': await current_user.name}), 200
     return {}, 401
 
 @app.route('/api/v1/world/<name>', methods=['GET'])

@@ -5,6 +5,7 @@ import {HttpClientModule} from '@angular/common/http'
 import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {VirtualScrollerModule} from 'ngx-virtual-scroller'
 import {AppComponent} from './app.component'
+import {LogoComponent} from './logo/logo.component'
 import {EngineComponent} from './engine/engine.component'
 import {UiToolbarComponent} from './ui/ui-toolbar/ui-toolbar.component'
 import {UiChatZoneComponent} from './ui/ui-chat-zone/ui-chat-zone.component'
@@ -26,6 +27,7 @@ import {
   declarations: [
     AppComponent,
     routingComponents,
+    LogoComponent,
     EngineComponent,
     UiToolbarComponent,
     UiChatZoneComponent

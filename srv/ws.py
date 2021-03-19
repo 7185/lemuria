@@ -19,16 +19,16 @@ def collect_websocket(func):
         u.websockets.add(websocket._get_current_object())
         u.connected = True
         await u.init_timer()
-        await broadcast({'type': 'join', 'data': u.name})
-        await broadcast({'type': 'list', 'data': [u.to_dict() for u in [u for u in authorized_users if u.connected]]})
+        await broadcast({'type': 'join', 'data': await u.name})
+        await broadcast({'type': 'list', 'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
         try:
             return await func(u, *args, **kwargs)
         finally:
             u.websockets.remove(websocket._get_current_object())
             if len(u.websockets) == 0:
                 u.connected = False
-                await broadcast({'type': 'part', 'data': u.name})
-                await broadcast({'type': 'list', 'data': [u.to_dict() for u in [u for u in authorized_users if u.connected]]})
+                await broadcast({'type': 'part', 'data': await u.name})
+                await broadcast({'type': 'list', 'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
     return wrapper
 
 
@@ -51,7 +51,7 @@ async def receiving():
 
 async def process_msg(user: User, data: dict) -> None:
     if data['type'] == 'msg':
-        await broadcast({'type': 'msg', 'user': user.name, 'data': data['data']})
+        await broadcast({'type': 'msg', 'user': await user.name, 'data': data['data']})
     elif data['type'] == 'pos':
         user.position[0] = data['data']['pos']['x']
         user.position[1] = data['data']['pos']['y']
