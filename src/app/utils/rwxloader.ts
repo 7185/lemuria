@@ -33,7 +33,7 @@ var RWXLoader = ( function () {
 	};
 
 	const GeometrySampling = {
-		POINTCOULD: 1,
+		POINTCLOUD: 1,
 		WIREFRAME: 2,
 		SOLID: 3
 	};
@@ -201,6 +201,18 @@ var RWXLoader = ( function () {
 		} else if ( rwxMaterial.lightsampling == LightSampling.VERTEX ) {
 
 			materialDict[ 'flatShading' ] = false;
+
+		}
+
+		if ( rwxMaterial.geometrysampling < GeometrySampling.SOLID ) {
+
+			// For the time being: we treat 'wireframe' and 'pointcloud' the same, as 'pointcloud' is not yet trivially
+			// supported
+			materialDict[ 'wireframe' ] = true;
+
+		} else {
+
+			materialDict[ 'wireframe' ] = false;
 
 		}
 
@@ -465,6 +477,12 @@ var RWXLoader = ( function () {
 
 				}
 
+				if ( this.mask != null ) {
+
+					sign += this.mask;
+
+				}
+
 				sign += this.collision.toString();
 
 				return sign;
@@ -548,6 +566,7 @@ var RWXLoader = ( function () {
 				this.currentMaterialID = null;
 				this.currentMaterialList = [];
 				this.currentMaterialSignature = "";
+				this.currentRWXMaterial = new RWXMaterial();
 
 			},
 
@@ -594,6 +613,7 @@ var RWXLoader = ( function () {
 		this.materialModeRegex = new RegExp( "^ *((add)?materialmode(s)?) +([A-Za-z0-9_\\-]+).*$", 'i' );
 		this.collisionRegex = new RegExp( "^ *(collision) +(on|off).*$", 'i' );
 		this.lightsamplingRegex = new RegExp( "^ *(lightsampling) +(facet|vertex).*$", 'i' );
+		this.geometrysamplingRegex = new RegExp( "^ *(geometrysampling) +(pointcloud|wireframe|solid).*$", 'i' );
 
 	}
 
@@ -1201,6 +1221,29 @@ var RWXLoader = ( function () {
 					} else {
 
 						ctx.materialManager.currentRWXMaterial.lightsampling = LightSampling.FACET;
+
+					}
+
+					continue;
+
+				}
+
+				res = this.geometrysamplingRegex.exec( line );
+				if ( res != null ) {
+
+					const gs = res[ 2 ].toLowerCase();
+
+					if ( gs == "pointcloud" ) {
+
+						ctx.materialManager.currentRWXMaterial.geometrysampling = GeometrySampling.POINTCLOUD;
+
+					} else if ( gs == "wireframe" ) {
+
+						ctx.materialManager.currentRWXMaterial.geometrysampling = GeometrySampling.WIREFRAME;
+
+					} else {
+
+						ctx.materialManager.currentRWXMaterial.geometrysampling = GeometrySampling.SOLID;
 
 					}
 

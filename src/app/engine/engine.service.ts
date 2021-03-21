@@ -8,7 +8,7 @@ import {
 import {UserService} from './../user/user.service'
 import {config} from '../app.config'
 
-export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, ctrl, shift, esc, del }
+export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, ctrl, shift, esc, ins, del }
 export const DEG = Math.PI / 180
 
 @Injectable({providedIn: 'root'})
@@ -317,6 +317,10 @@ export class EngineService implements OnDestroy {
         this.controls[PressedKey.esc] = value
         break
       }
+      case 'Insert': {
+        this.controls[PressedKey.ins] = value
+        break
+      }
       case 'Delete': {
         this.controls[PressedKey.del] = value
         break
@@ -382,6 +386,15 @@ export class EngineService implements OnDestroy {
       if (this.selectedObject.rotation.y < -Math.PI) {
         this.selectedObject.rotation.y += 2 * Math.PI
       }
+    }
+    if (this.controls[PressedKey.ins]) {
+      this.selectedObject = this.selectedObject.clone() as Group
+      this.selectedObject.position.add(v.multiplyScalar(moveStep))
+      this.scene.add(this.selectedObject)
+      this.selectionBox.setFromObject(this.selectedObject)
+    }
+    if (this.controls[PressedKey.del]) {
+      this.removeObject(this.selectedObject)
     }
     this.selectionBox.update()
   }
