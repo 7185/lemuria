@@ -230,7 +230,6 @@ export class EngineService implements OnDestroy {
     }
     this.moveUsers()
     this.moveLabels()
-    this.raycaster.setFromCamera(this.mouse, this.activeCamera)
     this.renderer.render(this.scene, this.activeCamera)
   }
 
@@ -246,6 +245,7 @@ export class EngineService implements OnDestroy {
     event.preventDefault()
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+    this.raycaster.setFromCamera(this.mouse, this.activeCamera)
     const intersects = this.raycaster.intersectObjects(this.scene.children, true)
     let item = null
     for (const i of intersects) {
@@ -473,7 +473,7 @@ export class EngineService implements OnDestroy {
         user.position.x = u.oldX + (u.x - u.oldX) * u.completion
         user.position.y = u.oldY + (u.y - u.oldY) * u.completion
         if (user.userData.height > 1.1) {
-          user.position.y += user.userData.height * 0.55
+          user.position.y += user.userData.offsetY
         }
         user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
         user.rotation.x = u.oldRoll + (u.roll - u.oldRoll) * u.completion

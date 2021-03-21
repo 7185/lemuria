@@ -22,7 +22,10 @@ import {
 	FrontSide,
 	DoubleSide,
 	Group,
-	BufferAttribute
+	BufferAttribute,
+	EdgesGeometry,
+	LineSegments,
+	LineBasicMaterial
 } from 'three';
 
 var RWXLoader = ( function () {
@@ -228,8 +231,7 @@ var RWXLoader = ( function () {
 
 		if ( rwxMaterial.texture == null ) {
 
-			phongMat.color.set( ( Math.trunc( rwxMaterial.color[ 0 ] * 255 ) << 16 ) + ( Math.trunc( rwxMaterial
-				.color[ 1 ] * 255 ) << 8 ) + Math.trunc( rwxMaterial.color[ 2 ] * 255 ) );
+			phongMat.color.set( rwxMaterial.getColorHexValue() );
 
 		} else {
 
@@ -285,7 +287,7 @@ var RWXLoader = ( function () {
 						maskTexture.wrapT = RepeatWrapping;
 						phongMat.alphaMap = maskTexture;
 
-						// Notify three.js that this material has been updated (to re-render it).
+						// Notify three.js that this material has been updated (to re-render it)
 						phongMat.needsUpdate = true;
 
 					}, function error( e ) {
@@ -350,7 +352,6 @@ var RWXLoader = ( function () {
 			ctx.currentBufferGeometry.computeVertexNormals();
 
 			const mesh = new Mesh( ctx.currentBufferGeometry, ctx.materialManager.getCurrentMaterialList() );
-
 			ctx.currentGroup.add( mesh );
 
 		}
@@ -369,7 +370,7 @@ var RWXLoader = ( function () {
 
 	};
 
-	var addFace = function ( ctx, a, b, c ) {
+	var addTriangle = function ( ctx, a, b, c ) {
 
 		if ( ctx.materialManager.getCurrentMaterialID() !== ctx.previousMaterialID ) {
 
@@ -380,6 +381,77 @@ var RWXLoader = ( function () {
 		// Add new face
 		ctx.currentBufferFaceCount ++;
 		ctx.currentBufferFaces.push( a, b, c );
+
+	};
+
+	var addQuad = function ( ctx, a, b, c, d ) {
+
+		if ( ctx.materialManager.getCurrentMaterialID() !== ctx.previousMaterialID ) {
+
+			commitBufferGeometryGroup( ctx );
+
+		}
+
+		if ( true && ctx.materialManager.currentRWXMaterial.geometrysampling == GeometrySampling.WIREFRAME ) {
+
+			// We need to use a whole different geometry logic to handle wireframe quads the way the AW client does:
+			// by only rendering the outter edges
+			const tmpBufferGeometry = new BufferGeometry();
+
+		  tmpBufferGeometry.setAttribute( 'position', new BufferAttribute( new Float32Array( [
+
+				ctx.currentBufferVertices[ a * 3 ], ctx.currentBufferVertices[ a * 3 + 1 ], ctx.currentBufferVertices[ a * 3 + 2 ],
+				ctx.currentBufferVertices[ b * 3 ], ctx.currentBufferVertices[ b * 3 + 1 ], ctx.currentBufferVertices[ b * 3 + 2 ],
+				ctx.currentBufferVertices[ c * 3 ], ctx.currentBufferVertices[ c * 3 + 1 ], ctx.currentBufferVertices[ c * 3 + 2 ],
+				ctx.currentBufferVertices[ a * 3 ], ctx.currentBufferVertices[ a * 3 + 1 ], ctx.currentBufferVertices[ a * 3 + 2 ],
+				ctx.currentBufferVertices[ c * 3 ], ctx.currentBufferVertices[ c * 3 + 1 ], ctx.currentBufferVertices[ c * 3 + 2 ],
+				ctx.currentBufferVertices[ d * 3 ], ctx.currentBufferVertices[ d * 3 + 1 ], ctx.currentBufferVertices[ d * 3 + 2 ]
+
+			] ), 3 ) );
+
+			tmpBufferGeometry.computeVertexNormals();
+
+			const lines = new LineSegments( new EdgesGeometry( tmpBufferGeometry ),
+				new LineBasicMaterial( { color: ctx.materialManager.currentRWXMaterial.getColorHexValue() } ) );
+
+			ctx.currentGroup.add( lines );
+
+		} else {
+
+			// Add two new faces
+			ctx.currentBufferFaceCount += 2;
+			ctx.currentBufferFaces.push( a, b, c );
+			ctx.currentBufferFaces.push( a, c, d );
+
+		}
+
+	};
+
+	var addPolygon = function ( ctx, indices ) {
+
+		if ( ctx.materialManager.getCurrentMaterialID() !== ctx.previousMaterialID ) {
+
+			commitBufferGeometryGroup( ctx );
+
+		}
+
+		const [ newVertices, newUVs, newFaces ] =
+			triangulateFacesWithShapes( ctx.currentBufferVertices, ctx.currentBufferUVs, indices );
+
+		ctx.currentBufferVertices.push( ...newVertices );
+		ctx.currentBufferUVs.push( ...newUVs );
+
+		for ( var lf = 0; lf < newFaces.length; lf += 3 ) {
+
+			const a = newFaces[ lf ];
+			const b = newFaces[ lf + 1 ];
+			const c = newFaces[ lf + 2 ];
+
+			// Add new face
+			ctx.currentBufferFaceCount ++;
+			ctx.currentBufferFaces.push( a, b, c );
+
+		}
 
 	};
 
@@ -431,6 +503,14 @@ var RWXLoader = ( function () {
 
 	};
 
+	var startEdgeGeometry = function ( ctx ) {
+
+	};
+
+	var stopEdgeGeometry = function ( ctx ) {
+
+	};
+
 	var RWXMaterial = ( function () {
 
 		function RWXMaterial() {
@@ -457,6 +537,13 @@ var RWXLoader = ( function () {
 		RWXMaterial.prototype = {
 
 			constructor: RWXMaterial,
+
+			getColorHexValue: function () {
+
+				return ( Math.trunc( this.color[ 0 ] * 255 ) << 16 ) + ( Math.trunc( this
+					.color[ 1 ] * 255 ) << 8 ) + Math.trunc( this.color[ 2 ] * 255 );
+
+			},
 
 			getMatSignature: function () {
 
@@ -552,6 +639,12 @@ var RWXLoader = ( function () {
 				}
 
 				return this.currentMaterialID;
+
+			},
+
+			getCurrentMaterial: function () {
+
+				  return this.currentMaterialList[ this.getCurrentMaterialID() ];
 
 			},
 
@@ -885,7 +978,7 @@ var RWXLoader = ( function () {
 
 					} );
 
-					addFace( ctx, vId[ 0 ], vId[ 1 ], vId[ 2 ] );
+					addTriangle( ctx, vId[ 0 ], vId[ 1 ], vId[ 2 ] );
 
 					continue;
 
@@ -901,8 +994,7 @@ var RWXLoader = ( function () {
 
 					} );
 
-					addFace( ctx, vId[ 0 ], vId[ 1 ], vId[ 2 ] );
-					addFace( ctx, vId[ 0 ], vId[ 2 ], vId[ 3 ] );
+					addQuad( ctx, vId[ 0 ], vId[ 1 ], vId[ 2 ], vId[ 3 ] );
 
 					continue;
 
@@ -922,21 +1014,7 @@ var RWXLoader = ( function () {
 
 					}
 
-					const [ newVertices, newUVs, newFaces ] =
-					triangulateFacesWithShapes( ctx.currentBufferVertices, ctx.currentBufferUVs, polyIDs );
-
-					ctx.currentBufferVertices.push( ...newVertices );
-					ctx.currentBufferUVs.push( ...newUVs );
-
-					for ( var lf = 0; lf < newFaces.length; lf += 3 ) {
-
-						const vid1 = newFaces[ lf ];
-						const vid2 = newFaces[ lf + 1 ];
-						const vid3 = newFaces[ lf + 2 ];
-
-						addFace( ctx, vid1, vid2, vid3 );
-
-					}
+					addPolygon( ctx, polyIDs );
 
 					continue;
 

@@ -128,8 +128,9 @@ export class WorldService {
       const box = new Box3()
       box.setFromObject(group)
       group.userData.height = box.max.y - box.min.y
+      group.userData.offsetY = -box.min.y
       if (group.userData.height > 1.1) {
-        group.position.y = group.userData.height * 0.55
+        group.position.y += group.userData.offsetY
       } else {
         group.position.y = 0
       }
