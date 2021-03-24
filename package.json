@@ -28,7 +28,7 @@
     "@fortawesome/angular-fontawesome": "^0.8.2",
     "@fortawesome/fontawesome-svg-core": "^1.2.35",
     "@fortawesome/free-solid-svg-icons": "^5.15.3",
-    "bootstrap": "^5.0.0-beta2",
+    "bootstrap": "^5.0.0-beta3",
     "jszip": "^3.6.0",
     "jszip-utils": "^0.1.0",
     "ngx-virtual-scroller": "^4.0.3",

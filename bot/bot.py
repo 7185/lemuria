@@ -1,18 +1,17 @@
 
 #!/usr/bin/env python
 
-import requests
+import asks
 import websockets
 import asyncio
 import json
 
 def get_cookie_from_response(response, cookie_name):
-    cookies = response.cookies.get_dict()
-    if cookie_name in cookies:
-        return cookies[cookie_name]
+    for c in response.cookies:
+        if c.name == cookie_name:
+            return c.value
     return None
 
-SSL_VERIFY = False
 AUTH_COOKIE = 'QUART_AUTH'
 DEBUG = False
 
@@ -120,7 +119,7 @@ class Bot(User):
             await self._process_msg(msg)
 
     async def login(self) -> None:
-        rlogin = requests.post(self.web_url + '/auth', json={'login': self.name, 'password': 'password'}, verify=SSL_VERIFY)
+        rlogin = await asks.post(self.web_url + '/auth', json={'login': self.name, 'password': 'password'})
         self.cookiejar = {
             AUTH_COOKIE: get_cookie_from_response(rlogin, AUTH_COOKIE)
         }
