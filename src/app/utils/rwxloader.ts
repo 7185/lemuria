@@ -82,15 +82,11 @@ var RWXLoader = ( function () {
 
 		var _tmp = new Vector3();
 
-		var _basis = new Matrix4();
+		return function ( vertices, loop ) {
 
-		return function ( vertices, uvs, loop ) {
-
-			var newVertices = [];
-			var newUvs = [];
 			var faces = [];
 
-			var offset = vertices.length / 3;
+			var vertexMap = {};
 
 			// Compute centroid
 			_ctr.setScalar( 0.0 );
@@ -99,6 +95,7 @@ var RWXLoader = ( function () {
 			for ( var i = 0; i < l; i ++ ) {
 
 				_ctr.add( new Vector3( vertices[ loop[ i ] * 3 ], vertices[ loop[ i ] * 3 + 1 ], vertices[ loop[ i ] * 3 + 2 ] ) );
+				vertexMap[ i ] = loop[ i ];
 
 			}
 
@@ -134,8 +131,6 @@ var RWXLoader = ( function () {
 			_x.copy( X ).applyQuaternion( _q );
 			_y.crossVectors( _x, _z );
 			_y.normalize();
-			_basis.makeBasis( _x, _y, _z );
-			_basis.setPosition( _ctr );
 
 			// Project the 3D vertices on the 2D plane
 			var projVertices = [];
@@ -144,7 +139,6 @@ var RWXLoader = ( function () {
 				const currentVertex = new Vector3( vertices[ loop[ i ] * 3 ], vertices[ loop[ i ] * 3 + 1 ], vertices[ loop[ i ] * 3 + 2 ] );
 				_tmp.subVectors( currentVertex, _ctr );
 				projVertices.push( new Vector2( _tmp.dot( _x ), _tmp.dot( _y ) ) );
-				newUvs.push( uvs[ loop[ i ] * 2 ], uvs[ loop[ i ] * 2 + 1 ] );
 
 			}
 
@@ -152,21 +146,16 @@ var RWXLoader = ( function () {
 			var shape = new Shape( projVertices );
 			var geometry = new ShapeBufferGeometry( shape );
 
-			// Transform geometry back to the initial coordinate system
-			geometry.applyMatrix4( _basis );
-
-			const shapePositions = geometry.getAttribute( 'position' ).array;
 			const shapeIndices = geometry.getIndex().array;
 
-			newVertices.push( ...shapePositions as number[]);
-
+			// Use the vertex indices from each newly computed 2D face to extend our current set
 			for ( var i = 0, lFaces = shapeIndices.length; i < lFaces; i ++ ) {
 
-				faces.push( shapeIndices[ i ] + offset );
+				faces.push( vertexMap[ shapeIndices[ i ] ] );
 
 			}
 
-			return [ newVertices, newUvs, faces ];
+			return faces;
 
 		};
 
@@ -435,23 +424,11 @@ var RWXLoader = ( function () {
 
 		}
 
-		const [ newVertices, newUVs, newFaces ] =
-			triangulateFacesWithShapes( ctx.currentBufferVertices, ctx.currentBufferUVs, indices );
+		const newFaces =
+			triangulateFacesWithShapes( ctx.currentBufferVertices, indices );
 
-		ctx.currentBufferVertices.push( ...newVertices );
-		ctx.currentBufferUVs.push( ...newUVs );
-
-		for ( var lf = 0; lf < newFaces.length; lf += 3 ) {
-
-			const a = newFaces[ lf ];
-			const b = newFaces[ lf + 1 ];
-			const c = newFaces[ lf + 2 ];
-
-			// Add new face
-			ctx.currentBufferFaceCount ++;
-			ctx.currentBufferFaces.push( a, b, c );
-
-		}
+		ctx.currentBufferFaceCount += newFaces.length / 3;
+		ctx.currentBufferFaces.push( ...newFaces )
 
 	};
 

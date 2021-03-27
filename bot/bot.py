@@ -141,4 +141,4 @@ class Bot(User):
             await self._callback('on_disconnected')
 
     def run(self) -> None:
-        asyncio.get_event_loop().run_until_complete(self.connect())
+        asyncio.run(self.connect())
