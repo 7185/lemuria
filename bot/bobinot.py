@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import asyncio
+import trio
 from math import atan2, pi
 from bot import Bot
 from random import randint
@@ -34,7 +34,7 @@ class Bobinot(Bot):
                 break
             self.set_position(p[0], self.y, p[1], yaw=direction)
             await self.send_position()
-            await asyncio.sleep(tick / 1e3)
+            await trio.sleep(tick / 1e3)
 
     async def on_connected(self) -> None:
         await self.change_avatar(self.avatar)
@@ -51,18 +51,18 @@ class Bobinot(Bot):
         print(f"<{user}> {msg}")
         if user != self.name:
             if msg.startswith('!list'):
-                l = ' '.join([u.name + '(' + str(u.avatar) + ':' + i + ')' for i, u in self.userlist.items()])
+                l = ' '.join([f'{u.name}({u.avatar}:{i})' for i, u in self.userlist.items()])
                 await self.send_msg(l)
             elif msg.startswith('!pos'):
                 await self.send_msg(f'{self.x},{self.y},{self.z}')
             elif msg.startswith('!come'):
                 await self.send_msg('Coming...')
-                for i, u in self.userlist.items():
+                for u in self.userlist.values():
                     if u.name == user:
                         self.current_move_thread += 1
-                        asyncio.ensure_future(self.move(u.x, u.z))
+                        self.nursery.start_soon(self.move, u.x, u.z)
             elif msg.startswith('!whereami'):
-                for i, u in self.userlist.items():
+                for u in self.userlist.values():
                     if u.name == user:
                         await self.send_msg(f'{u.x},{u.y},{u.z}')
             elif msg.startswith('!speed'):
