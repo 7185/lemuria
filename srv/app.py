@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-from quart import Quart, render_template, websocket, request, jsonify, json
+from quart import g, render_template, websocket, request, jsonify, json
 from functools import wraps
 from ws import sending, receiving, User, authorized_users
 import uuid
-import asyncio
+import trio
+from quart_trio import QuartTrio
 from quart_auth import AuthUser, AuthManager, login_user, logout_user, login_required, current_user, Unauthorized
 
-app = Quart(__name__)
+app = QuartTrio(__name__)
 app.config.from_object('config.Config')
 app.static_folder = app.config['STATIC_PATH']
 app.template_folder = app.config['STATIC_PATH']
@@ -56,9 +57,10 @@ async def world(name):
 
 @app.websocket('/ws')
 async def wsocket():
-    producer = asyncio.create_task(sending())
-    consumer = asyncio.create_task(receiving())
-    await asyncio.gather(producer, consumer)
+    async with trio.open_nursery() as nursery:
+        g.nursery = nursery
+        nursery.start_soon(sending)
+        nursery.start_soon(receiving)
 
 @app.errorhandler(404)
 async def redirect(e):

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-import asyncio
+import trio
 import uuid
 from functools import wraps
-from quart import websocket
+from quart import websocket, jsonify, json
 from quart_auth import AuthManager, AuthUser, current_user, login_required, _AuthSerializer
 from config import Config
 from user import authorized_users, broadcast, User
@@ -14,8 +14,8 @@ def collect_websocket(func):
         u = User.current()
         if u is None:
             return
-        if u.queue is None:
-            u.queue = asyncio.Queue()
+        if u.queue_send is None:
+            u.queue_send, u.queue_recv = trio.open_memory_channel(100)
         u.websockets.add(websocket._get_current_object())
         u.connected = True
         await u.init_timer()
@@ -35,7 +35,8 @@ def collect_websocket(func):
 @collect_websocket
 async def sending(user=None):
     while True:
-        data = await user.queue.get()
+        data = await user.queue_recv.receive()
+        data = json.loads(data)
         for s in user.websockets:
             await s.send_json(data)
 
