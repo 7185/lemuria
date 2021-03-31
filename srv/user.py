@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from quart import websocket, jsonify, json
+from quart import websocket, json, g
 from quart_auth import AuthUser, _AuthSerializer
 from utils import Timer
 from config import Config
@@ -61,12 +61,13 @@ class User(AuthUser):
         if self.pos_timer:
             await self.pos_timer.cancel()
         if self.connected:
-            self.pos_timer = Timer(Config.POSITION_UPDATE_TICK, self.send_pos)
+            self.pos_timer = Timer(Config.POSITION_UPDATE_TICK, self.send_pos, g.nursery)
             await self.pos_timer.start()
 
     async def send_pos(self):
         await broadcast({'type': 'pos', 'user': self.auth_id, 'data': {'pos': {'x': self.position[0], 'y': self.position[1], 'z': self.position[2]},
                                                                        'ori': {'x': self.orientation[0], 'y': self.orientation[1], 'z': self.orientation[2]}}})
+        await self.init_timer()
     
     async def send_avatar(self):
         await broadcast({'type': 'avatar', 'user': self.auth_id, 'data': self.avatar})

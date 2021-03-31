@@ -2,7 +2,7 @@
 import trio
 import uuid
 from functools import wraps
-from quart import websocket, jsonify, json
+from quart import websocket, json
 from quart_auth import AuthManager, AuthUser, current_user, login_required, _AuthSerializer
 from config import Config
 from user import authorized_users, broadcast, User
