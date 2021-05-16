@@ -56,6 +56,7 @@ async def world(name):
 
 
 @app.websocket('/ws')
+@login_required
 async def wsocket():
     async with trio.open_nursery() as nursery:
         g.nursery = nursery

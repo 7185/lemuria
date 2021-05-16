@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import trio
 import uuid
+from math import inf
 from functools import wraps
 from quart import websocket, json
-from quart_auth import AuthManager, AuthUser, current_user, login_required, _AuthSerializer
 from config import Config
 from user import authorized_users, broadcast, User
 
@@ -15,7 +15,7 @@ def collect_websocket(func):
         if u is None:
             return
         if u.queue_send is None:
-            u.queue_send, u.queue_recv = trio.open_memory_channel(100)
+            u.queue_send, u.queue_recv = trio.open_memory_channel(inf)
         u.websockets.add(websocket._get_current_object())
         u.connected = True
         await u.init_timer()

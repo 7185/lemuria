@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from quart import websocket, json, g
-from quart_auth import AuthUser, _AuthSerializer
+from quart_auth import AuthUser, current_user
 from utils import Timer
 from config import Config
 
@@ -10,14 +10,10 @@ authorized_users = set()
 class User(AuthUser):
     @staticmethod
     def current():
-        token = websocket.cookies['QUART_AUTH']
-        serializer = _AuthSerializer('**changeme**', 'quart auth salt')
-        user_id = serializer.loads(token)
         for u in authorized_users:
-            if u.auth_id == user_id:
+            if (u.auth_id == current_user.auth_id):
                 return u
         return None
-
 
     def __init__(self, auth_id):
         super().__init__(auth_id)
