@@ -1,13 +1,13 @@
 <div id="chat-zone" [class.active]="chatActive">
   <virtual-scroller #scroll [items]="data">
     <p class="line mx-2" *ngFor="let m of scroll.viewPortItems">
-      <ng-container *ngIf="m.type == 'msg'">
+      <ng-container *ngIf="m.type === 'msg'">
         <b [ngStyle]="{'color': colors[m.user]}">{{ m.user }}</b>: {{ m.data }}
       </ng-container>
-      <ng-container *ngIf="m.type == 'join'"><b class="text-success">{{ m.data }} joined</b></ng-container>
-      <ng-container *ngIf="m.type == 'part'"><b class="text-danger">{{ m.data }} left</b></ng-container>
-      <ng-container *ngIf="m.type == 'err'"><b class="text-danger">{{ m.data }}</b></ng-container>
-      <ng-container *ngIf="m.type == 'info'"><em class="text-info">{{ m.data }}</em></ng-container>
+      <ng-container *ngIf="m.type === 'join'"><b class="text-success">{{ m.data }} joined</b></ng-container>
+      <ng-container *ngIf="m.type === 'part'"><b class="text-danger">{{ m.data }} left</b></ng-container>
+      <ng-container *ngIf="m.type === 'err'"><b class="text-danger">{{ m.data }}</b></ng-container>
+      <ng-container *ngIf="m.type === 'info'"><em class="text-info">{{ m.data }}</em></ng-container>
     </p>
   </virtual-scroller>
   <div class="input-group">
