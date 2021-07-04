@@ -1,8 +1,10 @@
 import {NgModule} from '@angular/core'
 import {BrowserModule} from '@angular/platform-browser'
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations'
 import {FormsModule, ReactiveFormsModule} from '@angular/forms'
 import {HttpClientModule} from '@angular/common/http'
 import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome'
+import {BsDropdownModule} from 'ngx-bootstrap/dropdown'
 import {VirtualScrollerModule} from 'ngx-virtual-scroller'
 import {AppComponent} from './app.component'
 import {LogoComponent} from './logo/logo.component'
@@ -15,6 +17,7 @@ import {
   faComments,
   faCircleNotch,
   faEye,
+  faGlobe,
   faKey,
   faLocationArrow,
   faSignOutAlt,
@@ -39,6 +42,8 @@ import {
     HttpClientModule,
     FontAwesomeModule,
     VirtualScrollerModule,
+    BrowserAnimationsModule,
+    BsDropdownModule.forRoot(),
     AppRoutingModule
   ],
   providers: [],
@@ -52,6 +57,7 @@ export class AppModule {
       faComments,
       faCircleNotch,
       faEye,
+      faGlobe,
       faKey,
       faLocationArrow,
       faSignOutAlt,

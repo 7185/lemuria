@@ -1,8 +1,28 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-0">
   <div class="container-fluid">
     <a class="navbar-brand" href="#">Lemuria</a>
-    <button *ngIf="!socket.connected" class="btn btn-success my-2 my-sm-0" (click)="connect()" type="button">Connect</button>
-    <button *ngIf="socket.connected" class="btn btn-danger my-2 my-sm-0" (click)="socket.close()" type="button">Disconnect</button>
+    <div class="nav navbar-nav">
+      <div class="btn-group" dropdown>
+        <div dropdownToggle type="button" class="nav-link dropdown-toggle">
+          World <span class="caret"></span>
+        </div>
+        <ul *dropdownMenu class="dropdown-menu" role="menu">
+          <li role="menuitem" (click)="connect()">
+            <a class="dropdown-item" href="#"><fa-icon [icon]="['fas', 'globe']"></fa-icon> Lemuria</a>
+          </li>
+        </ul>
+      </div>
+      <div class="btn-group" dropdown [isDisabled]="!socket.connected">
+        <div dropdownToggle type="button" class="nav-link dropdown-toggle">
+          Avatar <span class="caret"></span>
+        </div>
+        <ul *dropdownMenu class="dropdown-menu" role="menu">
+          <li role="menuitem" *ngFor="let a of world.avatarList" (click)="changeAvatar(world.avatarList.indexOf(a))">
+            <a class="dropdown-item" href="#">{{ a }}</a>
+          </li>
+        </ul>
+      </div>
+    </div>
     <button class="btn btn-primary my-2 my-sm-0" (click)="toggleCamera()" type="button">
       <fa-icon *ngIf="firstPerson" [icon]="['fas', 'eye']"></fa-icon>
       <fa-icon *ngIf="!firstPerson" [icon]="['fas', 'video']"></fa-icon>
@@ -19,19 +39,23 @@
         </fa-layers>
       </div>
     </button>
-    <select class="form-select w-25" (change)="changeAvatar($event.target.value)">
-      <option *ngFor="let a of world.avatarList" [value]="world.avatarList.indexOf(a)">{{ a }}</option>
-    </select>
     <div class="nav navbar-nav ml-auto">
       <button class="btn btn-info my-2 my-sm-0" type="button">
         <fa-icon [icon]="['fas', 'users']"></fa-icon> {{ list.length }}
       </button>
-      <div class="nav-link">
-        <fa-icon [icon]="['fas', 'user']"></fa-icon> {{ name }}
+      <div class="btn-group" dropdown>
+        <div dropdownToggle type="button" class="nav-link dropdown-toggle">
+          <fa-icon [icon]="['fas', 'user']"></fa-icon> {{ name }} <span class="caret"></span>
+        </div>
+        <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
+          <li *ngIf="socket.connected" role="menuitem" (click)="socket.close()">
+            <a class="dropdown-item" href="#"><fa-icon [icon]="['fas', 'sign-out-alt']"></fa-icon> Leave world</a>
+          </li>
+          <li role="menuitem" (click)="logout()">
+            <a class="dropdown-item" href="#"><fa-icon [icon]="['fas', 'sign-out-alt']"></fa-icon> Sign out</a>
+          </li>
+        </ul>
       </div>
-      <button class="btn btn-danger my-2 my-sm-0" type="button" (click)="logout()">
-        <fa-icon [icon]="['fas', 'sign-out-alt']"></fa-icon>
-      </button>
     </div>
   </div>
 </nav>
