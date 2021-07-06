@@ -1,3 +1,5 @@
 Quart
+quart-auth>=0.5.0
 Quart-Trio
-quart-Auth>=0.5.0
+SQLAlchemy<1.4
+sqlalchemy-aio

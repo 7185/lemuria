@@ -7,8 +7,11 @@
           World <span class="caret"></span>
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
-          <li role="menuitem" (click)="connect()">
+          <li role="menuitem" (click)="connect(1)">
             <a class="dropdown-item" href="#"><fa-icon [icon]="['fas', 'globe']"></fa-icon> Lemuria</a>
+          </li>
+          <li role="menuitem" (click)="connect(2)">
+            <a class="dropdown-item" href="#"><fa-icon [icon]="['fas', 'globe']"></fa-icon> Tibsland</a>
           </li>
         </ul>
       </div>

@@ -36,9 +36,9 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.world.setAvatar(this.world.avatarList[avatarId])
   }
 
-  public connect() {
+  public connect(worldId=1) {
     this.socket.connect()
-    this.http.world('lemuria').subscribe((w: any) => {
+    this.http.world(worldId).subscribe((w: any) => {
       this.world.setWorld(w)
       this.socket.messages.next({type: 'info', data: w.welcome})
     })
