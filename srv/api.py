@@ -7,7 +7,7 @@ from user import User, authorized_users
 api_auth = Blueprint('api_auth', __name__, url_prefix='/api/v1/auth')
 api_world = Blueprint('api_world', __name__, url_prefix='/api/v1/world')
 
-@api_auth.route('/', methods=['POST'])
+@api_auth.route('/', methods=['POST'], strict_slashes=False)
 async def auth_login():
     data = await request.json
     user_id = str(uuid.uuid4())[:8]
@@ -17,13 +17,13 @@ async def auth_login():
     authorized_users.add(u)
     return jsonify({'id': user_id, 'name': await u.name}), 200
 
-@api_auth.route('/', methods=['DELETE'])
+@api_auth.route('/', methods=['DELETE'], strict_slashes=False)
 @login_required
 async def auth_logout():
     logout_user()
     return {}, 200
 
-@api_auth.route('/', methods=['GET'])
+@api_auth.route('/', methods=['GET'], strict_slashes=False)
 @login_required
 async def auth_session():
     if await current_user.name:
