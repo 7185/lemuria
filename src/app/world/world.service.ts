@@ -100,13 +100,8 @@ export class WorldService {
           child.castShadow = true
         }
       })
-      g.position.x = pos.x / 100
-      g.position.y = pos.y / 100
-      g.position.z = pos.z / 100
-      g.rotation.order = 'YZX'
-      g.rotation.x = rot.x * DEG / 10
-      g.rotation.y = rot.y * DEG / 10
-      g.rotation.z = rot.z * DEG / 10
+      g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
+      g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
       this.engine.addObject(g)
     })
   }

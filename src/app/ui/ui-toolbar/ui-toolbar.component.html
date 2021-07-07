@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-0">
   <div class="container-fluid">
-    <a class="navbar-brand" href="#">Lemuria</a>
+    <a class="navbar-brand" href="/">Lemuria</a>
     <div class="nav navbar-nav">
       <div class="btn-group" dropdown>
         <div dropdownToggle type="button" class="nav-link dropdown-toggle">
@@ -8,10 +8,10 @@
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
           <li role="menuitem" (click)="connect(1)">
-            <a class="dropdown-item" href="#"><fa-icon [icon]="['fas', 'globe']"></fa-icon> Lemuria</a>
+            <button class="dropdown-item"><fa-icon [icon]="['fas', 'globe']"></fa-icon> Lemuria</button>
           </li>
           <li role="menuitem" (click)="connect(2)">
-            <a class="dropdown-item" href="#"><fa-icon [icon]="['fas', 'globe']"></fa-icon> Tibsland</a>
+            <button class="dropdown-item"><fa-icon [icon]="['fas', 'globe']"></fa-icon> Tibsland</button>
           </li>
         </ul>
       </div>
@@ -21,7 +21,7 @@
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
           <li role="menuitem" *ngFor="let a of world.avatarList" (click)="changeAvatar(world.avatarList.indexOf(a))">
-            <a class="dropdown-item" href="#">{{ a }}</a>
+            <button class="dropdown-item">{{ a }}</button>
           </li>
         </ul>
       </div>
@@ -52,10 +52,10 @@
         </div>
         <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
           <li *ngIf="socket.connected" role="menuitem" (click)="socket.close()">
-            <a class="dropdown-item" href="#"><fa-icon [icon]="['fas', 'sign-out-alt']"></fa-icon> Leave world</a>
+            <button class="dropdown-item"><fa-icon [icon]="['fas', 'sign-out-alt']"></fa-icon> Leave world</button>
           </li>
           <li role="menuitem" (click)="logout()">
-            <a class="dropdown-item" href="#"><fa-icon [icon]="['fas', 'sign-out-alt']"></fa-icon> Sign out</a>
+            <button class="dropdown-item"><fa-icon [icon]="['fas', 'sign-out-alt']"></fa-icon> Sign out</button>
           </li>
         </ul>
       </div>
