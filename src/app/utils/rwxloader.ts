@@ -625,40 +625,38 @@ class RWXMaterialManager {
 
 class RWXLoader extends Loader {
 
-	integerRegex = new RegExp( "([-+]?[0-9]+)", 'g' );
-	floatRegex = new RegExp( "([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+))", 'g' );
-	nonCommentRegex = new RegExp( "^(.*)#", 'g' );
-	modelbeginRegex = new RegExp( "^ *(modelbegin).*$", 'i' );
-	modelendRegex = new RegExp( "^ *(modelend).*$", 'i' );
-	clumpbeginRegex = new RegExp( "^ *(clumpbegin).*$", 'i' );
-	clumpendRegex = new RegExp( "^ *(clumpend).*$", 'i' );
-	transformbeginRegex = new RegExp( "^ *(transformbegin).*$", 'i' );
-	transformendRegex = new RegExp( "^ *(transformend).*$", 'i' );
-	protobeginRegex = new RegExp( "^ *(protobegin) +([A-Za-z0-9_\\-]+).*$", 'i' );
-	protoinstanceRegex = new RegExp( "^ *(protoinstance) +([A-Za-z0-9_\\-]+).*$", 'i' );
-	protoendRegex = new RegExp( "^ *(protoend).*$", 'i' );
-	vertexRegex = new RegExp(
-		"^ *(vertex|vertexext)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){3}) *(uv(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){2}))?.*$",
-		'i' );
-	polygonRegex = new RegExp( "^ *(polygon|polygonext)( +[0-9]+)(( +[0-9]+)+) ?.*$", 'i' );
-	quadRegex = new RegExp( "^ *(quad|quadext)(( +([0-9]+)){4}).*$", 'i' );
-	triangleRegex = new RegExp( "^ *(triangle|triangleext)(( +([0-9]+)){3}).*$", 'i' );
-	textureRegex = new RegExp( "^ *(texture) +([A-Za-z0-9_\\-]+) *(mask *([A-Za-z0-9_\\-]+))?.*$", 'i' );
-	colorRegex = new RegExp( "^ *(color)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){3}).*$", 'i' );
-	opacityRegex = new RegExp( "^ *(opacity)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)).*$", 'i' );
-	identityRegex = new RegExp( "^ *(identity) *$", 'i' );
-	transformRegex = new RegExp( "^ *(transform)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){16}).*$", 'i' );
-	translateRegex = new RegExp( "^ *(translate)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){3}).*$", 'i' );
-	scaleRegex = new RegExp( "^ *(scale)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){3}).*$", 'i' );
-	rotateRegex = new RegExp( "^ *(rotate)(( +[-+]?[0-9]*){4})$", 'i' );
-	surfaceRegex = new RegExp( "^ *(surface)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){3}).*$", 'i' );
-	ambientRegex = new RegExp( "^ *(ambient)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)).*$", 'i' );
-	diffuseRegex = new RegExp( "^ *(diffuse)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)).*$", 'i' );
-	specularRegex = new RegExp( "^ *(specular)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)).*$", 'i' );
-	materialModeRegex = new RegExp( "^ *((add)?materialmode(s)?) +([A-Za-z0-9_\\-]+).*$", 'i' );
-	collisionRegex = new RegExp( "^ *(collision) +(on|off).*$", 'i' );
-	lightsamplingRegex = new RegExp( "^ *(lightsampling) +(facet|vertex).*$", 'i' );
-	geometrysamplingRegex = new RegExp( "^ *(geometrysampling) +(pointcloud|wireframe|solid).*$", 'i' );
+	integerRegex = /([-+]?[0-9]+)/g;
+	floatRegex = /([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+))/g;
+	nonCommentRegex = /^(.*)#/g;
+	modelbeginRegex = /^ *(modelbegin).*$/i;
+	modelendRegex = /^ *(modelend).*$/i;
+	clumpbeginRegex = /^ *(clumpbegin).*$/i;
+	clumpendRegex = /^ *(clumpend).*$/i;
+	transformbeginRegex = /^ *(transformbegin).*$/i;
+	transformendRegex = /^ *(transformend).*$/i;
+	protobeginRegex = /^ *(protobegin) +([A-Za-z0-9_\-]+).*$/i;
+	protoinstanceRegex = /^ *(protoinstance) +([A-Za-z0-9_\-]+).*$/i;
+	protoendRegex = /^ *(protoend).*$/i;
+	vertexRegex = /^ *(vertex|vertexext)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){3}) *(uv(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){2}))?.*$/i;
+	polygonRegex = /^ *(polygon|polygonext)( +[0-9]+)(( +[0-9]+)+) ?.*$/i;
+	quadRegex = /^ *(quad|quadext)(( +([0-9]+)){4}).*$/i;
+	triangleRegex = /^ *(triangle|triangleext)(( +([0-9]+)){3}).*$/i;
+	textureRegex = /^ *(texture) +([A-Za-z0-9_\-]+) *(mask *([A-Za-z0-9_\-]+))?.*$/i;
+	colorRegex = /^ *(color)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){3}).*$/i;
+	opacityRegex = /^ *(opacity)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)).*$/i;
+	identityRegex = /^ *(identity) *$/i;
+	transformRegex = /^ *(transform)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){16}).*$/i;
+	translateRegex = /^ *(translate)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){3}).*$/i;
+	scaleRegex = /^ *(scale)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){3}).*$/i;
+	rotateRegex = /^ *(rotate)(( +[-+]?[0-9]*){4})$/i;
+	surfaceRegex = /^ *(surface)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)){3}).*$/i;
+	ambientRegex = /^ *(ambient)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)).*$/i;
+	diffuseRegex = /^ *(diffuse)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)).*$/i;
+	specularRegex = /^ *(specular)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)).*$/i;
+	materialModeRegex = /^ *((add)?materialmode(s)?) +([A-Za-z0-9_\-]+).*$/i;
+	collisionRegex = /^ *(collision) +(on|off).*$/i;
+	lightsamplingRegex = /^ *(lightsampling) +(facet|vertex).*$/i;
+	geometrysamplingRegex = /^ *(geometrysampling) +(pointcloud|wireframe|solid).*$/i;
 
 	jsZip = null;
 	jsZipUtils = null;

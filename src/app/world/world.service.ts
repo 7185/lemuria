@@ -4,9 +4,13 @@ import {EngineService, DEG} from './../engine/engine.service'
 import {ObjectService} from './object.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
+import {colors} from '../utils/colors'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
   BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, Object3D} from 'three'
 export const RES_PATH = config.url.resource
+
+const isInvisible = /create[^;]+visible\s+(no|off)/i
+const isColored = /create[^;]+color\s+(\w+)/i
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
@@ -88,18 +92,47 @@ export class WorldService {
     })
   }
 
-  public loadItem(item: string, pos: Vector3, rot: Vector3) {
+  public execActions(item: Group) {
+    let color = null
+    const invisible = isInvisible.exec(item.userData.act)
+    if (invisible !== null) {
+      item.visible = false
+    } else {
+      const colored = isColored.exec(item.userData.act)
+      if (colored !== null) {
+        color = colored[1]
+        if (color in colors) {
+          color = colors[color]
+        }
+      }
+    }
+    item.traverse((child: Object3D) => {
+      if (child instanceof Mesh) {
+        if (color !== null) {
+          child.material = new MeshPhongMaterial({color})
+        }
+      }
+    })
+  }
+
+  public loadItem(item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null) {
     if (!item.endsWith('.rwx')) {
       item += '.rwx'
     }
     this.objSvc.loadObject(item).then((o) => {
       const g = o.clone()
       g.name = item
+      g.userData.date = date
+      g.userData.desc = desc
+      g.userData.act = act
       g.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           child.castShadow = true
         }
       })
+      if (act) {
+        this.execActions(g)
+      }
       g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
       g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
       this.engine.addObject(g)
@@ -143,7 +176,8 @@ export class WorldService {
     this.avatarList = data.avatars
     this.setAvatar(this.avatarList[0], this.avatar)
     for (const item of data.objects) {
-      this.loadItem(item[0], new Vector3(item[1], item[2], item[3]), new Vector3(item[4], item[5], item[6]))
+      this.loadItem(item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
+                    item[0], item[8], item[9])
     }
     // Update avatars
     for (const u of this.userSvc.userList) {

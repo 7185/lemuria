@@ -27,6 +27,7 @@ prop = Table(
     Column('id', Integer, primary_key=True),
     Column('wid', Integer),
     Column('uid', Integer),
+    Column('date', Integer),
     Column('name', Text),
     Column('x', Integer),
     Column('y', Integer),
@@ -60,6 +61,8 @@ async def import_world(name):
         del(w['objects'])
         await conn.execute(world.update().where(world.c.id==wid).values(data=json.dumps(w)))
         for o in objects:
-            await conn.execute(prop.insert().values(wid=wid, uid=1, name=o[0], x=o[1], y=o[2], z=o[3], pi=o[4], ya=o[5], ro=o[6]))
+            await conn.execute(prop.insert().values(wid=wid, uid=1, date=o[0], name=o[1],
+                                                    x=o[2], y=o[3], z=o[4], pi=o[5], ya=o[6], ro=o[7],
+                                                    desc=o[8], act=o[9]))
 
 # trio.run(init_db)

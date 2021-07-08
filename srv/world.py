@@ -26,7 +26,7 @@ class World:
                 self._objects = []
                 result = await conn.execute(f"select * from prop where wid = {self.world_id}")
                 for l in await result.fetchall():
-                    self._objects.append(list(l)[3:10])
+                    self._objects.append(list(l)[3:13])
             self._resolved = True
     
     @property
