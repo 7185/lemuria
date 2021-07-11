@@ -6,7 +6,7 @@
     "michel", "jeanne", "robin", "pierre", "steven", "thierry", "julien", "fred",
     "damien", "eve", "catherine", "mere_noel", "stephanie", "mariee1", "poule1", "lapin1"
   ],
-  "objects":  [
-      ["tracteur1", 0, 0, 0]
+  "objects": [
+    [0, "tracteur1", 0, 0, 0, 0, 0, 0, null, null]
   ]
 }
