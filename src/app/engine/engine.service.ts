@@ -1,10 +1,12 @@
 import {Subject} from 'rxjs'
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
-  AmbientLight, BoxHelper, Clock, Material, PerspectiveCamera, Raycaster, Scene, GridHelper, Group,
-  Vector2, Vector3, WebGLRenderer, DirectionalLight, PCFSoftShadowMap, CameraHelper, Object3D, Spherical
+  AmbientLight, BoxHelper, Clock, Material, PerspectiveCamera, Raycaster, Scene, GridHelper, Group, Fog,
+  Vector2, Vector3, WebGLRenderer, DirectionalLight, PCFSoftShadowMap, CameraHelper, Object3D, Spherical,
+  Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial
 } from 'three'
-
+import {Octree} from 'three/examples/jsm/math/Octree'
+import {Capsule} from 'three/examples/jsm/math/Capsule'
 import {UserService} from './../user/user.service'
 import {config} from '../app.config'
 
@@ -29,6 +31,10 @@ export class EngineService implements OnDestroy {
   private avatar: Group
   private buildMode = false
   private selectedObject: Group
+
+  private playerCollider: Capsule
+  private worldOctree: Octree
+  private capsuleMaterial: MeshBasicMaterial
 
   private frameId: number = null
   private deltaSinceLastFrame = 0
@@ -84,6 +90,10 @@ export class EngineService implements OnDestroy {
     this.light.position.z = 100
     this.scene.add(this.light)
 
+    // this.scene.fog = new Fog(0xCCCCCC, 10, 50)
+    this.worldOctree = new Octree()
+    this.capsuleMaterial = new MeshBasicMaterial({color: 0x00ff00, wireframe: true})
+
     this.dirLight = new DirectionalLight(0x10100f, 10)
     this.dirLight.name = 'dirlight'
     this.dirLight.userData.persist = true
@@ -103,6 +113,36 @@ export class EngineService implements OnDestroy {
       this.scene.add(shadowHelper)
       const gridHelper = new GridHelper(1000, 100, 0xff0000, 0x00ffff)
       this.scene.add(gridHelper)
+    }
+  }
+
+  public updateCapsule() {
+    const capsuleHeight = this.camera.position.y * 1.11
+    const capsuleRadius = 0.35
+    const capsulePos = this.player.position
+    this.playerCollider = new Capsule(new Vector3(capsulePos.x, capsulePos.y + capsuleRadius, capsulePos.z),
+                                      new Vector3(capsulePos.x, capsulePos.y + capsuleHeight - capsuleRadius, capsulePos.z),
+                                      capsuleRadius)
+    if (config.debug) {
+      for (const item of this.player.children.filter(i => i.name === 'capsule')) {
+        this.player.remove(item)
+      }
+      const capsule = new Group()
+      capsule.name = 'capsule'
+      const cylinderGeometry = new CylinderGeometry(capsuleRadius, capsuleRadius, capsuleHeight - capsuleRadius * 2, 8)
+      const topSphereGeometry = new SphereGeometry(capsuleRadius)
+      const bottomSphereGeometry = new SphereGeometry(capsuleRadius)
+      const cylinder = new Mesh(cylinderGeometry, this.capsuleMaterial)
+      const topSphere = new Mesh(topSphereGeometry, this.capsuleMaterial)
+      const bottomSphere = new Mesh(bottomSphereGeometry, this.capsuleMaterial)
+      cylinder.position.set(0, capsuleHeight/2, 0)
+      topSphere.position.set(0, capsuleHeight - capsuleRadius, 0)
+      bottomSphere.position.set(0, capsuleRadius, 0)
+      capsule.add(cylinder)
+      capsule.add(topSphere)
+      capsule.add(bottomSphere)
+      capsule.position.set(capsulePos.x, capsulePos.y, capsulePos.z)
+      this.player.attach(capsule)
     }
   }
 
@@ -141,6 +181,12 @@ export class EngineService implements OnDestroy {
     this.scene.add(group)
   }
 
+  public addMeshToOctree(group: Group) {
+    setTimeout(() => this.worldOctree.fromGraphNode(group),
+     100 * Math.sqrt((group.position.x - this.player.position.x) ** 2 + (group.position.z - this.player.position.z) ** 2)
+    )
+  }
+
   public removeObject(group: Group) {
     if (group === this.selectedObject) {
       this.buildMode = false
@@ -164,6 +210,7 @@ export class EngineService implements OnDestroy {
     }
       this.buildMode = true
       this.selectedObject = item
+      console.log(item.name, item.position, item.userData.act)
       this.selectionBox = new BoxHelper(item, 0xffff00)
       ;(this.selectionBox.material as Material).depthTest = false
       this.scene.add(this.selectionBox)
@@ -399,7 +446,6 @@ export class EngineService implements OnDestroy {
     this.selectionBox.update()
   }
 
-
   private moveCamera() {
     const cameraDirection = new Vector3()
     this.activeCamera.getWorldDirection(cameraDirection)
@@ -463,6 +509,18 @@ export class EngineService implements OnDestroy {
     const sph = new Spherical()
     sph.setFromVector3(cameraDirection)
     this.compass.next(Math.round(sph.theta / DEG))
+
+    if (this.playerCollider) {
+      this.playerCollider.start = new Vector3(this.player.position.x, this.player.position.y + 0.35, this.player.position.z)
+      this.playerCollider.end = new Vector3(this.player.position.x, this.player.position.y + 1.75 - 0.35, this.player.position.z)
+
+      const result = this.worldOctree.capsuleIntersect(this.playerCollider)
+      if (result !== false) {
+        this.capsuleMaterial.color.setHex(0xff0000)
+      } else {
+        this.capsuleMaterial.color.setHex(0x00ff00)
+      }
+    }
   }
 
   private moveUsers() {

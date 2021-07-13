@@ -65,11 +65,12 @@ function getFinalTransform( ctx ) {
 
 }
 
-function triangulateFacesWithShapes( vertices, loop ) {
+function triangulateFacesWithShapes( vertices, uvs, loop ) {
 
 	// Mostly crediting @neeh for their answer: https://stackoverflow.com/a/42402681
 	const _ctr = new Vector3();
 
+	let _basis = new Matrix4();
 	const _plane = new Plane();
 	const _q = new Quaternion();
 	const _y = new Vector3();
@@ -80,8 +81,11 @@ function triangulateFacesWithShapes( vertices, loop ) {
 
 	let _tmp = new Vector3();
 
+	let newVertices = [];
+	let newUvs = [];
 	let faces = [];
 
+	let offset = vertices.length / 3;
 	let vertexMap = {};
 
 	// Compute centroid
@@ -127,6 +131,8 @@ function triangulateFacesWithShapes( vertices, loop ) {
 	_x.copy( X ).applyQuaternion( _q );
 	_y.crossVectors( _x, _z );
 	_y.normalize();
+	_basis.makeBasis( _x, _y, _z );
+	_basis.setPosition( _ctr );
 
 	// Project the 3D vertices on the 2D plane
 	let projVertices = [];
@@ -135,6 +141,7 @@ function triangulateFacesWithShapes( vertices, loop ) {
 		const currentVertex = new Vector3( vertices[ loop[ i ] * 3 ], vertices[ loop[ i ] * 3 + 1 ], vertices[ loop[ i ] * 3 + 2 ] );
 		_tmp.subVectors( currentVertex, _ctr );
 		projVertices.push( new Vector2( _tmp.dot( _x ), _tmp.dot( _y ) ) );
+		newUvs.push( uvs[ loop[ i ] * 2 ], uvs[ loop[ i ] * 2 + 1 ] );
 
 	}
 
@@ -142,16 +149,36 @@ function triangulateFacesWithShapes( vertices, loop ) {
 	let shape = new Shape( projVertices );
 	let geometry = new ShapeBufferGeometry( shape );
 
+	geometry.applyMatrix4( _basis );
+
+	let bufferPosition = geometry.getAttribute( 'position' );
 	const shapeIndices = geometry.getIndex().array;
+
+	/*
+	* Replace the positions for each vertex in the newly computed (flat and planar) polygon with the ones from the original
+	* set of vertices it was fed with, thus "sealing" the geometry perfectly despite the vertices being duplicated.
+	*/
+	for ( let i = 0, lVertices = bufferPosition.count; i < lVertices; i ++ ) {
+
+		bufferPosition.setXYZ(
+			i,
+			vertices[ vertexMap[ i ] * 3 ],
+			vertices[ vertexMap [ i ] * 3 + 1 ],
+			vertices[ vertexMap [ i ] * 3 + 2 ]
+		);
+
+	}
 
 	// Use the vertex indices from each newly computed 2D face to extend our current set
 	for ( let i = 0, lFaces = shapeIndices.length; i < lFaces; i ++ ) {
 
-		faces.push( vertexMap[ shapeIndices[ i ] ] );
+		faces.push( shapeIndices[ i ] + offset );
 
 	}
 
-	return faces;
+	newVertices.push(...Array.from(bufferPosition.array));
+
+	return [ newVertices, newUvs, faces ];
 
 }
 
@@ -159,7 +186,7 @@ function makeThreeMaterial( rwxMaterial, folder, texExtension = "jpg", maskExten
   "zip", jsZip = null, jsZipUtils = null ) {
 
 	let materialDict = {};
-		
+
 	if ( rwxMaterial.materialmode == MaterialMode.NULL ) {
 
 		materialDict[ 'side' ] = FrontSide;
@@ -273,11 +300,7 @@ function makeThreeMaterial( rwxMaterial, folder, texExtension = "jpg", maskExten
 					// Notify three.js that this material has been updated (to re-render it)
 					phongMat.needsUpdate = true;
 
-				}, function error( e ) {
-
-					throw e;
-
-				} );
+				});
 
 			} else if ( maskExtension != 'zip' ) {
 
@@ -418,11 +441,23 @@ function addPolygon( ctx, indices ) {
 
 	}
 
-	const newFaces =
-		triangulateFacesWithShapes( ctx.currentBufferVertices, indices );
+	const [ newVertices, newUVs, newFaces ] =
+		triangulateFacesWithShapes( ctx.currentBufferVertices, ctx.currentBufferUVs, indices );
 
-	ctx.currentBufferFaceCount += newFaces.length / 3;
-	ctx.currentBufferFaces.push( ...newFaces )
+	ctx.currentBufferVertices.push( ...newVertices );
+	ctx.currentBufferUVs.push( ...newUVs );
+
+	for ( let lf = 0; lf < newFaces.length; lf += 3 ) {
+
+		const a = newFaces[ lf ];
+		const b = newFaces[ lf + 1 ];
+		const c = newFaces[ lf + 2 ];
+
+		// Add new face
+		ctx.currentBufferFaceCount ++;
+		ctx.currentBufferFaces.push( a, b, c );
+
+	}
 
 }
 
@@ -476,7 +511,6 @@ function loadCurrentTransform( ctx ) {
 
 class RWXMaterial {
 
-	
 	// Material related properties start here
 	color = [ 0.0, 0.0, 0.0 ]; // Red, Green, Blue
 	surface = [ 0.0, 0.0, 0.0 ]; // Ambience, Diffusion, Specularity
@@ -493,7 +527,7 @@ class RWXMaterial {
 	// End of material related properties
 
 	transform = new Matrix4();
-		
+
 	constructor() {
 
 	}
@@ -516,7 +550,7 @@ class RWXMaterial {
 			sign += tm.toString();
 
 		} );
-			
+
 		sign += this.materialmode.toString();
 
 		if ( this.texture != null ) {
@@ -552,7 +586,7 @@ class RWXMaterialManager {
 	currentMaterialID = null;
 	currentMaterialList = [];
 	currentMaterialSignature = "";
-	
+
 	constructor( folder, texExtension = "jpg", maskExtension =
 	  "zip", jsZip = null, jsZipUtils = null ) {
 

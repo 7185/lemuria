@@ -70,6 +70,8 @@ export class WorldService {
     this.avatar.name = 'avatar'
     this.avatar.rotation.copy(new Euler(0, Math.PI, 0))
     this.engine.attachCam(this.avatar)
+
+    // listeners
     this.userSvc.listChanged.subscribe((userList: User[]) => {
       for (const user of this.engine.objects().filter(o => o.userData?.player)) {
         if (userList.map(u => u.id).indexOf(user.name) === -1) {
@@ -135,6 +137,7 @@ export class WorldService {
       }
       g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
       g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
+      this.engine.addMeshToOctree(g)
       this.engine.addObject(g)
     })
   }
@@ -165,6 +168,7 @@ export class WorldService {
       if (group.name === 'avatar') {
         this.engine.setCameraOffset(group.userData.height * 0.9)
       }
+      this.engine.updateCapsule()
     })
   }
 
