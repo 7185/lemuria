@@ -62,9 +62,12 @@ export class WorldService {
     const floorMesh = new Mesh(floorGeometry, floorMaterial)
     floorMesh.receiveShadow = true
     floor.add(floorMesh)
+    floor.name = 'ground'
+    floor.userData.persist = true
     floor.position.y = 0
     floor.rotation.x = -Math.PI / 2
     this.engine.addObject(floor)
+    this.engine.addMeshToOctree(floor)
 
     this.avatar = new Group()
     this.avatar.name = 'avatar'
@@ -137,7 +140,6 @@ export class WorldService {
       }
       g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
       g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
-      this.engine.addMeshToOctree(g)
       this.engine.addObject(g)
     })
   }

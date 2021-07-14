@@ -12,6 +12,7 @@ import {config} from '../app.config'
 
 export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, ctrl, shift, esc, ins, del }
 export const DEG = Math.PI / 180
+const capsuleRadius = 0.35
 
 @Injectable({providedIn: 'root'})
 export class EngineService implements OnDestroy {
@@ -35,6 +36,8 @@ export class EngineService implements OnDestroy {
   private playerCollider: Capsule
   private worldOctree: Octree
   private capsuleMaterial: MeshBasicMaterial
+  private playerVelocity = new Vector3()
+  private playerOnFloor = true
 
   private frameId: number = null
   private deltaSinceLastFrame = 0
@@ -118,7 +121,6 @@ export class EngineService implements OnDestroy {
 
   public updateCapsule() {
     const capsuleHeight = this.camera.position.y * 1.11
-    const capsuleRadius = 0.35
     const capsulePos = this.player.position
     this.playerCollider = new Capsule(new Vector3(capsulePos.x, capsulePos.y + capsuleRadius, capsulePos.z),
                                       new Vector3(capsulePos.x, capsulePos.y + capsuleHeight - capsuleRadius, capsulePos.z),
@@ -173,8 +175,15 @@ export class EngineService implements OnDestroy {
     this.player.attach(this.avatar)
   }
 
-  public setCameraOffset(offset) {
+  public setCameraOffset(offset: number) {
     this.camera.position.y = offset
+  }
+
+  public refreshOctree() {
+    this.worldOctree = new Octree()
+    for (const item of this.scene.children.filter(i => i.name.endsWith('.rwx'))) {
+      this.addMeshToOctree(item as Group)
+    }
   }
 
   public addObject(group: Group) {
@@ -183,7 +192,7 @@ export class EngineService implements OnDestroy {
 
   public addMeshToOctree(group: Group) {
     setTimeout(() => this.worldOctree.fromGraphNode(group),
-     100 * Math.sqrt((group.position.x - this.player.position.x) ** 2 + (group.position.z - this.player.position.z) ** 2)
+      100 * Math.sqrt((group.position.x - this.player.position.x) ** 2 + (group.position.z - this.player.position.z) ** 2)
     )
   }
 
@@ -207,6 +216,7 @@ export class EngineService implements OnDestroy {
       this.selectedObject = null
       this.selectionBox.geometry.dispose()
       this.scene.remove(this.selectionBox)
+      this.refreshOctree()
     }
       this.buildMode = true
       this.selectedObject = item
@@ -454,14 +464,14 @@ export class EngineService implements OnDestroy {
       steps = 16 * this.deltaSinceLastFrame
     }
     if (this.controls[PressedKey.up]) {
-      this.player.position.addScaledVector(cameraDirection, steps)
+      this.playerVelocity.add(cameraDirection.multiplyScalar(steps))
     }
     if (this.controls[PressedKey.down]) {
-      this.player.position.addScaledVector(cameraDirection, -steps)
+      this.playerVelocity.add(cameraDirection.multiplyScalar(-steps))
     }
     if (this.controls[PressedKey.left]) {
       if (this.controls[PressedKey.shift]) {
-        this.player.position.addScaledVector(new Vector3(cameraDirection.z, 0, -cameraDirection.x), steps)
+        this.playerVelocity.add((new Vector3(cameraDirection.z, 0, -cameraDirection.x)).multiplyScalar(steps))
       } else {
         this.player.rotation.y += 0.1 * steps
         if (this.player.rotation.y > Math.PI) {
@@ -471,7 +481,7 @@ export class EngineService implements OnDestroy {
     }
     if (this.controls[PressedKey.right]) {
       if (this.controls[PressedKey.shift]) {
-        this.player.position.addScaledVector(new Vector3(-cameraDirection.z, 0, cameraDirection.x), steps)
+        this.playerVelocity.add(new Vector3(-cameraDirection.z, 0, cameraDirection.x).multiplyScalar(steps))
       } else {
         this.player.rotation.y -= 0.1 * steps
         if (this.player.rotation.y < -Math.PI) {
@@ -490,14 +500,41 @@ export class EngineService implements OnDestroy {
       }
     }
     if (this.controls[PressedKey.plus]) {
-      this.player.position.y += steps
+      this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(steps))
     }
     if (this.controls[PressedKey.minus]) {
-      this.player.position.y -= steps
+      this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(-steps))
     }
-    if (this.player.position.y < 0) {
-      this.player.position.y = 0
+
+    if (this.playerOnFloor) {
+      const damping = Math.exp(-3 * this.deltaSinceLastFrame) - 1
+      this.playerVelocity.addScaledVector(this.playerVelocity, damping)
+    } else {
+      this.playerVelocity.y -= 30 * this.deltaSinceLastFrame
     }
+
+    if (this.playerCollider) {
+      const deltaPosition = this.playerVelocity.clone().multiplyScalar(this.deltaSinceLastFrame)
+      this.playerCollider.translate(deltaPosition)
+      const result = this.worldOctree.capsuleIntersect(this.playerCollider)
+      this.playerOnFloor = false
+      if (result) {
+        this.capsuleMaterial.color.setHex(0xff0000)
+        this.playerOnFloor = result.normal.y < 0
+        if (!this.playerOnFloor) {
+          this.playerVelocity.addScaledVector(result.normal, - result.normal.dot(this.playerVelocity))
+        }
+        this.playerCollider.translate(result.normal.multiplyScalar(result.depth))
+      } else {
+        this.capsuleMaterial.color.setHex(0x00ff00)
+      }
+
+      this.player.position.copy(
+        new Vector3(this.playerCollider.start.x,
+          this.playerCollider.start.y - capsuleRadius,
+          this.playerCollider.start.z))
+    }
+
     const sky = this.scene.children.find(o => o.name === 'skybox')
     if (sky != null) {
       sky.position.copy(this.player.position)
@@ -506,21 +543,10 @@ export class EngineService implements OnDestroy {
     if (dirlight != null) {
       dirlight.position.copy(new Vector3(-50 + this.player.position.x, 80 + this.player.position.y, 10 + this.player.position.z))
     }
+    // compass
     const sph = new Spherical()
     sph.setFromVector3(cameraDirection)
     this.compass.next(Math.round(sph.theta / DEG))
-
-    if (this.playerCollider) {
-      this.playerCollider.start = new Vector3(this.player.position.x, this.player.position.y + 0.35, this.player.position.z)
-      this.playerCollider.end = new Vector3(this.player.position.x, this.player.position.y + 1.75 - 0.35, this.player.position.z)
-
-      const result = this.worldOctree.capsuleIntersect(this.playerCollider)
-      if (result !== false) {
-        this.capsuleMaterial.color.setHex(0xff0000)
-      } else {
-        this.capsuleMaterial.color.setHex(0x00ff00)
-      }
-    }
   }
 
   private moveUsers() {
