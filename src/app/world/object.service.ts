@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core'
-import {RWXLoader} from '../utils/rwxloader'
+import RWXLoader from 'three-rwx-loader'
 import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial} from 'three'
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'

@@ -31,6 +31,7 @@ export class EngineService implements OnDestroy {
   private dirLight: DirectionalLight
   private avatar: Group
   private buildMode = false
+  private flyMode = false
   private selectedObject: Group
 
   private playerCollider: Capsule
@@ -181,7 +182,7 @@ export class EngineService implements OnDestroy {
 
   public refreshOctree() {
     this.worldOctree = new Octree()
-    for (const item of this.scene.children.filter(i => i.name.endsWith('.rwx'))) {
+    for (const item of this.scene.children.filter(i => i.name === 'ground' || (i.name.endsWith('.rwx') && i.userData.notSolid !== true))) {
       this.addMeshToOctree(item as Group)
     }
   }
@@ -500,9 +501,11 @@ export class EngineService implements OnDestroy {
       }
     }
     if (this.controls[PressedKey.plus]) {
+      this.flyMode = true
       this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(steps))
     }
     if (this.controls[PressedKey.minus]) {
+      this.flyMode = true
       this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(-steps))
     }
 
@@ -510,7 +513,9 @@ export class EngineService implements OnDestroy {
       const damping = Math.exp(-3 * this.deltaSinceLastFrame) - 1
       this.playerVelocity.addScaledVector(this.playerVelocity, damping)
     } else {
-      this.playerVelocity.y -= 30 * this.deltaSinceLastFrame
+      if (!this.flyMode) {
+        this.playerVelocity.y -= 30 * this.deltaSinceLastFrame
+      }
     }
 
     if (this.playerCollider) {
@@ -520,9 +525,11 @@ export class EngineService implements OnDestroy {
       this.playerOnFloor = false
       if (result) {
         this.capsuleMaterial.color.setHex(0xff0000)
-        this.playerOnFloor = result.normal.y < 0
+        this.playerOnFloor = result.normal.y > 0
         if (!this.playerOnFloor) {
           this.playerVelocity.addScaledVector(result.normal, - result.normal.dot(this.playerVelocity))
+        } else {
+          this.flyMode = false
         }
         this.playerCollider.translate(result.normal.multiplyScalar(result.depth))
       } else {

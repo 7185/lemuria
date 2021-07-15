@@ -10,6 +10,7 @@ import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrappin
 export const RES_PATH = config.url.resource
 
 const isInvisible = /create[^;]+visible\s+(no|off)/i
+const isNotSolid = /create[^;]+solid\s+(no|off)/i
 const isColored = /create[^;]+color\s+(\w+)/i
 
 @Injectable({providedIn: 'root'})
@@ -99,6 +100,10 @@ export class WorldService {
 
   public execActions(item: Group) {
     let color = null
+    const notSolid = isNotSolid.exec(item.userData.act)
+    if (notSolid !== null) {
+      item.userData.notSolid = true
+    }
     const invisible = isInvisible.exec(item.userData.act)
     if (invisible !== null) {
       item.visible = false
