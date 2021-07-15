@@ -182,7 +182,8 @@ export class EngineService implements OnDestroy {
 
   public refreshOctree() {
     this.worldOctree = new Octree()
-    for (const item of this.scene.children.filter(i => i.name === 'ground' || (i.name.endsWith('.rwx') && i.userData.notSolid !== true))) {
+    this.worldOctree.fromGraphNode(this.scene.children.find(o => o.name === 'ground'))
+    for (const item of this.scene.children.filter(i => i.name.endsWith('.rwx') && i.userData.notSolid !== true)) {
       this.addMeshToOctree(item as Group)
     }
   }
@@ -508,13 +509,14 @@ export class EngineService implements OnDestroy {
       this.flyMode = true
       this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(-steps))
     }
-
+    const damping = Math.exp(-3 * this.deltaSinceLastFrame) - 1
     if (this.playerOnFloor) {
-      const damping = Math.exp(-3 * this.deltaSinceLastFrame) - 1
       this.playerVelocity.addScaledVector(this.playerVelocity, damping)
     } else {
-      if (!this.flyMode) {
+      if (!this.flyMode &&!this.controls[PressedKey.shift]) {
         this.playerVelocity.y -= 30 * this.deltaSinceLastFrame
+      } else {
+        this.playerVelocity.addScaledVector(this.playerVelocity, damping)
       }
     }
 
@@ -523,7 +525,7 @@ export class EngineService implements OnDestroy {
       this.playerCollider.translate(deltaPosition)
       const result = this.worldOctree.capsuleIntersect(this.playerCollider)
       this.playerOnFloor = false
-      if (result) {
+      if (result && !this.controls[PressedKey.shift]) {
         this.capsuleMaterial.color.setHex(0xff0000)
         this.playerOnFloor = result.normal.y > 0
         if (!this.playerOnFloor) {
