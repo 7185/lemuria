@@ -29,10 +29,14 @@ export class ObjectService {
       return this.objects.get(name)
     } else {
       const promise = new Promise((resolve, reject) => {
-        this.rwxLoader.load(name, (rwx: Group) => resolve(rwx.clone()), null, () => resolve(this.errorCone.clone()))
+        this.rwxLoader.load(name, (rwx: Group) => resolve(rwx), null, () => resolve(this.errorCone))
       })
       this.objects.set(name, promise)
       return promise
     }
+  }
+
+  cleanCache() {
+    this.objects = new Map()
   }
 }

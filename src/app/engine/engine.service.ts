@@ -193,9 +193,31 @@ export class EngineService implements OnDestroy {
   }
 
   public addMeshToOctree(group: Group) {
-    setTimeout(() => this.worldOctree.fromGraphNode(group),
-      100 * Math.sqrt((group.position.x - this.player.position.x) ** 2 + (group.position.z - this.player.position.z) ** 2)
-    )
+    if (group.userData.notSolid !== true) {
+      setTimeout(() => this.worldOctree.fromGraphNode(group),
+        100 * Math.sqrt((group.position.x - this.player.position.x) ** 2 + (group.position.z - this.player.position.z) ** 2)
+      )
+    }
+  }
+
+  public disposeMaterial(group: Group) {
+    group.traverse((child: Object3D) => {
+      if (child instanceof Mesh) {
+        if (child.material instanceof Array) {
+          for (const m of child.material) {
+            if (m.alphaMap != null) {
+              m.alphaMap.dispose()
+            }
+            m.dispose()
+          }
+        } else {
+          if (child.material.alphaMap != null) {
+            child.material.alphaMap.dispose()
+          }
+          child.material.dispose()
+        }
+      }
+    })
   }
 
   public removeObject(group: Group) {
@@ -205,6 +227,12 @@ export class EngineService implements OnDestroy {
       this.selectionBox.geometry.dispose()
       this.scene.remove(this.selectionBox)
     }
+    this.disposeMaterial(group)
+    group.traverse((child: Object3D) => {
+      if (child instanceof Mesh) {
+        child.geometry.dispose()
+      }
+    })
     this.scene.remove(group)
   }
 
@@ -218,11 +246,10 @@ export class EngineService implements OnDestroy {
       this.selectedObject = null
       this.selectionBox.geometry.dispose()
       this.scene.remove(this.selectionBox)
-      this.refreshOctree()
     }
       this.buildMode = true
       this.selectedObject = item
-      console.log(item.name, item.position, item.userData.act)
+      console.log(item.name, item.position, item.rotation, item.userData)
       this.selectionBox = new BoxHelper(item, 0xffff00)
       ;(this.selectionBox.material as Material).depthTest = false
       this.scene.add(this.selectionBox)
@@ -378,6 +405,7 @@ export class EngineService implements OnDestroy {
       }
       case 'Insert': {
         this.controls[PressedKey.ins] = value
+        console.log(this.renderer.info.memory)
         break
       }
       case 'Delete': {
@@ -542,6 +570,10 @@ export class EngineService implements OnDestroy {
         new Vector3(this.playerCollider.start.x,
           this.playerCollider.start.y - capsuleRadius,
           this.playerCollider.start.z))
+    }
+
+    for (const item of this.scene.children.filter(i => i.userData.sprite === true)) {
+      item.rotation.y = this.player.rotation.y
     }
 
     const sky = this.scene.children.find(o => o.name === 'skybox')

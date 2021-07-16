@@ -54,6 +54,10 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.engine.toggleCamera()
   }
 
+  public enableCollision(): void {
+    this.engine.refreshOctree()
+  }
+
   public ngOnInit(): void {
     this.http.getLogged().subscribe((u: any) => {
       this.name = u.name

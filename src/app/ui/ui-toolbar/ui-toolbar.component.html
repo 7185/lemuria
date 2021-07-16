@@ -27,6 +27,10 @@
       <fa-icon *ngIf="firstPerson" [icon]="['fas', 'eye']"></fa-icon>
       <fa-icon *ngIf="!firstPerson" [icon]="['fas', 'video']"></fa-icon>
     </button>
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" (click)="enableCollision()" btnCheckbox>
+      <label class="form-check-label text-info">Slow mode</label>
+    </div>
     <button class="d-inline-block btn btn-dark btn-circle" type="button">
       <div #compass>
         <fa-layers [fixedWidth]="true">

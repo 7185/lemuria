@@ -116,13 +116,14 @@ export class WorldService {
         }
       }
     }
-    item.traverse((child: Object3D) => {
-      if (child instanceof Mesh) {
-        if (color !== null) {
+    if (color != null) {
+      this.engine.disposeMaterial(item)
+      item.traverse((child: Object3D) => {
+        if (child instanceof Mesh) {
           child.material = new MeshPhongMaterial({color})
         }
-      }
-    })
+      })
+    }
   }
 
   public loadItem(item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null) {
@@ -154,15 +155,15 @@ export class WorldService {
       name += '.rwx'
     }
     this.objSvc.loadObject(name).then((o) => {
-      const g = o.clone()
-      g.traverse((child: Object3D) => {
+      o.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           child.castShadow = true
           child.receiveShadow = true
         }
       })
+      this.engine.disposeMaterial(o)
       group.clear()
-      group.add(g)
+      group.add(o)
       const box = new Box3()
       box.setFromObject(group)
       group.userData.height = box.max.y - box.min.y
@@ -183,6 +184,7 @@ export class WorldService {
     for (const item of this.engine.objects().filter(i => i.name.length > 0 && !i.userData?.persist)) {
       this.engine.removeObject(item as Group)
     }
+    this.objSvc.cleanCache()
     this.objSvc.setPath(data.path)
     this.avatarList = data.avatars
     this.setAvatar(this.avatarList[0], this.avatar)
