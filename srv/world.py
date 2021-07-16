@@ -43,3 +43,13 @@ class World:
             'path': self._path,
             'objects': self._objects
         }
+
+    @classmethod
+    async def get_list(self):
+        w = []
+        conn = await app.engine.connect()
+        result = await conn.execute(f"select id, name from world")
+        for l in await result.fetchall():
+            w.append({'id': l[0], 'name': l[1]})
+        return w
+

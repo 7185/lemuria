@@ -30,6 +30,12 @@ async def auth_session():
         return jsonify({'id': current_user.auth_id, 'name': await current_user.name}), 200
     return {}, 401
 
+@api_world.route('/', methods=['GET'])
+@login_required
+async def world_list():
+    from world import World
+    return jsonify(await World.get_list()), 200
+
 @api_world.route('/<world_id>', methods=['GET'])
 @login_required
 async def world(world_id):

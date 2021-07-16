@@ -7,11 +7,8 @@
           World <span class="caret"></span>
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
-          <li role="menuitem" (click)="connect(1)">
-            <button class="dropdown-item"><fa-icon [icon]="['fas', 'globe']"></fa-icon> Lemuria</button>
-          </li>
-          <li role="menuitem" (click)="connect(2)">
-            <button class="dropdown-item"><fa-icon [icon]="['fas', 'globe']"></fa-icon> Tibsland</button>
+          <li *ngFor="let w of worldlist" role="menuitem" (click)="connect(w.id)">
+            <button class="dropdown-item"><fa-icon [icon]="['fas', 'globe']"></fa-icon> {{w.name}}</button>
           </li>
         </ul>
       </div>

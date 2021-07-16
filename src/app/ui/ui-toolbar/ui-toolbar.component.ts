@@ -18,6 +18,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public firstPerson = true
   public name = 'Anonymous'
   public list: User[] = []
+  public worldlist = []
 
   public constructor(
     private renderer: Renderer2,
@@ -57,6 +58,9 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.http.getLogged().subscribe((u: any) => {
       this.name = u.name
       this.userSvc.currentName = u.name
+      this.http.worlds().subscribe((w: any) => {
+        this.worldlist = w
+      })
     })
     this.userSvc.listChanged.subscribe((l) => this.list = l)
   }

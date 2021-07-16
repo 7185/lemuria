@@ -83,6 +83,10 @@ export class HttpService extends HttpClient {
     return this.get(`${this.baseUrl}/world/${worldId}`)
   }
 
+  public worlds() {
+    return this.get(`${this.baseUrl}/world/`)
+  }
+
   private hasExpired(): boolean {
     if (this.expiration === 0) {
       return true
