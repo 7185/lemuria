@@ -10,6 +10,7 @@ class World:
         self._avatars = None
         self._welcome = None
         self._path = None
+        self._entry = '0N 0W'
         self._objects = None
 
     async def _resolve(self):
@@ -23,6 +24,8 @@ class World:
                 self._avatars = d['avatars']
                 self._welcome = d['welcome']
                 self._path = d['path']
+                if 'entry' in d:
+                    self._entry = d['entry'] or '0N 0W'
                 self._objects = []
                 result = await conn.execute(f"select * from prop where wid = {self.world_id}")
                 for l in await result.fetchall():
@@ -41,6 +44,7 @@ class World:
             'avatars': self._avatars,
             'welcome': self._welcome,
             'path': self._path,
+            'entry': self._entry,
             'objects': self._objects
         }
 

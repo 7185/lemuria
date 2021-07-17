@@ -98,7 +98,7 @@ export class EngineService implements OnDestroy {
     this.worldOctree = new Octree()
     this.capsuleMaterial = new MeshBasicMaterial({color: 0x00ff00, wireframe: true})
 
-    this.dirLight = new DirectionalLight(0x10100f, 10)
+    this.dirLight = new DirectionalLight(0xffffff, 0.5)
     this.dirLight.name = 'dirlight'
     this.dirLight.userData.persist = true
     this.dirLight.position.set(-50, 80, 10)
@@ -297,6 +297,30 @@ export class EngineService implements OnDestroy {
     this.avatar.visible = this.activeCamera === this.thirdCamera
   }
 
+  public posToString(pos: Vector3): string {
+    return (Math.abs(pos.z) / 10).toFixed(2).concat(pos.z >= 0 ? 'N' : 'S') + ' ' +
+      (Math.abs(pos.x) / 10).toFixed(2).concat(pos.x >= 0 ? 'W' : 'E')
+  }
+
+  public stringToPos(pos: string): Vector3 {
+    const r = new Vector3()
+    const m = /([+-]?([0-9]*[.])?[0-9]+)(N|S)\s([+-]?([0-9]*[.])?[0-9]+)(W|E).*/i.exec(pos)
+    if (m !== null) {
+      r.z = Number.parseFloat(m[1]) * (m[3] === 'N' ? 10 : -10)
+      r.x = Number.parseFloat(m[4]) * (m[6] === 'W' ? 10 : -10)
+    }
+    console.log('convert', r)
+    return r
+  }
+
+  public teleport(pos: Vector3 | string): void {
+    if (typeof pos === 'string') {
+      pos = this.stringToPos(pos)
+    }
+    this.player.position.copy(pos)
+    this.updateCapsule()
+  }
+
   private render(): void {
     this.frameId = requestAnimationFrame(() => {
       this.render()
@@ -405,11 +429,17 @@ export class EngineService implements OnDestroy {
       }
       case 'Insert': {
         this.controls[PressedKey.ins] = value
-        console.log(this.renderer.info.memory)
         break
       }
       case 'Delete': {
         this.controls[PressedKey.del] = value
+        break
+      }
+      case 'F10': {
+        if (value) {
+          console.log(this.renderer.info.memory)
+          console.log(this.posToString(this.player.position))
+        }
         break
       }
       default: {

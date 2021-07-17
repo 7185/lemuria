@@ -65,7 +65,7 @@ export class WorldService {
     floor.add(floorMesh)
     floor.name = 'ground'
     floor.userData.persist = true
-    floor.position.y = 0
+    floor.position.y = -0.01
     floor.rotation.x = -Math.PI / 2
     this.engine.addObject(floor)
     this.engine.addMeshToOctree(floor)
@@ -191,6 +191,9 @@ export class WorldService {
     for (const item of data.objects) {
       this.loadItem(item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
                     item[0], item[8], item[9])
+    }
+    if (data.entry) {
+      this.engine.teleport(data.entry)
     }
     // Update avatars
     for (const u of this.userSvc.userList) {
