@@ -12,28 +12,29 @@ export const RES_PATH = config.url.resource
 const isInvisible = /create[^;]+visible\s+(no|off)/i
 const isNotSolid = /create[^;]+solid\s+(no|off)/i
 const isColored = /create[^;]+color\s+(\w+)/i
+const isTextured = /create[^;]+texture\s+(\w+)/i
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
 
   public avatarList: string[] = []
   private avatar: Group
+  private textureLoader: TextureLoader
 
   constructor(private engine: EngineService, private userSvc: UserService, private objSvc: ObjectService) {
   }
 
   initWorld() {
-    const loader = new TextureLoader()
-
+    this.textureLoader = new TextureLoader()
     const skyGeometry = new BoxGeometry(100, 100, 100)
 
     const skyMaterials = []
-    const textureFt = loader.load(`${RES_PATH}/textures/faesky02back.jpg`)
-    const textureBk = loader.load(`${RES_PATH}/textures/faesky02front.jpg`)
-    const textureUp = loader.load(`${RES_PATH}/textures/faesky02up.jpg`)
-    const textureDn = loader.load(`${RES_PATH}/textures/faesky02down.jpg`)
-    const textureRt = loader.load(`${RES_PATH}/textures/faesky02right.jpg`)
-    const textureLf = loader.load(`${RES_PATH}/textures/faesky02left.jpg`)
+    const textureFt = this.textureLoader.load(`${RES_PATH}/textures/faesky02back.jpg`)
+    const textureBk = this.textureLoader.load(`${RES_PATH}/textures/faesky02front.jpg`)
+    const textureUp = this.textureLoader.load(`${RES_PATH}/textures/faesky02up.jpg`)
+    const textureDn = this.textureLoader.load(`${RES_PATH}/textures/faesky02down.jpg`)
+    const textureRt = this.textureLoader.load(`${RES_PATH}/textures/faesky02right.jpg`)
+    const textureLf = this.textureLoader.load(`${RES_PATH}/textures/faesky02left.jpg`)
     textureUp.center = new Vector2(0.5, 0.5)
     textureUp.rotation = Math.PI / 2
     textureDn.center = new Vector2(0.5, 0.5)
@@ -52,7 +53,7 @@ export class WorldService {
     skybox.userData.persist = true
     this.engine.addObject(skybox)
 
-    const floorTexture = loader.load(`${RES_PATH}/textures/terrain17.jpg`)
+    const floorTexture = this.textureLoader.load(`${RES_PATH}/textures/terrain17.jpg`)
     floorTexture.wrapS = RepeatWrapping
     floorTexture.wrapT = RepeatWrapping
     floorTexture.repeat.set(128, 128)
@@ -100,6 +101,7 @@ export class WorldService {
 
   public execActions(item: Group) {
     let color = null
+    let textureMat = null
     const notSolid = isNotSolid.exec(item.userData.act)
     if (notSolid !== null) {
       item.userData.notSolid = true
@@ -114,6 +116,15 @@ export class WorldService {
         if (color in colors) {
           color = colors[color]
         }
+      } else {
+        const textured = isTextured.exec(item.userData.act)
+        if (textured !== null) {
+          textureMat = textured[1]
+          if (!textureMat.endsWith('.jpg')) {
+            textureMat += '.jpg'
+          }
+          textureMat = this.objSvc.loadTexture(textureMat, this.textureLoader)
+        }
       }
     }
     if (color != null) {
@@ -121,6 +132,13 @@ export class WorldService {
       item.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           child.material = new MeshPhongMaterial({color})
+        }
+      })
+    } else if (textureMat != null) {
+      this.engine.disposeMaterial(item)
+      item.traverse((child: Object3D) => {
+        if (child instanceof Mesh) {
+          child.material = textureMat
         }
       })
     }

@@ -309,7 +309,6 @@ export class EngineService implements OnDestroy {
       r.z = Number.parseFloat(m[1]) * (m[3] === 'N' ? 10 : -10)
       r.x = Number.parseFloat(m[4]) * (m[6] === 'W' ? 10 : -10)
     }
-    console.log('convert', r)
     return r
   }
 
@@ -602,7 +601,7 @@ export class EngineService implements OnDestroy {
           this.playerCollider.start.z))
     }
 
-    for (const item of this.scene.children.filter(i => i.userData.sprite === true)) {
+    for (const item of this.scene.children.filter(i => i.userData.rwx != null && i.userData.rwx.axisAlignment !== 'none')) {
       item.rotation.y = this.player.rotation.y
     }
 
