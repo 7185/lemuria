@@ -5,6 +5,7 @@ import {UserService} from './../../user/user.service'
 import {AfterViewInit, Component, ElementRef, OnInit, Renderer2, ViewChild} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import {User} from '../../user/user.model'
+import { Vector3 } from 'three'
 
 @Component({
   selector: 'app-ui-toolbar',
@@ -17,6 +18,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
 
   public firstPerson = true
   public name = 'Anonymous'
+  public userId: string
   public list: User[] = []
   public worldlist = []
 
@@ -58,8 +60,14 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.engine.refreshOctree()
   }
 
+  public join(userId: string) {
+    const user = this.userSvc.userList.find(v => v.id === userId)
+    this.engine.teleport(new Vector3(user.x, user.y, user.z))
+  }
+
   public ngOnInit(): void {
     this.http.getLogged().subscribe((u: any) => {
+      this.userId = u.id
       this.name = u.name
       this.userSvc.currentName = u.name
       this.http.worlds().subscribe((w: any) => {

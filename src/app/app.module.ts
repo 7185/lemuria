@@ -14,6 +14,7 @@ import {UiChatZoneComponent} from './ui/ui-chat-zone/ui-chat-zone.component'
 import {AppRoutingModule, routingComponents} from './app-routing.module'
 
 import {
+  faBolt,
   faComments,
   faCircleNotch,
   faEye,
@@ -54,6 +55,7 @@ import {
 export class AppModule {
   constructor(private iconLibrary: FaIconLibrary) {
     iconLibrary.addIcons(
+      faBolt,
       faComments,
       faCircleNotch,
       faEye,

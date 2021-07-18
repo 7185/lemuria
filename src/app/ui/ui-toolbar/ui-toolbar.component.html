@@ -4,7 +4,7 @@
     <div class="nav navbar-nav">
       <div class="btn-group" dropdown>
         <div dropdownToggle type="button" class="nav-link dropdown-toggle">
-          World <span class="caret"></span>
+          World
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
           <li *ngFor="let w of worldlist" role="menuitem" (click)="connect(w.id)">
@@ -14,7 +14,7 @@
       </div>
       <div class="btn-group" dropdown [isDisabled]="!socket.connected">
         <div dropdownToggle type="button" class="nav-link dropdown-toggle">
-          Avatar <span class="caret"></span>
+          Avatar
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
           <li role="menuitem" *ngFor="let a of world.avatarList" (click)="changeAvatar(world.avatarList.indexOf(a))">
@@ -44,9 +44,20 @@
       </div>
     </button>
     <div class="nav navbar-nav ml-auto">
-      <button class="btn btn-info my-2 my-sm-0" type="button">
-        <fa-icon [icon]="['fas', 'users']"></fa-icon> {{ list.length }}
-      </button>
+      <div class="btn-group" dropdown>
+        <div dropdownToggle type="button" class="btn btn-info">
+          <fa-icon [icon]="['fas', 'users']" [fixedWidth]="true"></fa-icon> {{ list.length }}
+        </div>
+        <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
+          <li *ngFor="let u of list" role="menuitem" class="dropdown-item">
+            <fa-icon [icon]="['fas', 'user']"></fa-icon>
+            {{u.name}}
+            <button *ngIf="u.id !== userId" class="btn btn-sm btn-warning" (click)="join(u.id)" type="button" title="Join user">
+              <fa-icon [icon]="['fas', 'bolt']"></fa-icon>
+            </button>
+          </li>
+        </ul>
+      </div>
       <div class="btn-group" dropdown>
         <div dropdownToggle type="button" class="nav-link dropdown-toggle">
           <fa-icon [icon]="['fas', 'user']"></fa-icon> {{ name }} <span class="caret"></span>
