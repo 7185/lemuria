@@ -4,15 +4,10 @@ import {EngineService, DEG} from './../engine/engine.service'
 import {ObjectService} from './object.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
-import {colors} from '../utils/colors'
+import {AWActionParser} from 'aw-action-parser'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
   BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, Object3D} from 'three'
 export const RES_PATH = config.url.resource
-
-const isInvisible = /create[^;]+visible\s+(no|off)/i
-const isNotSolid = /create[^;]+solid\s+(no|off)/i
-const isColored = /create[^;]+color\s+(\w+)/i
-const isTextured = /create[^;]+texture\s+(\w+)/i
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
@@ -20,6 +15,7 @@ export class WorldService {
   public avatarList: string[] = []
   private avatar: Group
   private textureLoader: TextureLoader
+  private actionParser = new AWActionParser()
 
   constructor(private engine: EngineService, private userSvc: UserService, private objSvc: ObjectService) {
   }
@@ -100,47 +96,40 @@ export class WorldService {
   }
 
   public execActions(item: Group) {
-    let color = null
-    let textureMat = null
-    const notSolid = isNotSolid.exec(item.userData.act)
-    if (notSolid !== null) {
-      item.userData.notSolid = true
-    }
-    const invisible = isInvisible.exec(item.userData.act)
-    if (invisible !== null) {
-      item.visible = false
-    } else {
-      const colored = isColored.exec(item.userData.act)
-      if (colored !== null) {
-        color = colored[1]
-        if (color in colors) {
-          color = colors[color]
+    const result = this.actionParser.parse(item.userData.act)
+    if (result.create != null) {
+      for (const cmd of result.create) {
+        if (cmd.commandType === 'solid') {
+          item.userData.notSolid = !cmd.value
         }
-      } else {
-        const textured = isTextured.exec(item.userData.act)
-        if (textured !== null) {
-          textureMat = textured[1]
-          if (!textureMat.endsWith('.jpg')) {
-            textureMat += '.jpg'
+        if (cmd.commandType === 'visible') {
+          item.visible = cmd.value
+        } else {
+          if (cmd.commandType === 'color') {
+            const color = `rgb(${cmd.color.r},${cmd.color.g},${cmd.color.b})`
+            this.engine.disposeMaterial(item)
+            item.traverse((child: Object3D) => {
+              if (child instanceof Mesh) {
+                child.material = new MeshPhongMaterial({color})
+              }
+            })
+          } else {
+            if (cmd.commandType === 'texture') {
+              let textureMat = cmd.texture
+              if (!textureMat.endsWith('.jpg')) {
+                textureMat += '.jpg'
+              }
+              textureMat = this.objSvc.loadTexture(textureMat, this.textureLoader)
+              this.engine.disposeMaterial(item)
+              item.traverse((child: Object3D) => {
+                if (child instanceof Mesh) {
+                  child.material = textureMat
+                }
+              })
+            }
           }
-          textureMat = this.objSvc.loadTexture(textureMat, this.textureLoader)
         }
       }
-    }
-    if (color != null) {
-      this.engine.disposeMaterial(item)
-      item.traverse((child: Object3D) => {
-        if (child instanceof Mesh) {
-          child.material = new MeshPhongMaterial({color})
-        }
-      })
-    } else if (textureMat != null) {
-      this.engine.disposeMaterial(item)
-      item.traverse((child: Object3D) => {
-        if (child instanceof Mesh) {
-          child.material = textureMat
-        }
-      })
     }
   }
 
