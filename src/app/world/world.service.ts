@@ -202,16 +202,8 @@ export class WorldService {
     if (data.entry) {
       this.engine.teleport(data.entry)
     }
-    // Update avatars
-    for (const u of this.userSvc.userList) {
-      const user = this.engine.objects().find(o => o.name === u.id)
-      if (user != null) {
-        if (u.avatar >= this.avatarList.length) {
-          u.avatar = 0
-        }
-        this.setAvatar(this.avatarList[u.avatar], user as Group)
-      }
-    }
+    // Trigger list update to create users
+    this.userSvc.listChanged.next(this.userSvc.userList)
   }
 
   private addUser(u: User) {

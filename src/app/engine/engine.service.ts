@@ -150,6 +150,11 @@ export class EngineService implements OnDestroy {
   }
 
   public createTextLabel(group: Group) {
+    // avoid duplicate labels
+    const oldLabel = document.getElementById('label-' + group.name)
+    if (oldLabel != null) {
+      oldLabel.remove()
+    }
     const div = document.createElement('div')
     div.className = 'text-label'
     div.id = 'label-' + group.name
