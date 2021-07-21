@@ -168,9 +168,9 @@ export class WorldService {
           child.receiveShadow = true
         }
       })
-      this.engine.disposeMaterial(o)
+      this.engine.disposeMaterial(group)
       group.clear()
-      group.add(o)
+      group.add(o.clone())
       const box = new Box3()
       box.setFromObject(group)
       group.userData.height = box.max.y - box.min.y
