@@ -30,7 +30,12 @@ export class SocketService {
         this.disconnect()
       })
       this.posTimer = interval(200).subscribe(() => {
-        const pos: [Vector3, Vector3] = this.engineSvc.getPosition()
+        const pos: [Vector3, Vector3] = [new Vector3(), new Vector3()]
+        for (const [i, vec] of this.engineSvc.getPosition().entries()) {
+          for (const [a, v] of Object.entries(vec)) {
+            pos[i][a] = +v.toFixed(2)
+          }
+        }
         if (!(this.lastSentPos[0].equals(pos[0]) && this.lastSentPos[1].equals(pos[1]))) {
           this.sendMessage({type: 'pos', data: {pos: pos[0], ori: pos[1]}})
           this.lastSentPos[0].copy(pos[0])

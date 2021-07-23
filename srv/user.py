@@ -69,4 +69,6 @@ class User(AuthUser):
 
 async def broadcast(message):
     for user in [u for u in authorized_users if u.connected]:
+        if message['type'] == 'pos' and message['user'] == user.auth_id:
+            continue
         await user.queue.put(message)

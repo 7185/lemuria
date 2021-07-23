@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 
 import asks
@@ -109,8 +108,12 @@ class Bot(User):
         await self._callback('on_self_msg', msg)
 
     async def send_position(self) -> None:
-        await self.send({'type': 'pos', 'data': {'pos': {'x': self.x, 'y': self.y, 'z': self.z},
-                                                 'ori': {'x': self.roll, 'y': self.yaw, 'z': self.pitch}}})
+        await self.send({'type': 'pos', 'data': {'pos': {'x': round(self.x, 2),
+                                                         'y': round(self.y, 2), 
+                                                         'z': round(self.z, 2)},
+                                                 'ori': {'x': round(self.roll),
+                                                         'y': round(self.yaw),
+                                                         'z': round(self.pitch)}}})
 
     async def change_avatar(self, avatar: int) -> None:
         self.avatar = avatar
