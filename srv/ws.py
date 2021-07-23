@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import trio
 import uuid
 from functools import wraps
 from quart import websocket, json
@@ -7,46 +6,26 @@ from config import Config
 from user import authorized_users, broadcast, User
 
 
-def collect_websocket(func):
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        u = User.current()
-        if u is None:
-            return
-        if u.queue_send is None:
-            u.queue_send, u.queue_recv = trio.open_memory_channel(float('inf'))
-        u.websockets.add(websocket._get_current_object())
-        u.connected = True
-        await u.init_timer()
-        await broadcast({'type': 'join', 'data': await u.name})
-        await broadcast({'type': 'list', 'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
-        try:
-            return await func(u, *args, **kwargs)
-        finally:
-            u.websockets.remove(websocket._get_current_object())
-            if len(u.websockets) == 0:
-                u.connected = False
-                await broadcast({'type': 'part', 'data': await u.name})
-                await broadcast({'type': 'list', 'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
-    return wrapper
+async def sending(user: User):
+    await broadcast({'type': 'join', 'data': await user.name})
+    await broadcast({'type': 'list', 'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
+    try:
+        while True:
+            data = await user.queue.get()
+            for s in user.websockets:
+                await s.send_json(data)
+    finally:
+        user.websockets.remove(websocket._get_current_object())
+        if len(user.websockets) == 0:
+            user.connected = False
+            await broadcast({'type': 'part', 'data': await user.name})
+            await broadcast({'type': 'list', 'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
 
 
-@collect_websocket
-async def sending(user=None):
-    while True:
-        data = await user.queue_recv.receive()
-        data = json.loads(data)
-        for s in user.websockets:
-            await s.send_json(data)
-
-
-async def receiving():
-    u = User.current()
-    if u is None:
-        return
+async def receiving(user: User):
     while True:
         data = await websocket.receive_json()
-        await process_msg(u, data)
+        await process_msg(user, data)
 
 
 async def process_msg(user: User, data: dict) -> None:

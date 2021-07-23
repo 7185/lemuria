@@ -1,19 +1,20 @@
 #!/usr/bin/env python
-import trio
+import asyncio
 from typing import Callable
 from contextlib import suppress
 
 class Timer:
-    def __init__(self, timeout: int, callback: Callable, nursery: trio.Nursery) -> None:
+    def __init__(self, timeout: int, callback: Callable) -> None:
         self._timeout = timeout
         self._callback = callback
-        self._nursery = nursery
-        self._cancel_scope = trio.CancelScope()
+        self._task = None
 
     async def start(self) -> None:
-        with self._cancel_scope:
-            await trio.sleep(self._timeout)
-            self._nursery.start_soon(self._callback)
+        await asyncio.sleep(self._timeout)
+        self._task = asyncio.ensure_future(self._callback())
 
     async def cancel(self) -> None:
-        self._cancel_scope.cancel()
+        if self._task and not self._task.cancelled():
+            self._task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._task

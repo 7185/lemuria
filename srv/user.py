@@ -19,8 +19,7 @@ class User(AuthUser):
         super().__init__(auth_id)
         self._resolved = False
         self._name = None
-        self.queue_send = None
-        self.queue_recv = None
+        self.queue = None
         self.connected = False
         self.websockets = set()
         self.position = [0, 0, 0]
@@ -57,7 +56,7 @@ class User(AuthUser):
         if self.pos_timer:
             await self.pos_timer.cancel()
         if self.connected:
-            self.pos_timer = Timer(Config.POSITION_UPDATE_TICK, self.send_pos, g.nursery)
+            self.pos_timer = Timer(Config.POSITION_UPDATE_TICK, self.send_pos)
             await self.pos_timer.start()
 
     async def send_pos(self):
@@ -70,5 +69,4 @@ class User(AuthUser):
 
 async def broadcast(message):
     for user in [u for u in authorized_users if u.connected]:
-        msg = json.dumps(message)
-        await user.queue_send.send(msg)
+        await user.queue.put(message)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import uuid
+import asyncio
 from quart import request, jsonify, Blueprint
 from quart_auth import login_user, logout_user, login_required, current_user
 from user import User, authorized_users
@@ -13,6 +14,7 @@ async def auth_login():
     user_id = str(uuid.uuid4())[:8]
     u = User(user_id)
     u._name = data['login'] or 'Anonymous'+user_id
+    u.queue = asyncio.Queue()
     login_user(u, True)
     authorized_users.add(u)
     return jsonify({'id': user_id, 'name': await u.name}), 200
