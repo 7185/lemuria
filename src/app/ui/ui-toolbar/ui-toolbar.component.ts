@@ -36,7 +36,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       avatarId = 0
     }
     this.socket.sendMessage({type: 'avatar', data: avatarId})
-    this.world.setAvatar(this.world.avatarList[avatarId])
+    this.world.setAvatar(this.world.avatarList[avatarId].geometry)
   }
 
   public connect(worldId=1) {

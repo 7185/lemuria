@@ -12,7 +12,7 @@ export const RES_PATH = config.url.resource
 @Injectable({providedIn: 'root'})
 export class WorldService {
 
-  public avatarList: string[] = []
+  public avatarList: {name: string; geometry: string}[] = []
   private avatar: Group
   private textureLoader: TextureLoader
   private actionParser = new AWActionParser()
@@ -91,7 +91,7 @@ export class WorldService {
     this.userSvc.avatarChanged.subscribe((u) => {
       const user = this.engine.objects().find(o => o.name === u.id)
       const avatarId = u.avatar >= this.avatarList.length ? 0 : u.avatar
-      this.setAvatar(this.avatarList[avatarId], user as Group)
+      this.setAvatar(this.avatarList[avatarId].geometry, user as Group)
     })
   }
 
@@ -194,8 +194,10 @@ export class WorldService {
     }
     this.objSvc.cleanCache()
     this.objSvc.setPath(data.path)
-    this.avatarList = data.avatars
-    this.setAvatar(this.avatarList[0], this.avatar)
+    this.objSvc.loadAvatars().subscribe((list) => {
+      this.avatarList = list
+      this.setAvatar(this.avatarList[0].geometry, this.avatar)
+    })
     for (const item of data.objects) {
       this.loadItem(item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
                     item[0], item[8], item[9])
@@ -209,7 +211,7 @@ export class WorldService {
 
   private addUser(u: User) {
     if (u.name !== this.userSvc.currentName) {
-      let avatar = this.avatarList[u.avatar] || 'michel'
+      let avatar = this.avatarList[u.avatar].geometry || 'michel'
       if (!avatar.endsWith('.rwx')) {
         avatar += '.rwx'
       }

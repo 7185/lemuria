@@ -4,7 +4,7 @@ import {HttpClient, HttpHandler, HttpResponse} from '@angular/common/http'
 import {Router} from '@angular/router'
 import {config} from '../app.config'
 import {User} from '../user/user.model'
-import {catchError, tap} from 'rxjs/operators'
+import {catchError, tap, map} from 'rxjs/operators'
 
 
 @Injectable({providedIn: 'root'})
@@ -76,6 +76,27 @@ export class HttpService extends HttpClient {
         return throwError(error)
       }),
       tap(data => this.setLogged(new User(data)))
+    )
+  }
+
+  public avatars(path: string) {
+    return this.get(`${path}/avatars/avatars.dat`, {responseType: 'text'}).pipe(
+      map((a: any) => {
+        const list = []
+        a.split('\n').map((l: string) => l.trim()).forEach((line: string) => {
+          const i = list.length - 1
+          if (line === 'avatar') {
+            list.push({name: '', geometry: ''})
+          }
+          if (line.startsWith('name=')) {
+            list[i].name = line.substring(5)
+          }
+          if (line.startsWith('geometry=')) {
+            list[i].geometry = line.substring(9)
+          }
+        })
+        return list
+      })
     )
   }
 

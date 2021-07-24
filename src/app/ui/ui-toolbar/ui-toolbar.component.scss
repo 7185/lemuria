@@ -13,3 +13,8 @@ nav {
   font-size: 12px;
   line-height: 1.42857;
 }
+
+ul.dropdown-menu {
+  max-height: 50vw;
+  overflow-y: auto;
+}

@@ -1,4 +1,5 @@
 import {Injectable} from '@angular/core'
+import {HttpService} from './../network/http.service'
 import RWXLoader from 'three-rwx-loader'
 import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, RepeatWrapping, TextureLoader} from 'three'
 import * as JSZip from 'jszip'
@@ -13,7 +14,7 @@ export class ObjectService {
   private textures: Map<string, any> = new Map()
   private path = 'http://localhost'
 
-  constructor() {
+  constructor(private http: HttpService) {
     const cone = new Mesh(new ConeGeometry(0.5, 0.5, 3), new MeshBasicMaterial({color: 0x000000}))
     cone.position.y = 0.5
     this.errorCone = new Group().add(cone)
@@ -23,6 +24,10 @@ export class ObjectService {
   setPath(path: string) {
     this.path = path
     this.rwxLoader.setPath(`${this.path}/rwx`).setResourcePath(`${this.path}/textures`)
+  }
+
+  loadAvatars() {
+    return this.http.avatars(this.path)
   }
 
   loadTexture(name: string, loader: TextureLoader): any {
