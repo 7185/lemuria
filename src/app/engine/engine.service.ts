@@ -128,6 +128,7 @@ export class EngineService implements OnDestroy {
                                       capsuleRadius)
     if (config.debug) {
       for (const item of this.player.children.filter(i => i.name === 'capsule')) {
+        this.disposeMaterial(item as Group)
         this.player.remove(item)
       }
       const capsule = new Group()
@@ -575,7 +576,7 @@ export class EngineService implements OnDestroy {
     if (this.playerOnFloor) {
       this.playerVelocity.addScaledVector(this.playerVelocity, damping)
     } else {
-      if (!this.flyMode &&!this.controls[PressedKey.shift]) {
+      if (!this.flyMode && !this.controls[PressedKey.shift]) {
         this.playerVelocity.y -= 30 * this.deltaSinceLastFrame
       } else {
         this.playerVelocity.addScaledVector(this.playerVelocity, damping)

@@ -7,4 +7,4 @@ import trio
 from db_tools import init_db
 trio.run(init_db)
 from db_tools import import_world
-trio.run(import_world, 'lemuria')
+trio.run(import_world, '../atlemuria.txt', '../proplemuria.txt')

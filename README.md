@@ -45,7 +45,7 @@ Go into `srv/tools`, then run the following:
 $ ./import_lemuria.py
 ```
 
-This will create and init the database `srv/app.db` using the data in `srv/lemuria.json`.
+This will create and init the database `srv/app.db` using the data in `srv/atlemuria.txt` and `srv/proplemuria.txt`.
 
 You will also need the `village2` resource path to be served, to do so you can go to `srv`
 and create a symlink by running the following (but set the path correctly first):

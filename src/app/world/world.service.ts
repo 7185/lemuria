@@ -111,6 +111,7 @@ export class WorldService {
             item.traverse((child: Object3D) => {
               if (child instanceof Mesh) {
                 child.material = new MeshPhongMaterial({color})
+                child.material.flatShading = true
               }
             })
           } else {
