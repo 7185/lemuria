@@ -3,7 +3,7 @@ import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
   AmbientLight, BoxHelper, Clock, Material, PerspectiveCamera, Raycaster, Scene, GridHelper, Group, Fog,
   Vector2, Vector3, WebGLRenderer, DirectionalLight, PCFSoftShadowMap, CameraHelper, Object3D, Spherical,
-  Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial
+  Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper
 } from 'three'
 import {Octree} from 'three/examples/jsm/math/Octree'
 import {Capsule} from 'three/examples/jsm/math/Capsule'
@@ -44,6 +44,7 @@ export class EngineService implements OnDestroy {
   private deltaSinceLastFrame = 0
 
   private selectionBox: BoxHelper
+  private axesHelper: AxesHelper
   private controls: boolean[] = Array(9).fill(false)
 
   private mouse = new Vector2()
@@ -231,6 +232,9 @@ export class EngineService implements OnDestroy {
       this.buildMode = false
       this.selectedObject = null
       this.selectionBox.geometry.dispose()
+      ;(this.selectionBox.material as Material).dispose()
+      this.axesHelper.geometry.dispose()
+      ;(this.axesHelper.material as Material).dispose()
       this.scene.remove(this.selectionBox)
     }
     this.disposeMaterial(group)
@@ -250,13 +254,21 @@ export class EngineService implements OnDestroy {
     if (this.selectionBox != null) {
       this.buildMode = false
       this.selectedObject = null
+      this.axesHelper.geometry.dispose()
+      ;(this.axesHelper.material as Material).dispose()
       this.selectionBox.geometry.dispose()
+      ;(this.selectionBox.material as Material).dispose()
       this.scene.remove(this.selectionBox)
     }
       this.buildMode = true
       this.selectedObject = item
       console.log(item.name, item.position, item.rotation, item.userData)
       this.selectionBox = new BoxHelper(item, 0xffff00)
+      this.axesHelper = new AxesHelper(5)
+      ;(this.axesHelper.material as Material).depthTest = false
+      this.axesHelper.position.copy(item.position)
+      this.axesHelper.rotation.copy(item.rotation)
+      this.selectionBox.attach(this.axesHelper)
       ;(this.selectionBox.material as Material).depthTest = false
       this.scene.add(this.selectionBox)
       this.selectionBox.setFromObject(item)
@@ -517,6 +529,10 @@ export class EngineService implements OnDestroy {
     }
     if (this.controls[PressedKey.del]) {
       this.removeObject(this.selectedObject)
+    }
+    if (this.selectedObject != null) {
+      this.axesHelper.position.copy(this.selectedObject.position)
+      this.axesHelper.rotation.copy(this.selectedObject.rotation)
     }
     this.selectionBox.update()
   }

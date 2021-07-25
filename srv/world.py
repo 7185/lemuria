@@ -7,7 +7,6 @@ class World:
         self.world_id = world_id
         self._resolved = False
         self._name = None
-        self._avatars = None
         self._welcome = None
         self._path = None
         self._entry = '0N 0W'
@@ -21,7 +20,6 @@ class World:
             if data[2] is not None:
                 d = json.loads(data[2])
                 self._name = data[1]
-                self._avatars = d['avatars']
                 self._welcome = d['welcome']
                 self._path = d['path']
                 if 'entry' in d:
@@ -41,7 +39,6 @@ class World:
         return {
             'id': self.world_id,
             'name': await self.name,
-            'avatars': self._avatars,
             'welcome': self._welcome,
             'path': self._path,
             'entry': self._entry,
