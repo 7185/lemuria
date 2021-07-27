@@ -1,9 +1,9 @@
 import {Subject} from 'rxjs'
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
-  AmbientLight, BoxHelper, Clock, Material, PerspectiveCamera, Raycaster, Scene, GridHelper, Group, Fog,
-  Vector2, Vector3, WebGLRenderer, DirectionalLight, BasicShadowMap, CameraHelper, Object3D, Spherical,
-  Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper, sRGBEncoding
+  AmbientLight, BoxHelper, Clock, Material, PerspectiveCamera, Raycaster, Scene, GridHelper, Group,
+  Vector2, Vector3, WebGLRenderer, DirectionalLight, CameraHelper, Object3D, Spherical,
+  Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper
 } from 'three'
 import {Octree} from 'three/examples/jsm/math/Octree'
 import {Capsule} from 'three/examples/jsm/math/Capsule'
@@ -52,6 +52,10 @@ export class EngineService implements OnDestroy {
   private raycaster = new Raycaster()
   private cameraDirection = new Vector3()
 
+  private usersNode = new Group()
+  private worldNode = new Group()
+  private objectsNode = new Group()
+
   public constructor(private ngZone: NgZone, private userSvc: UserService) {
   }
 
@@ -77,7 +81,7 @@ export class EngineService implements OnDestroy {
 
     this.player = new Object3D()
     this.player.rotation.order = 'YXZ'
-    this.scene.add(this.player)
+    this.worldNode.add(this.player)
 
     this.camera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000)
     this.camera.rotation.order = 'YXZ'
@@ -94,7 +98,7 @@ export class EngineService implements OnDestroy {
 
     this.light = new AmbientLight(0x404040)
     this.light.position.z = 100
-    this.scene.add(this.light)
+    this.worldNode.add(this.light)
 
     // this.scene.fog = new Fog(0xCCCCCC, 10, 50)
     this.worldOctree = new Octree()
@@ -102,9 +106,7 @@ export class EngineService implements OnDestroy {
 
     this.dirLight = new DirectionalLight(0xffffff, 0.5)
     this.dirLight.name = 'dirlight'
-    this.dirLight.userData.persist = true
     this.dirLight.position.set(-50, 80, 10)
-    this.dirLight.castShadow = true
     this.dirLight.shadow.camera.left = 100
     this.dirLight.shadow.camera.right = -100
     this.dirLight.shadow.camera.top = 100
@@ -112,7 +114,11 @@ export class EngineService implements OnDestroy {
     this.dirLight.shadow.mapSize.width = 2048
     this.dirLight.shadow.mapSize.height = 2048
     this.dirLight.target = this.camera
-    this.scene.add(this.dirLight)
+    this.worldNode.add(this.dirLight)
+
+    this.scene.add(this.worldNode)
+    this.scene.add(this.usersNode)
+    this.scene.add(this.objectsNode)
 
     if (config.debug) {
       const shadowHelper = new CameraHelper(this.dirLight.shadow.camera)
@@ -197,7 +203,15 @@ export class EngineService implements OnDestroy {
   }
 
   public addObject(group: Group) {
-    this.scene.add(group)
+    this.objectsNode.add(group)
+  }
+
+  public addWorldObject(group: Group) {
+    this.worldNode.add(group)
+  }
+
+  public addUser(group: Group) {
+    this.usersNode.add(group)
   }
 
   public addMeshToOctree(group: Group) {
@@ -230,13 +244,7 @@ export class EngineService implements OnDestroy {
 
   public removeObject(group: Group) {
     if (group === this.selectedObject) {
-      this.buildMode = false
-      this.selectedObject = null
-      this.selectionBox.geometry.dispose()
-      ;(this.selectionBox.material as Material).dispose()
-      this.axesHelper.geometry.dispose()
-      ;(this.axesHelper.material as Material).dispose()
-      this.scene.remove(this.selectionBox)
+      this.deselect()
     }
     this.disposeMaterial(group)
     group.traverse((child: Object3D) => {
@@ -244,35 +252,25 @@ export class EngineService implements OnDestroy {
         child.geometry.dispose()
       }
     })
-    this.scene.remove(group)
+    this.objectsNode.remove(group)
+  }
+
+  public removeUser(group: Group) {
+    this.disposeMaterial(group)
+    group.traverse((child: Object3D) => {
+      if (child instanceof Mesh) {
+        child.geometry.dispose()
+      }
+    })
+    this.usersNode.remove(group)
   }
 
   public objects() {
-    return this.scene.children
+    return this.objectsNode.children
   }
 
-  public select(item: Group) {
-    if (this.selectionBox != null) {
-      this.buildMode = false
-      this.selectedObject = null
-      this.axesHelper.geometry.dispose()
-      ;(this.axesHelper.material as Material).dispose()
-      this.selectionBox.geometry.dispose()
-      ;(this.selectionBox.material as Material).dispose()
-      this.scene.remove(this.selectionBox)
-    }
-      this.buildMode = true
-      this.selectedObject = item
-      console.log(item.name, item.position, item.rotation, item.userData)
-      this.selectionBox = new BoxHelper(item, 0xffff00)
-      this.axesHelper = new AxesHelper(5)
-      ;(this.axesHelper.material as Material).depthTest = false
-      this.axesHelper.position.copy(item.position)
-      this.axesHelper.rotation.copy(item.rotation)
-      this.selectionBox.attach(this.axesHelper)
-      ;(this.selectionBox.material as Material).depthTest = false
-      this.scene.add(this.selectionBox)
-      this.selectionBox.setFromObject(item)
+  public users() {
+    return this.usersNode.children
   }
 
   public animate(): void {
@@ -344,6 +342,7 @@ export class EngineService implements OnDestroy {
       this.render()
     })
     this.deltaSinceLastFrame = this.clock.getDelta()
+    this.activeCamera.getWorldDirection(this.cameraDirection)
 
     if (!this.buildMode) {
       this.moveCamera()
@@ -361,16 +360,43 @@ export class EngineService implements OnDestroy {
     this.renderer.setSize(width, height)
   }
 
+  private deselect() {
+    this.selectedObject = null
+    this.selectionBox.geometry.dispose()
+    ;(this.selectionBox.material as Material).dispose()
+    this.axesHelper.geometry.dispose()
+    ;(this.axesHelper.material as Material).dispose()
+    this.scene.remove(this.selectionBox)
+  }
+
+  private select(item: Group) {
+    if (this.selectionBox != null) {
+      this.deselect()
+    }
+    this.buildMode = true
+    this.selectedObject = item
+    console.log(item.name, item.position, item.rotation, item.userData)
+    this.selectionBox = new BoxHelper(item, 0xffff00)
+    this.axesHelper = new AxesHelper(5)
+    ;(this.axesHelper.material as Material).depthTest = false
+    this.axesHelper.position.copy(item.position)
+    this.axesHelper.rotation.copy(item.rotation)
+    this.selectionBox.attach(this.axesHelper)
+    ;(this.selectionBox.material as Material).depthTest = false
+    this.scene.add(this.selectionBox)
+    this.selectionBox.setFromObject(item)
+  }
+
   private rightClick(event: MouseEvent) {
     event.preventDefault()
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
     this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
     this.raycaster.setFromCamera(this.mouse, this.activeCamera)
-    const intersects = this.raycaster.intersectObjects(this.scene.children, true)
+    const intersects = this.raycaster.intersectObjects(this.objectsNode.children, true)
     let item = null
     for (const i of intersects) {
       let obj = i.object
-      while (obj.parent !== this.scene) {
+      while (obj.parent !== this.objectsNode) {
         obj = obj.parent
       }
       if (obj.name.endsWith('.rwx')) {
@@ -476,8 +502,6 @@ export class EngineService implements OnDestroy {
         rotStep = Math.PI / 180
       }
     }
-    const cameraDirection = new Vector3()
-    this.activeCamera.getWorldDirection(cameraDirection)
     if (this.controls[PressedKey.plus]) {
       this.selectedObject.translateY(moveStep)
     }
@@ -485,10 +509,10 @@ export class EngineService implements OnDestroy {
       this.selectedObject.translateY(-moveStep)
     }
     const v = new Vector3()
-    if (Math.abs(cameraDirection.x) >= Math.abs(cameraDirection.z)) {
-      v.x = Math.sign(cameraDirection.x)
+    if (Math.abs(this.cameraDirection.x) >= Math.abs(this.cameraDirection.z)) {
+      v.x = Math.sign(this.cameraDirection.x)
     } else {
-      v.z = Math.sign(cameraDirection.z)
+      v.z = Math.sign(this.cameraDirection.z)
     }
     if (this.controls[PressedKey.up]) {
       this.selectedObject.position.add(v.multiplyScalar(moveStep))
@@ -517,7 +541,7 @@ export class EngineService implements OnDestroy {
     if (this.controls[PressedKey.ins]) {
       this.selectedObject = this.selectedObject.clone() as Group
       this.selectedObject.position.add(v.multiplyScalar(moveStep))
-      this.scene.add(this.selectedObject)
+      this.objectsNode.add(this.selectedObject)
       this.selectionBox.setFromObject(this.selectedObject)
     }
     if (this.controls[PressedKey.del]) {
@@ -531,7 +555,6 @@ export class EngineService implements OnDestroy {
   }
 
   private moveCamera() {
-    this.activeCamera.getWorldDirection(this.cameraDirection)
     let steps = 4 * this.deltaSinceLastFrame
     if (this.controls[PressedKey.ctrl]) {
       steps = 16 * this.deltaSinceLastFrame
@@ -615,11 +638,11 @@ export class EngineService implements OnDestroy {
           this.playerCollider.start.z))
     }
 
-    for (const item of this.scene.children.filter(i => i.userData.rwx != null && i.userData.rwx.axisAlignment !== 'none')) {
+    for (const item of this.objectsNode.children.filter(i => i.userData.rwx?.axisAlignment !== 'none')) {
       item.rotation.y = this.player.rotation.y
     }
 
-    const sky = this.scene.children.find(o => o.name === 'skybox')
+    const sky = this.worldNode.children.find(o => o.name === 'skybox')
     if (sky != null) {
       sky.position.copy(this.player.position)
     }
@@ -632,7 +655,7 @@ export class EngineService implements OnDestroy {
 
   private moveUsers() {
     for (const u of this.userSvc.userList.filter(usr => usr.completion < 1)) {
-      const user = this.scene.children.find(o => o.name === u.id)
+      const user = this.usersNode.children.find(o => o.name === u.id)
       if (user != null) {
         u.completion = (u.completion + this.deltaSinceLastFrame / 0.2) > 1 ? 1 : u.completion + this.deltaSinceLastFrame / 0.2
         user.position.x = u.oldX + (u.x - u.oldX) * u.completion
@@ -649,7 +672,7 @@ export class EngineService implements OnDestroy {
   }
 
   private moveLabels() {
-    for (const user of this.scene.children.filter(o => o.userData?.player)) {
+    for (const user of this.usersNode.children) {
       const pos = new Vector3()
       pos.copy(user.position)
       if (user.userData.height > 1.1) {

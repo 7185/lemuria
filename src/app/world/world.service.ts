@@ -46,8 +46,7 @@ export class WorldService {
     const skybox = new Group()
     skybox.add(new Mesh(skyGeometry, skyMaterials))
     skybox.name = 'skybox'
-    skybox.userData.persist = true
-    this.engine.addObject(skybox)
+    this.engine.addWorldObject(skybox)
 
     const floorTexture = this.textureLoader.load(`${RES_PATH}/textures/terrain17.jpg`)
     floorTexture.wrapS = RepeatWrapping
@@ -60,10 +59,9 @@ export class WorldService {
     const floorMesh = new Mesh(floorGeometry, floorMaterial)
     floor.add(floorMesh)
     floor.name = 'ground'
-    floor.userData.persist = true
     floor.position.y = -0.01
     floor.rotation.x = -Math.PI / 2
-    this.engine.addObject(floor)
+    this.engine.addWorldObject(floor)
     this.engine.addMeshToOctree(floor)
 
     this.avatar = new Group()
@@ -73,14 +71,14 @@ export class WorldService {
 
     // listeners
     this.userSvc.listChanged.subscribe((userList: User[]) => {
-      for (const user of this.engine.objects().filter(o => o.userData?.player)) {
+      for (const user of this.engine.users()) {
         if (userList.map(u => u.id).indexOf(user.name) === -1) {
-          this.engine.removeObject(user as Group)
+          this.engine.removeUser(user as Group)
           document.getElementById('label-' + user.name).remove()
         }
       }
       for (const u of userList) {
-        const user = this.engine.objects().find(o => o.name === u.id)
+        const user = this.engine.users().find(o => o.name === u.id)
         if (user == null) {
           this.addUser(u)
         }
@@ -88,7 +86,7 @@ export class WorldService {
     })
 
     this.userSvc.avatarChanged.subscribe((u) => {
-      const user = this.engine.objects().find(o => o.name === u.id)
+      const user = this.engine.users().find(o => o.name === u.id)
       const avatarId = u.avatar >= this.avatarList.length ? 0 : u.avatar
       this.setAvatar(this.avatarList[avatarId].geometry, user as Group)
     })
@@ -166,7 +164,8 @@ export class WorldService {
   }
 
   public setWorld(data: any) {
-    for (const item of this.engine.objects().filter(i => i.name.length > 0 && !i.userData?.persist)) {
+    // Children is a dynamic iterable, we need a copy to get all of them
+    for (const item of [...this.engine.objects()]) {
       this.engine.removeObject(item as Group)
     }
     this.objSvc.cleanCache()
@@ -203,7 +202,7 @@ export class WorldService {
       group.userData.player = true
       this.engine.createTextLabel(group)
       this.setAvatar(avatar, group)
-      this.engine.addObject(group)
+      this.engine.addUser(group)
     }
   }
 }
