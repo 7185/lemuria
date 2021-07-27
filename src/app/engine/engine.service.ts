@@ -2,8 +2,8 @@ import {Subject} from 'rxjs'
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
   AmbientLight, BoxHelper, Clock, Material, PerspectiveCamera, Raycaster, Scene, GridHelper, Group, Fog,
-  Vector2, Vector3, WebGLRenderer, DirectionalLight, PCFSoftShadowMap, CameraHelper, Object3D, Spherical,
-  Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper
+  Vector2, Vector3, WebGLRenderer, DirectionalLight, BasicShadowMap, CameraHelper, Object3D, Spherical,
+  Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper, sRGBEncoding
 } from 'three'
 import {Octree} from 'three/examples/jsm/math/Octree'
 import {Capsule} from 'three/examples/jsm/math/Capsule'
@@ -17,7 +17,8 @@ const capsuleRadius = 0.35
 @Injectable({providedIn: 'root'})
 export class EngineService implements OnDestroy {
 
-  public compass: Subject<any> = new Subject()
+  public compassSub: Subject<any> = new Subject()
+  private compass = new Spherical()
   private canvas: HTMLCanvasElement
   private labelZone: HTMLDivElement
   private renderer: WebGLRenderer
@@ -49,6 +50,7 @@ export class EngineService implements OnDestroy {
 
   private mouse = new Vector2()
   private raycaster = new Raycaster()
+  private cameraDirection = new Vector3()
 
   public constructor(private ngZone: NgZone, private userSvc: UserService) {
   }
@@ -65,12 +67,11 @@ export class EngineService implements OnDestroy {
 
     this.renderer = new WebGLRenderer({
       canvas: this.canvas,
-      alpha: true,    // transparent background
-      antialias: true // smooth edges
+      alpha: false,    // transparent background
+      antialias: true, // smooth edges
     })
     this.renderer.setSize(window.innerWidth, window.innerHeight)
-    this.renderer.shadowMap.enabled = true
-    this.renderer.shadowMap.type = PCFSoftShadowMap
+    this.renderer.shadowMap.enabled = false
 
     this.scene = new Scene()
 
@@ -78,15 +79,15 @@ export class EngineService implements OnDestroy {
     this.player.rotation.order = 'YXZ'
     this.scene.add(this.player)
 
-    this.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+    this.camera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000)
     this.camera.rotation.order = 'YXZ'
     this.camera.position.y = 0
     this.player.attach(this.camera)
 
-    this.thirdCamera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+    this.thirdCamera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000)
     this.thirdCamera.rotation.order = 'YXZ'
-    this.thirdCamera.position.z = 5
-    this.thirdCamera.position.y = 0.5
+    this.thirdCamera.position.z = 6
+    this.thirdCamera.position.y = 0.2
     this.camera.attach(this.thirdCamera)
 
     this.activeCamera = this.camera
@@ -344,14 +345,6 @@ export class EngineService implements OnDestroy {
     })
     this.deltaSinceLastFrame = this.clock.getDelta()
 
-    const tractor = this.scene.children.find(o => o.name === 'tracteur1.rwx')
-    if (tractor && !this.buildMode) {
-      tractor.rotation.y += 0.01
-      const d = new Vector3()
-      tractor.getWorldDirection(d)
-      tractor.position.addScaledVector(d, -0.05)
-    }
-
     if (!this.buildMode) {
       this.moveCamera()
     }
@@ -538,21 +531,20 @@ export class EngineService implements OnDestroy {
   }
 
   private moveCamera() {
-    const cameraDirection = new Vector3()
-    this.activeCamera.getWorldDirection(cameraDirection)
+    this.activeCamera.getWorldDirection(this.cameraDirection)
     let steps = 4 * this.deltaSinceLastFrame
     if (this.controls[PressedKey.ctrl]) {
       steps = 16 * this.deltaSinceLastFrame
     }
     if (this.controls[PressedKey.up]) {
-      this.playerVelocity.add(cameraDirection.multiplyScalar(steps))
+      this.playerVelocity.add(this.cameraDirection.multiplyScalar(steps))
     }
     if (this.controls[PressedKey.down]) {
-      this.playerVelocity.add(cameraDirection.multiplyScalar(-steps))
+      this.playerVelocity.add(this.cameraDirection.multiplyScalar(-steps))
     }
     if (this.controls[PressedKey.left]) {
       if (this.controls[PressedKey.shift]) {
-        this.playerVelocity.add((new Vector3(cameraDirection.z, 0, -cameraDirection.x)).multiplyScalar(steps))
+        this.playerVelocity.add((new Vector3(this.cameraDirection.z, 0, -this.cameraDirection.x)).multiplyScalar(steps))
       } else {
         this.player.rotation.y += 0.1 * steps
         if (this.player.rotation.y > Math.PI) {
@@ -562,7 +554,7 @@ export class EngineService implements OnDestroy {
     }
     if (this.controls[PressedKey.right]) {
       if (this.controls[PressedKey.shift]) {
-        this.playerVelocity.add(new Vector3(-cameraDirection.z, 0, cameraDirection.x).multiplyScalar(steps))
+        this.playerVelocity.add(new Vector3(-this.cameraDirection.z, 0, this.cameraDirection.x).multiplyScalar(steps))
       } else {
         this.player.rotation.y -= 0.1 * steps
         if (this.player.rotation.y < -Math.PI) {
@@ -631,14 +623,11 @@ export class EngineService implements OnDestroy {
     if (sky != null) {
       sky.position.copy(this.player.position)
     }
-    const dirlight = this.scene.children.find(o => o.name === 'dirlight')
-    if (dirlight != null) {
-      dirlight.position.copy(new Vector3(-50 + this.player.position.x, 80 + this.player.position.y, 10 + this.player.position.z))
-    }
+    this.dirLight.position.copy(new Vector3(-50 + this.player.position.x, 80 + this.player.position.y, 10 + this.player.position.z))
+
     // compass
-    const sph = new Spherical()
-    sph.setFromVector3(cameraDirection)
-    this.compass.next(Math.round(sph.theta / DEG))
+    this.compass.setFromVector3(this.cameraDirection)
+    this.compassSub.next(Math.round(this.compass.theta / DEG))
   }
 
   private moveUsers() {

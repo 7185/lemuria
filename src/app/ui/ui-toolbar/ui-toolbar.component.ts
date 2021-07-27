@@ -78,7 +78,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public ngAfterViewInit(): void {
-    this.engine.compass.subscribe((o: number) => {
+    this.engine.compassSub.subscribe((o: number) => {
       this.renderer.setStyle(this.compass.nativeElement, 'transform', `rotate(${o}deg)`)
     })
   }

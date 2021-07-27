@@ -6,7 +6,7 @@ import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {AWActionParser} from 'aw-action-parser'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
-  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, Object3D} from 'three'
+  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3} from 'three'
 export const RES_PATH = config.url.resource
 
 @Injectable({providedIn: 'root'})
@@ -58,7 +58,6 @@ export class WorldService {
     const floorGeometry = new PlaneGeometry(1000, 1000, 1, 1)
     const floor = new Group()
     const floorMesh = new Mesh(floorGeometry, floorMaterial)
-    floorMesh.receiveShadow = true
     floor.add(floorMesh)
     floor.name = 'ground'
     floor.userData.persist = true
@@ -106,27 +105,16 @@ export class WorldService {
           item.visible = cmd.value
         } else {
           if (cmd.commandType === 'color') {
-            const color = `rgb(${cmd.color.r},${cmd.color.g},${cmd.color.b})`
-            this.engine.disposeMaterial(item)
-            item.traverse((child: Object3D) => {
-              if (child instanceof Mesh) {
-                child.material = new MeshPhongMaterial({color})
-                child.material.flatShading = true
-              }
-            })
+            this.objSvc.applyTexture(item, null, null, cmd.color)
           } else {
             if (cmd.commandType === 'texture') {
-              let textureMat = cmd.texture
-              if (!textureMat.endsWith('.jpg')) {
-                textureMat += '.jpg'
-              }
-              textureMat = this.objSvc.loadTexture(textureMat, this.textureLoader)
-              this.engine.disposeMaterial(item)
-              item.traverse((child: Object3D) => {
-                if (child instanceof Mesh) {
-                  child.material = textureMat
+              if (cmd.texture) {
+                cmd.texture = cmd.texture.lastIndexOf('.') !== -1 ? cmd.texture.substring(0, cmd.texture.lastIndexOf('.')) : cmd.texture
+                if (cmd.mask) {
+                  cmd.mask = cmd.mask.lastIndexOf('.') !== -1 ? cmd.mask.substring(0, cmd.mask.lastIndexOf('.')) : cmd.mask
                 }
-              })
+              }
+              this.objSvc.applyTexture(item, cmd.texture, cmd.mask)
             }
           }
         }
@@ -144,11 +132,6 @@ export class WorldService {
       g.userData.date = date
       g.userData.desc = desc
       g.userData.act = act
-      g.traverse((child: Object3D) => {
-        if (child instanceof Mesh) {
-          child.castShadow = true
-        }
-      })
       if (act) {
         this.execActions(g)
       }
@@ -163,12 +146,6 @@ export class WorldService {
       name += '.rwx'
     }
     this.objSvc.loadObject(name).then((o) => {
-      o.traverse((child: Object3D) => {
-        if (child instanceof Mesh) {
-          child.castShadow = true
-          child.receiveShadow = true
-        }
-      })
       this.engine.disposeMaterial(group)
       group.clear()
       group.add(o.clone())

@@ -1,7 +1,8 @@
 import {Injectable} from '@angular/core'
 import {HttpService} from './../network/http.service'
-import RWXLoader from 'three-rwx-loader'
-import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, RepeatWrapping, TextureLoader} from 'three'
+import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, Texture, RepeatWrapping, 
+  TextureLoader, MeshPhongMaterial, Object3D} from 'three'
+import RWXLoader, {makeThreeMaterial} from 'three-rwx-loader'
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'
 
@@ -18,7 +19,7 @@ export class ObjectService {
     const cone = new Mesh(new ConeGeometry(0.5, 0.5, 3), new MeshBasicMaterial({color: 0x000000}))
     cone.position.y = 0.5
     this.errorCone = new Group().add(cone)
-    this.rwxLoader.setJSZip(JSZip, JSZipUtils)
+    this.rwxLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true)
   }
 
   setPath(path: string) {
@@ -30,18 +31,40 @@ export class ObjectService {
     return this.http.avatars(this.path)
   }
 
+  applyTexture(item: Group, textureName: string = null, maskName: string = null, color: any = null) {
+    item.traverse((child: Object3D) => {
+      if (child instanceof Mesh) {
+        const newMaterials = []
+        child.material.forEach((m: MeshPhongMaterial, index: number) => {
+          if (m.userData.rwx.material != null) {
+            const newRWXMat = m.userData.rwx.material
+            newRWXMat.texture = textureName
+            newRWXMat.mask = maskName
+            if (color != null) {
+              newRWXMat.color = [color.r/255.0, color.g/255.0, color.b/255.0]
+            }
+            newMaterials.push(makeThreeMaterial(newRWXMat, `${this.path}/textures`, 'jpg', 'zip', JSZip, JSZipUtils).phongMat)
+          }
+        })
+        child.material = newMaterials
+        child.material.needsUpdate = true
+      }
+    })
+  }
+
   loadTexture(name: string, loader: TextureLoader): any {
+    let texture: Texture
     if (this.textures.get(name) !== undefined) {
-      return this.textures.get(name)
+      texture = this.textures.get(name)
     } else {
-      const texture = loader.load(`${this.path}/textures/${name}`)
+      texture = loader.load(`${this.path}/textures/${name}`)
       texture.wrapS = RepeatWrapping
       texture.wrapT = RepeatWrapping
-      const material = new MeshBasicMaterial({map: texture})
-      material.needsUpdate = true
-      this.textures.set(name, material)
-      return material
+      this.textures.set(name, texture)
     }
+    const material = new MeshPhongMaterial({map: texture})
+    material.needsUpdate = true
+    return material
   }
 
   loadObject(name: string): Promise<any> {
