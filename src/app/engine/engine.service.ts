@@ -55,6 +55,7 @@ export class EngineService implements OnDestroy {
   private usersNode = new Group()
   private worldNode = new Group()
   private objectsNode = new Group()
+  private sprites: Set<Group> = new Set()
 
   public constructor(private ngZone: NgZone, private userSvc: UserService) {
   }
@@ -73,6 +74,7 @@ export class EngineService implements OnDestroy {
       canvas: this.canvas,
       alpha: false,    // transparent background
       antialias: true, // smooth edges
+      stencil: false
     })
     this.renderer.setSize(window.innerWidth, window.innerHeight)
     this.renderer.shadowMap.enabled = false
@@ -203,7 +205,12 @@ export class EngineService implements OnDestroy {
   }
 
   public addObject(group: Group) {
+    group.matrixAutoUpdate = false
     this.objectsNode.add(group)
+    if (group.userData.rwx?.axisAlignment !== 'none') {
+      this.sprites.add(group)
+    }
+    group.updateMatrix()
   }
 
   public addWorldObject(group: Group) {
@@ -245,6 +252,9 @@ export class EngineService implements OnDestroy {
   public removeObject(group: Group) {
     if (group === this.selectedObject) {
       this.deselect()
+    }
+    if (group.userData.rwx?.axisAlignment !== 'none') {
+      this.sprites.delete(group)
     }
     this.disposeMaterial(group)
     group.traverse((child: Object3D) => {
@@ -361,12 +371,15 @@ export class EngineService implements OnDestroy {
   }
 
   private deselect() {
+    this.buildMode = false
     this.selectedObject = null
     this.selectionBox.geometry.dispose()
     ;(this.selectionBox.material as Material).dispose()
     this.axesHelper.geometry.dispose()
     ;(this.axesHelper.material as Material).dispose()
     this.scene.remove(this.selectionBox)
+    this.selectionBox = null
+    this.axesHelper = null
   }
 
   private select(item: Group) {
@@ -486,10 +499,7 @@ export class EngineService implements OnDestroy {
 
   private moveItem() {
     if (this.controls[PressedKey.esc]) {
-      this.buildMode = false
-      this.selectedObject = null
-      this.selectionBox.geometry.dispose()
-      this.scene.remove(this.selectionBox)
+      this.deselect()
       return
     }
     let moveStep = 0.5
@@ -544,14 +554,13 @@ export class EngineService implements OnDestroy {
       this.objectsNode.add(this.selectedObject)
       this.selectionBox.setFromObject(this.selectedObject)
     }
+    this.selectedObject.updateMatrix()
+    this.axesHelper.position.copy(this.selectedObject.position)
+    this.axesHelper.rotation.copy(this.selectedObject.rotation)
+    this.selectionBox.update()
     if (this.controls[PressedKey.del]) {
       this.removeObject(this.selectedObject)
     }
-    if (this.selectedObject != null) {
-      this.axesHelper.position.copy(this.selectedObject.position)
-      this.axesHelper.rotation.copy(this.selectedObject.rotation)
-    }
-    this.selectionBox.update()
   }
 
   private moveCamera() {
@@ -638,8 +647,9 @@ export class EngineService implements OnDestroy {
           this.playerCollider.start.z))
     }
 
-    for (const item of this.objectsNode.children.filter(i => i.userData.rwx?.axisAlignment !== 'none')) {
+    for (const item of this.sprites) {
       item.rotation.y = this.player.rotation.y
+      item.updateMatrix()
     }
 
     const sky = this.worldNode.children.find(o => o.name === 'skybox')
