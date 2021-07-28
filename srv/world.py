@@ -18,24 +18,28 @@ class World:
     async def _resolve(self):
         if not self._resolved:
             conn = await current_app.engine.connect()
+
             result = await conn.execute(f"select * from world where id = {self.world_id}")
             data = await result.first()
+
             if data[2] is not None:
                 world_data = json.loads(data[2])
+                self._id = data[0]
                 self._name = data[1]
                 self._welcome = world_data['welcome']
                 self._path = world_data['path']
+
                 if 'entry' in world_data:
                     self._entry = world_data['entry'] or '0N 0W'
-                self._objects = []
-                result = await conn.execute(f"select * from prop where wid = {self.world_id}")
-                for prop in await result.fetchall():
-                    self._objects.append(list(prop)[3:13])
+
                 try:
                     self._elev = await self.elev_dump()
                 except FileNotFoundError:
                     pass
-            self._resolved = True
+
+                self._resolved = True
+
+            await conn.close()
 
     @property
     async def name(self):
@@ -49,17 +53,42 @@ class World:
             'welcome': self._welcome,
             'path': self._path,
             'entry': self._entry,
-            'objects': self._objects,
             'elev': self._elev
         }
+
+    # Having a 'None' value on one of those coordinate criterias means no bound will be applied when querying all objects
+    async def props(self, min_x = None, max_x = None, min_y = None, max_y = None, min_z = None, max_z = None):
+        conn = await current_app.engine.connect()
+
+        final_query = "select * from prop where wid = {world_id}{xmin}{xmax}{ymin}{ymax}{zmin}{zmax}".format(
+            world_id = self.world_id,
+            xmin = f" AND x >= {min_x}" if min_x is not None else "",
+            xmax = f" AND x < {max_x}" if max_x is not None else "",
+            ymin = f" AND y >= {min_y}" if min_y is not None else "",
+            ymax = f" AND y < {max_y}" if max_y is not None else "",
+            zmin = f" AND z >= {min_z}" if min_z is not None else "",
+            zmax = f" AND z < {max_z}" if max_z is not None else "")
+
+        props = []
+        result = await conn.execute(final_query)
+
+        for prop in await result.fetchall():
+            props.append(list(prop)[3:13])
+
+        await conn.close()
+
+        return { 'entries': props }
 
     @classmethod
     async def get_list(cls):
         world_list = []
         conn = await current_app.engine.connect()
+
         result = await conn.execute("select id, name from world")
         for world in await result.fetchall():
             world_list.append({'id': world[0], 'name': world[1]})
+
+        await conn.close()
         return world_list
 
     async def elev_dump(self):

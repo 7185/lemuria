@@ -1,13 +1,16 @@
-import {Subscription} from 'rxjs'
+import {Observable, Subscription, Subject, throwError, from, of} from 'rxjs'
+import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
 import {UserService} from './../user/user.service'
 import {User} from './../user/user.model'
 import {EngineService, DEG} from './../engine/engine.service'
 import {ObjectService} from './object.service'
+import {HttpService} from './../network/http.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {AWActionParser} from 'aw-action-parser'
-import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping,
-  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, BufferAttribute} from 'three'
+import {flattenGroup} from 'three-rwx-loader'
+import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, LOD,
+  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, BufferAttribute, Object3D} from 'three'
 export const RES_PATH = config.url.resource
 
 @Injectable({providedIn: 'root'})
@@ -18,16 +21,59 @@ export class WorldService {
   private textureLoader: TextureLoader
   private actionParser = new AWActionParser()
   private terrain: Group
+  private worldId: number
+  private previousLocalUserPos = null
+
+  private propBatchSize: number = config.world.propBatchSize
+  private chunkWidth: number = config.world.chunk.width // in cm
+  private chunkDepth: number = config.world.chunk.depth // in cm
+  private chunkMap: Map<number, Set<number>>
+  private chunkLoadingLayout = []
+  private chunkLoadCircular: boolean = config.world.chunk.loadCircular
+  private chunkLoadRadius: number = config.world.chunk.loadRadius
+  private prioritizeNearestChunks: boolean = config.world.chunk.prioritizeNearest
+  private flattenChunks: boolean = config.world.chunk.flatten
+
+  private maxLodDistance: number = config.world.lod.maxDistance
 
   private uListListener: Subscription
   private uAvatarListener: Subscription
 
-  constructor(private engine: EngineService, private userSvc: UserService, private objSvc: ObjectService) {
+  constructor(private engine: EngineService, private userSvc: UserService, private objSvc: ObjectService,
+    private httpSvc: HttpService) {
+
+    for (let i = -this.chunkLoadRadius; i <= this.chunkLoadRadius; i++) {
+      for (let j = -this.chunkLoadRadius; j <= this.chunkLoadRadius; j++) {
+
+        // Only keep chunks within a certain circular radius (if circular loadin is enabled)
+        if (!this.chunkLoadCircular || ( i * i + j * j ) < this.chunkLoadRadius * this.chunkLoadRadius) {
+           this.chunkLoadingLayout.push([i, j])
+        }
+
+      }
+    }
+
+    // For extra comfort: we can sort each chunk in the layout based on there distance to the center,
+    // this ought to make de client load and display nearest chunks first
+    if (this.prioritizeNearestChunks) {
+        this.chunkLoadingLayout.sort((c0, c1) => {
+            const d0 = (c0[0]*c0[0] + c0[1]*c0[1])
+            const d1 = (c1[0]*c1[0] + c1[1]*c1[1])
+            if (d0 < d1) { return -1 }
+            if (d0 > d1) { return 1 }
+            return 0
+        })
+    }
+
+    // Register chunk updater to the engine
+    this.engine.localUserPosObservable().subscribe((pos: Vector3) => { this.autoUpdateChunks(pos) })
   }
 
   initWorld() {
     this.textureLoader = new TextureLoader()
     const skyGeometry = new BoxGeometry(100, 100, 100)
+
+    this.resetChunks()
 
     const skyMaterials = []
     const textureFt = this.textureLoader.load(`${RES_PATH}/textures/faesky02back.jpg`)
@@ -83,6 +129,11 @@ export class WorldService {
   destroyWorld() {
     this.uAvatarListener.unsubscribe()
     this.uListListener.unsubscribe()
+  }
+
+  public resetChunks() {
+    this.previousLocalUserPos = null
+    this.chunkMap = new Map<number, Set<number>>()
   }
 
   public initTerrain(elev: any) {
@@ -186,11 +237,11 @@ export class WorldService {
     }
   }
 
-  public loadItem(item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null) {
+  public loadItem(item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null): Promise<Object3D> {
     if (!item.endsWith('.rwx')) {
       item += '.rwx'
     }
-    this.objSvc.loadObject(item).then((o) => {
+    return this.objSvc.loadObject(item).then((o) => {
       const g = o.clone()
       g.name = item
       g.userData.date = date
@@ -207,10 +258,13 @@ export class WorldService {
       g.userData.boxCenter = {x: center.x, y: center.y, z: center.z}
       g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
       g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
+
       if (act && g.userData?.isError !== true) {
         this.execActions(g)
       }
-      this.engine.addObject(g)
+
+      g.updateMatrix()
+      return g
     })
   }
 
@@ -238,27 +292,134 @@ export class WorldService {
     })
   }
 
-  public setWorld(data: any) {
+  public setWorld(world: any, pos: Vector3) {
+    this.worldId = world.id
     // Children is a dynamic iterable, we need a copy to get all of them
     for (const item of [...this.engine.objects()]) {
       this.engine.removeObject(item as Group)
     }
     this.objSvc.cleanCache()
-    this.objSvc.setPath(data.path)
+    this.objSvc.setPath(world.path)
     this.objSvc.loadAvatars().subscribe((list) => {
       this.avatarList = list
       this.setAvatar(this.avatarList[0].geometry, this.avatar)
     })
-    this.initTerrain(data.elev)
-    for (const item of data.objects) {
-      this.loadItem(item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
-                    item[0], item[8], item[9])
+    this.initTerrain(world.elev)
+
+    this.resetChunks()
+
+    // Load a few chunks on world initialization
+    this.autoUpdateChunks(pos)
+
+    if (world.entry) {
+      this.engine.teleport(world.entry)
     }
-    if (data.entry) {
-      this.engine.teleport(data.entry)
-    }
+
     // Trigger list update to create users
     this.userSvc.listChanged.next(this.userSvc.userList)
+  }
+
+  // this method is method to be called on each frame to update the state of chunks if needed
+  public autoUpdateChunks(pos: Vector3) {
+    const posX: number = Math.floor(pos.x * 100)
+    const posY: number = Math.floor(pos.y * 100)
+    const posZ: number = Math.floor(pos.z * 100)
+
+    const chunkX = Math.floor((posX + this.chunkWidth / 2) / this.chunkWidth)
+    const chunkZ = Math.floor((posZ + this.chunkDepth / 2) / this.chunkDepth)
+
+    // Only trigger a chunk update if we've actually moved to another chunk
+    if (this.previousLocalUserPos !== null) {
+      const previousChunkX = Math.floor((Math.floor(this.previousLocalUserPos.x * 100) + this.chunkWidth / 2) / this.chunkWidth)
+      const previousChunkZ = Math.floor((Math.floor(this.previousLocalUserPos.z * 100) + this.chunkDepth / 2) / this.chunkDepth)
+
+      if (previousChunkX === chunkX && previousChunkZ === chunkZ) {
+        return
+      }
+    }
+
+    this.previousLocalUserPos = pos.clone()
+
+    // For clarity: we get an Observable from loadChunk, if it produces anything: we take care of it
+    // in subscribe() (note that if the chunk has already been loaded, it won't reach the operator).
+    // We also tag the chunk as not being loaded if any error were to happen (like a failed http request)
+    from(this.chunkLoadingLayout).pipe(
+      concatMap( val => this.loadChunk(chunkX+val[0], chunkZ+val[1]))
+    ).subscribe(
+      (chunk: LOD) => { this.engine.addChunk(chunk) },
+      (val: any) => {
+        console.error(val.err)
+        if (this.chunkMap.get(val.x)?.has(val.z)) {
+          this.chunkMap.get(val.x).delete(val.z)
+        }
+      }
+    )
+  }
+
+  private loadChunk(x: number, z: number): Observable<LOD> {
+    // If the chunk was already loaded: we skip it
+    if (this.chunkMap.get(x)?.has(z)) {
+       return new Observable<any>(subscriber => { subscriber.complete() })
+    }
+
+    // tag this chunk as being worked on already
+    if (this.chunkMap.has(x)) {
+      this.chunkMap.get(x).add(z)
+    } else {
+      this.chunkMap.set(x, new Set<number>())
+      this.chunkMap.get(x).add(z)
+    }
+
+    const chunkXpos = (x * this.chunkWidth) / 100.0
+    const chunkZpos = (z * this.chunkDepth) / 100.0
+
+    // We first need to fetch the list of props using HttpService, we cannot go further
+    // with this chunk if this call fails
+    return this.httpSvc.props(this.worldId,
+      (x * this.chunkWidth) - (this.chunkWidth / 2),
+      (x * this.chunkWidth) + (this.chunkWidth / 2),
+      null, null,
+      (z * this.chunkDepth) - (this.chunkDepth / 2),
+      (z * this.chunkDepth) + (this.chunkDepth / 2)).pipe(concatMap((props: any) =>
+        from(props.entries).pipe(
+          bufferCount(props.entries.length, this.propBatchSize), // Pace the loading of items based on the desired batch size
+          concatMap( arr => from( arr )), // Each individual emission from bufferCount is an array of items
+          mergeMap((item: any) => this.loadItem(item[1], new Vector3(item[2], item[3], item[4]),
+                                                new Vector3(item[5], item[6], item[7]),
+                                                item[0], item[8], item[9])
+          ),
+          mergeMap((item: Object3D) => {
+            const chunkOffset = new Vector3(chunkXpos, 0, chunkZpos)
+            item.position.sub(chunkOffset)
+            if (item.userData.move !== undefined) {
+                item.userData.move.orig.sub(chunkOffset)
+            }
+            item.updateMatrix()
+            return of(item)
+          }), // Adjust position of objects based on the center of the chunk
+          bufferCount(props.entries.size), // Wait for all items to be loaded before proceeding
+          mergeMap((objs: any) => of((new Group()).add(...objs))), // Add all buffered objects to the chunkGroup
+          mergeMap((chunkGroup: Group) => {
+            // Set metadata on the chunk
+            const lod = new LOD()
+            lod.userData.rwx = { axisAlignment: 'none' }
+            lod.userData.world = { chunk: { x, z } }
+
+            chunkGroup = this.flattenChunks ? flattenGroup(chunkGroup) : chunkGroup
+            chunkGroup.userData.rwx = { axisAlignment: 'none' }
+            chunkGroup.userData.world = { chunk: { x: chunkXpos, z: chunkZpos } }
+
+            lod.addLevel(chunkGroup, this.maxLodDistance)
+            lod.addLevel(new Group(), this.maxLodDistance + 1)
+            lod.position.set(chunkXpos, 0, chunkZpos)
+            lod.updateMatrix()
+
+            return of(lod)
+          })
+        )
+      ),
+      catchError(err => throwError({x, z, err}))
+    )
   }
 
   private addUser(u: User) {

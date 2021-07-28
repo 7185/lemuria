@@ -2,7 +2,7 @@ import {Subject} from 'rxjs'
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
   AmbientLight, Clock, Material, PerspectiveCamera, Raycaster, Scene, Group, BoxBufferGeometry,
-  Vector2, Vector3, WebGLRenderer, DirectionalLight, CameraHelper, Object3D, Spherical,
+  Vector2, Vector3, WebGLRenderer, DirectionalLight, CameraHelper, Object3D, Spherical, LOD,
   Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper, EdgesGeometry,
   LineSegments, LineBasicMaterial
 } from 'three'
@@ -48,6 +48,7 @@ export class EngineService implements OnDestroy {
   private frameId: number = null
   private deltaSinceLastFrame = 0
 
+  private selectionGroup: Group
   private selectionBox: LineSegments
   private axesHelper: AxesHelper
   private controls: boolean[] = Array(9).fill(false)
@@ -64,6 +65,7 @@ export class EngineService implements OnDestroy {
 
   private mouseIdle = 0
   private labelDesc: HTMLDivElement
+  private localUserPos = new Subject<Vector3>()
 
   public constructor(private ngZone: NgZone, private userSvc: UserService) {
   }
@@ -72,6 +74,10 @@ export class EngineService implements OnDestroy {
     if (this.frameId != null) {
       cancelAnimationFrame(this.frameId)
     }
+  }
+
+  public localUserPosObservable() {
+    return this.localUserPos.asObservable()
   }
 
   public createScene(canvas: ElementRef<HTMLCanvasElement>, labelZone: ElementRef<HTMLDivElement>,
@@ -227,15 +233,21 @@ export class EngineService implements OnDestroy {
     }
   }
 
+  public addChunk(chunk: LOD) {
+    chunk.matrixAutoUpdate = false
+    this.objectsNode.add(chunk)
+
+    for (const child of chunk.levels[0].object.children) {
+      this.handleSpecialObject(child as Group)
+    }
+
+    chunk.updateMatrix()
+  }
+
   public addObject(group: Group) {
     group.matrixAutoUpdate = false
     this.objectsNode.add(group)
-    if (group.userData.rwx?.axisAlignment !== 'none') {
-      this.sprites.add(group)
-    }
-    if (group.userData.rotate != null || group.userData.move != null) {
-      this.movingObjects.add(group)
-    }
+    this.handleSpecialObject(group)
     group.updateMatrix()
   }
 
@@ -418,6 +430,15 @@ export class EngineService implements OnDestroy {
     this.updateCapsule()
   }
 
+  private handleSpecialObject(group: Group) {
+    if (group.userData.rwx?.axisAlignment !== 'none') {
+      this.sprites.add(group)
+    }
+    if (group.userData.rotate != null || group.userData.move != null) {
+      this.movingObjects.add(group)
+    }
+  }
+
   private render(): void {
     this.frameId = requestAnimationFrame(() => {
       this.render()
@@ -449,9 +470,10 @@ export class EngineService implements OnDestroy {
     ;(this.selectionBox.material as Material).dispose()
     this.axesHelper.geometry.dispose()
     ;(this.axesHelper.material as Material).dispose()
-    this.scene.remove(this.selectionBox)
+    this.scene.remove(this.selectionGroup)
     this.selectionBox = null
     this.axesHelper = null
+    this.selectionGroup = null
   }
 
   private select(item: Group) {
@@ -464,24 +486,24 @@ export class EngineService implements OnDestroy {
 
     const geometry = new BoxBufferGeometry(item.userData.box.x, item.userData.box.y, item.userData.box.z)
     const edges = new EdgesGeometry(geometry)
+    this.selectionGroup = new Group()
     this.selectionBox = new LineSegments(edges, new LineBasicMaterial({color: 0xffff00, depthTest: false}))
     this.axesHelper = new AxesHelper(5)
     ;(this.axesHelper.material as Material).depthTest = false
-    this.axesHelper.position.copy(this.selectedObject.position)
-    this.axesHelper.rotation.copy(this.selectedObject.rotation)
+    this.selectionGroup.add(this.selectionBox, this.axesHelper)
+    const chunkData = this.selectedObject.parent.userData.world.chunk
     const center = new Vector3(this.selectedObject.userData.boxCenter.x,
                                this.selectedObject.userData.boxCenter.y,
                                this.selectedObject.userData.boxCenter.z)
     center.applyAxisAngle(new Vector3(0, 1, 0), this.selectedObject.rotation.y)
     center.applyAxisAngle(new Vector3(0, 0, 1), this.selectedObject.rotation.z)
     center.applyAxisAngle(new Vector3(1, 0, 0), this.selectedObject.rotation.x)
-    this.selectionBox.position.copy(new Vector3(this.selectedObject.position.x + center.x,
-                                                this.selectedObject.position.y + center.y,
-                                                this.selectedObject.position.z + center.z))
-    this.selectionBox.rotation.copy(this.selectedObject.rotation)
-    this.selectionBox.updateMatrix()
-    this.selectionBox.attach(this.axesHelper)
-    this.scene.add(this.selectionBox)
+    this.selectionGroup.position.copy(new Vector3(chunkData.x + this.selectedObject.position.x + center.x,
+                                                  this.selectedObject.position.y + center.y,
+                                                  chunkData.z + this.selectedObject.position.z + center.z))
+    this.selectionGroup.rotation.copy(this.selectedObject.rotation)
+    this.selectionGroup.updateMatrix()
+    this.scene.add(this.selectionGroup)
   }
 
   private pointedItem() {
@@ -490,7 +512,7 @@ export class EngineService implements OnDestroy {
     let item = null
     for (const i of intersects) {
       let obj = i.object
-      while (obj.parent !== this.objectsNode) {
+      while (!obj.parent.userData.world?.chunk) {
         obj = obj.parent
       }
       if (obj.name.endsWith('.rwx')) {
@@ -637,17 +659,18 @@ export class EngineService implements OnDestroy {
       this.objectsNode.add(this.selectedObject)
     }
     this.selectedObject.updateMatrix()
+    const chunkData = this.selectedObject.parent.userData.world.chunk
     const center = new Vector3(this.selectedObject.userData.boxCenter.x,
                                this.selectedObject.userData.boxCenter.y,
                                this.selectedObject.userData.boxCenter.z)
     center.applyAxisAngle(new Vector3(0, 1, 0), this.selectedObject.rotation.y)
     center.applyAxisAngle(new Vector3(0, 0, 1), this.selectedObject.rotation.z)
     center.applyAxisAngle(new Vector3(1, 0, 0), this.selectedObject.rotation.x)
-    this.selectionBox.position.copy(new Vector3(this.selectedObject.position.x + center.x,
-                                                this.selectedObject.position.y + center.y,
-                                                this.selectedObject.position.z + center.z))
-    this.selectionBox.rotation.copy(this.selectedObject.rotation)
-    this.selectionBox.updateMatrix()
+    this.selectionGroup.position.copy(new Vector3(chunkData.x + this.selectedObject.position.x + center.x,
+                                                  this.selectedObject.position.y + center.y,
+                                                  chunkData.z + this.selectedObject.position.z + center.z))
+    this.selectionGroup.rotation.copy(this.selectedObject.rotation)
+    this.selectionGroup.updateMatrix()
     if (this.controls[PressedKey.del]) {
       this.removeObject(this.selectedObject)
     }
@@ -736,6 +759,7 @@ export class EngineService implements OnDestroy {
       }
 
       this.player.position.set(this.playerCollider.start.x, this.playerCollider.start.y - capsuleRadius, this.playerCollider.start.z)
+      this.localUserPos.next(this.player.position)
     }
 
     for (const item of this.sprites) {

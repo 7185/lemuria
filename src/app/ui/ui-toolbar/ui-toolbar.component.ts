@@ -41,9 +41,10 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
 
   public connect(worldId=1) {
     this.socket.connect()
+
     this.http.world(worldId).subscribe((w: any) => {
-      this.world.setWorld(w)
       this.socket.messages.next({type: 'info', data: w.welcome})
+      this.world.setWorld(w, new Vector3(0, 0, 0))
     })
   }
 
