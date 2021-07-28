@@ -34,6 +34,7 @@ export class EngineService implements OnDestroy {
   private buildMode = false
   private flyMode = false
   private selectedObject: Group
+  private hoveredObject: Group
 
   private playerCollider: Capsule
   private worldOctree: Octree
@@ -57,6 +58,9 @@ export class EngineService implements OnDestroy {
   private objectsNode = new Group()
   private sprites: Set<Group> = new Set()
 
+  private mouseIdle = 0
+  private labelDesc: HTMLDivElement
+
   public constructor(private ngZone: NgZone, private userSvc: UserService) {
   }
 
@@ -66,9 +70,12 @@ export class EngineService implements OnDestroy {
     }
   }
 
-  public createScene(canvas: ElementRef<HTMLCanvasElement>, labelZone: ElementRef<HTMLDivElement>): void {
+  public createScene(canvas: ElementRef<HTMLCanvasElement>, labelZone: ElementRef<HTMLDivElement>,
+                     labelDesc: ElementRef<HTMLDivElement>): void {
     this.canvas = canvas.nativeElement
     this.labelZone = labelZone.nativeElement
+    this.labelDesc = labelDesc.nativeElement
+    this.labelDesc.innerHTML = ''
 
     this.renderer = new WebGLRenderer({
       canvas: this.canvas,
@@ -307,8 +314,17 @@ export class EngineService implements OnDestroy {
       this.canvas.addEventListener('contextmenu', (e: MouseEvent) => {
         this.rightClick(e)
       })
+      this.canvas.addEventListener('mousemove', (e: MouseEvent) => {
+        this.mouseIdle = 0
+        this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1
+        this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1
+      })
       window.addEventListener('keydown', (e: KeyboardEvent) => {
         if ((e.target as HTMLElement).nodeName === 'BODY') {
+          // reset tooltip
+          this.mouseIdle = 0
+          this.labelDesc.style.display = 'none'
+          this.hoveredObject = null
           this.handleKeys(e.code, true)
           if (this.buildMode) {
             this.moveItem()
@@ -318,10 +334,28 @@ export class EngineService implements OnDestroy {
       })
       window.addEventListener('keyup', (e: KeyboardEvent) => {
         if ((e.target as HTMLElement).nodeName === 'BODY') {
+          this.mouseIdle = 0
           this.handleKeys(e.code, false)
           e.preventDefault()
         }
       })
+      setInterval(() => {
+        this.mouseIdle++
+        if (this.mouseIdle >= 10) {
+          const item = this.pointedItem()
+          if (item !== this.hoveredObject) {
+            this.labelDesc.style.display = 'none'
+            this.hoveredObject = item
+            if (item != null) {
+              this.labelDesc.style.display = 'block'
+              this.labelDesc.innerHTML = item.userData.desc
+              this.labelDesc.style.left = (this.mouse.x + 1)/2 * window.innerWidth + 'px'
+              this.labelDesc.style.top = -(this.mouse.y - 1)/2 * window.innerHeight + 'px'
+            }
+          }
+          this.mouseIdle = 5
+        }
+      }, 100)
     })
   }
 
@@ -406,10 +440,7 @@ export class EngineService implements OnDestroy {
     this.selectionBox.setFromObject(item)
   }
 
-  private rightClick(event: MouseEvent) {
-    event.preventDefault()
-    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+  private pointedItem() {
     this.raycaster.setFromCamera(this.mouse, this.activeCamera)
     const intersects = this.raycaster.intersectObjects(this.objectsNode.children, true)
     let item = null
@@ -423,6 +454,12 @@ export class EngineService implements OnDestroy {
         break
       }
     }
+    return item
+  }
+
+  private rightClick(event: MouseEvent) {
+    event.preventDefault()
+    const item = this.pointedItem()
     if (item != null) {
       this.select(item as Group)
     }
@@ -492,7 +529,7 @@ export class EngineService implements OnDestroy {
       }
       case 'F10': {
         if (value) {
-          console.log(this.renderer.info.memory)
+          console.log(this.renderer.info)
           console.log(this.posToString(this.player.position))
         }
         break
