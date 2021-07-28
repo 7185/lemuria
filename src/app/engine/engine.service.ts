@@ -239,24 +239,14 @@ export class EngineService implements OnDestroy {
   public disposeMaterial(group: Group) {
     group.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
-        if (child.material instanceof Array) {
-          for (const m of child.material) {
-            if (m.alphaMap != null) {
-              m.alphaMap.dispose()
-            }
-            if (m.map != null) {
-              m.map.dispose()
-            }
-            m.dispose()
+        for (const m of child.material) {
+          if (m.alphaMap != null) {
+            m.alphaMap.dispose()
           }
-        } else {
-          if (child.material.alphaMap != null) {
-            child.material.alphaMap.dispose()
+          if (m.map != null) {
+            m.map.dispose()
           }
-          if (child.material.map != null) {
-            child.material.map.dispose()
-          }
-          child.material.dispose()
+          m.dispose()
         }
       }
     })

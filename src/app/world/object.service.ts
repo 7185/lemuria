@@ -16,7 +16,7 @@ export class ObjectService {
   private path = 'http://localhost'
 
   constructor(private http: HttpService) {
-    const cone = new Mesh(new ConeGeometry(0.5, 0.5, 3), new MeshBasicMaterial({color: 0x000000}))
+    const cone = new Mesh(new ConeGeometry(0.5, 0.5, 3), [new MeshBasicMaterial({color: 0x000000})])
     cone.position.y = 0.5
     this.errorCone = new Group().add(cone)
     this.rwxLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true)
