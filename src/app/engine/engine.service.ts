@@ -237,11 +237,17 @@ export class EngineService implements OnDestroy {
             if (m.alphaMap != null) {
               m.alphaMap.dispose()
             }
+            if (m.map != null) {
+              m.map.dispose()
+            }
             m.dispose()
           }
         } else {
           if (child.material.alphaMap != null) {
             child.material.alphaMap.dispose()
+          }
+          if (child.material.map != null) {
+            child.material.map.dispose()
           }
           child.material.dispose()
         }
@@ -641,10 +647,7 @@ export class EngineService implements OnDestroy {
         this.capsuleMaterial.color.setHex(0x00ff00)
       }
 
-      this.player.position.copy(
-        new Vector3(this.playerCollider.start.x,
-          this.playerCollider.start.y - capsuleRadius,
-          this.playerCollider.start.z))
+      this.player.position.set(this.playerCollider.start.x, this.playerCollider.start.y - capsuleRadius, this.playerCollider.start.z)
     }
 
     for (const item of this.sprites) {
@@ -656,7 +659,7 @@ export class EngineService implements OnDestroy {
     if (sky != null) {
       sky.position.copy(this.player.position)
     }
-    this.dirLight.position.copy(new Vector3(-50 + this.player.position.x, 80 + this.player.position.y, 10 + this.player.position.z))
+    this.dirLight.position.set(-50 + this.player.position.x, 80 + this.player.position.y, 10 + this.player.position.z)
 
     // compass
     this.compass.setFromVector3(this.cameraDirection)
@@ -683,8 +686,7 @@ export class EngineService implements OnDestroy {
 
   private moveLabels() {
     for (const user of this.usersNode.children) {
-      const pos = new Vector3()
-      pos.copy(user.position)
+      const pos = user.position.clone()
       if (user.userData.height > 1.1) {
         pos.y += user.userData.height / 2
       } else {

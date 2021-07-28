@@ -35,7 +35,7 @@ export class ObjectService {
     item.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         const newMaterials = []
-        child.material.forEach((m: MeshPhongMaterial, index: number) => {
+        child.material.forEach((m: MeshPhongMaterial) => {
           if (m.userData.rwx.material != null) {
             const newRWXMat = m.userData.rwx.material
             newRWXMat.texture = textureName
@@ -45,6 +45,13 @@ export class ObjectService {
             }
             newMaterials.push(makeThreeMaterial(newRWXMat, `${this.path}/textures`, 'jpg', 'zip', JSZip, JSZipUtils).phongMat)
           }
+          if (m.alphaMap != null) {
+            m.alphaMap.dispose()
+          }
+          if (m.map != null) {
+            m.map.dispose()
+          }
+          m.dispose()
         })
         child.material = newMaterials
         child.material.needsUpdate = true
