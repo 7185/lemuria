@@ -104,6 +104,22 @@ export class HttpService extends HttpClient {
     return this.get(`${this.baseUrl}/world/${worldId}`)
   }
 
+  public props(worldId: number, minX: number, maxX: number, minY: number, maxY: number, minZ: number, maxZ: number) {
+    // Craft params for props GET request
+    const opts: any = {
+        params: {}
+    }
+
+    if (minX != null) { opts.params.min_x = minX }
+    if (maxX != null) { opts.params.max_x = maxX }
+    if (minY != null) { opts.params.min_y = minY }
+    if (maxY != null) { opts.params.max_y = maxY }
+    if (minZ != null) { opts.params.min_z = minZ }
+    if (maxZ != null) { opts.params.max_z = maxZ }
+
+    return this.get(`${this.baseUrl}/world/${worldId}/props`, opts)
+  }
+
   public worlds() {
     return this.get(`${this.baseUrl}/world/`)
   }

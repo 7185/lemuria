@@ -34,7 +34,7 @@
     "ngx-virtual-scroller": "^4.0.3",
     "rxjs": "^6.6.7",
     "three": "^0.131.3",
-    "three-rwx-loader": "^0.3.1",
+    "three-rwx-loader": "^0.3.2",
     "tslib": "^2.3.0",
     "zone.js": "~0.11.4"
   },
