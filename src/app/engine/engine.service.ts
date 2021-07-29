@@ -205,8 +205,8 @@ export class EngineService implements OnDestroy {
 
   public refreshOctree() {
     this.worldOctree = new Octree()
-    this.worldOctree.fromGraphNode(this.scene.children.find(o => o.name === 'ground'))
-    for (const item of this.scene.children.filter(i => i.name.endsWith('.rwx') && i.userData.notSolid !== true)) {
+    this.worldOctree.fromGraphNode(this.worldNode.children.find(o => o.name === 'ground'))
+    for (const item of this.objectsNode.children.filter(i => i.name.endsWith('.rwx') && i.userData.notSolid !== true)) {
       this.addMeshToOctree(item as Group)
     }
   }
