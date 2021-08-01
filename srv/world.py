@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-from quart import json, g
-from app import app
+from quart import json, current_app
 
 class World:
     def __init__(self, world_id):
@@ -15,26 +14,26 @@ class World:
 
     async def _resolve(self):
         if not self._resolved:
-            conn = await app.engine.connect()
+            conn = await current_app.engine.connect()
             result = await conn.execute(f"select * from world where id = {self.world_id}")
             data = await result.first()
             if data[2] is not None:
-                d = json.loads(data[2])
+                world_data = json.loads(data[2])
                 self._name = data[1]
-                self._welcome = d['welcome']
-                self._path = d['path']
-                if 'entry' in d:
-                    self._entry = d['entry'] or '0N 0W'
+                self._welcome = world_data['welcome']
+                self._path = world_data['path']
+                if 'entry' in world_data:
+                    self._entry = world_data['entry'] or '0N 0W'
                 self._objects = []
                 result = await conn.execute(f"select * from prop where wid = {self.world_id}")
-                for l in await result.fetchall():
-                    self._objects.append(list(l)[3:13])
+                for prop in await result.fetchall():
+                    self._objects.append(list(prop)[3:13])
                 try:
                     self._elev = self.elev_dump()
                 except FileNotFoundError:
                     pass
             self._resolved = True
-    
+
     @property
     async def name(self):
         await self._resolve()
@@ -52,13 +51,13 @@ class World:
         }
 
     @classmethod
-    async def get_list(self):
-        w = []
-        conn = await app.engine.connect()
-        result = await conn.execute(f"select id, name from world")
-        for l in await result.fetchall():
-            w.append({'id': l[0], 'name': l[1]})
-        return w
+    async def get_list(cls):
+        world_list = []
+        conn = await current_app.engine.connect()
+        result = await conn.execute("select id, name from world")
+        for world in await result.fetchall():
+            world_list.append({'id': world[0], 'name': world[1]})
+        return world_list
 
     def elev_dump(self):
         with open(f"elev{self._name.lower()}.txt", 'r', encoding='ISO-8859-1') as f:
@@ -67,7 +66,7 @@ class World:
                 s = l.strip().split(' ')
                 if s[0] == 'elevdump':
                     continue
-                if ((int(s[0]), int(s[1])) not in elev):
+                if (int(s[0]), int(s[1])) not in elev:
                     elev[(int(s[0]), int(s[1]))] = []
                 elev[(int(s[0]), int(s[1]))].append({
                     'node': (int(s[2]), int(s[3])),

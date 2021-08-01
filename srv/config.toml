@@ -1,0 +1,7 @@
+STATIC_PATH = "static"
+DEBUG = true
+DB_FILE = "app.db"
+QUART_AUTH_COOKIE_SECURE = false
+QUART_AUTH_COOKIE_HTTP_ONLY = false
+SECRET_KEY = "**changeme**"
+POSITION_UPDATE_TICK = 0.2

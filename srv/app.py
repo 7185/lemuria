@@ -1,6 +1,9 @@
 #!/usr/bin/env python
+"""App module"""
+
 import asyncio
-from quart import g, Quart, render_template, websocket, request, jsonify
+import toml
+from quart import Quart, render_template, websocket, request, jsonify
 from quart_auth import AuthManager, login_required
 from sqlalchemy import create_engine
 from sqlalchemy_aio import ASYNCIO_STRATEGY
@@ -9,35 +12,40 @@ from ws import sending, receiving
 from user import User
 
 app = Quart(__name__)
-app.config.from_object('config.Config')
-app.static_folder = app.config['STATIC_PATH']
-app.template_folder = app.config['STATIC_PATH']
+app.config.from_file('config.toml', toml.load)
+config = app.config
+
+app.static_folder = config['STATIC_PATH']
+app.template_folder = config['STATIC_PATH']
+app.secret_key = config['SECRET_KEY']
 
 auth_manager = AuthManager()
 auth_manager.user_class = User
 
-app.secret_key = app.config['SECRET_KEY']
 app.engine = create_engine(f"sqlite:///{app.config['DB_FILE']}", strategy=ASYNCIO_STRATEGY)
 
 @app.route('/')
 async def index():
+    """Default route"""
     return await render_template("index.html")
 
 @app.websocket('/ws')
 @login_required
 async def wsocket():
-    u = User.current()
-    if u is None:
+    """Websocket"""
+    user = User.current()
+    if user is None:
         return
-    u.websockets.add(websocket._get_current_object())
-    u.connected = True
-    await u.init_timer()
-    producer = asyncio.create_task(sending(u))
-    consumer = asyncio.create_task(receiving(u))
+    user.websockets.add(websocket._get_current_object())
+    user.connected = True
+    await user.init_timer()
+    producer = asyncio.create_task(sending(user))
+    consumer = asyncio.create_task(receiving(user))
     await asyncio.gather(producer, consumer)
 
 @app.errorhandler(404)
-async def redirect(e):
+async def redirect():
+    """Redirect everything to index"""
     if '/api/' in request.url:
         return jsonify({'error': 'Not found'}), 404
     return await render_template("index.html")

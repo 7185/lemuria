@@ -1,25 +1,24 @@
 #!/usr/bin/env python
-import uuid
-from functools import wraps
-from quart import websocket, json
-from config import Config
+from quart import websocket
 from user import authorized_users, broadcast, User
 
 
 async def sending(user: User):
     await broadcast({'type': 'join', 'data': await user.name})
-    await broadcast({'type': 'list', 'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
+    await broadcast({'type': 'list',
+                     'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
     try:
         while True:
             data = await user.queue.get()
-            for s in user.websockets:
-                await s.send_json(data)
+            for socket in user.websockets:
+                await socket.send_json(data)
     finally:
         user.websockets.remove(websocket._get_current_object())
         if len(user.websockets) == 0:
             user.connected = False
             await broadcast({'type': 'part', 'data': await user.name})
-            await broadcast({'type': 'list', 'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
+            await broadcast({'type': 'list',
+                             'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
 
 
 async def receiving(user: User):

@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-import trio
+"""Database tools module"""
+
 import json
 from sqlalchemy_aio import TRIO_STRATEGY
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, Text
 from sqlalchemy.schema import CreateTable
 
-engine = create_engine(f'sqlite:///../app.db', strategy=TRIO_STRATEGY)
+engine = create_engine('sqlite:///../app.db', strategy=TRIO_STRATEGY)
 metadata = MetaData()
 
 world_attr = {
@@ -66,8 +67,10 @@ def prop_dump(file):
             obj_len = int(s[8])
             desc_len = int(s[9])
             act_len = int(s[10])
-            yield [int(s[1]), data[:obj_len], int(s[2]), int(s[3]), int(s[4]), int(s[6]), int(s[5]), int(s[7]),
-                data[obj_len:obj_len + desc_len] or None, data[obj_len + desc_len:obj_len + desc_len + act_len] or None]
+            yield [int(s[1]), data[:obj_len], int(s[2]), int(s[3]), int(s[4]),
+                   int(s[6]), int(s[5]), int(s[7]),
+                   data[obj_len:obj_len + desc_len] or None,
+                   data[obj_len + desc_len:obj_len + desc_len + act_len] or None]
 
 
 async def init_db():
@@ -81,22 +84,23 @@ async def init_db():
 
 async def import_world(attr_file, prop_file):
     conn = await engine.connect()
-    result = await conn.execute(f"select id from user where lower(name) = 'admin'")
+    result = await conn.execute("select id from user where lower(name) = 'admin'")
     data = await result.first()
     if data is None:
         print("Create admin user first")
         return
     admin_id = data[0]
     attr_dict = {}
-    for e in attr_dump(attr_file):
-        if e[0] in world_attr:
-            attr_dict[world_attr[e[0]]] = e[1]
+    for entry in attr_dump(attr_file):
+        if entry[0] in world_attr:
+            attr_dict[world_attr[entry[0]]] = entry[1]
 
     w_query = f"select id from world where lower(name) = '{attr_dict['name'].lower()}'"
     result = await conn.execute(w_query)
     data = await result.first()
     if data is None:
-        await conn.execute(world.insert().values(name=attr_dict['name'], data=json.dumps(attr_dict)))
+        await conn.execute(world.insert().values(name=attr_dict['name'],
+                                                 data=json.dumps(attr_dict)))
         result = await conn.execute(w_query)
         data = await result.first()
     world_id = data[0]
