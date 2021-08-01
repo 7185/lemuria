@@ -5,8 +5,8 @@ import {ObjectService} from './object.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {AWActionParser} from 'aw-action-parser'
-import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, MeshPhongMaterial, DoubleSide,
-  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3} from 'three'
+import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping,
+  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, BufferAttribute} from 'three'
 export const RES_PATH = config.url.resource
 
 @Injectable({providedIn: 'root'})
@@ -16,6 +16,7 @@ export class WorldService {
   private avatar: Group
   private textureLoader: TextureLoader
   private actionParser = new AWActionParser()
+  private terrain: Group
 
   constructor(private engine: EngineService, private userSvc: UserService, private objSvc: ObjectService) {
   }
@@ -48,22 +49,6 @@ export class WorldService {
     skybox.name = 'skybox'
     this.engine.addWorldObject(skybox)
 
-    const floorTexture = this.textureLoader.load(`${RES_PATH}/textures/terrain17.jpg`)
-    floorTexture.wrapS = RepeatWrapping
-    floorTexture.wrapT = RepeatWrapping
-    floorTexture.repeat.set(128, 128)
-
-    const floorMaterial = new MeshPhongMaterial({map: floorTexture, side: DoubleSide})
-    const floorGeometry = new PlaneGeometry(1000, 1000, 1, 1)
-    const floor = new Group()
-    const floorMesh = new Mesh(floorGeometry, floorMaterial)
-    floor.add(floorMesh)
-    floor.name = 'ground'
-    floor.position.y = -0.01
-    floor.rotation.x = -Math.PI / 2
-    this.engine.addWorldObject(floor)
-    this.engine.addMeshToOctree(floor)
-
     this.avatar = new Group()
     this.avatar.name = 'avatar'
     this.avatar.rotation.copy(new Euler(0, Math.PI, 0))
@@ -90,6 +75,46 @@ export class WorldService {
       const avatarId = u.avatar >= this.avatarList.length ? 0 : u.avatar
       this.setAvatar(this.avatarList[avatarId].geometry, user as Group)
     })
+  }
+
+  public initTerrain(elev: any) {
+    if (this.terrain != null) {
+      this.engine.removeWorldObject(this.terrain)
+    }
+
+    this.terrain = new Group()
+    const terrainTexture = this.textureLoader.load(`${RES_PATH}/textures/terrain17.jpg`)
+    terrainTexture.wrapS = RepeatWrapping
+    terrainTexture.wrapT = RepeatWrapping
+    terrainTexture.repeat.set(128, 128)
+
+    const terrainMaterial = new MeshBasicMaterial({map: terrainTexture})
+
+    // FIXME: Plane should be 128x128
+    if (elev != null) {
+      for (const d of Object.entries(elev)) {
+        // Only one page for now
+        if (d[0] === '0_0') {
+          const geometry = new PlaneGeometry(1280, 1280, 127, 127)
+          geometry.rotateX(-Math.PI / 2)
+
+          const positions = new Float32Array(geometry.attributes.position.array)
+          for (let i = 0, j = 0, l = positions.length; i < l; i++, j += 3) {
+            positions[j + 1] = d[1][i] / 100 || 0
+          }
+          geometry.setAttribute('position', new BufferAttribute(positions, 3))
+
+          const terrainMesh = new Mesh(geometry, terrainMaterial)
+          this.terrain.add(terrainMesh)
+        }
+      }
+    } else {
+      const geometry = new PlaneGeometry(1280, 1280, 127, 127)
+      geometry.rotateX(-Math.PI / 2)
+      const terrainMesh = new Mesh(geometry, terrainMaterial)
+      this.terrain.add(terrainMesh)
+    }
+    this.engine.addWorldObject(this.terrain)
   }
 
   public execActions(item: Group) {
@@ -174,6 +199,7 @@ export class WorldService {
       this.avatarList = list
       this.setAvatar(this.avatarList[0].geometry, this.avatar)
     })
+    this.initTerrain(data.elev)
     for (const item of data.objects) {
       this.loadItem(item[1], new Vector3(item[2], item[3], item[4]), new Vector3(item[5], item[6], item[7]),
                     item[0], item[8], item[9])

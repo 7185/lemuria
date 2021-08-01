@@ -48,26 +48,26 @@ prop = Table(
 
 
 def attr_dump(file):
-    f = open(file, 'r', encoding='ISO-8859-1')
-    for l in f:
-        s = l.split(' ', 1)
-        if s[0] == 'atdump':
-            continue
-        yield (int(s[0]), s[1].strip())
+    with open(file, 'r', encoding='ISO-8859-1') as f:
+        for l in f:
+            s = l.split(' ', 1)
+            if s[0] == 'atdump':
+                continue
+            yield (int(s[0]), s[1].strip())
 
 
 def prop_dump(file):
-    f = open(file, 'r', encoding='ISO-8859-1')
-    for l in f:
-        s = l.split(' ', 11)
-        if s[0] == 'propdump':
-            continue
-        data = s[11]
-        obj_len = int(s[8])
-        desc_len = int(s[9])
-        act_len = int(s[10])
-        yield [int(s[1]), data[:obj_len], int(s[2]), int(s[3]), int(s[4]), int(s[6]), int(s[5]), int(s[7]),
-               data[obj_len:obj_len + desc_len] or None, data[obj_len + desc_len:obj_len + desc_len + act_len] or None]
+    with open(file, 'r', encoding='ISO-8859-1') as f:
+        for l in f:
+            s = l.split(' ', 11)
+            if s[0] == 'propdump':
+                continue
+            data = s[11]
+            obj_len = int(s[8])
+            desc_len = int(s[9])
+            act_len = int(s[10])
+            yield [int(s[1]), data[:obj_len], int(s[2]), int(s[3]), int(s[4]), int(s[6]), int(s[5]), int(s[7]),
+                data[obj_len:obj_len + desc_len] or None, data[obj_len + desc_len:obj_len + desc_len + act_len] or None]
 
 
 async def init_db():

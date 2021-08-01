@@ -132,8 +132,6 @@ export class EngineService implements OnDestroy {
     if (config.debug) {
       const shadowHelper = new CameraHelper(this.dirLight.shadow.camera)
       this.scene.add(shadowHelper)
-      const gridHelper = new GridHelper(1000, 100, 0xff0000, 0x00ffff)
-      this.scene.add(gridHelper)
     }
   }
 
@@ -153,9 +151,9 @@ export class EngineService implements OnDestroy {
       const cylinderGeometry = new CylinderGeometry(capsuleRadius, capsuleRadius, capsuleHeight - capsuleRadius * 2, 8)
       const topSphereGeometry = new SphereGeometry(capsuleRadius)
       const bottomSphereGeometry = new SphereGeometry(capsuleRadius)
-      const cylinder = new Mesh(cylinderGeometry, this.capsuleMaterial)
-      const topSphere = new Mesh(topSphereGeometry, this.capsuleMaterial)
-      const bottomSphere = new Mesh(bottomSphereGeometry, this.capsuleMaterial)
+      const cylinder = new Mesh(cylinderGeometry, [this.capsuleMaterial])
+      const topSphere = new Mesh(topSphereGeometry, [this.capsuleMaterial])
+      const bottomSphere = new Mesh(bottomSphereGeometry, [this.capsuleMaterial])
       cylinder.position.set(0, capsuleHeight/2, 0)
       topSphere.position.set(0, capsuleHeight - capsuleRadius, 0)
       bottomSphere.position.set(0, capsuleRadius, 0)
@@ -266,6 +264,17 @@ export class EngineService implements OnDestroy {
       }
     })
     this.objectsNode.remove(group)
+  }
+
+  public removeWorldObject(group: Group) {
+    group.traverse((child: Object3D) => {
+      if (child instanceof Mesh) {
+        child.geometry.dispose()
+        // FIXME: terrain should have a material array
+        child.material.dispose()
+      }
+    })
+    this.worldNode.remove(group)
   }
 
   public removeUser(group: Group) {
