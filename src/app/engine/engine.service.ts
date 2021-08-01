@@ -267,11 +267,10 @@ export class EngineService implements OnDestroy {
   }
 
   public removeWorldObject(group: Group) {
+    this.disposeMaterial(group)
     group.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         child.geometry.dispose()
-        // FIXME: terrain should have a material array
-        child.material.dispose()
       }
     })
     this.worldNode.remove(group)

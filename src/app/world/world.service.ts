@@ -88,7 +88,7 @@ export class WorldService {
     terrainTexture.wrapT = RepeatWrapping
     terrainTexture.repeat.set(128, 128)
 
-    const terrainMaterial = new MeshBasicMaterial({map: terrainTexture})
+    const terrainMaterial = [new MeshBasicMaterial({map: terrainTexture})]
 
     // FIXME: Plane should be 128x128
     if (elev != null) {
@@ -103,6 +103,7 @@ export class WorldService {
             positions[j + 1] = d[1][i] / 100 || 0
           }
           geometry.setAttribute('position', new BufferAttribute(positions, 3))
+          geometry.addGroup(0, geometry.getIndex().count, 0)
 
           const terrainMesh = new Mesh(geometry, terrainMaterial)
           this.terrain.add(terrainMesh)
@@ -111,6 +112,7 @@ export class WorldService {
     } else {
       const geometry = new PlaneGeometry(1280, 1280, 127, 127)
       geometry.rotateX(-Math.PI / 2)
+      geometry.addGroup(0, geometry.getIndex().count, 0)
       const terrainMesh = new Mesh(geometry, terrainMaterial)
       this.terrain.add(terrainMesh)
     }
