@@ -165,7 +165,7 @@ export class WorldService {
       g.userData.date = date
       g.userData.desc = desc
       g.userData.act = act
-      if (act) {
+      if (act && g.userData?.isError !== true) {
         this.execActions(g)
       }
       g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)

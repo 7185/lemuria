@@ -22,6 +22,7 @@ export class ObjectService {
     const cone = new Mesh(coneGeometry, [new MeshBasicMaterial({color: 0x000000})])
     cone.position.y = 0.5
     this.errorCone = new Group().add(cone)
+    this.errorCone.userData.isError = true
     this.rwxLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true)
   }
 
