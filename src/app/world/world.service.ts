@@ -83,6 +83,7 @@ export class WorldService {
     }
 
     this.terrain = new Group()
+    this.terrain.name = 'terrain'
     const terrainTexture = this.textureLoader.load(`${RES_PATH}/textures/terrain17.jpg`)
     terrainTexture.wrapS = RepeatWrapping
     terrainTexture.wrapT = RepeatWrapping
@@ -117,6 +118,7 @@ export class WorldService {
       this.terrain.add(terrainMesh)
     }
     this.engine.addWorldObject(this.terrain)
+    this.engine.refreshOctree()
   }
 
   public execActions(item: Group) {

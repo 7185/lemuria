@@ -201,11 +201,13 @@ export class EngineService implements OnDestroy {
     this.camera.position.y = offset
   }
 
-  public refreshOctree() {
+  public refreshOctree(withObjets=false) {
     this.worldOctree = new Octree()
-    this.worldOctree.fromGraphNode(this.worldNode.children.find(o => o.name === 'ground'))
-    for (const item of this.objectsNode.children.filter(i => i.name.endsWith('.rwx') && i.userData.notSolid !== true)) {
-      this.addMeshToOctree(item as Group)
+    this.worldOctree.fromGraphNode(this.worldNode.children.find(o => o.name === 'terrain'))
+    if (withObjets) {
+      for (const item of this.objectsNode.children.filter(i => i.name.endsWith('.rwx') && i.userData.notSolid !== true)) {
+        this.addMeshToOctree(item as Group)
+      }
     }
   }
 
