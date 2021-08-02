@@ -91,27 +91,33 @@ export class WorldService {
 
     const terrainMaterial = [new MeshBasicMaterial({map: terrainTexture})]
 
-    // FIXME: Plane should be 128x128
     if (elev != null) {
       for (const d of Object.entries(elev)) {
-        // Only one page for now
-        if (d[0] === '0_0') {
-          const geometry = new PlaneGeometry(1280, 1280, 127, 127)
-          geometry.rotateX(-Math.PI / 2)
+        const geometry = new PlaneGeometry(1280, 1280, 128, 128)
+        geometry.rotateX(-Math.PI / 2)
 
-          const positions = new Float32Array(geometry.attributes.position.array)
-          for (let i = 0, j = 0, l = positions.length; i < l; i++, j += 3) {
-            positions[j + 1] = d[1][i] / 100 || 0
+        const positions = new Float32Array(geometry.attributes.position.array)
+        let gap = 0
+        for (let i = 0, j = 0; i < positions.length; i++, j += 3) {
+          if (i % 128 !== 0) {
+            positions[j + 1 + gap * 3] = d[1][i] / 100 || 0
+          } else {
+            // skip edge
+            gap++
           }
-          geometry.setAttribute('position', new BufferAttribute(positions, 3))
-          geometry.addGroup(0, geometry.getIndex().count, 0)
-
-          const terrainMesh = new Mesh(geometry, terrainMaterial)
-          this.terrain.add(terrainMesh)
         }
+        geometry.setAttribute('position', new BufferAttribute(positions, 3))
+        geometry.addGroup(0, geometry.getIndex().count, 0)
+
+        const terrainMesh = new Mesh(geometry, terrainMaterial)
+        const pos = d[0].split('_').map(p => parseInt(p, 10))
+        // move terrain by 1E (-10x)
+        terrainMesh.position.set(pos[0] * 10 - 10, 0, pos[1] * 10)
+        console.log(pos, terrainMesh.position)
+        this.terrain.add(terrainMesh)
       }
     } else {
-      const geometry = new PlaneGeometry(1280, 1280, 127, 127)
+      const geometry = new PlaneGeometry(1280, 1280, 128, 128)
       geometry.rotateX(-Math.PI / 2)
       geometry.addGroup(0, geometry.getIndex().count, 0)
       const terrainMesh = new Mesh(geometry, terrainMaterial)
