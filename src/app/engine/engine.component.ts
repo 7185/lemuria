@@ -1,4 +1,4 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core'
+import {Component, ElementRef, OnInit, OnDestroy, ViewChild} from '@angular/core'
 import {EngineService} from './engine.service'
 import {WorldService} from '../world/world.service'
 
@@ -7,7 +7,7 @@ import {WorldService} from '../world/world.service'
   templateUrl: './engine.component.html',
   styleUrls: ['./engine.component.scss']
 })
-export class EngineComponent implements OnInit {
+export class EngineComponent implements OnInit, OnDestroy {
 
   @ViewChild('rendererCanvas', {static: true})
   public rendererCanvas: ElementRef<HTMLCanvasElement>
@@ -25,4 +25,8 @@ export class EngineComponent implements OnInit {
     this.engServ.animate()
   }
 
+  public ngOnDestroy(): void {
+    this.engServ.clearScene()
+    this.world.destroyWorld()
+  }
 }

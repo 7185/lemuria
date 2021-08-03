@@ -44,7 +44,7 @@ async def wsocket():
     await asyncio.gather(producer, consumer)
 
 @app.errorhandler(404)
-async def redirect():
+async def redirect(_):
     """Redirect everything to index"""
     if '/api/' in request.url:
         return jsonify({'error': 'Not found'}), 404

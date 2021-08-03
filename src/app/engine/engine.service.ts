@@ -12,6 +12,7 @@ import {config} from '../app.config'
 
 export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, ctrl, shift, esc, ins, del }
 export const DEG = Math.PI / 180
+export const RPM = Math.PI / 30
 const capsuleRadius = 0.35
 
 @Injectable({providedIn: 'root'})
@@ -31,6 +32,7 @@ export class EngineService implements OnDestroy {
   private light: AmbientLight
   private dirLight: DirectionalLight
   private avatar: Group
+  private skybox: Group
   private buildMode = false
   private flyMode = false
   private selectedObject: Group
@@ -135,6 +137,22 @@ export class EngineService implements OnDestroy {
     }
   }
 
+  public clearScene() {
+    for (const item of this.worldNode.children) {
+      this.removeWorldObject(item as Group)
+    }
+    this.renderer.dispose()
+    this.scene.traverse((child: Object3D) => {
+      if (child instanceof Mesh) {
+        child.geometry.dispose()
+      }
+      this.disposeMaterial(child as Group)
+      if (child.parent) {
+        child.parent.remove()
+      }
+    })
+  }
+
   public updateCapsule() {
     const capsuleHeight = this.camera.position.y * 1.11
     const capsulePos = this.player.position
@@ -187,10 +205,6 @@ export class EngineService implements OnDestroy {
     return [p, o]
   }
 
-  public setBackground(bg) {
-    this.scene.background = bg
-  }
-
   public attachCam(group: Group) {
     this.avatar = group
     this.avatar.visible = this.activeCamera === this.thirdCamera
@@ -221,6 +235,9 @@ export class EngineService implements OnDestroy {
   }
 
   public addWorldObject(group: Group) {
+    if (group.name === 'skybox') {
+      this.skybox = group
+    }
     this.worldNode.add(group)
   }
 
@@ -269,16 +286,22 @@ export class EngineService implements OnDestroy {
   }
 
   public removeWorldObject(group: Group) {
-    this.disposeMaterial(group)
-    group.traverse((child: Object3D) => {
-      if (child instanceof Mesh) {
-        child.geometry.dispose()
-      }
-    })
-    this.worldNode.remove(group)
+    if (group) {
+      this.disposeMaterial(group)
+      group.traverse((child: Object3D) => {
+        if (child instanceof Mesh) {
+          child.geometry.dispose()
+        }
+      })
+      this.worldNode.remove(group)
+    }
   }
 
   public removeUser(group: Group) {
+    const divUser = document.getElementById('label-' + group.name)
+    if (divUser) {
+      divUser.remove()
+    }
     this.disposeMaterial(group)
     group.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
@@ -346,7 +369,7 @@ export class EngineService implements OnDestroy {
           if (item !== this.hoveredObject) {
             this.labelDesc.style.display = 'none'
             this.hoveredObject = item
-            if (item != null) {
+            if (item != null && item.userData?.desc) {
               this.labelDesc.style.display = 'block'
               this.labelDesc.innerHTML = item.userData.desc
               this.labelDesc.style.left = (this.mouse.x + 1)/2 * window.innerWidth + 'px'
@@ -692,10 +715,16 @@ export class EngineService implements OnDestroy {
       item.updateMatrix()
     }
 
-    const sky = this.worldNode.children.find(o => o.name === 'skybox')
-    if (sky != null) {
-      sky.position.copy(this.player.position)
+    if (!this.buildMode) {
+      for (const item of this.objectsNode.children.filter(i => i.userData.rotate != null)) {
+        item.rotation.x += item.userData.rotate.x * RPM * this.deltaSinceLastFrame
+        item.rotation.y += item.userData.rotate.y * RPM * this.deltaSinceLastFrame
+        item.rotation.z += item.userData.rotate.z * RPM * this.deltaSinceLastFrame
+        item.updateMatrix()
+      }
     }
+
+    this.skybox.position.copy(this.player.position)
     this.dirLight.position.set(-50 + this.player.position.x, 80 + this.player.position.y, 10 + this.player.position.z)
 
     // compass
@@ -733,11 +762,13 @@ export class EngineService implements OnDestroy {
       vector.x = (vector.x + 1)/2 * window.innerWidth
       vector.y = -(vector.y - 1)/2 * window.innerHeight
       const div = document.getElementById('label-' + user.name)
-      if (div != null && vector.z < 1) {
-        div.style.left = vector.x + 'px'
-        div.style.top = vector.y + 'px'
+      if (div != null) {
+        if (vector.z < 1) {
+          div.style.left = vector.x + 'px'
+          div.style.top = vector.y + 'px'
+        }
+        div.style.visibility = vector.z < 1 ? 'visible' : 'hidden'
       }
-      div.style.visibility = vector.z < 1 ? 'visible' : 'hidden'
     }
   }
 }

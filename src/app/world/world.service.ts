@@ -1,3 +1,4 @@
+import {Subscription} from 'rxjs'
 import {UserService} from './../user/user.service'
 import {User} from './../user/user.model'
 import {EngineService, DEG} from './../engine/engine.service'
@@ -17,6 +18,9 @@ export class WorldService {
   private textureLoader: TextureLoader
   private actionParser = new AWActionParser()
   private terrain: Group
+
+  private uListListener: Subscription
+  private uAvatarListener: Subscription
 
   constructor(private engine: EngineService, private userSvc: UserService, private objSvc: ObjectService) {
   }
@@ -55,11 +59,10 @@ export class WorldService {
     this.engine.attachCam(this.avatar)
 
     // listeners
-    this.userSvc.listChanged.subscribe((userList: User[]) => {
+    this.uListListener = this.userSvc.listChanged.subscribe((userList: User[]) => {
       for (const user of this.engine.users()) {
         if (userList.map(u => u.id).indexOf(user.name) === -1) {
           this.engine.removeUser(user as Group)
-          document.getElementById('label-' + user.name).remove()
         }
       }
       for (const u of userList) {
@@ -70,11 +73,16 @@ export class WorldService {
       }
     })
 
-    this.userSvc.avatarChanged.subscribe((u) => {
+    this.uAvatarListener = this.userSvc.avatarChanged.subscribe((u) => {
       const user = this.engine.users().find(o => o.name === u.id)
       const avatarId = u.avatar >= this.avatarList.length ? 0 : u.avatar
       this.setAvatar(this.avatarList[avatarId].geometry, user as Group)
     })
+  }
+
+  destroyWorld() {
+    this.uAvatarListener.unsubscribe()
+    this.uListListener.unsubscribe()
   }
 
   public initTerrain(elev: any) {
@@ -113,7 +121,6 @@ export class WorldService {
         const pos = d[0].split('_').map(p => parseInt(p, 10))
         // move terrain by 1E (-10x)
         terrainMesh.position.set(pos[0] * 10 - 10, 0, pos[1] * 10)
-        console.log(pos, terrainMesh.position)
         this.terrain.add(terrainMesh)
       }
     } else {
@@ -150,6 +157,9 @@ export class WorldService {
               this.objSvc.applyTexture(item, cmd.texture, cmd.mask)
             }
           }
+        }
+        if (cmd.commandType === 'rotate') {
+          item.userData.rotate = cmd.speed
         }
       }
     }
