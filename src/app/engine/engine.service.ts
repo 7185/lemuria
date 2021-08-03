@@ -1,7 +1,7 @@
 import {Subject} from 'rxjs'
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
-  AmbientLight, BoxHelper, Clock, Material, PerspectiveCamera, Raycaster, Scene, GridHelper, Group,
+  AmbientLight, BoxHelper, Clock, Material, PerspectiveCamera, Raycaster, Scene, Group,
   Vector2, Vector3, WebGLRenderer, DirectionalLight, CameraHelper, Object3D, Spherical,
   Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper
 } from 'three'
@@ -604,15 +604,11 @@ export class EngineService implements OnDestroy {
     }
     if (this.controls[PressedKey.pgUp]) {
       this.selectedObject.rotation.y += rotStep
-      if (this.selectedObject.rotation.y > -Math.PI) {
-        this.selectedObject.rotation.y -= 2 * Math.PI
-      }
+      this.selectedObject.rotation.y = this.radNormalized(this.selectedObject.rotation.y)
     }
     if (this.controls[PressedKey.pgDown]) {
       this.selectedObject.rotation.y -= rotStep
-      if (this.selectedObject.rotation.y < -Math.PI) {
-        this.selectedObject.rotation.y += 2 * Math.PI
-      }
+      this.selectedObject.rotation.y = this.radNormalized(this.selectedObject.rotation.y)
     }
     if (this.controls[PressedKey.ins]) {
       this.selectedObject = this.selectedObject.clone() as Group
@@ -645,9 +641,7 @@ export class EngineService implements OnDestroy {
         this.playerVelocity.add((new Vector3(this.cameraDirection.z, 0, -this.cameraDirection.x)).multiplyScalar(steps))
       } else {
         this.player.rotation.y += 0.1 * steps
-        if (this.player.rotation.y > Math.PI) {
-         this.player.rotation.y -= 2 * Math.PI
-        }
+        this.player.rotation.y = this.radNormalized(this.player.rotation.y)
       }
     }
     if (this.controls[PressedKey.right]) {
@@ -655,9 +649,7 @@ export class EngineService implements OnDestroy {
         this.playerVelocity.add(new Vector3(-this.cameraDirection.z, 0, this.cameraDirection.x).multiplyScalar(steps))
       } else {
         this.player.rotation.y -= 0.1 * steps
-        if (this.player.rotation.y < -Math.PI) {
-          this.player.rotation.y += 2 * Math.PI
-        }
+        this.player.rotation.y = this.radNormalized(this.player.rotation.y)
       }
     }
     if (this.controls[PressedKey.pgUp]) {
@@ -720,6 +712,9 @@ export class EngineService implements OnDestroy {
         item.rotation.x += item.userData.rotate.x * RPM * this.deltaSinceLastFrame
         item.rotation.y += item.userData.rotate.y * RPM * this.deltaSinceLastFrame
         item.rotation.z += item.userData.rotate.z * RPM * this.deltaSinceLastFrame
+        item.rotation.x = this.radNormalized(item.rotation.x)
+        item.rotation.y = this.radNormalized(item.rotation.y)
+        item.rotation.z = this.radNormalized(item.rotation.z)
         item.updateMatrix()
       }
     }
@@ -770,5 +765,14 @@ export class EngineService implements OnDestroy {
         div.style.visibility = vector.z < 1 ? 'visible' : 'hidden'
       }
     }
+  }
+
+  private radNormalized(value: number): number {
+    if (value > Math.PI) {
+      value -= 2 * Math.PI
+    } else if (value < -Math.PI) {
+      value += 2 * Math.PI
+    }
+    return value
   }
 }
