@@ -59,6 +59,7 @@ export class EngineService implements OnDestroy {
   private worldNode = new Group()
   private objectsNode = new Group()
   private sprites: Set<Group> = new Set()
+  private movingObjects: Set<Group> = new Set()
 
   private mouseIdle = 0
   private labelDesc: HTMLDivElement
@@ -231,6 +232,9 @@ export class EngineService implements OnDestroy {
     if (group.userData.rwx?.axisAlignment !== 'none') {
       this.sprites.add(group)
     }
+    if (group.userData.rotate != null || group.userData.move != null) {
+      this.movingObjects.add(group)
+    }
     group.updateMatrix()
   }
 
@@ -275,6 +279,9 @@ export class EngineService implements OnDestroy {
     }
     if (group.userData.rwx?.axisAlignment !== 'none') {
       this.sprites.delete(group)
+    }
+    if (group.userData.rotate != null || group.userData.move != null) {
+      this.movingObjects.delete(group)
     }
     this.disposeMaterial(group)
     group.traverse((child: Object3D) => {
@@ -419,6 +426,7 @@ export class EngineService implements OnDestroy {
 
     if (!this.buildMode) {
       this.moveCamera()
+      this.moveItems()
     }
     this.moveUsers()
     this.moveLabels()
@@ -626,9 +634,17 @@ export class EngineService implements OnDestroy {
   }
 
   private moveCamera() {
-    let steps = 4 * this.deltaSinceLastFrame
-    if (this.controls[PressedKey.ctrl]) {
-      steps = 16 * this.deltaSinceLastFrame
+    let steps = 0
+    if (!this.flyMode) {
+      steps = 3 * this.deltaSinceLastFrame
+      if (this.controls[PressedKey.ctrl]) {
+        steps = 9 * this.deltaSinceLastFrame
+      }
+    } else {
+      steps = 12 * this.deltaSinceLastFrame
+      if (this.controls[PressedKey.ctrl]) {
+        steps = 30 * this.deltaSinceLastFrame
+      }
     }
     if (this.controls[PressedKey.up]) {
       this.playerVelocity.add(this.cameraDirection.multiplyScalar(steps))
@@ -638,7 +654,7 @@ export class EngineService implements OnDestroy {
     }
     if (this.controls[PressedKey.left]) {
       if (this.controls[PressedKey.shift]) {
-        this.playerVelocity.add((new Vector3(this.cameraDirection.z, 0, -this.cameraDirection.x)).multiplyScalar(steps))
+        this.playerVelocity.add(new Vector3(this.cameraDirection.z, 0, -this.cameraDirection.x).multiplyScalar(steps))
       } else {
         this.player.rotation.y += 0.1 * steps
         this.player.rotation.y = this.radNormalized(this.player.rotation.y)
@@ -707,24 +723,68 @@ export class EngineService implements OnDestroy {
       item.updateMatrix()
     }
 
-    if (!this.buildMode) {
-      for (const item of this.objectsNode.children.filter(i => i.userData.rotate != null)) {
-        item.rotation.x += item.userData.rotate.x * RPM * this.deltaSinceLastFrame
-        item.rotation.y += item.userData.rotate.y * RPM * this.deltaSinceLastFrame
-        item.rotation.z += item.userData.rotate.z * RPM * this.deltaSinceLastFrame
-        item.rotation.x = this.radNormalized(item.rotation.x)
-        item.rotation.y = this.radNormalized(item.rotation.y)
-        item.rotation.z = this.radNormalized(item.rotation.z)
-        item.updateMatrix()
-      }
-    }
-
     this.skybox.position.copy(this.player.position)
     this.dirLight.position.set(-50 + this.player.position.x, 80 + this.player.position.y, 10 + this.player.position.z)
 
     // compass
     this.compass.setFromVector3(this.cameraDirection)
     this.compassSub.next(Math.round(this.compass.theta / DEG))
+  }
+
+  private moveItems() {
+    for (const item of this.movingObjects) {
+      if (item.userData.move) {
+        if (item.userData.move.completion < 1) {
+          item.position.x += (item.userData.move.distance.x / item.userData.move.time)
+            * this.deltaSinceLastFrame * item.userData.move.direction
+          item.position.y += (item.userData.move.distance.y / item.userData.move.time)
+            * this.deltaSinceLastFrame * item.userData.move.direction
+          item.position.z += (item.userData.move.distance.z / item.userData.move.time)
+            * this.deltaSinceLastFrame * item.userData.move.direction
+          item.userData.move.completion += this.deltaSinceLastFrame / item.userData.move.time
+        } else {
+          // move is done
+          if (item.userData.move.direction === -1) {
+            // wayback is done
+            if (item.userData.move.loop) {
+              item.userData.move.direction = item.userData.move.direction * -1
+              item.userData.move.completion = 0
+            }
+          } else {
+            if (item.userData.move.reset) {
+              // no wayback, all done
+              item.position.copy(item.userData.move.orig)
+            } else {
+              // wayback is starting
+              item.userData.move.direction = item.userData.move.direction * -1
+              item.userData.move.completion = 0
+            }
+          }
+        }
+      }
+      if (item.userData.rotate) {
+        item.rotation.x += item.userData.rotate.speed.x * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction
+        item.rotation.y += item.userData.rotate.speed.y * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction
+        item.rotation.z += item.userData.rotate.speed.z * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction
+        item.rotation.x = this.radNormalized(item.rotation.x)
+        item.rotation.y = this.radNormalized(item.rotation.y)
+        item.rotation.z = this.radNormalized(item.rotation.z)
+        if (item.userData.rotate.time) {
+          if (item.userData.rotate.completion >= 1) {
+            if (item.userData.rotate.loop) {
+              item.userData.rotate.completion = 0
+              if (item.userData.rotate.reset) {
+                item.rotation.copy(item.userData.rotate.orig)
+              } else {
+                item.userData.rotate.direction = item.userData.rotate.direction * -1
+              }
+            }
+          }
+          item.userData.rotate.completion += this.deltaSinceLastFrame / item.userData.rotate.time
+        }
+      }
+      item.updateMatrix()
+    }
   }
 
   private moveUsers() {

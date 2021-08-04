@@ -5,7 +5,7 @@ import {UserService} from './../../user/user.service'
 import {AfterViewInit, Component, ElementRef, OnInit, Renderer2, ViewChild} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import {User} from '../../user/user.model'
-import { Vector3 } from 'three'
+import {Vector3} from 'three'
 
 @Component({
   selector: 'app-ui-toolbar',

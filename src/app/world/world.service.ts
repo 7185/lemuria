@@ -158,8 +158,29 @@ export class WorldService {
             }
           }
         }
+        if (cmd.commandType === 'move') {
+          item.userData.move = {
+            distance: cmd.distance,
+            time: cmd.time || 1,
+            loop: cmd.loop || false,
+            reset: cmd.reset || false,
+            wait: cmd.wait || 0,
+            completion: 0,
+            direction: 1,
+            orig: item.position.clone()
+          }
+        }
         if (cmd.commandType === 'rotate') {
-          item.userData.rotate = cmd.speed
+          item.userData.rotate = {
+            speed: cmd.speed,
+            time: cmd.time || null,
+            loop: cmd.loop || false,
+            reset: cmd.reset || false,
+            wait: cmd.wait || 0,
+            completion: 0,
+            direction: 1,
+            orig: item.rotation.clone()
+          }
         }
       }
     }
@@ -175,11 +196,11 @@ export class WorldService {
       g.userData.date = date
       g.userData.desc = desc
       g.userData.act = act
+      g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
+      g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
       if (act && g.userData?.isError !== true) {
         this.execActions(g)
       }
-      g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
-      g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
       this.engine.addObject(g)
     })
   }
