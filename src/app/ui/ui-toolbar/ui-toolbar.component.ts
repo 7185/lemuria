@@ -48,7 +48,9 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public logout() {
-    this.socket.close()
+    if (this.socket.connected) {
+      this.socket.close()
+    }
     this.http.logout().subscribe()
   }
 

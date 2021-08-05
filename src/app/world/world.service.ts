@@ -196,6 +196,15 @@ export class WorldService {
       g.userData.date = date
       g.userData.desc = desc
       g.userData.act = act
+      const box = new Box3()
+      box.setFromObject(g)
+      const center = box.getCenter(new Vector3())
+      g.userData.box = {
+        x: box.max.x - box.min.x,
+        y: box.max.y - box.min.y,
+        z: box.max.z - box.min.z
+      }
+      g.userData.boxCenter = {x: center.x, y: center.y, z: center.z}
       g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
       g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
       if (act && g.userData?.isError !== true) {

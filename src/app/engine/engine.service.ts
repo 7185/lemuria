@@ -1,9 +1,10 @@
 import {Subject} from 'rxjs'
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
-  AmbientLight, BoxHelper, Clock, Material, PerspectiveCamera, Raycaster, Scene, Group,
+  AmbientLight, Clock, Material, PerspectiveCamera, Raycaster, Scene, Group, BoxBufferGeometry,
   Vector2, Vector3, WebGLRenderer, DirectionalLight, CameraHelper, Object3D, Spherical,
-  Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper
+  Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper, EdgesGeometry,
+  LineSegments, LineBasicMaterial
 } from 'three'
 import {Octree} from 'three/examples/jsm/math/Octree'
 import {Capsule} from 'three/examples/jsm/math/Capsule'
@@ -47,7 +48,7 @@ export class EngineService implements OnDestroy {
   private frameId: number = null
   private deltaSinceLastFrame = 0
 
-  private selectionBox: BoxHelper
+  private selectionBox: LineSegments
   private axesHelper: AxesHelper
   private controls: boolean[] = Array(9).fill(false)
 
@@ -460,15 +461,27 @@ export class EngineService implements OnDestroy {
     this.buildMode = true
     this.selectedObject = item
     console.log(item.name, item.position, item.rotation, item.userData)
-    this.selectionBox = new BoxHelper(item, 0xffff00)
+
+    const geometry = new BoxBufferGeometry(item.userData.box.x, item.userData.box.y, item.userData.box.z)
+    const edges = new EdgesGeometry(geometry)
+    this.selectionBox = new LineSegments(edges, new LineBasicMaterial({color: 0xffff00, depthTest: false}))
     this.axesHelper = new AxesHelper(5)
     ;(this.axesHelper.material as Material).depthTest = false
-    this.axesHelper.position.copy(item.position)
-    this.axesHelper.rotation.copy(item.rotation)
+    this.axesHelper.position.copy(this.selectedObject.position)
+    this.axesHelper.rotation.copy(this.selectedObject.rotation)
+    const center = new Vector3(this.selectedObject.userData.boxCenter.x,
+                               this.selectedObject.userData.boxCenter.y,
+                               this.selectedObject.userData.boxCenter.z)
+    center.applyAxisAngle(new Vector3(0, 1, 0), this.selectedObject.rotation.y)
+    center.applyAxisAngle(new Vector3(0, 0, 1), this.selectedObject.rotation.z)
+    center.applyAxisAngle(new Vector3(1, 0, 0), this.selectedObject.rotation.x)
+    this.selectionBox.position.copy(new Vector3(this.selectedObject.position.x + center.x,
+                                                this.selectedObject.position.y + center.y,
+                                                this.selectedObject.position.z + center.z))
+    this.selectionBox.rotation.copy(this.selectedObject.rotation)
+    this.selectionBox.updateMatrix()
     this.selectionBox.attach(this.axesHelper)
-    ;(this.selectionBox.material as Material).depthTest = false
     this.scene.add(this.selectionBox)
-    this.selectionBox.setFromObject(item)
   }
 
   private pointedItem() {
@@ -619,15 +632,22 @@ export class EngineService implements OnDestroy {
       this.selectedObject.rotation.y = this.radNormalized(this.selectedObject.rotation.y)
     }
     if (this.controls[PressedKey.ins]) {
-      this.selectedObject = this.selectedObject.clone() as Group
+      this.selectedObject = this.selectedObject.clone()
       this.selectedObject.position.add(v.multiplyScalar(moveStep))
       this.objectsNode.add(this.selectedObject)
-      this.selectionBox.setFromObject(this.selectedObject)
     }
     this.selectedObject.updateMatrix()
-    this.axesHelper.position.copy(this.selectedObject.position)
-    this.axesHelper.rotation.copy(this.selectedObject.rotation)
-    this.selectionBox.update()
+    const center = new Vector3(this.selectedObject.userData.boxCenter.x,
+                               this.selectedObject.userData.boxCenter.y,
+                               this.selectedObject.userData.boxCenter.z)
+    center.applyAxisAngle(new Vector3(0, 1, 0), this.selectedObject.rotation.y)
+    center.applyAxisAngle(new Vector3(0, 0, 1), this.selectedObject.rotation.z)
+    center.applyAxisAngle(new Vector3(1, 0, 0), this.selectedObject.rotation.x)
+    this.selectionBox.position.copy(new Vector3(this.selectedObject.position.x + center.x,
+                                                this.selectedObject.position.y + center.y,
+                                                this.selectedObject.position.z + center.z))
+    this.selectionBox.rotation.copy(this.selectedObject.rotation)
+    this.selectionBox.updateMatrix()
     if (this.controls[PressedKey.del]) {
       this.removeObject(this.selectedObject)
     }
