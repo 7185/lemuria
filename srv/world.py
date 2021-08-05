@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""World module"""
+
+import aiofiles
 from quart import json, current_app
 
 class World:
@@ -29,7 +32,7 @@ class World:
                 for prop in await result.fetchall():
                     self._objects.append(list(prop)[3:13])
                 try:
-                    self._elev = self.elev_dump()
+                    self._elev = await self.elev_dump()
                 except FileNotFoundError:
                     pass
             self._resolved = True
@@ -59,10 +62,10 @@ class World:
             world_list.append({'id': world[0], 'name': world[1]})
         return world_list
 
-    def elev_dump(self):
-        with open(f"elev{self._name.lower()}.txt", 'r', encoding='ISO-8859-1') as f:
+    async def elev_dump(self):
+        async with aiofiles.open(f"elev{self._name.lower()}.txt", 'r', encoding='ISO-8859-1') as f:
             elev = {}
-            for l in f:
+            async for l in f:
                 s = l.strip().split(' ')
                 if s[0] == 'elevdump':
                     continue
@@ -79,6 +82,7 @@ class World:
             z_page = 128 * p[1]
             for n in nodes:
                 if f"{x_page}_{z_page}" not in d:
+                    # new page
                     d[f"{x_page}_{z_page}"] = {}
                 # ignore big nodes and nodes with few elevs for now
                 if n['node_size'] == 4 and len(n['elevs']) > 1:

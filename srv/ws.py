@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+"""Websocket module"""
+
 from quart import websocket
 from user import authorized_users, broadcast, User
 
@@ -16,6 +18,8 @@ async def sending(user: User):
         user.websockets.remove(websocket._get_current_object())
         if len(user.websockets) == 0:
             user.connected = False
+            # Force Timer cancel
+            await user.set_timer()
             await broadcast({'type': 'part', 'data': await user.name})
             await broadcast({'type': 'list',
                              'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})

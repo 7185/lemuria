@@ -2,6 +2,7 @@
 """Database tools module"""
 
 import json
+import trio
 from sqlalchemy_aio import TRIO_STRATEGY
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, Text
 from sqlalchemy.schema import CreateTable
@@ -48,18 +49,18 @@ prop = Table(
 )
 
 
-def attr_dump(file):
-    with open(file, 'r', encoding='ISO-8859-1') as f:
-        for l in f:
+async def attr_dump(file):
+    async with await trio.open_file(file, 'r', encoding='ISO-8859-1') as f:
+        async for l in f:
             s = l.split(' ', 1)
             if s[0] == 'atdump':
                 continue
             yield (int(s[0]), s[1].strip())
 
 
-def prop_dump(file):
-    with open(file, 'r', encoding='ISO-8859-1') as f:
-        for l in f:
+async def prop_dump(file):
+    async with await trio.open_file(file, 'r', encoding='ISO-8859-1') as f:
+        async for l in f:
             s = l.split(' ', 11)
             if s[0] == 'propdump':
                 continue
@@ -91,7 +92,7 @@ async def import_world(attr_file, prop_file):
         return
     admin_id = data[0]
     attr_dict = {}
-    for entry in attr_dump(attr_file):
+    async for entry in attr_dump(attr_file):
         if entry[0] in world_attr:
             attr_dict[world_attr[entry[0]]] = entry[1]
 
@@ -106,7 +107,7 @@ async def import_world(attr_file, prop_file):
     world_id = data[0]
     await conn.execute(prop.delete().where(prop.c.wid==world_id))
     trans = await conn.begin()
-    for o in prop_dump(prop_file):
+    async for o in prop_dump(prop_file):
         await conn.execute(prop.insert().values(wid=world_id, uid=admin_id, date=o[0], name=o[1],
                                                 x=o[2], y=o[3], z=o[4], pi=o[5], ya=o[6], ro=o[7],
                                                 desc=o[8], act=o[9]))

@@ -53,7 +53,7 @@ class User(AuthUser):
             'picth': self.orientation[2]
         }
 
-    async def init_timer(self):
+    async def set_timer(self):
         if self.pos_timer:
             await self.pos_timer.cancel()
         if self.connected:
@@ -63,8 +63,10 @@ class User(AuthUser):
     async def send_pos(self):
         await broadcast({'type': 'pos', 'user': self.auth_id,
             'data': {'pos': {'x': self.position[0], 'y': self.position[1], 'z': self.position[2]},
-                     'ori': {'x': self.orientation[0], 'y': self.orientation[1], 'z': self.orientation[2]}}})
-        await self.init_timer()
+                     'ori': {'x': self.orientation[0],
+                             'y': self.orientation[1],
+                             'z': self.orientation[2]}}})
+        await self.set_timer()
 
     async def send_avatar(self):
         await broadcast({'type': 'avatar', 'user': self.auth_id, 'data': self.avatar})

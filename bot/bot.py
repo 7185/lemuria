@@ -1,13 +1,15 @@
 #!/usr/bin/env python
+"""Bot module"""
 
+import json
 import asks
 import trio
 import trio_websocket
-import json
 
 asks.init(trio)
 
 def get_cookie_from_response(response, cookie_name):
+    """Returns cookie value of cookie_name"""
     for c in response.cookies:
         if c.name == cookie_name:
             return c.value
@@ -17,6 +19,7 @@ AUTH_COOKIE = 'QUART_AUTH'
 DEBUG = False
 
 class User:
+    """User class"""
     def __init__(self, name: str="") -> None:
         self.name = name
         self.x = 0.0
@@ -27,7 +30,8 @@ class User:
         self.pitch = 0.0
         self.avatar = 0
 
-    def set_position(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, roll: float = 0.0, yaw: float = 0.0, pitch: float = 0.0,):
+    def set_position(self, x: float = 0.0, y: float = 0.0, z: float = 0.0,
+                     roll: float = 0.0, yaw: float = 0.0, pitch: float = 0.0,):
         self.x = x
         self.y = y
         self.z = z
@@ -36,8 +40,9 @@ class User:
         self.pitch = pitch
 
 class Bot(User):
+    """Bot class"""
     def __init__(self, web_url: str, ws_url: str, logging_enabled: bool=True) -> None:
-        super(Bot, self).__init__()
+        super().__init__()
         self.web_url = web_url
         self.ws_url = ws_url
         self.ws = None
@@ -95,7 +100,7 @@ class Bot(User):
                     self.userlist[u].avatar = msg['data']
             await self._callback('on_user_avatar', msg['user'], msg['data'])
 
-    
+
     async def send(self, msg: dict) -> None:
         if self.ws is not None:
             await self.ws.send_message(json.dumps(msg))
@@ -109,7 +114,7 @@ class Bot(User):
 
     async def send_position(self) -> None:
         await self.send({'type': 'pos', 'data': {'pos': {'x': round(self.x, 2),
-                                                         'y': round(self.y, 2), 
+                                                         'y': round(self.y, 2),
                                                          'z': round(self.z, 2)},
                                                  'ori': {'x': round(self.roll),
                                                          'y': round(self.yaw),
@@ -129,14 +134,16 @@ class Bot(User):
                 break
 
     async def login(self) -> None:
-        rlogin = await asks.post(self.web_url + '/auth', json={'login': self.name, 'password': 'password'})
+        rlogin = await asks.post(self.web_url + '/auth',
+                                 json={'login': self.name, 'password': 'password'})
         self.cookiejar = {
             AUTH_COOKIE: get_cookie_from_response(rlogin, AUTH_COOKIE)
         }
 
     async def connect(self) -> None:
         await self.login()
-        async with trio_websocket.open_websocket_url(self.ws_url, extra_headers=[('Cookie', AUTH_COOKIE+'='+self.cookiejar[AUTH_COOKIE])]) as websocket:
+        headers = [('Cookie', f"{AUTH_COOKIE}={self.cookiejar[AUTH_COOKIE]}")]
+        async with trio_websocket.open_websocket_url(self.ws_url, extra_headers=headers) as websocket:
             self.ws = websocket
             self.log('@ Connected')
             self.connected = True

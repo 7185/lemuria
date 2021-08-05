@@ -19,7 +19,9 @@ class Timer:
 
     async def cancel(self) -> None:
         """Stop timer"""
-        if self._task and not self._task.cancelled():
+        if not self._task:
+            return
+        if self._task.cancelled():
             self._task.cancel()
             with suppress(asyncio.CancelledError):
                 await self._task

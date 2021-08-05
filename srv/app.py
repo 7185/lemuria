@@ -11,8 +11,11 @@ from api import api_auth, api_world
 from ws import sending, receiving
 from user import User
 
+with open('config.toml') as config_file:
+    toml_data = toml.load(config_file)
+
 app = Quart(__name__)
-app.config.from_file('config.toml', toml.load)
+app.config.from_mapping(toml_data)
 config = app.config
 
 app.static_folder = config['STATIC_PATH']
@@ -38,7 +41,7 @@ async def wsocket():
         return
     user.websockets.add(websocket._get_current_object())
     user.connected = True
-    await user.init_timer()
+    await user.set_timer()
     producer = asyncio.create_task(sending(user))
     consumer = asyncio.create_task(receiving(user))
     await asyncio.gather(producer, consumer)
