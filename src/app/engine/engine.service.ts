@@ -647,10 +647,10 @@ export class EngineService implements OnDestroy {
       }
     }
     if (this.controls[PressedKey.up]) {
-      this.playerVelocity.add(this.cameraDirection.multiplyScalar(steps))
+      this.playerVelocity.add(new Vector3(this.cameraDirection.x, 0, this.cameraDirection.z).multiplyScalar(steps))
     }
     if (this.controls[PressedKey.down]) {
-      this.playerVelocity.add(this.cameraDirection.multiplyScalar(-steps))
+      this.playerVelocity.add(new Vector3(-this.cameraDirection.x, 0, -this.cameraDirection.z).multiplyScalar(steps))
     }
     if (this.controls[PressedKey.left]) {
       if (this.controls[PressedKey.shift]) {
@@ -754,6 +754,10 @@ export class EngineService implements OnDestroy {
             if (item.userData.move.reset) {
               // no wayback, all done
               item.position.copy(item.userData.move.orig)
+              if (item.userData.move.loop) {
+                // loop
+                item.userData.move.completion = 0
+              }
             } else {
               // wayback is starting
               item.userData.move.direction = item.userData.move.direction * -1
