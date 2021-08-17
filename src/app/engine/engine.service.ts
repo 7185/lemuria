@@ -61,7 +61,7 @@ export class EngineService implements OnDestroy {
   private worldNode = new Group()
   private objectsNode = new Group()
   private sprites: Set<Group> = new Set()
-  private movingObjects: Set<Group> = new Set()
+  private animatedObjects: Set<Group> = new Set()
 
   private mouseIdle = 0
   private labelDesc: HTMLDivElement
@@ -294,7 +294,7 @@ export class EngineService implements OnDestroy {
       this.sprites.delete(group)
     }
     if (group.userData.rotate != null || group.userData.move != null) {
-      this.movingObjects.delete(group)
+      this.animatedObjects.delete(group)
     }
     this.disposeMaterial(group)
     group.traverse((child: Object3D) => {
@@ -435,7 +435,7 @@ export class EngineService implements OnDestroy {
       this.sprites.add(group)
     }
     if (group.userData.rotate != null || group.userData.move != null) {
-      this.movingObjects.add(group)
+      this.animatedObjects.add(group)
     }
   }
 
@@ -448,7 +448,7 @@ export class EngineService implements OnDestroy {
 
     if (!this.buildMode) {
       this.moveCamera()
-      this.moveItems()
+      this.animateItems()
     }
     this.moveUsers()
     this.moveLabels()
@@ -775,8 +775,8 @@ export class EngineService implements OnDestroy {
     this.compassSub.next(Math.round(this.compass.theta / DEG))
   }
 
-  private moveItems() {
-    for (const item of this.movingObjects) {
+  private animateItems() {
+    for (const item of this.animatedObjects) {
       if (item.userData.move) {
         if (item.userData.move.completion < 1) {
           item.position.x += (item.userData.move.distance.x / item.userData.move.time)
