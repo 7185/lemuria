@@ -39,7 +39,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.world.setAvatar(this.world.avatarList[avatarId].geometry)
   }
 
-  public connect(worldId=1) {
+  public connect(worldId = 1) {
     this.socket.connect()
 
     this.http.world(worldId).subscribe((w: any) => {

@@ -59,6 +59,17 @@
         ],
         "no-tabs": [
           "error"
+        ],
+        "space-in-parens": [
+          "error",
+          "never"
+        ],
+        "space-infix-ops": [
+          "error"
+        ],
+        "object-curly-spacing": [
+          "error",
+          "never"
         ]
       }
     },

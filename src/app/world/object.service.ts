@@ -45,7 +45,7 @@ export class ObjectService {
             newRWXMat.texture = textureName
             newRWXMat.mask = maskName
             if (color != null) {
-              newRWXMat.color = [color.r/255.0, color.g/255.0, color.b/255.0]
+              newRWXMat.color = [color.r / 255.0, color.g / 255.0, color.b / 255.0]
             }
             newMaterials.push(makeThreeMaterial(newRWXMat, `${this.path}/textures`, 'jpg', 'zip', JSZip, JSZipUtils).phongMat)
           }

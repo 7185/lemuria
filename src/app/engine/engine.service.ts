@@ -180,7 +180,7 @@ export class EngineService implements OnDestroy {
       const cylinder = new Mesh(cylinderGeometry, [this.capsuleMaterial])
       const topSphere = new Mesh(topSphereGeometry, [this.capsuleMaterial])
       const bottomSphere = new Mesh(bottomSphereGeometry, [this.capsuleMaterial])
-      cylinder.position.set(0, capsuleHeight/2, 0)
+      cylinder.position.set(0, capsuleHeight / 2, 0)
       topSphere.position.set(0, capsuleHeight - capsuleRadius, 0)
       bottomSphere.position.set(0, capsuleRadius, 0)
       capsule.add(cylinder)
@@ -223,7 +223,7 @@ export class EngineService implements OnDestroy {
     this.camera.position.y = offset
   }
 
-  public refreshOctree(withObjets=false) {
+  public refreshOctree(withObjets = false) {
     this.worldOctree = new Octree()
     this.worldOctree.fromGraphNode(this.worldNode.children.find(o => o.name === 'terrain'))
     if (withObjets) {
@@ -392,8 +392,8 @@ export class EngineService implements OnDestroy {
             if (item != null && item.userData?.desc) {
               this.labelDesc.style.display = 'block'
               this.labelDesc.innerHTML = item.userData.desc
-              this.labelDesc.style.left = (this.mouse.x + 1)/2 * window.innerWidth + 'px'
-              this.labelDesc.style.top = -(this.mouse.y - 1)/2 * window.innerHeight + 'px'
+              this.labelDesc.style.left = (this.mouse.x + 1) / 2 * window.innerWidth + 'px'
+              this.labelDesc.style.top = -(this.mouse.y - 1) / 2 * window.innerHeight + 'px'
             }
           }
           this.mouseIdle = 5
@@ -862,8 +862,8 @@ export class EngineService implements OnDestroy {
         pos.y += user.userData.height
       }
       const vector = pos.project(this.activeCamera)
-      vector.x = (vector.x + 1)/2 * window.innerWidth
-      vector.y = -(vector.y - 1)/2 * window.innerHeight
+      vector.x = (vector.x + 1) / 2 * window.innerWidth
+      vector.y = -(vector.y - 1) / 2 * window.innerHeight
       const div = document.getElementById('label-' + user.name)
       if (div != null) {
         if (vector.z < 1) {

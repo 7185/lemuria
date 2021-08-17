@@ -46,7 +46,7 @@ export class WorldService {
       for (let j = -this.chunkLoadRadius; j <= this.chunkLoadRadius; j++) {
 
         // Only keep chunks within a certain circular radius (if circular loadin is enabled)
-        if (!this.chunkLoadCircular || ( i * i + j * j ) < this.chunkLoadRadius * this.chunkLoadRadius) {
+        if (!this.chunkLoadCircular || (i * i + j * j) < this.chunkLoadRadius * this.chunkLoadRadius) {
            this.chunkLoadingLayout.push([i, j])
         }
 
@@ -57,8 +57,8 @@ export class WorldService {
     // this ought to make de client load and display nearest chunks first
     if (this.prioritizeNearestChunks) {
         this.chunkLoadingLayout.sort((c0, c1) => {
-            const d0 = (c0[0]*c0[0] + c0[1]*c0[1])
-            const d1 = (c1[0]*c1[0] + c1[1]*c1[1])
+            const d0 = (c0[0] * c0[0] + c0[1] * c0[1])
+            const d1 = (c1[0] * c1[0] + c1[1] * c1[1])
             if (d0 < d1) { return -1 }
             if (d0 > d1) { return 1 }
             return 0
@@ -237,35 +237,34 @@ export class WorldService {
     }
   }
 
-  public loadItem(item: string, pos: Vector3, rot: Vector3, date=0, desc=null, act=null): Promise<Object3D> {
+  public async loadItem(item: string, pos: Vector3, rot: Vector3, date = 0, desc = null, act = null): Promise<Object3D> {
     if (!item.endsWith('.rwx')) {
       item += '.rwx'
     }
-    return this.objSvc.loadObject(item).then((o) => {
-      const g = o.clone()
-      g.name = item
-      g.userData.date = date
-      g.userData.desc = desc
-      g.userData.act = act
-      const box = new Box3()
-      box.setFromObject(g)
-      const center = box.getCenter(new Vector3())
-      g.userData.box = {
-        x: box.max.x - box.min.x,
-        y: box.max.y - box.min.y,
-        z: box.max.z - box.min.z
-      }
-      g.userData.boxCenter = {x: center.x, y: center.y, z: center.z}
-      g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
-      g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
+    const o = await this.objSvc.loadObject(item)
+    const g = o.clone()
+    g.name = item
+    g.userData.date = date
+    g.userData.desc = desc
+    g.userData.act = act
+    const box = new Box3()
+    box.setFromObject(g)
+    const center = box.getCenter(new Vector3())
+    g.userData.box = {
+      x: box.max.x - box.min.x,
+      y: box.max.y - box.min.y,
+      z: box.max.z - box.min.z
+    }
+    g.userData.boxCenter = {x: center.x, y: center.y, z: center.z}
+    g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
+    g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
 
-      if (act && g.userData?.isError !== true) {
-        this.execActions(g)
-      }
+    if (act && g.userData?.isError !== true) {
+      this.execActions(g)
+    }
 
-      g.updateMatrix()
-      return g
-    })
+    g.updateMatrix()
+    return g
   }
 
   setAvatar(name: string, group: Group = this.avatar) {
@@ -344,7 +343,7 @@ export class WorldService {
     // in subscribe() (note that if the chunk has already been loaded, it won't reach the operator).
     // We also tag the chunk as not being loaded if any error were to happen (like a failed http request)
     from(this.chunkLoadingLayout).pipe(
-      concatMap( val => this.loadChunk(chunkX+val[0], chunkZ+val[1]))
+      concatMap(val => this.loadChunk(chunkX + val[0], chunkZ + val[1]))
     ).subscribe(
       (chunk: LOD) => { this.engine.addChunk(chunk) },
       (val: any) => {
@@ -383,7 +382,7 @@ export class WorldService {
       (z * this.chunkDepth) + (this.chunkDepth / 2)).pipe(concatMap((props: any) =>
         from(props.entries).pipe(
           bufferCount(props.entries.length, this.propBatchSize), // Pace the loading of items based on the desired batch size
-          concatMap( arr => from( arr )), // Each individual emission from bufferCount is an array of items
+          concatMap(arr => from(arr)), // Each individual emission from bufferCount is an array of items
           mergeMap((item: any) => this.loadItem(item[1], new Vector3(item[2], item[3], item[4]),
                                                 new Vector3(item[5], item[6], item[7]),
                                                 item[0], item[8], item[9])
@@ -402,12 +401,12 @@ export class WorldService {
           mergeMap((chunkGroup: Group) => {
             // Set metadata on the chunk
             const lod = new LOD()
-            lod.userData.rwx = { axisAlignment: 'none' }
-            lod.userData.world = { chunk: { x, z } }
+            lod.userData.rwx = {axisAlignment: 'none'}
+            lod.userData.world = {chunk: {x, z}}
 
             chunkGroup = this.flattenChunks ? flattenGroup(chunkGroup) : chunkGroup
-            chunkGroup.userData.rwx = { axisAlignment: 'none' }
-            chunkGroup.userData.world = { chunk: { x: chunkXpos, z: chunkZpos } }
+            chunkGroup.userData.rwx = {axisAlignment: 'none'}
+            chunkGroup.userData.world = {chunk: {x: chunkXpos, z: chunkZpos}}
 
             lod.addLevel(chunkGroup, this.maxLodDistance)
             lod.addLevel(new Group(), this.maxLodDistance + 1)
