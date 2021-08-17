@@ -495,12 +495,13 @@ export class EngineService implements OnDestroy {
     const center = new Vector3(this.selectedObject.userData.boxCenter.x,
                                this.selectedObject.userData.boxCenter.y,
                                this.selectedObject.userData.boxCenter.z)
+    this.selectionBox.position.copy(center)
     center.applyAxisAngle(new Vector3(0, 1, 0), this.selectedObject.rotation.y)
     center.applyAxisAngle(new Vector3(0, 0, 1), this.selectedObject.rotation.z)
     center.applyAxisAngle(new Vector3(1, 0, 0), this.selectedObject.rotation.x)
-    this.selectionGroup.position.copy(new Vector3(chunkData.x + this.selectedObject.position.x + center.x,
-                                                  this.selectedObject.position.y + center.y,
-                                                  chunkData.z + this.selectedObject.position.z + center.z))
+    this.selectionGroup.position.copy(new Vector3(chunkData.x + this.selectedObject.position.x,
+                                                  this.selectedObject.position.y,
+                                                  chunkData.z + this.selectedObject.position.z))
     this.selectionGroup.rotation.copy(this.selectedObject.rotation)
     this.selectionGroup.updateMatrix()
     this.scene.add(this.selectionGroup)
@@ -663,12 +664,13 @@ export class EngineService implements OnDestroy {
     const center = new Vector3(this.selectedObject.userData.boxCenter.x,
                                this.selectedObject.userData.boxCenter.y,
                                this.selectedObject.userData.boxCenter.z)
+    this.selectionBox.position.copy(center)
     center.applyAxisAngle(new Vector3(0, 1, 0), this.selectedObject.rotation.y)
     center.applyAxisAngle(new Vector3(0, 0, 1), this.selectedObject.rotation.z)
     center.applyAxisAngle(new Vector3(1, 0, 0), this.selectedObject.rotation.x)
-    this.selectionGroup.position.copy(new Vector3(chunkData.x + this.selectedObject.position.x + center.x,
-                                                  this.selectedObject.position.y + center.y,
-                                                  chunkData.z + this.selectedObject.position.z + center.z))
+    this.selectionGroup.position.copy(new Vector3(chunkData.x + this.selectedObject.position.x,
+                                                  this.selectedObject.position.y,
+                                                  chunkData.z + this.selectedObject.position.z))
     this.selectionGroup.rotation.copy(this.selectedObject.rotation)
     this.selectionGroup.updateMatrix()
     if (this.controls[PressedKey.del]) {
