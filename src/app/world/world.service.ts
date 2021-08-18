@@ -1,4 +1,4 @@
-import {Observable, Subscription, Subject, throwError, from, of} from 'rxjs'
+import {Observable, Subscription, throwError, from, of} from 'rxjs'
 import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
 import {UserService} from './../user/user.service'
 import {User} from './../user/user.model'
@@ -342,17 +342,17 @@ export class WorldService {
     // For clarity: we get an Observable from loadChunk, if it produces anything: we take care of it
     // in subscribe() (note that if the chunk has already been loaded, it won't reach the operator).
     // We also tag the chunk as not being loaded if any error were to happen (like a failed http request)
-    from(this.chunkLoadingLayout).pipe(
-      concatMap(val => this.loadChunk(chunkX + val[0], chunkZ + val[1]))
-    ).subscribe(
-      (chunk: LOD) => { this.engine.addChunk(chunk) },
-      (val: any) => {
-        console.error(val.err)
-        if (this.chunkMap.get(val.x)?.has(val.z)) {
-          this.chunkMap.get(val.x).delete(val.z)
+    from(this.chunkLoadingLayout)
+      .pipe(concatMap(val => this.loadChunk(chunkX + val[0], chunkZ + val[1])))
+      .subscribe({
+        next: (chunk: LOD) => { this.engine.addChunk(chunk) },
+        error: (val: any) => {
+          console.error(val.err)
+          if (this.chunkMap.get(val.x)?.has(val.z)) {
+            this.chunkMap.get(val.x).delete(val.z)
+          }
         }
-      }
-    )
+      })
   }
 
   private loadChunk(x: number, z: number): Observable<LOD> {
@@ -379,8 +379,9 @@ export class WorldService {
       (x * this.chunkWidth) + (this.chunkWidth / 2),
       null, null,
       (z * this.chunkDepth) - (this.chunkDepth / 2),
-      (z * this.chunkDepth) + (this.chunkDepth / 2)).pipe(concatMap((props: any) =>
-        from(props.entries).pipe(
+      (z * this.chunkDepth) + (this.chunkDepth / 2))
+      .pipe(
+        concatMap((props: any) => from(props.entries).pipe(
           bufferCount(props.entries.length, this.propBatchSize), // Pace the loading of items based on the desired batch size
           concatMap(arr => from(arr)), // Each individual emission from bufferCount is an array of items
           mergeMap((item: any) => this.loadItem(item[1], new Vector3(item[2], item[3], item[4]),
@@ -396,7 +397,7 @@ export class WorldService {
             item.updateMatrix()
             return of(item)
           }), // Adjust position of objects based on the center of the chunk
-          bufferCount(props.entries.size), // Wait for all items to be loaded before proceeding
+          bufferCount(props.entries.length), // Wait for all items to be loaded before proceeding
           mergeMap((objs: any) => of((new Group()).add(...objs))), // Add all buffered objects to the chunkGroup
           mergeMap((chunkGroup: Group) => {
             // Set metadata on the chunk
@@ -417,7 +418,7 @@ export class WorldService {
           })
         )
       ),
-      catchError(err => throwError({x, z, err}))
+      catchError(err => throwError(() => ({x, z, err})))
     )
   }
 

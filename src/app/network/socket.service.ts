@@ -19,15 +19,19 @@ export class SocketService {
 
   connect() {
     if (!this.connected) {
-      this.socket.subscribe(msg => {
-        this.connected = true
-        this.handleMessage(msg)
-      }, err => {
-        this.messages.next({type: 'err', data: 'Connection lost'})
-        this.disconnect()
-      }, () => {
-        this.messages.next({type: 'err', data: 'Disconnected'})
-        this.disconnect()
+      this.socket.subscribe({
+        next: msg => {
+          this.connected = true
+          this.handleMessage(msg)
+        },
+        error: () => {
+          this.messages.next({type: 'err', data: 'Connection lost'})
+          this.disconnect()
+        },
+        complete: () => {
+          this.messages.next({type: 'err', data: 'Disconnected'})
+          this.disconnect()
+        }
       })
       this.posTimer = interval(200).subscribe(() => {
         const pos: [Vector3, Vector3] = [new Vector3(), new Vector3()]

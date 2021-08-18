@@ -73,7 +73,7 @@ export class HttpService extends HttpClient {
     return this.get(`${this.baseUrl}/auth`).pipe(
       catchError((error: HttpResponse<any>) => {
         this.logout().subscribe()
-        return throwError(error)
+        return throwError(() => error)
       }),
       tap(data => this.setLogged(new User(data)))
     )

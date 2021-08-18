@@ -34,14 +34,15 @@ export class AuthComponent implements OnInit {
       .pipe(finalize(() => {
         this.processing = false
       }))
-      .subscribe(res => {
+      .subscribe({
+        next: () => {
           this.loginError = false
           this.router.navigate([this.returnUrl])
         },
-        err => {
+        error: () => {
           this.loginError = true
         }
-      )
+      })
   }
 
   ngOnInit() {
