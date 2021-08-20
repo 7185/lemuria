@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core'
 import {HttpService} from './../network/http.service'
 import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, Texture, RepeatWrapping,
   TextureLoader, MeshPhongMaterial, Object3D} from 'three'
-import RWXLoader, {makeThreeMaterial} from 'three-rwx-loader'
+import RWXLoader, {makeThreeMaterial, RWXMaterialManager} from 'three-rwx-loader'
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'
 
@@ -11,6 +11,7 @@ export class ObjectService {
 
   private errorCone: Group
   private rwxLoader = new RWXLoader(new LoadingManager())
+  private rwxMaterialManager = new RWXMaterialManager()
   private objects: Map<string, Promise<any>> = new Map()
   private textures: Map<string, any> = new Map()
   private path = 'http://localhost'
@@ -23,11 +24,13 @@ export class ObjectService {
     cone.position.y = 0.5
     this.errorCone = new Group().add(cone)
     this.errorCone.userData.isError = true
-    this.rwxLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true)
+    this.rwxMaterialManager = new RWXMaterialManager(this.path, 'jpg', 'zip', JSZip, JSZipUtils)
+    this.rwxLoader.setRWXMaterialManager(this.rwxMaterialManager).setFlatten(true)
   }
 
   setPath(path: string) {
     this.path = path
+    this.rwxMaterialManager.folder = `${this.path}/textures`
     this.rwxLoader.setPath(`${this.path}/rwx`).setResourcePath(`${this.path}/textures`)
   }
 
@@ -41,13 +44,14 @@ export class ObjectService {
         const newMaterials = []
         child.material.forEach((m: MeshPhongMaterial) => {
           if (m.userData.rwx.material != null) {
-            const newRWXMat = m.userData.rwx.material
+            const newRWXMat = m.userData.rwx.material.clone()
             newRWXMat.texture = textureName
             newRWXMat.mask = maskName
             if (color != null) {
               newRWXMat.color = [color.r / 255.0, color.g / 255.0, color.b / 255.0]
             }
-            newMaterials.push(makeThreeMaterial(newRWXMat, `${this.path}/textures`, 'jpg', 'zip', JSZip, JSZipUtils).phongMat)
+            this.rwxMaterialManager.currentRWXMaterial = newRWXMat
+            newMaterials.push(this.rwxMaterialManager.getCurrentMaterial().phongMat)
           }
           if (m.alphaMap != null) {
             m.alphaMap.dispose()
@@ -61,6 +65,7 @@ export class ObjectService {
         child.material.needsUpdate = true
       }
     })
+    this.rwxMaterialManager.resetCurrentMaterialList()
   }
 
   loadTexture(name: string, loader: TextureLoader): any {
@@ -93,5 +98,9 @@ export class ObjectService {
   cleanCache() {
     this.objects = new Map()
     this.textures = new Map()
+  }
+
+  public texturesNextFrame() {
+    this.rwxMaterialManager.texturesNextFrame()
   }
 }

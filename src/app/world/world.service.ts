@@ -67,6 +67,9 @@ export class WorldService {
 
     // Register chunk updater to the engine
     this.engine.localUserPosObservable().subscribe((pos: Vector3) => { this.autoUpdateChunks(pos) })
+
+    // Register chunk updater to the engine
+    this.engine.texturesAnimationObservable().subscribe((bar: any) => { this.texturesNextFrame() })
   }
 
   initWorld() {
@@ -352,6 +355,10 @@ export class WorldService {
           }
         }
       })
+  }
+
+  public texturesNextFrame() {
+    this.objSvc.texturesNextFrame()
   }
 
   private loadChunk(x: number, z: number): Observable<LOD> {

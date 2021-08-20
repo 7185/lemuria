@@ -47,6 +47,7 @@ export class EngineService implements OnDestroy {
 
   private frameId: number = null
   private deltaSinceLastFrame = 0
+  private animationElapsed = 0
 
   private selectionGroup: Group
   private selectionBox: LineSegments
@@ -65,7 +66,8 @@ export class EngineService implements OnDestroy {
 
   private mouseIdle = 0
   private labelDesc: HTMLDivElement
-  private localUserPos = new Subject<Vector3>()
+  private localUserPosSub = new Subject<Vector3>()
+  private texturesAnimationSub = new Subject<any>()
 
   public constructor(private ngZone: NgZone, private userSvc: UserService) {
   }
@@ -77,7 +79,11 @@ export class EngineService implements OnDestroy {
   }
 
   public localUserPosObservable() {
-    return this.localUserPos.asObservable()
+    return this.localUserPosSub.asObservable()
+  }
+
+  public texturesAnimationObservable() {
+    return this.texturesAnimationSub.asObservable()
   }
 
   public createScene(canvas: ElementRef<HTMLCanvasElement>, labelZone: ElementRef<HTMLDivElement>,
@@ -439,10 +445,18 @@ export class EngineService implements OnDestroy {
     this.deltaSinceLastFrame = this.clock.getDelta()
     this.activeCamera.getWorldDirection(this.cameraDirection)
 
+    if (this.animationElapsed > 0.10) {
+      this.texturesAnimationSub.next(null)
+      this.animationElapsed = 0
+    } else {
+      this.animationElapsed += this.deltaSinceLastFrame
+    }
+
     if (!this.buildMode) {
       this.moveCamera()
       this.animateItems()
     }
+
     this.moveUsers()
     this.moveLabels()
     this.renderer.render(this.scene, this.activeCamera)
@@ -771,7 +785,7 @@ export class EngineService implements OnDestroy {
       }
 
       this.player.position.set(this.playerCollider.start.x, this.playerCollider.start.y - capsuleRadius, this.playerCollider.start.z)
-      this.localUserPos.next(this.player.position)
+      this.localUserPosSub.next(this.player.position)
     }
 
     for (const item of this.sprites) {
