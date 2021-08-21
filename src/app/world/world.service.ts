@@ -321,7 +321,6 @@ export class WorldService {
   // this method is method to be called on each frame to update the state of chunks if needed
   public autoUpdateChunks(pos: Vector3) {
     const posX: number = Math.floor(pos.x * 100)
-    const posY: number = Math.floor(pos.y * 100)
     const posZ: number = Math.floor(pos.z * 100)
 
     const chunkX = Math.floor((posX + this.chunkWidth / 2) / this.chunkWidth)

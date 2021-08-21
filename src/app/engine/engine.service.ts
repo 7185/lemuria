@@ -223,10 +223,10 @@ export class EngineService implements OnDestroy {
     this.camera.position.y = offset
   }
 
-  public refreshOctree(withObjets = false) {
+  public refreshOctree(withObjects = false) {
     this.worldOctree = new Octree()
     this.worldOctree.fromGraphNode(this.worldNode.children.find(o => o.name === 'terrain'))
-    if (withObjets) {
+    if (withObjects) {
       for (const item of this.objectsNode.children.filter(i => i.name.endsWith('.rwx') && i.userData.notSolid !== true)) {
         this.addMeshToOctree(item as Group)
       }
@@ -242,13 +242,6 @@ export class EngineService implements OnDestroy {
     }
 
     chunk.updateMatrix()
-  }
-
-  public addObject(group: Group) {
-    group.matrixAutoUpdate = false
-    this.objectsNode.add(group)
-    this.handleSpecialObject(group)
-    group.updateMatrix()
   }
 
   public addWorldObject(group: Group) {
@@ -302,7 +295,7 @@ export class EngineService implements OnDestroy {
         child.geometry.dispose()
       }
     })
-    this.objectsNode.remove(group)
+    group.parent.remove(group)
   }
 
   public removeWorldObject(group: Group) {
@@ -468,8 +461,7 @@ export class EngineService implements OnDestroy {
     this.selectedObject = null
     this.selectionBox.geometry.dispose()
     ;(this.selectionBox.material as Material).dispose()
-    this.axesHelper.geometry.dispose()
-    ;(this.axesHelper.material as Material).dispose()
+    this.axesHelper.dispose()
     this.scene.remove(this.selectionGroup)
     this.selectionBox = null
     this.axesHelper = null
@@ -505,6 +497,22 @@ export class EngineService implements OnDestroy {
     this.selectionGroup.rotation.copy(this.selectedObject.rotation)
     this.selectionGroup.updateMatrix()
     this.scene.add(this.selectionGroup)
+  }
+
+  private updateChunk(object: Group) {
+    const oldChunkPos = object.parent.parent.position
+    const absPos = object.position.clone().add(oldChunkPos)
+    const chunkX = Math.floor((absPos.x * 100 + config.world.chunk.width / 2) / config.world.chunk.width)
+    const chunkZ = Math.floor((absPos.z * 100 + config.world.chunk.depth / 2) / config.world.chunk.depth)
+    for (const lod of this.objectsNode.children as LOD[]) {
+      if (lod.userData.world.chunk.x === chunkX && lod.userData.world.chunk.z === chunkZ) {
+        object.parent.remove(object)
+        lod.levels[0].object.add(object)
+        object.position.add(oldChunkPos).sub(object.parent.parent.position)
+        return
+      }
+    }
+    console.log(`Warning: Trying to move object ${object.name} to an uninitialized chunk (${chunkX}, ${chunkZ})`)
   }
 
   private pointedItem() {
@@ -655,10 +663,12 @@ export class EngineService implements OnDestroy {
       this.selectedObject.rotation.y = this.radNormalized(this.selectedObject.rotation.y)
     }
     if (this.controls[PressedKey.ins]) {
+      const parent = this.selectedObject.parent
       this.selectedObject = this.selectedObject.clone()
       this.selectedObject.position.add(v.multiplyScalar(moveStep))
-      this.objectsNode.add(this.selectedObject)
+      parent.add(this.selectedObject)
     }
+    this.updateChunk(this.selectedObject)
     this.selectedObject.updateMatrix()
     const chunkData = this.selectedObject.parent.userData.world.chunk
     const center = new Vector3(this.selectedObject.userData.boxCenter.x,

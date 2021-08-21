@@ -14,10 +14,11 @@
   virtual-scroller {
     height: calc(100% - 38px);
     overflow-y: hidden;
+    margin-right: 15px;
   }
   virtual-scroller:hover {
     overflow-y: auto;
-    padding-right: 1px;
+    margin-right: 0px;
   }
   img {
     margin-right: 4px;
