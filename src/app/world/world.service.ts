@@ -418,6 +418,7 @@ export class WorldService {
             lod.addLevel(chunkGroup, this.maxLodDistance)
             lod.addLevel(new Group(), this.maxLodDistance + 1)
             lod.position.set(chunkXpos, 0, chunkZpos)
+            lod.autoUpdate = false
             lod.updateMatrix()
 
             return of(lod)

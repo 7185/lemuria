@@ -28,6 +28,7 @@ export class EngineService implements OnDestroy {
   private camera: PerspectiveCamera
   private thirdCamera: PerspectiveCamera
   private activeCamera: PerspectiveCamera
+  private lodCamera: PerspectiveCamera
   private player: Object3D
   private scene: Scene
   private light: AmbientLight
@@ -111,6 +112,8 @@ export class EngineService implements OnDestroy {
     this.camera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000)
     this.camera.rotation.order = 'YXZ'
     this.camera.position.y = 0
+    this.lodCamera = this.camera.clone()
+    this.scene.add(this.lodCamera)
     this.player.attach(this.camera)
 
     this.thirdCamera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000)
@@ -438,6 +441,19 @@ export class EngineService implements OnDestroy {
     }
   }
 
+  private updateLODs() {
+    // We trick the LOD into acting like the camera is always on the ground,
+    // this avoids having chunks disappearing if we get to high/far on the Y axis
+    this.lodCamera.position.set(this.player.position.x, 0, this.player.position.z)
+    this.lodCamera.rotation.copy(this.player.rotation)
+    this.lodCamera.updateMatrix()
+    this.lodCamera.updateProjectionMatrix()
+
+    for (const lod of this.objectsNode.children as LOD[]) {
+      lod.update(this.lodCamera)
+    }
+  }
+
   private render(): void {
     this.frameId = requestAnimationFrame(() => {
       this.render()
@@ -457,6 +473,7 @@ export class EngineService implements OnDestroy {
       this.animateItems()
     }
 
+    this.updateLODs()
     this.moveUsers()
     this.moveLabels()
     this.renderer.render(this.scene, this.activeCamera)
