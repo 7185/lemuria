@@ -11,17 +11,27 @@ import {LogoComponent} from './logo/logo.component'
 import {EngineComponent} from './engine/engine.component'
 import {UiToolbarComponent} from './ui/ui-toolbar/ui-toolbar.component'
 import {UiChatZoneComponent} from './ui/ui-chat-zone/ui-chat-zone.component'
+import {UiBuilderZoneComponent} from './ui/ui-builder-zone/ui-builder-zone.component'
 import {AppRoutingModule, routingComponents} from './app-routing.module'
 
 import {
+  faArrowDown,
+  faArrowLeft,
+  faArrowUp,
+  faArrowRight,
   faBolt,
-  faComments,
   faCircleNotch,
+  faClone,
+  faComments,
   faEye,
   faGlobe,
   faKey,
   faLocationArrow,
+  faRedoAlt,
+  faRoad,
+  faTrashAlt,
   faSignOutAlt,
+  faUndoAlt,
   faUser,
   faUsers,
   faVideo
@@ -34,7 +44,8 @@ import {
     LogoComponent,
     EngineComponent,
     UiToolbarComponent,
-    UiChatZoneComponent
+    UiChatZoneComponent,
+    UiBuilderZoneComponent
   ],
   imports: [
     BrowserModule,
@@ -55,14 +66,23 @@ import {
 export class AppModule {
   constructor(private iconLibrary: FaIconLibrary) {
     iconLibrary.addIcons(
+      faArrowDown,
+      faArrowLeft,
+      faArrowUp,
+      faArrowRight,
       faBolt,
-      faComments,
       faCircleNotch,
+      faClone,
+      faComments,
       faEye,
       faGlobe,
       faKey,
       faLocationArrow,
+      faRedoAlt,
+      faRoad,
       faSignOutAlt,
+      faTrashAlt,
+      faUndoAlt,
       faUser,
       faUsers,
       faVideo

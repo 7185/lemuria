@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core'
 import {HttpService} from './../network/http.service'
 import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, Texture, RepeatWrapping,
   TextureLoader, MeshPhongMaterial, Object3D} from 'three'
-import RWXLoader, {makeThreeMaterial, RWXMaterialManager} from 'three-rwx-loader'
+import RWXLoader, {RWXMaterialManager} from 'three-rwx-loader'
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'
 

@@ -1,0 +1,97 @@
+<div id="build-zone" [class.d-none]="selectedObject.name === undefined">
+  <table class="table table-sm small">
+    <thead>
+    </thead>
+    <tbody>
+      <tr class="buttons">
+        <td>
+          <button class="btn btn-sm btn-danger shadow-none" type="button">
+            <fa-icon [icon]="['fas', 'trash-alt']" [fixedWidth]="true"></fa-icon>
+          </button>
+          <button class="btn btn-sm btn-dark" type="button">
+            <fa-icon [icon]="['fas', 'clone']" [fixedWidth]="true"></fa-icon>
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-secondary" type="button" blur>
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="['fas', 'road']" [fixedWidth]="true"></fa-icon>
+              <fa-icon class="d-inline-block" [icon]="['fas', 'arrow-up']" transform="shrink-6 up-8"></fa-icon>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-secondary" type="button">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="['fas', 'road']" [fixedWidth]="true"></fa-icon>
+              <fa-icon class="d-inline-block" [icon]="['fas', 'arrow-down']" transform="shrink-3 down-8"></fa-icon>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-secondary" type="button">
+            <fa-icon [icon]="['fas', 'arrow-left']" [fixedWidth]="true"></fa-icon>
+          </button>
+          <button class="btn btn-sm btn-secondary" type="button">
+            <fa-icon [icon]="['fas', 'arrow-right']" [fixedWidth]="true"></fa-icon>
+          </button>
+          <button class="btn btn-sm btn-secondary" type="button">
+            <fa-icon [icon]="['fas', 'arrow-up']" [fixedWidth]="true"></fa-icon>
+          </button>
+          <button class="btn btn-sm btn-secondary" type="button">
+            <fa-icon [icon]="['fas', 'arrow-down']" [fixedWidth]="true"></fa-icon>
+          </button>
+          <br/>
+          <button class="btn btn-sm btn-danger" type="button">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="['fas', 'redo-alt']" [fixedWidth]="true"></fa-icon>
+              <fa-layers-text content="X" transform="shrink-2 right-8 down-6" class="fw-bold"></fa-layers-text>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-danger" type="button">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="['fas', 'undo-alt']" [fixedWidth]="true"></fa-icon>
+              <fa-layers-text content="X" transform="shrink-2 left-8 down-6" class="fw-bold"></fa-layers-text>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-success" type="button">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="['fas', 'redo-alt']" [fixedWidth]="true"></fa-icon>
+              <fa-layers-text content="Y" transform="shrink-2 right-8 down-6" class="fw-bold"></fa-layers-text>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-success" type="button">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="['fas', 'undo-alt']" [fixedWidth]="true"></fa-icon>
+              <fa-layers-text content="Y" transform="shrink-2 left-8 down-6" class="fw-bold"></fa-layers-text>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-primary" type="button">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="['fas', 'redo-alt']" [fixedWidth]="true"></fa-icon>
+              <fa-layers-text content="Z" transform="shrink-2 right-8 down-6" class="fw-bold"></fa-layers-text>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-primary" type="button">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="['fas', 'undo-alt']" [fixedWidth]="true"></fa-icon>
+              <fa-layers-text content="Z" transform="shrink-2 left-8 down-6" class="fw-bold"></fa-layers-text>
+            </fa-layers>
+          </button>
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">Object</th>
+        <td><input type="text" class="form-control" [(ngModel)]="selectedObject.name"/></td>
+      </tr>
+      <tr>
+        <th scope="row">Description</th>
+        <td><textarea class="form-control" rows="3">{{ selectedObject.desc }}</textarea></td>
+      </tr>
+      <tr>
+        <th scope="row">Action</th>
+        <td><textarea class="form-control" rows="3">{{ selectedObject.act }}</textarea></td>
+      </tr>
+      <tr>
+      <th scope="row">Date</th>
+        <td>{{ selectedObject.date * 1000 | date:'EEE MMM d, y h:mm a' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -1,4 +1,4 @@
-import {Subject} from 'rxjs'
+import {BehaviorSubject, Subject} from 'rxjs'
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
   AmbientLight, Clock, Material, PerspectiveCamera, Raycaster, Scene, Group, BoxBufferGeometry,
@@ -9,9 +9,8 @@ import {
 import {Octree} from 'three/examples/jsm/math/Octree'
 import {Capsule} from 'three/examples/jsm/math/Capsule'
 import {UserService} from './../user/user.service'
+import {PressedKey, InputSystemService} from './inputsystem.service'
 import {config} from '../app.config'
-
-export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, ctrl, shift, esc, ins, del }
 export const DEG = Math.PI / 180
 export const RPM = Math.PI / 30
 const capsuleRadius = 0.35
@@ -20,6 +19,7 @@ const capsuleRadius = 0.35
 export class EngineService implements OnDestroy {
 
   public compassSub: Subject<any> = new Subject()
+  public selectedObjectSub = new BehaviorSubject<any>({})
   private compass = new Spherical()
   private canvas: HTMLCanvasElement
   private labelZone: HTMLDivElement
@@ -53,7 +53,6 @@ export class EngineService implements OnDestroy {
   private selectionGroup: Group
   private selectionBox: LineSegments
   private axesHelper: AxesHelper
-  private controls: boolean[] = Array(9).fill(false)
 
   private mouse = new Vector2()
   private raycaster = new Raycaster()
@@ -70,7 +69,7 @@ export class EngineService implements OnDestroy {
   private localUserPosSub = new Subject<Vector3>()
   private texturesAnimationSub = new Subject<any>()
 
-  public constructor(private ngZone: NgZone, private userSvc: UserService) {
+  public constructor(private ngZone: NgZone, private userSvc: UserService, private inputSysSvc: InputSystemService) {
   }
 
   public ngOnDestroy(): void {
@@ -130,7 +129,6 @@ export class EngineService implements OnDestroy {
 
     // this.scene.fog = new Fog(0xCCCCCC, 10, 50)
     this.worldOctree = new Octree()
-    this.capsuleMaterial = new MeshBasicMaterial({color: 0x00ff00, wireframe: true})
 
     this.dirLight = new DirectionalLight(0xffffff, 0.5)
     this.dirLight.name = 'dirlight'
@@ -184,8 +182,15 @@ export class EngineService implements OnDestroy {
       const capsule = new Group()
       capsule.name = 'capsule'
       const cylinderGeometry = new CylinderGeometry(capsuleRadius, capsuleRadius, capsuleHeight - capsuleRadius * 2, 8)
-      const topSphereGeometry = new SphereGeometry(capsuleRadius)
-      const bottomSphereGeometry = new SphereGeometry(capsuleRadius)
+      const topSphereGeometry = new SphereGeometry(capsuleRadius, 8, 8, Math.PI / 2, Math.PI)
+      const bottomSphereGeometry = new SphereGeometry(capsuleRadius, 8, 8, Math.PI / 2, Math.PI)
+      topSphereGeometry.clearGroups()
+      topSphereGeometry.addGroup(0, topSphereGeometry.getIndex().count, 0)
+      topSphereGeometry.rotateZ(Math.PI / 2)
+      bottomSphereGeometry.clearGroups()
+      bottomSphereGeometry.addGroup(0, bottomSphereGeometry.getIndex().count, 0)
+      bottomSphereGeometry.rotateZ(-Math.PI / 2)
+      this.capsuleMaterial = new MeshBasicMaterial({color: 0x00ff00, wireframe: true})
       const cylinder = new Mesh(cylinderGeometry, [this.capsuleMaterial])
       const topSphere = new Mesh(topSphereGeometry, [this.capsuleMaterial])
       const bottomSphere = new Mesh(bottomSphereGeometry, [this.capsuleMaterial])
@@ -230,6 +235,7 @@ export class EngineService implements OnDestroy {
 
   public setCameraOffset(offset: number) {
     this.camera.position.y = offset
+    this.avatar.position.y = this.player.position.y + this.avatar.userData.offsetY
   }
 
   public refreshOctree(withObjects = false) {
@@ -364,25 +370,17 @@ export class EngineService implements OnDestroy {
         this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1
         this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1
       })
-      window.addEventListener('keydown', (e: KeyboardEvent) => {
-        if ((e.target as HTMLElement).nodeName === 'BODY') {
-          // reset tooltip
-          this.mouseIdle = 0
-          this.labelDesc.style.display = 'none'
-          this.hoveredObject = null
-          this.handleKeys(e.code, true)
-          if (this.buildMode) {
-            this.moveItem()
-          }
-          e.preventDefault()
+      this.inputSysSvc.keyDownEvent.subscribe(() => {
+        // reset tooltip
+        this.mouseIdle = 0
+        this.labelDesc.style.display = 'none'
+        this.hoveredObject = null
+        if (this.buildMode) {
+          this.moveItem()
         }
       })
-      window.addEventListener('keyup', (e: KeyboardEvent) => {
-        if ((e.target as HTMLElement).nodeName === 'BODY') {
-          this.mouseIdle = 0
-          this.handleKeys(e.code, false)
-          e.preventDefault()
-        }
+      this.inputSysSvc.keyUpEvent.subscribe(() => {
+        this.mouseIdle = 0
       })
       setInterval(() => {
         this.mouseIdle++
@@ -490,6 +488,7 @@ export class EngineService implements OnDestroy {
   private deselect() {
     this.buildMode = false
     this.selectedObject = null
+    this.selectedObjectSub.next({})
     this.selectionBox.geometry.dispose()
     ;(this.selectionBox.material as Material).dispose()
     this.axesHelper.dispose()
@@ -505,7 +504,8 @@ export class EngineService implements OnDestroy {
     }
     this.buildMode = true
     this.selectedObject = item
-    console.log(item.name, item.position, item.rotation, item.userData)
+    this.selectedObjectSub.next({name: item.name, desc: item.userData.desc, act: item.userData.act, date: item.userData.date})
+    console.log(item)
 
     const geometry = new BoxBufferGeometry(item.userData.box.x, item.userData.box.y, item.userData.box.z)
     const edges = new EdgesGeometry(geometry)
@@ -571,100 +571,25 @@ export class EngineService implements OnDestroy {
     }
   }
 
-  private handleKeys(k: string, value: boolean) {
-    switch (k) {
-      case 'ArrowUp': {
-        this.controls[PressedKey.up] = value
-        break
-      }
-      case 'ArrowDown': {
-        this.controls[PressedKey.down] = value
-        break
-      }
-      case 'ArrowLeft': {
-        this.controls[PressedKey.left] = value
-        break
-      }
-      case 'ArrowRight': {
-        this.controls[PressedKey.right] = value
-        break
-      }
-      case 'PageUp': {
-        this.controls[PressedKey.pgUp] = value
-        break
-      }
-      case 'PageDown': {
-        this.controls[PressedKey.pgDown] = value
-        break
-      }
-      case 'NumpadAdd': {
-        this.controls[PressedKey.plus] = value
-        break
-      }
-      case 'NumpadSubtract': {
-        this.controls[PressedKey.minus] = value
-        break
-      }
-      case 'ControlLeft': {
-        this.controls[PressedKey.ctrl] = value
-        break
-      }
-      case 'ControlRight': {
-        this.controls[PressedKey.ctrl] = value
-        break
-      }
-      case 'ShiftLeft': {
-        this.controls[PressedKey.shift] = value
-        break
-      }
-      case 'ShiftRight': {
-        this.controls[PressedKey.shift] = value
-        break
-      }
-      case 'Escape': {
-        this.controls[PressedKey.esc] = value
-        break
-      }
-      case 'Insert': {
-        this.controls[PressedKey.ins] = value
-        break
-      }
-      case 'Delete': {
-        this.controls[PressedKey.del] = value
-        break
-      }
-      case 'F10': {
-        if (value) {
-          console.log(this.renderer.info)
-          console.log(this.posToString(this.player.position))
-        }
-        break
-      }
-      default: {
-         break
-      }
-    }
-  }
-
   private moveItem() {
-    if (this.controls[PressedKey.esc]) {
+    if (this.inputSysSvc.controls[PressedKey.esc]) {
       this.deselect()
       return
     }
     let moveStep = 0.5
     let rotStep = Math.PI / 12
-    if (this.controls[PressedKey.shift]) {
+    if (this.inputSysSvc.controls[PressedKey.shift]) {
       moveStep = 0.05
       rotStep = Math.PI / 120
-      if (this.controls[PressedKey.ctrl]) {
+      if (this.inputSysSvc.controls[PressedKey.ctrl]) {
         moveStep = 0.01
         rotStep = Math.PI / 180
       }
     }
-    if (this.controls[PressedKey.plus]) {
+    if (this.inputSysSvc.controls[PressedKey.plus]) {
       this.selectedObject.translateY(moveStep)
     }
-    if (this.controls[PressedKey.minus]) {
+    if (this.inputSysSvc.controls[PressedKey.minus]) {
       this.selectedObject.translateY(-moveStep)
     }
     const v = new Vector3()
@@ -673,27 +598,27 @@ export class EngineService implements OnDestroy {
     } else {
       v.z = Math.sign(this.cameraDirection.z)
     }
-    if (this.controls[PressedKey.up]) {
+    if (this.inputSysSvc.controls[PressedKey.up]) {
       this.selectedObject.position.add(v.multiplyScalar(moveStep))
     }
-    if (this.controls[PressedKey.down]) {
+    if (this.inputSysSvc.controls[PressedKey.down]) {
       this.selectedObject.position.add(v.multiplyScalar(-moveStep))
     }
-    if (this.controls[PressedKey.left]) {
+    if (this.inputSysSvc.controls[PressedKey.left]) {
       this.selectedObject.position.add(new Vector3(v.z * moveStep, 0, v.x * -moveStep))
     }
-    if (this.controls[PressedKey.right]) {
+    if (this.inputSysSvc.controls[PressedKey.right]) {
       this.selectedObject.position.add(new Vector3(v.z * -moveStep, 0, v.x * moveStep))
     }
-    if (this.controls[PressedKey.pgUp]) {
+    if (this.inputSysSvc.controls[PressedKey.pgUp]) {
       this.selectedObject.rotation.y += rotStep
       this.selectedObject.rotation.y = this.radNormalized(this.selectedObject.rotation.y)
     }
-    if (this.controls[PressedKey.pgDown]) {
+    if (this.inputSysSvc.controls[PressedKey.pgDown]) {
       this.selectedObject.rotation.y -= rotStep
       this.selectedObject.rotation.y = this.radNormalized(this.selectedObject.rotation.y)
     }
-    if (this.controls[PressedKey.ins]) {
+    if (this.inputSysSvc.controls[PressedKey.ins]) {
       const parent = this.selectedObject.parent
       this.selectedObject = this.selectedObject.clone()
       this.selectedObject.position.add(v.multiplyScalar(moveStep))
@@ -714,7 +639,7 @@ export class EngineService implements OnDestroy {
                                                   chunkData.z + this.selectedObject.position.z))
     this.selectionGroup.rotation.copy(this.selectedObject.rotation)
     this.selectionGroup.updateMatrix()
-    if (this.controls[PressedKey.del]) {
+    if (this.inputSysSvc.controls[PressedKey.del]) {
       this.removeObject(this.selectedObject)
     }
   }
@@ -723,52 +648,52 @@ export class EngineService implements OnDestroy {
     let steps = 0
     if (!this.flyMode) {
       steps = 3 * this.deltaSinceLastFrame
-      if (this.controls[PressedKey.ctrl]) {
+      if (this.inputSysSvc.controls[PressedKey.ctrl]) {
         steps = 9 * this.deltaSinceLastFrame
       }
     } else {
       steps = 12 * this.deltaSinceLastFrame
-      if (this.controls[PressedKey.ctrl]) {
+      if (this.inputSysSvc.controls[PressedKey.ctrl]) {
         steps = 30 * this.deltaSinceLastFrame
       }
     }
-    if (this.controls[PressedKey.up]) {
+    if (this.inputSysSvc.controls[PressedKey.up]) {
       this.playerVelocity.add(new Vector3(this.cameraDirection.x, 0, this.cameraDirection.z).multiplyScalar(steps))
     }
-    if (this.controls[PressedKey.down]) {
+    if (this.inputSysSvc.controls[PressedKey.down]) {
       this.playerVelocity.add(new Vector3(-this.cameraDirection.x, 0, -this.cameraDirection.z).multiplyScalar(steps))
     }
-    if (this.controls[PressedKey.left]) {
-      if (this.controls[PressedKey.shift]) {
+    if (this.inputSysSvc.controls[PressedKey.left]) {
+      if (this.inputSysSvc.controls[PressedKey.shift]) {
         this.playerVelocity.add(new Vector3(this.cameraDirection.z, 0, -this.cameraDirection.x).multiplyScalar(steps))
       } else {
         this.player.rotation.y += 0.1 * steps
         this.player.rotation.y = this.radNormalized(this.player.rotation.y)
       }
     }
-    if (this.controls[PressedKey.right]) {
-      if (this.controls[PressedKey.shift]) {
+    if (this.inputSysSvc.controls[PressedKey.right]) {
+      if (this.inputSysSvc.controls[PressedKey.shift]) {
         this.playerVelocity.add(new Vector3(-this.cameraDirection.z, 0, this.cameraDirection.x).multiplyScalar(steps))
       } else {
         this.player.rotation.y -= 0.1 * steps
         this.player.rotation.y = this.radNormalized(this.player.rotation.y)
       }
     }
-    if (this.controls[PressedKey.pgUp]) {
+    if (this.inputSysSvc.controls[PressedKey.pgUp]) {
       if (this.player.rotation.x < Math.PI / 2) {
         this.player.rotation.x += 0.1 * steps
       }
     }
-    if (this.controls[PressedKey.pgDown]) {
+    if (this.inputSysSvc.controls[PressedKey.pgDown]) {
       if (this.player.rotation.x > -Math.PI / 2) {
         this.player.rotation.x -= 0.1 * steps
       }
     }
-    if (this.controls[PressedKey.plus]) {
+    if (this.inputSysSvc.controls[PressedKey.plus]) {
       this.flyMode = true
       this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(steps))
     }
-    if (this.controls[PressedKey.minus]) {
+    if (this.inputSysSvc.controls[PressedKey.minus]) {
       this.flyMode = true
       this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(-steps))
     }
@@ -776,7 +701,7 @@ export class EngineService implements OnDestroy {
     if (this.playerOnFloor) {
       this.playerVelocity.addScaledVector(this.playerVelocity, damping)
     } else {
-      if (!this.flyMode && !this.controls[PressedKey.shift]) {
+      if (!this.flyMode && !this.inputSysSvc.controls[PressedKey.shift]) {
         this.playerVelocity.y -= 30 * this.deltaSinceLastFrame
       } else {
         this.playerVelocity.addScaledVector(this.playerVelocity, damping)
@@ -788,7 +713,7 @@ export class EngineService implements OnDestroy {
       this.playerCollider.translate(deltaPosition)
       const result = this.worldOctree.capsuleIntersect(this.playerCollider)
       this.playerOnFloor = false
-      if (result && !this.controls[PressedKey.shift]) {
+      if (result && !this.inputSysSvc.controls[PressedKey.shift]) {
         this.capsuleMaterial.color.setHex(0xff0000)
         this.playerOnFloor = result.normal.y > 0
         if (!this.playerOnFloor) {
@@ -885,9 +810,7 @@ export class EngineService implements OnDestroy {
         u.completion = (u.completion + this.deltaSinceLastFrame / 0.2) > 1 ? 1 : u.completion + this.deltaSinceLastFrame / 0.2
         user.position.x = u.oldX + (u.x - u.oldX) * u.completion
         user.position.y = u.oldY + (u.y - u.oldY) * u.completion
-        if (user.userData.height > 1.1) {
-          user.position.y += user.userData.offsetY
-        }
+        user.position.y += user.userData.offsetY
         user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
         user.rotation.x = u.oldRoll + (u.roll - u.oldRoll) * u.completion
         user.rotation.y = u.oldYaw + (u.yaw - u.oldYaw) * u.completion + Math.PI
