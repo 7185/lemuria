@@ -4,12 +4,13 @@ import type {ElementRef} from '@angular/core'
 import {
   AmbientLight, Clock, PerspectiveCamera, Raycaster, Scene, Group, BoxBufferGeometry,
   Vector2, Vector3, WebGLRenderer, DirectionalLight, CameraHelper, Object3D, Spherical,
-  Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper, EdgesGeometry,
-  LineSegments, LineBasicMaterial, sRGBEncoding
+  Mesh, MeshBasicMaterial, AxesHelper, EdgesGeometry,
+  LineSegments, LineBasicMaterial, sRGBEncoding, Box3, BoxGeometry,
+  Ray
 } from 'three'
-import type {Material, LOD} from 'three'
-import {Octree} from 'three/examples/jsm/math/Octree'
-import {Capsule} from 'three/examples/jsm/math/Capsule'
+import type {Material, LOD, Triangle} from 'three'
+import {flattenGroup} from 'three-rwx-loader'
+import {MeshBVH} from 'three-mesh-bvh/build/index.module'
 import {UserService} from './../user/user.service'
 import {ObjectAct, ObjectService} from './../world/object.service'
 import {PressedKey, InputSystemService} from './inputsystem.service'
@@ -18,10 +19,67 @@ import Utils from '../utils/utils'
 
 export const DEG = Math.PI / 180
 export const RPM = Math.PI / 30
-const capsuleRadius = 0.35
 const xAxis = new Vector3(1, 0, 0)
 const yAxis = new Vector3(0, 1, 0)
 const zAxis = new Vector3(0, 0, 1)
+const playerBoxSide = config.world.collider.boxSide
+const playerHalfSide = playerBoxSide / 2
+const playerClimbHeight = config.world.collider.climbHeight
+const playerFeetHeight = config.world.collider.feetHeight
+const playerGroundAdjust = config.world.collider.groundAdjust
+
+class PlayerCollider {
+  public boxHeight: number
+  public mainBox: Box3
+  private topBox: Box3
+  private bottomBox: Box3
+  private centralRay: Ray
+  private currentPos: Vector3
+
+  public constructor(boxHeight: number, pos = new Vector3(0, 0, 0)) {
+    if (boxHeight < playerClimbHeight  + 0.1) {
+      // We need to ensurethe total collider height doesn't go too low
+      this.boxHeight = playerClimbHeight + 0.1
+    } else {
+      this.boxHeight = boxHeight
+    }
+
+    this.mainBox = new Box3(new Vector3(-playerHalfSide, 0, -playerHalfSide), new Vector3(playerHalfSide, this.boxHeight, playerHalfSide))
+    this.topBox = new Box3(new Vector3(-playerHalfSide, playerClimbHeight, -playerHalfSide),
+      new Vector3(playerHalfSide, this.boxHeight, playerHalfSide))
+    this.bottomBox = new Box3(new Vector3(-playerHalfSide, 0, -playerHalfSide),
+      new Vector3(playerHalfSide, playerFeetHeight, playerHalfSide))
+    this.centralRay = new Ray(new Vector3(0, this.boxHeight, 0), new Vector3(0, -1, 0))
+    this.currentPos = pos.clone()
+
+    this.translate(this.currentPos)
+  }
+
+  public topBoxIntersectsTriangle(tri: Triangle): boolean {
+    return this.topBox.intersectsTriangle(tri)
+  }
+
+  public bottomBoxIntersectsTriangle(tri: Triangle): boolean {
+    return this.bottomBox.intersectsTriangle(tri)
+  }
+
+  public centralRayIntersectTriangle(tri: Triangle): Vector3 {
+    return this.centralRay.intersectTriangle(tri.a, tri.b, tri.c, true, new Vector3())
+  }
+
+  public translate(delta: Vector3): void {
+    this.mainBox.translate(delta)
+    this.topBox.translate(delta)
+    this.bottomBox.translate(delta)
+    this.centralRay.origin.add(delta)
+  }
+
+  public copyPos(pos: Vector3): void {
+    const delta = pos.clone().sub(this.currentPos)
+    this.translate(delta)
+    this.currentPos = pos.clone()
+  }
+}
 
 @Injectable({providedIn: 'root'})
 export class EngineService {
@@ -29,6 +87,7 @@ export class EngineService {
   public compassSub: Subject<any> = new Subject()
   public selectedObject: Group
   public selectedObjectSub = new BehaviorSubject<any>({})
+  public currentLODs: LOD[] = []
   private compass = new Spherical()
   private canvas: HTMLCanvasElement
   private labelZone: HTMLDivElement
@@ -48,9 +107,9 @@ export class EngineService {
   private flyMode = false
   private hoveredObject: Group
 
-  private playerCollider: Capsule
-  private worldOctree: Octree
-  private capsuleMaterial: MeshBasicMaterial
+  private playerCollider: PlayerCollider
+  private playerColliderBox: Group
+  private boxMaterial: MeshBasicMaterial
   private playerVelocity = new Vector3()
   private playerOnFloor = true
 
@@ -161,7 +220,6 @@ export class EngineService {
     this.worldNode.add(this.light)
 
     // this.scene.fog = new Fog(0xCCCCCC, 10, 50)
-    this.worldOctree = new Octree()
 
     this.dirLight = new DirectionalLight(0xffffff, 0.5)
     this.dirLight.name = 'dirlight'
@@ -214,40 +272,42 @@ export class EngineService {
     })
   }
 
-  public updateCapsule() {
-    const capsuleHeight = this.camera.position.y * 1.11
-    const capsulePos = this.player.position
-    this.playerCollider = new Capsule(new Vector3(capsulePos.x, capsulePos.y + capsuleRadius, capsulePos.z),
-                                      new Vector3(capsulePos.x, capsulePos.y + capsuleHeight - capsuleRadius, capsulePos.z),
-                                      capsuleRadius)
+  public updateBoundingBox() {
+    const boxHeight = this.camera.position.y * 1.11
+    const position = this.player.position
+    this.playerCollider = new PlayerCollider(boxHeight, position)
+
     if (config.debug) {
-      for (const item of this.player.children.filter(i => i.name === 'capsule')) {
+      for (const item of this.worldNode.children.filter(i => i.name === 'boundingBox')) {
         this.disposeMaterial(item as Group)
-        this.player.remove(item)
+        this.worldNode.remove(item)
       }
-      const capsule = new Group()
-      capsule.name = 'capsule'
-      const cylinderGeometry = new CylinderGeometry(capsuleRadius, capsuleRadius, capsuleHeight - capsuleRadius * 2, 8)
-      const topSphereGeometry = new SphereGeometry(capsuleRadius, 8, 8, Math.PI / 2, Math.PI)
-      const bottomSphereGeometry = new SphereGeometry(capsuleRadius, 8, 8, Math.PI / 2, Math.PI)
-      topSphereGeometry.clearGroups()
-      topSphereGeometry.addGroup(0, topSphereGeometry.getIndex().count, 0)
-      topSphereGeometry.rotateZ(Math.PI / 2)
-      bottomSphereGeometry.clearGroups()
-      bottomSphereGeometry.addGroup(0, bottomSphereGeometry.getIndex().count, 0)
-      bottomSphereGeometry.rotateZ(-Math.PI / 2)
-      this.capsuleMaterial = new MeshBasicMaterial({color: 0x00ff00, wireframe: true})
-      const cylinder = new Mesh(cylinderGeometry, [this.capsuleMaterial])
-      const topSphere = new Mesh(topSphereGeometry, [this.capsuleMaterial])
-      const bottomSphere = new Mesh(bottomSphereGeometry, [this.capsuleMaterial])
-      cylinder.position.set(0, capsuleHeight / 2, 0)
-      topSphere.position.set(0, capsuleHeight - capsuleRadius, 0)
-      bottomSphere.position.set(0, capsuleRadius, 0)
-      capsule.add(cylinder)
-      capsule.add(topSphere)
-      capsule.add(bottomSphere)
-      capsule.position.set(capsulePos.x, capsulePos.y, capsulePos.z)
-      this.player.attach(capsule)
+      const boxPos = (new Vector3(0, boxHeight / 2, 0)).add(position)
+      const boundingBox = new Group()
+      boundingBox.name = 'boundingBox'
+      const mainBoxGeometry = new BoxGeometry(playerBoxSide, boxHeight, playerBoxSide)
+      const topBoxGeometry = new BoxGeometry(playerBoxSide, boxHeight - playerClimbHeight, playerBoxSide)
+      const bottomBoxGeometry = new BoxGeometry(playerBoxSide, playerFeetHeight, playerBoxSide)
+      this.boxMaterial = new MeshBasicMaterial({color: 0x00ff00, wireframe: true})
+
+      const mainBox = new Mesh(mainBoxGeometry, [this.boxMaterial, this.boxMaterial, this.boxMaterial,
+        this.boxMaterial, this.boxMaterial, this.boxMaterial])
+      const topBox = new Mesh(topBoxGeometry, [this.boxMaterial, this.boxMaterial, this.boxMaterial,
+        this.boxMaterial, this.boxMaterial, this.boxMaterial])
+      const bottomBox = new Mesh(bottomBoxGeometry, [this.boxMaterial, this.boxMaterial, this.boxMaterial,
+        this.boxMaterial, this.boxMaterial, this.boxMaterial])
+
+      topBox.position.set(0, (boxHeight - (boxHeight - playerClimbHeight)) / 2, 0)
+      bottomBox.position.set(0, (playerFeetHeight - boxHeight) / 2, 0)
+      boundingBox.add(mainBox)
+      boundingBox.add(topBox)
+      boundingBox.add(bottomBox)
+      boundingBox.position.set(boxPos.x, boxPos.y, boxPos.z)
+      boundingBox.userData.mainBox = mainBox
+      boundingBox.userData.topBox = topBox
+      boundingBox.userData.bottomBox = bottomBox
+      this.playerColliderBox = boundingBox
+      this.worldNode.add(boundingBox)
     }
   }
 
@@ -284,16 +344,6 @@ export class EngineService {
     this.avatar.position.y = this.player.position.y + this.avatar.userData.offsetY
   }
 
-  public refreshOctree(withObjects = false) {
-    this.worldOctree = new Octree()
-    this.worldOctree.fromGraphNode(this.worldNode.children.find(o => o.name === 'terrain'))
-    if (withObjects) {
-      for (const item of this.objectsNode.children.filter(i => i.name.endsWith('.rwx') && i.userData.notSolid !== true)) {
-        this.addMeshToOctree(item as Group)
-      }
-    }
-  }
-
   public addChunk(chunk: LOD) {
     chunk.matrixAutoUpdate = false
     this.objectsNode.add(chunk)
@@ -318,14 +368,6 @@ export class EngineService {
 
   public addUser(group: Group) {
     this.usersNode.add(group)
-  }
-
-  public addMeshToOctree(group: Group) {
-    if (group.userData.notSolid !== true) {
-      setTimeout(() => this.worldOctree.fromGraphNode(group),
-        100 * Math.sqrt((group.position.x - this.player.position.x) ** 2 + (group.position.z - this.player.position.z) ** 2)
-      )
-    }
   }
 
   public setSkybox(skybox: Group) {
@@ -365,7 +407,12 @@ export class EngineService {
         child.geometry.dispose()
       }
     })
-    group.parent.remove(group)
+
+    const chunk = group.parent as Group
+    chunk.remove(group)
+
+    // Regenerate boundsTree for this LOD
+    this.updateChunkBVH(chunk)
   }
 
   public removeWorldObject(group: Group) {
@@ -479,11 +526,40 @@ export class EngineService {
       this.player.position.copy(pos)
     }
     this.player.rotation.y = this.radNormalized(yaw * DEG + Math.PI)
-    this.updateCapsule()
+    this.updateBoundingBox()
   }
 
   public getLODs(): LOD[] {
     return this.objectsNode.children as LOD[]
+  }
+
+  public updateObjectBVH(object: Object3D) {
+    // Regenerate boundsTree for associated LOD
+    this.updateChunkBVH(object.parent as Group)
+  }
+
+  public updateChunkBVH(chunk: Group) {
+    // Regenerate boundsTree for associated LOD
+    const bvhMesh = flattenGroup(chunk, (mesh: Mesh) => mesh.userData?.notSolid !== true)
+
+    // If the mesh is empty (no faces): we don't need a bounds tree
+    if (bvhMesh.geometry.getIndex().array.length === 0) {
+      chunk.parent.userData.boundsTree = null
+    } else {
+      chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {lazyGeneration: false})
+    }
+  }
+
+  public updateTerrainBVH(terrain: Group) {
+    // Regenerate boundsTree for associated LOD
+    const bvhMesh = flattenGroup(terrain)
+
+    // If the mesh is empty (no faces): we don't need a bounds tree
+    if (bvhMesh.geometry.getIndex().array.length === 0) {
+      terrain.userData.boundsTree = null
+    } else {
+      terrain.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {lazyGeneration: false})
+    }
   }
 
   public updateSelectionBox(): void {
@@ -559,6 +635,7 @@ export class EngineService {
   }
 
   private deselect() {
+    this.updateObjectBVH(this.selectedObject)
     this.buildMode = false
     this.selectedObject = null
     this.selectedObjectSub.next({})
@@ -841,31 +918,124 @@ export class EngineService {
       }
     }
 
-    if (this.playerCollider) {
-      const deltaPosition = this.playerVelocity.clone().multiplyScalar(this.deltaSinceLastFrame)
-      this.playerCollider.translate(deltaPosition)
-      const result = this.worldOctree.capsuleIntersect(this.playerCollider)
+    //console.log(this.flyMode, this.playerOnFloor)
+
+    this.playerVelocity.y = this.playerOnFloor && !this.flyMode ? 0 : this.deltaSinceLastFrame * 0.01 + this.playerVelocity.y
+
+    this.player.updateMatrixWorld()
+
+    const boxHeight: number = this.playerCollider?.boxHeight
+
+    const deltaPosition = this.playerVelocity.clone().multiplyScalar(this.deltaSinceLastFrame)
+    const oldPosition = this.player.position.clone()
+    const newPosition = oldPosition.clone().add(deltaPosition)
+
+    this.playerCollider?.copyPos(newPosition)
+    this.playerColliderBox?.position.set(newPosition.x, newPosition.y + boxHeight / 2.0, newPosition.z)
+
+    if (!this.inputSysSvc.controls[PressedKey.shift] && this.playerCollider) {
+
+      const terrain = this.worldNode.children.find(o => o.name === 'terrain') as any
+
+      this.boxMaterial?.color.setHex(0x00ff00)
+
+      let climbHeight = null
+      let minHeight = null
+      let boxCollision = false
+      let feetCollision = false
+
       this.playerOnFloor = false
-      if (result && !this.inputSysSvc.controls[PressedKey.shift]) {
-        if (config.debug) {
-          this.capsuleMaterial.color.setHex(0xff0000)
+
+      const intersectsTriangle = (tri: Triangle) => {
+        // Check if the triangle is intersecting the boundingBox and later adjust the
+        // boundingBox position if it is.
+
+        const collision = this.playerCollider.topBoxIntersectsTriangle(tri)
+        const rayIntersectionPoint = this.playerCollider.centralRayIntersectTriangle(tri)
+
+        if (this.playerCollider.bottomBoxIntersectsTriangle(tri)) {
+          feetCollision = true
         }
-        this.playerOnFloor = result.normal.y > 0
-        if (!this.playerOnFloor) {
-          this.playerVelocity.addScaledVector(result.normal, - result.normal.dot(this.playerVelocity))
-        } else {
-          this.flyMode = false
+
+        if (collision) {
+          boxCollision = true
+          this.boxMaterial?.color.setHex(0xff0000)
         }
-        this.playerCollider.translate(result.normal.multiplyScalar(result.depth))
-      } else {
-        if (config.debug) {
-          this.capsuleMaterial.color.setHex(0x00ff00)
+
+        if (rayIntersectionPoint != null && rayIntersectionPoint.y > newPosition.y) {
+          this.boxMaterial?.color.setHex(0xffff00)
+
+          if (climbHeight == null || climbHeight < rayIntersectionPoint.y) {
+            climbHeight = rayIntersectionPoint.y
+          }
+
+          if (minHeight == null || minHeight < rayIntersectionPoint.y) {
+            minHeight = rayIntersectionPoint.y
+          }
         }
       }
 
-      this.player.position.set(this.playerCollider.start.x, this.playerCollider.start.y - capsuleRadius, this.playerCollider.start.z)
-      this.localUserPosSub.next(this.player.position)
+      terrain?.userData.boundsTree?.shapecast (
+        terrain,
+        {
+          intersectsBounds: box => box.intersectsBox(this.playerCollider.mainBox),
+          intersectsTriangle
+        }
+      )
+
+      for (const lod of this.currentLODs) {
+
+        const lodOffset = lod.position
+        this.playerCollider.translate(lodOffset.negate())
+
+        lod.userData.boundsTree?.shapecast (
+          (lod as any),
+          {
+            intersectsBounds: box => box.intersectsBox(this.playerCollider.mainBox),
+            intersectsTriangle
+          }
+        )
+
+        this.playerCollider.translate(lodOffset.negate())
+      }
+
+      if (boxCollision) {
+        this.playerVelocity.set(0.0, 0.0, 0.0)
+        this.playerCollider.copyPos(oldPosition)
+        this.player.position.copy(oldPosition)
+      } else {
+        if (this.playerVelocity.y <= 0 && climbHeight !== null) {
+          // Player is on floor
+          this.playerVelocity.setY(0.0)
+          newPosition.setY(climbHeight - playerGroundAdjust)
+          this.playerOnFloor = true
+          this.flyMode = false
+        }
+
+        if (this.playerVelocity.y > 0 && minHeight !== null && climbHeight !== minHeight) {
+          // Player hits the ceiling
+          this.playerVelocity.setY(0.0)
+          newPosition.setY(minHeight - playerGroundAdjust)
+        }
+
+        if (climbHeight === null && feetCollision && newPosition.y + playerGroundAdjust < oldPosition.y) {
+          // Prevent the player from falling in a small gap
+          this.playerVelocity.setY(0.0)
+          newPosition.setY(oldPosition.y)
+          this.playerCollider.copyPos(newPosition)
+        }
+
+        if (feetCollision) {
+          this.flyMode = false
+        }
+
+        this.player.position.copy(newPosition)
+      }
+    } else {
+      this.player.position.copy(newPosition)
     }
+
+    this.localUserPosSub.next(this.player.position)
 
     for (const item of this.sprites) {
       item.rotation.y = this.player.rotation.y
