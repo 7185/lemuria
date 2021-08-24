@@ -15,6 +15,12 @@ export const config: any = {
     },
     lod: {
       maxDistance: 100 // In meters
+    },
+    collider: {
+      boxSide: 0.55,
+      climbHeight: 0.65,
+      feetHeight: 0.1,
+      groundAdjust: 0.00001
     }
   },
   debug: false

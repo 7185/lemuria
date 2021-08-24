@@ -1,6 +1,6 @@
 import {Subject, Observable, throwError, from, of} from 'rxjs'
 import type {Subscription} from 'rxjs'
-import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
+import {mergeMap, concatMap, bufferCount, catchError, finalize} from 'rxjs/operators'
 import {UserService} from './../user/user.service'
 import type {User} from './../user/user.model'
 import {EngineService, DEG} from './../engine/engine.service'
@@ -12,6 +12,7 @@ import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrappin
   MeshBasicMaterial, Box3, BufferAttribute, sRGBEncoding} from 'three'
 import type {Object3D} from 'three'
 import Utils from '../utils/utils'
+
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
@@ -66,7 +67,9 @@ export class WorldService {
     }
 
     // Register chunk updater to the engine
-    this.engine.localUserPosObservable().subscribe((pos: Vector3) => { this.autoUpdateChunks(pos) })
+    this.engine.localUserPosObservable().subscribe((pos: Vector3) => {
+      this.autoUpdateChunks(pos)
+    })
 
     // Register texture animator to the engine
     this.engine.texturesAnimationObservable().subscribe(() => { this.objSvc.texturesNextFrame() })
@@ -212,7 +215,8 @@ export class WorldService {
       this.terrain.add(terrainMesh)
     }
     this.engine.addWorldObject(this.terrain)
-    this.engine.refreshOctree()
+    this.terrain.updateMatrixWorld()
+    this.engine.updateTerrainBVH(this.terrain)
   }
 
 
@@ -260,7 +264,7 @@ export class WorldService {
       group.userData.offsetY = group.position.y - box.min.y
       if (group.name === 'avatar') {
         this.engine.setCameraOffset(group.userData.height * 0.9)
-        this.engine.updateCapsule()
+        this.engine.updateBoundingBox()
       } else {
         const user = this.userSvc.userList.find(u => u.id === group.name)
         group.position.y = user.y + group.userData.offsetY
@@ -372,17 +376,25 @@ export class WorldService {
     return new Vector3(xPos, 0, zPos)
   }
 
-  // this method is method to be called on each frame to update the state of chunks if needed
-  public autoUpdateChunks(pos: Vector3) {
-    const [chunkX, chunkZ] = this.getChunkTile(pos)
-
-    // Only trigger a chunk update if we've actually moved to another chunk
+  // Return true if, given the provided chunk indices, this target chunk is different from the current one,
+  // false otherwise
+  public hasChunkChanged(chunkX: number, chunkZ: number) {
     if (this.previousLocalUserPos !== null) {
       const [previousChunkX, previousChunkZ] = this.getChunkTile(this.previousLocalUserPos)
 
       if (previousChunkX === chunkX && previousChunkZ === chunkZ) {
-        return
+        return false
       }
+    }
+    return true
+  }
+
+  // this method is method to be called on each frame to update the state of chunks if needed
+  public autoUpdateChunks(pos: Vector3) {
+    const [chunkX, chunkZ] = this.getChunkTile(pos)
+
+    if (!this.hasChunkChanged(chunkX, chunkZ)) {
+      return
     }
 
     this.previousLocalUserPos = pos.clone()
@@ -391,7 +403,26 @@ export class WorldService {
     // in subscribe() (note that if the chunk has already been loaded, it won't reach the operator).
     // We also tag the chunk as not being loaded if any error were to happen (like a failed http request)
     from(this.chunkLoadingLayout)
-      .pipe(concatMap(val => this.loadChunk(chunkX + val[0], chunkZ + val[1])))
+      .pipe(concatMap(val => this.loadChunk(chunkX + val[0], chunkZ + val[1])),
+      finalize(() => {
+        const newLODs: LOD[] = []
+
+        for (const lod of this.engine.getLODs()) {
+          const chunk = lod.userData.world.chunk
+
+          if (chunk.x < chunkX - 1 || chunk.x > chunkX + 1 ||
+              chunk.z < chunkZ - 1 || chunk.z > chunkZ + 1) {
+            // This is not a nearby chunk, skip it
+            continue
+          }
+
+          console.log('Add chunk %d, %d', chunk.x, chunk.z)
+          newLODs.push(lod)
+
+        }
+
+        this.engine.currentLODs = newLODs
+      }))
       .subscribe({
         next: (chunk: LOD) => { this.engine.addChunk(chunk) },
         error: (val: any) => {
@@ -460,6 +491,7 @@ export class WorldService {
             lod.position.set(chunkPos.x, 0, chunkPos.z)
             lod.autoUpdate = false
             lod.updateMatrix()
+            this.engine.updateChunkBVH(chunkGroup)
 
             return of(lod)
           })
@@ -470,14 +502,25 @@ export class WorldService {
   }
 
   private setObjectChunk(object: Object3D) {
-    const oldChunkPos = object.parent.parent.position
+    const oldChunk = object.parent as Group
+    const oldLOD = oldChunk.parent
+    const oldChunkPos = oldLOD.position
     const absPos = object.position.clone().add(oldChunkPos)
     const [chunkX, chunkZ] = this.getChunkTile(absPos)
+
     for (const lod of this.engine.getLODs()) {
       if (lod.userData.world.chunk.x === chunkX && lod.userData.world.chunk.z === chunkZ) {
-        object.parent.remove(object)
-        lod.levels[0].object.add(object)
-        object.position.add(oldChunkPos).sub(object.parent.parent.position)
+        oldChunk.remove(object)
+
+        // Regenerate boundsTree for source LOD, if it's different from the destination one
+        if (oldLOD !== lod) {
+          this.engine.updateChunkBVH(oldChunk)
+        }
+
+        const chunk = lod.levels[0].object
+        chunk.add(object)
+        object.position.add(oldChunkPos).sub(lod.position)
+
         return
       }
     }

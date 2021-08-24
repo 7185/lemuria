@@ -75,10 +75,6 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.engine.toggleCamera()
   }
 
-  public enableCollision(): void {
-    this.engine.refreshOctree()
-  }
-
   public join(userId: string) {
     const user = this.userSvc.userList.find(v => v.id === userId)
     this.engine.teleport(new Vector3(user.x, user.y, user.z))
