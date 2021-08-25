@@ -278,14 +278,16 @@ export class WorldService {
       this.engine.disposeMaterial(group)
       group.clear()
       group.add(o.clone())
-      group.position.set(0, 0, 0)
       const box = new Box3()
       box.setFromObject(group)
       group.userData.height = box.max.y - box.min.y
-      group.userData.offsetY = -box.min.y
+      group.userData.offsetY = group.position.y - box.min.y
       if (group.name === 'avatar') {
         this.engine.setCameraOffset(group.userData.height * 0.9)
         this.engine.updateCapsule()
+      } else {
+        const user = this.userSvc.userList.find(u => u.id === group.name)
+        group.position.y = user.y + group.userData.offsetY
       }
     })
   }
