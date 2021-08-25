@@ -14,6 +14,9 @@ import {config} from '../app.config'
 export const DEG = Math.PI / 180
 export const RPM = Math.PI / 30
 const capsuleRadius = 0.35
+const xAxis = new Vector3(1, 0, 0)
+const yAxis = new Vector3(0, 1, 0)
+const zAxis = new Vector3(0, 0, 1)
 
 @Injectable({providedIn: 'root'})
 export class EngineService implements OnDestroy {
@@ -519,9 +522,9 @@ export class EngineService implements OnDestroy {
                                this.selectedObject.userData.boxCenter.y,
                                this.selectedObject.userData.boxCenter.z)
     this.selectionBox.position.copy(center)
-    center.applyAxisAngle(new Vector3(0, 1, 0), this.selectedObject.rotation.y)
-    center.applyAxisAngle(new Vector3(0, 0, 1), this.selectedObject.rotation.z)
-    center.applyAxisAngle(new Vector3(1, 0, 0), this.selectedObject.rotation.x)
+    center.applyAxisAngle(yAxis, this.selectedObject.rotation.y)
+    center.applyAxisAngle(zAxis, this.selectedObject.rotation.z)
+    center.applyAxisAngle(xAxis, this.selectedObject.rotation.x)
     this.selectionGroup.position.copy(new Vector3(chunkData.x + this.selectedObject.position.x,
                                                   this.selectedObject.position.y,
                                                   chunkData.z + this.selectedObject.position.z))
@@ -611,28 +614,22 @@ export class EngineService implements OnDestroy {
       this.selectedObject.position.add(new Vector3(v.z * -moveStep, 0, v.x * moveStep))
     }
     if (this.inputSysSvc.controls[PressedKey.pgUp]) {
-      this.selectedObject.rotation.y += rotStep
-      this.selectedObject.rotation.y = this.radNormalized(this.selectedObject.rotation.y)
+      this.selectedObject.rotateOnAxis(yAxis, rotStep)
     }
     if (this.inputSysSvc.controls[PressedKey.pgDown]) {
-      this.selectedObject.rotation.y -= rotStep
-      this.selectedObject.rotation.y = this.radNormalized(this.selectedObject.rotation.y)
+      this.selectedObject.rotateOnAxis(yAxis, -rotStep)
     }
     if (this.inputSysSvc.controls[PressedKey.divide]) {
-      this.selectedObject.rotation.x += rotStep
-      this.selectedObject.rotation.x = this.radNormalized(this.selectedObject.rotation.x)
+      this.selectedObject.rotateOnAxis(xAxis, rotStep)
     }
     if (this.inputSysSvc.controls[PressedKey.multiply]) {
-      this.selectedObject.rotation.x -= rotStep
-      this.selectedObject.rotation.x = this.radNormalized(this.selectedObject.rotation.x)
+      this.selectedObject.rotateOnAxis(xAxis, -rotStep)
     }
     if (this.inputSysSvc.controls[PressedKey.home]) {
-      this.selectedObject.rotation.z += rotStep
-      this.selectedObject.rotation.z = this.radNormalized(this.selectedObject.rotation.z)
+      this.selectedObject.rotateOnAxis(zAxis, rotStep)
     }
     if (this.inputSysSvc.controls[PressedKey.end]) {
-      this.selectedObject.rotation.z -= rotStep
-      this.selectedObject.rotation.z = this.radNormalized(this.selectedObject.rotation.z)
+      this.selectedObject.rotateOnAxis(zAxis, -rotStep)
     }
     if (this.inputSysSvc.controls[PressedKey.ins]) {
       const parent = this.selectedObject.parent
@@ -647,9 +644,9 @@ export class EngineService implements OnDestroy {
                                this.selectedObject.userData.boxCenter.y,
                                this.selectedObject.userData.boxCenter.z)
     this.selectionBox.position.copy(center)
-    center.applyAxisAngle(new Vector3(0, 1, 0), this.selectedObject.rotation.y)
-    center.applyAxisAngle(new Vector3(0, 0, 1), this.selectedObject.rotation.z)
-    center.applyAxisAngle(new Vector3(1, 0, 0), this.selectedObject.rotation.x)
+    center.applyAxisAngle(yAxis, this.selectedObject.rotation.y)
+    center.applyAxisAngle(zAxis, this.selectedObject.rotation.z)
+    center.applyAxisAngle(xAxis, this.selectedObject.rotation.x)
     this.selectionGroup.position.copy(new Vector3(chunkData.x + this.selectedObject.position.x,
                                                   this.selectedObject.position.y,
                                                   chunkData.z + this.selectedObject.position.z))
@@ -795,12 +792,9 @@ export class EngineService implements OnDestroy {
         }
       }
       if (item.userData.rotate) {
-        item.rotation.x += item.userData.rotate.speed.x * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction
-        item.rotation.y += item.userData.rotate.speed.y * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction
-        item.rotation.z += item.userData.rotate.speed.z * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction
-        item.rotation.x = this.radNormalized(item.rotation.x)
-        item.rotation.y = this.radNormalized(item.rotation.y)
-        item.rotation.z = this.radNormalized(item.rotation.z)
+        item.rotateOnAxis(yAxis, item.userData.rotate.speed.y * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
+        item.rotateOnAxis(zAxis, item.userData.rotate.speed.z * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
+        item.rotateOnAxis(xAxis, item.userData.rotate.speed.x * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
         if (item.userData.rotate.time) {
           if (item.userData.rotate.completion >= 1) {
             if (item.userData.rotate.loop) {
