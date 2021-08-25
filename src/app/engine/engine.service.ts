@@ -1,4 +1,4 @@
-import {BehaviorSubject, Subject} from 'rxjs'
+import {BehaviorSubject, Subject, timer} from 'rxjs'
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
   AmbientLight, Clock, Material, PerspectiveCamera, Raycaster, Scene, Group, BoxBufferGeometry,
@@ -382,7 +382,7 @@ export class EngineService implements OnDestroy {
       this.inputSysSvc.keyUpEvent.subscribe(() => {
         this.mouseIdle = 0
       })
-      setInterval(() => {
+      timer(0, 100).subscribe(() => {
         this.mouseIdle++
         if (this.mouseIdle >= 10) {
           const item = this.pointedItem()
@@ -398,7 +398,7 @@ export class EngineService implements OnDestroy {
           }
           this.mouseIdle = 5
         }
-      }, 100)
+      })
     })
   }
 
@@ -617,6 +617,22 @@ export class EngineService implements OnDestroy {
     if (this.inputSysSvc.controls[PressedKey.pgDown]) {
       this.selectedObject.rotation.y -= rotStep
       this.selectedObject.rotation.y = this.radNormalized(this.selectedObject.rotation.y)
+    }
+    if (this.inputSysSvc.controls[PressedKey.divide]) {
+      this.selectedObject.rotation.x += rotStep
+      this.selectedObject.rotation.x = this.radNormalized(this.selectedObject.rotation.x)
+    }
+    if (this.inputSysSvc.controls[PressedKey.multiply]) {
+      this.selectedObject.rotation.x -= rotStep
+      this.selectedObject.rotation.x = this.radNormalized(this.selectedObject.rotation.x)
+    }
+    if (this.inputSysSvc.controls[PressedKey.home]) {
+      this.selectedObject.rotation.z += rotStep
+      this.selectedObject.rotation.z = this.radNormalized(this.selectedObject.rotation.z)
+    }
+    if (this.inputSysSvc.controls[PressedKey.end]) {
+      this.selectedObject.rotation.z -= rotStep
+      this.selectedObject.rotation.z = this.radNormalized(this.selectedObject.rotation.z)
     }
     if (this.inputSysSvc.controls[PressedKey.ins]) {
       const parent = this.selectedObject.parent

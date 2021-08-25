@@ -5,70 +5,70 @@
     <tbody>
       <tr class="buttons">
         <td>
-          <button class="btn btn-sm btn-danger shadow-none" type="button">
+          <button class="btn btn-sm btn-danger shadow-none" (mousedown)="trigger($event, 'Delete')" type="button">
             <fa-icon [icon]="['fas', 'trash-alt']" [fixedWidth]="true"></fa-icon>
           </button>
-          <button class="btn btn-sm btn-dark" type="button">
+          <button class="btn btn-sm btn-dark" (mousedown)="trigger($event, 'Insert')" type="button">
             <fa-icon [icon]="['fas', 'clone']" [fixedWidth]="true"></fa-icon>
           </button>
         </td>
         <td>
-          <button class="btn btn-sm btn-secondary" type="button" blur>
+          <button class="btn btn-sm btn-secondary" (mousedown)="trigger($event, 'ArrowUp')" type="button">
             <fa-layers [fixedWidth]="true">
               <fa-icon [icon]="['fas', 'road']" [fixedWidth]="true"></fa-icon>
               <fa-icon class="d-inline-block" [icon]="['fas', 'arrow-up']" transform="shrink-6 up-8"></fa-icon>
             </fa-layers>
           </button>
-          <button class="btn btn-sm btn-secondary" type="button">
+          <button class="btn btn-sm btn-secondary" (mousedown)="trigger($event, 'ArrowDown')" type="button">
             <fa-layers [fixedWidth]="true">
               <fa-icon [icon]="['fas', 'road']" [fixedWidth]="true"></fa-icon>
               <fa-icon class="d-inline-block" [icon]="['fas', 'arrow-down']" transform="shrink-3 down-8"></fa-icon>
             </fa-layers>
           </button>
-          <button class="btn btn-sm btn-secondary" type="button">
+          <button class="btn btn-sm btn-secondary" (mousedown)="trigger($event, 'ArrowLeft')" type="button">
             <fa-icon [icon]="['fas', 'arrow-left']" [fixedWidth]="true"></fa-icon>
           </button>
-          <button class="btn btn-sm btn-secondary" type="button">
+          <button class="btn btn-sm btn-secondary" (mousedown)="trigger($event, 'ArrowRight')" type="button">
             <fa-icon [icon]="['fas', 'arrow-right']" [fixedWidth]="true"></fa-icon>
           </button>
-          <button class="btn btn-sm btn-secondary" type="button">
+          <button class="btn btn-sm btn-secondary" (mousedown)="trigger($event, 'NumpadAdd')" type="button">
             <fa-icon [icon]="['fas', 'arrow-up']" [fixedWidth]="true"></fa-icon>
           </button>
-          <button class="btn btn-sm btn-secondary" type="button">
+          <button class="btn btn-sm btn-secondary" (mousedown)="trigger($event, 'NumpadSubtract')" type="button">
             <fa-icon [icon]="['fas', 'arrow-down']" [fixedWidth]="true"></fa-icon>
           </button>
           <br/>
-          <button class="btn btn-sm btn-danger" type="button">
+          <button class="btn btn-sm btn-danger" (mousedown)="trigger($event, 'NumpadMultiply')" type="button">
             <fa-layers [fixedWidth]="true">
               <fa-icon [icon]="['fas', 'redo-alt']" [fixedWidth]="true"></fa-icon>
               <fa-layers-text content="X" transform="shrink-2 right-8 down-6" class="fw-bold"></fa-layers-text>
             </fa-layers>
           </button>
-          <button class="btn btn-sm btn-danger" type="button">
+          <button class="btn btn-sm btn-danger" (mousedown)="trigger($event, 'NumpadDivide')" type="button" >
             <fa-layers [fixedWidth]="true">
               <fa-icon [icon]="['fas', 'undo-alt']" [fixedWidth]="true"></fa-icon>
               <fa-layers-text content="X" transform="shrink-2 left-8 down-6" class="fw-bold"></fa-layers-text>
             </fa-layers>
           </button>
-          <button class="btn btn-sm btn-success" type="button">
+          <button class="btn btn-sm btn-success" (mousedown)="trigger($event, 'PageDown')" type="button">
             <fa-layers [fixedWidth]="true">
               <fa-icon [icon]="['fas', 'redo-alt']" [fixedWidth]="true"></fa-icon>
               <fa-layers-text content="Y" transform="shrink-2 right-8 down-6" class="fw-bold"></fa-layers-text>
             </fa-layers>
           </button>
-          <button class="btn btn-sm btn-success" type="button">
+          <button class="btn btn-sm btn-success" (mousedown)="trigger($event, 'PageUp')" type="button">
             <fa-layers [fixedWidth]="true">
               <fa-icon [icon]="['fas', 'undo-alt']" [fixedWidth]="true"></fa-icon>
               <fa-layers-text content="Y" transform="shrink-2 left-8 down-6" class="fw-bold"></fa-layers-text>
             </fa-layers>
           </button>
-          <button class="btn btn-sm btn-primary" type="button">
+          <button class="btn btn-sm btn-primary" (mousedown)="trigger($event, 'End')" type="button">
             <fa-layers [fixedWidth]="true">
               <fa-icon [icon]="['fas', 'redo-alt']" [fixedWidth]="true"></fa-icon>
               <fa-layers-text content="Z" transform="shrink-2 right-8 down-6" class="fw-bold"></fa-layers-text>
             </fa-layers>
           </button>
-          <button class="btn btn-sm btn-primary" type="button">
+          <button class="btn btn-sm btn-primary" (mousedown)="trigger($event, 'Home')" type="button">
             <fa-layers [fixedWidth]="true">
               <fa-icon [icon]="['fas', 'undo-alt']" [fixedWidth]="true"></fa-icon>
               <fa-layers-text content="Z" transform="shrink-2 left-8 down-6" class="fw-bold"></fa-layers-text>

@@ -13,6 +13,16 @@ export class UiBuilderZoneComponent implements OnInit {
   public constructor(private engineSvc: EngineService) {
   }
 
+  trigger(event: MouseEvent, code: string) {
+    const downEv = new KeyboardEvent('keydown', {code})
+    Object.defineProperty(downEv, 'target', {value: document.body})
+    const upEv = new KeyboardEvent('keyup', {code})
+    Object.defineProperty(upEv, 'target', {value: document.body})
+    window.dispatchEvent(downEv)
+    window.dispatchEvent(upEv)
+    event.preventDefault()
+  }
+
   public ngOnInit(): void {
     this.engineSvc.selectedObjectSub.asObservable().subscribe((object) => {
       this.selectedObject = object

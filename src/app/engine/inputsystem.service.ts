@@ -2,12 +2,13 @@ import {Injectable} from '@angular/core'
 import {fromEvent} from 'rxjs'
 import {map} from 'rxjs/operators'
 
-export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, ctrl, shift, esc, ins, del }
+export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, multiply, divide,
+   home, end, ctrl, shift, esc, ins, del, len }
 
 @Injectable({providedIn: 'root'})
 export class InputSystemService {
 
-  public controls: boolean[] = Array(9).fill(false)
+  public controls: boolean[] = Array(PressedKey.len).fill(false)
   public keyUpEvent = fromEvent(window, 'keyup').pipe(
     map((e: KeyboardEvent) => {
       if ((e.target as HTMLElement).nodeName === 'BODY') {
@@ -58,6 +59,22 @@ export class InputSystemService {
       }
       case 'NumpadSubtract': {
         this.controls[PressedKey.minus] = value
+        break
+      }
+      case 'NumpadMultiply': {
+        this.controls[PressedKey.multiply] = value
+        break
+      }
+      case 'NumpadDivide': {
+        this.controls[PressedKey.divide] = value
+        break
+      }
+      case 'Home': {
+        this.controls[PressedKey.home] = value
+        break
+      }
+      case 'End': {
+        this.controls[PressedKey.end] = value
         break
       }
       case 'ControlLeft': {
