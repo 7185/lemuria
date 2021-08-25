@@ -294,10 +294,7 @@ export class WorldService {
 
   public setWorld(world: any, pos: Vector3) {
     this.worldId = world.id
-    // Children is a dynamic iterable, we need a copy to get all of them
-    for (const item of [...this.engine.objects()]) {
-      this.engine.removeObject(item as Group)
-    }
+    this.engine.clearObjects()
     this.objSvc.cleanCache()
     this.objSvc.setPath(world.path)
     this.objSvc.loadAvatars().subscribe((list) => {

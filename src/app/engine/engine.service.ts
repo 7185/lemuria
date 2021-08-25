@@ -155,8 +155,21 @@ export class EngineService implements OnDestroy {
     }
   }
 
+  public clearObjects() {
+    if (this.selectionBox != null) {
+      this.deselect()
+    }
+    // Children is a dynamic iterable, we need a copy to get all of them
+    for (const item of [...this.objectsNode.children]) {
+      this.removeObject(item as Group)
+    }
+  }
+
   public clearScene() {
-    for (const item of this.worldNode.children) {
+    if (this.selectionBox != null) {
+      this.deselect()
+    }
+    for (const item of [...this.worldNode.children]) {
       this.removeWorldObject(item as Group)
     }
     this.renderer.dispose()
@@ -340,10 +353,6 @@ export class EngineService implements OnDestroy {
       }
     })
     this.usersNode.remove(group)
-  }
-
-  public objects() {
-    return this.objectsNode.children
   }
 
   public users() {
