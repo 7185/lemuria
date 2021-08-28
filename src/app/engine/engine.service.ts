@@ -9,6 +9,7 @@ import {
 import {Octree} from 'three/examples/jsm/math/Octree'
 import {Capsule} from 'three/examples/jsm/math/Capsule'
 import {UserService} from './../user/user.service'
+import {ObjectAct, ObjectService} from './../world/object.service'
 import {PressedKey, InputSystemService} from './inputsystem.service'
 import {config} from '../app.config'
 export const DEG = Math.PI / 180
@@ -72,7 +73,26 @@ export class EngineService implements OnDestroy {
   private localUserPosSub = new Subject<Vector3>()
   private texturesAnimationSub = new Subject<any>()
 
-  public constructor(private ngZone: NgZone, private userSvc: UserService, private inputSysSvc: InputSystemService) {
+  private keyActionMap = new Map([
+    [PressedKey.up, ObjectAct.forward],
+    [PressedKey.right, ObjectAct.right],
+    [PressedKey.down, ObjectAct.backward],
+    [PressedKey.left, ObjectAct.left],
+    [PressedKey.pgUp, ObjectAct.rotY],
+    [PressedKey.pgDown, ObjectAct.rotnY],
+    [PressedKey.plus, ObjectAct.up],
+    [PressedKey.minus, ObjectAct.down],
+    [PressedKey.divide, ObjectAct.rotX],
+    [PressedKey.multiply, ObjectAct.rotnX],
+    [PressedKey.home, ObjectAct.rotZ],
+    [PressedKey.end, ObjectAct.rotnZ],
+    [PressedKey.esc, ObjectAct.deselect],
+    [PressedKey.ins, ObjectAct.copy],
+    [PressedKey.del, ObjectAct.delete]
+  ])
+
+  public constructor(private ngZone: NgZone, private userSvc: UserService, private inputSysSvc: InputSystemService,
+     private objSvc: ObjectService) {
   }
 
   public ngOnDestroy(): void {
@@ -382,17 +402,23 @@ export class EngineService implements OnDestroy {
         this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1
         this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1
       })
-      this.inputSysSvc.keyDownEvent.subscribe(() => {
+      this.inputSysSvc.keyDownEvent.subscribe((k) => {
         // reset tooltip
         this.mouseIdle = 0
         this.labelDesc.style.display = 'none'
         this.hoveredObject = null
         if (this.buildMode) {
-          this.moveItem()
+          const act = this.keyActionMap.get(k) || ObjectAct.nop
+          this.objSvc.objectAction.next(act)
         }
       })
       this.inputSysSvc.keyUpEvent.subscribe(() => {
         this.mouseIdle = 0
+      })
+      this.objSvc.objectAction.subscribe((act) => {
+        if (this.buildMode) {
+          this.moveItem(act)
+        }
       })
       timer(0, 100).subscribe(() => {
         this.mouseIdle++
@@ -542,7 +568,7 @@ export class EngineService implements OnDestroy {
     this.scene.add(this.selectionGroup)
   }
 
-  private updateChunk(object: Group) {
+  private setObjectChunk(object: Group) {
     const oldChunkPos = object.parent.parent.position
     const absPos = object.position.clone().add(oldChunkPos)
     const chunkX = Math.floor((absPos.x * 100 + config.world.chunk.width / 2) / config.world.chunk.width)
@@ -583,8 +609,8 @@ export class EngineService implements OnDestroy {
     }
   }
 
-  private moveItem() {
-    if (this.inputSysSvc.controls[PressedKey.esc]) {
+  private moveItem(action: number) {
+    if (action === ObjectAct.deselect) {
       this.deselect()
       return
     }
@@ -598,55 +624,86 @@ export class EngineService implements OnDestroy {
         rotStep = Math.PI / 180
       }
     }
-    if (this.inputSysSvc.controls[PressedKey.plus]) {
-      this.selectedObject.translateY(moveStep)
-    }
-    if (this.inputSysSvc.controls[PressedKey.minus]) {
-      this.selectedObject.translateY(-moveStep)
-    }
     const v = new Vector3()
     if (Math.abs(this.cameraDirection.x) >= Math.abs(this.cameraDirection.z)) {
       v.x = Math.sign(this.cameraDirection.x)
     } else {
       v.z = Math.sign(this.cameraDirection.z)
     }
-    if (this.inputSysSvc.controls[PressedKey.up]) {
-      this.selectedObject.position.add(v.multiplyScalar(moveStep))
+    switch (action) {
+      case (ObjectAct.up): {
+        this.selectedObject.translateY(moveStep)
+        break
+      }
+      case (ObjectAct.down): {
+        this.selectedObject.translateY(-moveStep)
+        break
+      }
+      case (ObjectAct.forward): {
+        this.selectedObject.position.add(v.multiplyScalar(moveStep))
+        break
+      }
+      case (ObjectAct.backward): {
+        this.selectedObject.position.add(v.multiplyScalar(-moveStep))
+        break
+      }
+      case (ObjectAct.left): {
+        this.selectedObject.position.add(new Vector3(v.z * moveStep, 0, v.x * -moveStep))
+        break
+      }
+      case (ObjectAct.right): {
+        this.selectedObject.position.add(new Vector3(v.z * -moveStep, 0, v.x * moveStep))
+        break
+      }
+      case (ObjectAct.rotY): {
+        this.selectedObject.rotateOnAxis(yAxis, rotStep)
+        break
+      }
+      case (ObjectAct.rotnY): {
+        this.selectedObject.rotateOnAxis(yAxis, -rotStep)
+        break
+      }
+      case (ObjectAct.rotX): {
+        this.selectedObject.rotateOnAxis(xAxis, rotStep)
+        break
+      }
+      case (ObjectAct.rotnX): {
+        this.selectedObject.rotateOnAxis(xAxis, -rotStep)
+        break
+      }
+      case (ObjectAct.rotZ): {
+        this.selectedObject.rotateOnAxis(zAxis, rotStep)
+        break
+      }
+      case (ObjectAct.rotnZ): {
+        this.selectedObject.rotateOnAxis(zAxis, -rotStep)
+        break
+      }
+      case (ObjectAct.snapGrid): {
+        this.selectedObject.position.set(Math.round(this.selectedObject.position.x * 2) / 2,
+                                         Math.round(this.selectedObject.position.y * 2) / 2,
+                                         Math.round(this.selectedObject.position.z * 2) / 2)
+        break
+      }
+      case (ObjectAct.rotReset): {
+        this.selectedObject.rotation.set(0, 0, 0)
+        break
+      }
+      case (ObjectAct.copy): {
+        const parent = this.selectedObject.parent
+        this.selectedObject = this.selectedObject.clone()
+        this.selectedObject.position.add(v.multiplyScalar(moveStep))
+        parent.add(this.selectedObject)
+        break
+      }
+      case (ObjectAct.delete): {
+        this.removeObject(this.selectedObject)
+        return
+      }
+      default:
+        return
     }
-    if (this.inputSysSvc.controls[PressedKey.down]) {
-      this.selectedObject.position.add(v.multiplyScalar(-moveStep))
-    }
-    if (this.inputSysSvc.controls[PressedKey.left]) {
-      this.selectedObject.position.add(new Vector3(v.z * moveStep, 0, v.x * -moveStep))
-    }
-    if (this.inputSysSvc.controls[PressedKey.right]) {
-      this.selectedObject.position.add(new Vector3(v.z * -moveStep, 0, v.x * moveStep))
-    }
-    if (this.inputSysSvc.controls[PressedKey.pgUp]) {
-      this.selectedObject.rotateOnAxis(yAxis, rotStep)
-    }
-    if (this.inputSysSvc.controls[PressedKey.pgDown]) {
-      this.selectedObject.rotateOnAxis(yAxis, -rotStep)
-    }
-    if (this.inputSysSvc.controls[PressedKey.divide]) {
-      this.selectedObject.rotateOnAxis(xAxis, rotStep)
-    }
-    if (this.inputSysSvc.controls[PressedKey.multiply]) {
-      this.selectedObject.rotateOnAxis(xAxis, -rotStep)
-    }
-    if (this.inputSysSvc.controls[PressedKey.home]) {
-      this.selectedObject.rotateOnAxis(zAxis, rotStep)
-    }
-    if (this.inputSysSvc.controls[PressedKey.end]) {
-      this.selectedObject.rotateOnAxis(zAxis, -rotStep)
-    }
-    if (this.inputSysSvc.controls[PressedKey.ins]) {
-      const parent = this.selectedObject.parent
-      this.selectedObject = this.selectedObject.clone()
-      this.selectedObject.position.add(v.multiplyScalar(moveStep))
-      parent.add(this.selectedObject)
-    }
-    this.updateChunk(this.selectedObject)
+    this.setObjectChunk(this.selectedObject)
     this.selectedObject.updateMatrix()
     const chunkData = this.selectedObject.parent.userData.world.chunk
     const center = new Vector3(this.selectedObject.userData.boxCenter.x,
@@ -661,9 +718,6 @@ export class EngineService implements OnDestroy {
                                                   chunkData.z + this.selectedObject.position.z))
     this.selectionGroup.rotation.copy(this.selectedObject.rotation)
     this.selectionGroup.updateMatrix()
-    if (this.inputSysSvc.controls[PressedKey.del]) {
-      this.removeObject(this.selectedObject)
-    }
   }
 
   private moveCamera() {

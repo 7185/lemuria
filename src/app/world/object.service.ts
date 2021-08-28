@@ -1,3 +1,4 @@
+import {Subject} from 'rxjs'
 import {Injectable} from '@angular/core'
 import {HttpService} from './../network/http.service'
 import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, Texture, RepeatWrapping,
@@ -6,12 +7,17 @@ import RWXLoader, {RWXMaterialManager} from 'three-rwx-loader'
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'
 
+// can't be const (angular#25963)
+export enum ObjectAct { nop = 0, forward, backward, left, right, up, down, rotX, rotnX, rotY, rotnY, rotZ, rotnZ,
+   copy, delete, rotReset, snapGrid, deselect }
+
 @Injectable({providedIn: 'root'})
 export class ObjectService {
 
+  public objectAction = new Subject<number>()
   private errorCone: Group
   private rwxLoader = new RWXLoader(new LoadingManager())
-  private rwxMaterialManager = new RWXMaterialManager()
+  private rwxMaterialManager: RWXMaterialManager
   private objects: Map<string, Promise<any>> = new Map()
   private textures: Map<string, any> = new Map()
   private path = 'http://localhost'

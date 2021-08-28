@@ -1,3 +1,4 @@
+import {ObjectService, ObjectAct} from './../../world/object.service'
 import {Component, OnInit} from '@angular/core'
 import {EngineService} from '../../engine/engine.service'
 
@@ -7,19 +8,16 @@ import {EngineService} from '../../engine/engine.service'
   styleUrls: ['./ui-builder-zone.component.scss']
 })
 export class UiBuilderZoneComponent implements OnInit {
-
+  public objectAct = ObjectAct
   public selectedObject: any
 
-  public constructor(private engineSvc: EngineService) {
+  public constructor(private engineSvc: EngineService, private objSvc: ObjectService) {
   }
 
-  trigger(event: MouseEvent, code: string) {
-    const downEv = new KeyboardEvent('keydown', {code})
-    Object.defineProperty(downEv, 'target', {value: document.body})
-    const upEv = new KeyboardEvent('keyup', {code})
-    Object.defineProperty(upEv, 'target', {value: document.body})
-    window.dispatchEvent(downEv)
-    window.dispatchEvent(upEv)
+  trigger(event: MouseEvent, action: number) {
+    if (event.button === 0) {
+      this.objSvc.objectAction.next(action)
+    }
     event.preventDefault()
   }
 
