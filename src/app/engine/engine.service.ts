@@ -790,7 +790,9 @@ export class EngineService implements OnDestroy {
       const result = this.worldOctree.capsuleIntersect(this.playerCollider)
       this.playerOnFloor = false
       if (result && !this.inputSysSvc.controls[PressedKey.shift]) {
-        this.capsuleMaterial.color.setHex(0xff0000)
+        if (config.debug) {
+          this.capsuleMaterial.color.setHex(0xff0000)
+        }
         this.playerOnFloor = result.normal.y > 0
         if (!this.playerOnFloor) {
           this.playerVelocity.addScaledVector(result.normal, - result.normal.dot(this.playerVelocity))
@@ -799,7 +801,9 @@ export class EngineService implements OnDestroy {
         }
         this.playerCollider.translate(result.normal.multiplyScalar(result.depth))
       } else {
-        this.capsuleMaterial.color.setHex(0x00ff00)
+        if (config.debug) {
+          this.capsuleMaterial.color.setHex(0x00ff00)
+        }
       }
 
       this.player.position.set(this.playerCollider.start.x, this.playerCollider.start.y - capsuleRadius, this.playerCollider.start.z)
