@@ -20,7 +20,8 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public name = 'Anonymous'
   public userId: string
   public list: User[] = []
-  public worldlist = []
+  public worldList = []
+  public visibilityList = new Array(11).fill(40).map((n, i) => n + i * 20)
 
   public constructor(
     private renderer: Renderer2,
@@ -29,6 +30,10 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     public world: WorldService,
     private http: HttpService,
     private userSvc: UserService) {
+  }
+
+  public changeVisibility(visibility: number) {
+    this.world.setVisibility(visibility)
   }
 
   public changeAvatar(avatarId: number) {
@@ -44,7 +49,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
 
     this.http.world(worldId).subscribe((w: any) => {
       this.socket.messages.next({type: 'info', data: w.welcome})
-      this.world.setWorld(w, new Vector3(0, 0, 0))
+      this.world.setWorld(w)
     })
   }
 
@@ -75,7 +80,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       this.name = u.name
       this.userSvc.currentName = u.name
       this.http.worlds().subscribe((w: any) => {
-        this.worldlist = w
+        this.worldList = w
       })
     })
     this.userSvc.listChanged.subscribe((l) => this.list = l)

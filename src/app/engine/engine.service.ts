@@ -1,4 +1,4 @@
-import {BehaviorSubject, Subject, timer} from 'rxjs'
+import {BehaviorSubject, fromEvent, Subject, timer} from 'rxjs'
 import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
 import {
   AmbientLight, Clock, Material, PerspectiveCamera, Raycaster, Scene, Group, BoxBufferGeometry,
@@ -12,6 +12,8 @@ import {UserService} from './../user/user.service'
 import {ObjectAct, ObjectService} from './../world/object.service'
 import {PressedKey, InputSystemService} from './inputsystem.service'
 import {config} from '../app.config'
+import Utils from '../utils/utils'
+
 export const DEG = Math.PI / 180
 export const RPM = Math.PI / 30
 const capsuleRadius = 0.35
@@ -387,20 +389,19 @@ export class EngineService implements OnDestroy {
       if (document.readyState !== 'loading') {
         this.render()
       } else {
-        window.addEventListener('DOMContentLoaded', () => {
-          this.render()
-        })
+        fromEvent(window, 'DOMContentLoaded').subscribe(() => this.render())
       }
-      window.addEventListener('resize', () => {
-        this.resize()
-      })
-      this.canvas.addEventListener('contextmenu', (e: MouseEvent) => {
-        this.rightClick(e)
-      })
-      this.canvas.addEventListener('mousemove', (e: MouseEvent) => {
+      fromEvent(window, 'resize').subscribe(() => this.resize())
+      fromEvent(this.canvas, 'contextmenu').subscribe((e: MouseEvent) => this.rightClick(e))
+      fromEvent(this.canvas, 'mousemove').subscribe((e: MouseEvent) => {
         this.mouseIdle = 0
         this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1
         this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1
+      })
+      fromEvent(this.canvas, 'mousedown').subscribe((e: MouseEvent) => {
+        if (e.button === 0 && this.selectionBox != null) {
+          this.deselect()
+        }
       })
       this.inputSysSvc.keyDownEvent.subscribe((k) => {
         // reset tooltip
@@ -445,24 +446,9 @@ export class EngineService implements OnDestroy {
     this.avatar.visible = this.activeCamera === this.thirdCamera
   }
 
-  public posToString(pos: Vector3): string {
-    return (Math.abs(pos.z) / 10).toFixed(2).concat(pos.z >= 0 ? 'N' : 'S') + ' ' +
-      (Math.abs(pos.x) / 10).toFixed(2).concat(pos.x >= 0 ? 'W' : 'E')
-  }
-
-  public stringToPos(pos: string): Vector3 {
-    const r = new Vector3()
-    const m = /([+-]?([0-9]*[.])?[0-9]+)(N|S)\s([+-]?([0-9]*[.])?[0-9]+)(W|E).*/i.exec(pos)
-    if (m !== null) {
-      r.z = Number.parseFloat(m[1]) * (m[3] === 'N' ? 10 : -10)
-      r.x = Number.parseFloat(m[4]) * (m[6] === 'W' ? 10 : -10)
-    }
-    return r
-  }
-
   public teleport(pos: Vector3 | string): void {
     if (typeof pos === 'string') {
-      pos = this.stringToPos(pos)
+      pos = Utils.stringToPos(pos)
     }
     this.player.position.copy(pos)
     this.updateCapsule()

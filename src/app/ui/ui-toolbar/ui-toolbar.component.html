@@ -7,7 +7,7 @@
           World
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
-          <li *ngFor="let w of worldlist" role="menuitem" (click)="connect(w.id)">
+          <li *ngFor="let w of worldList" role="menuitem" (click)="connect(w.id)">
             <button class="dropdown-item"><fa-icon [icon]="['fas', 'globe']"></fa-icon> {{w.name}}</button>
           </li>
         </ul>
@@ -19,6 +19,16 @@
         <ul *dropdownMenu class="dropdown-menu" role="menu">
           <li role="menuitem" *ngFor="let a of world.avatarList" (click)="changeAvatar(world.avatarList.indexOf(a))">
             <button class="dropdown-item">{{ a.name }}</button>
+          </li>
+        </ul>
+      </div>
+      <div class="btn-group" dropdown [isDisabled]="!socket.connected">
+        <div dropdownToggle type="button" class="nav-link dropdown-toggle">
+          Visibility
+        </div>
+        <ul *dropdownMenu class="dropdown-menu" role="menu">
+          <li role="menuitem" *ngFor="let a of visibilityList" (click)="changeVisibility(a)">
+            <button class="dropdown-item">{{ a }} meters</button>
           </li>
         </ul>
       </div>

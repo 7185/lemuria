@@ -11,6 +11,7 @@ import {AWActionParser} from 'aw-action-parser'
 import {flattenGroup} from 'three-rwx-loader'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, LOD,
   BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, BufferAttribute, Object3D} from 'three'
+import Utils from '../utils/utils'
 export const RES_PATH = config.url.resource
 
 @Injectable({providedIn: 'root'})
@@ -68,8 +69,8 @@ export class WorldService {
     // Register chunk updater to the engine
     this.engine.localUserPosObservable().subscribe((pos: Vector3) => { this.autoUpdateChunks(pos) })
 
-    // Register chunk updater to the engine
-    this.engine.texturesAnimationObservable().subscribe((bar: any) => { this.texturesNextFrame() })
+    // Register texture animator to the engine
+    this.engine.texturesAnimationObservable().subscribe((bar: any) => { this.objSvc.texturesNextFrame() })
   }
 
   initWorld() {
@@ -292,7 +293,13 @@ export class WorldService {
     })
   }
 
-  public setWorld(world: any, pos: Vector3) {
+  setVisibility(visibility: number) {
+    this.maxLodDistance = visibility
+    this.engine.clearObjects()
+    this.resetChunks()
+  }
+
+  public setWorld(world: any) {
     this.worldId = world.id
     this.engine.clearObjects()
     this.objSvc.cleanCache()
@@ -305,12 +312,15 @@ export class WorldService {
 
     this.resetChunks()
 
-    // Load a few chunks on world initialization
-    this.autoUpdateChunks(pos)
-
+    const entry = new Vector3(0, 0, 0)
     if (world.entry) {
-      this.engine.teleport(world.entry)
+      entry.copy(Utils.stringToPos(world.entry))
     }
+
+    // Load a few chunks on world initialization
+    this.autoUpdateChunks(entry)
+
+    this.engine.teleport(entry)
 
     // Trigger list update to create users
     this.userSvc.listChanged.next(this.userSvc.userList)
@@ -350,10 +360,6 @@ export class WorldService {
           }
         }
       })
-  }
-
-  public texturesNextFrame() {
-    this.objSvc.texturesNextFrame()
   }
 
   private loadChunk(x: number, z: number): Observable<LOD> {

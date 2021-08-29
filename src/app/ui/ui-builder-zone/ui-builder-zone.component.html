@@ -92,11 +92,11 @@
       </tr>
       <tr>
         <th scope="row">Description</th>
-        <td><textarea class="form-control" rows="3">{{ selectedObject.desc }}</textarea></td>
+        <td><textarea class="form-control" rows="3" [(ngModel)]="selectedObject.desc"></textarea></td>
       </tr>
       <tr>
         <th scope="row">Action</th>
-        <td><textarea class="form-control" rows="3">{{ selectedObject.act }}</textarea></td>
+        <td><textarea class="form-control" rows="3" [(ngModel)]="selectedObject.act"></textarea></td>
       </tr>
       <tr>
       <th scope="row">Date</th>
