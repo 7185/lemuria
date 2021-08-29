@@ -44,9 +44,8 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     if (avatarId >= this.world.avatarList.length) {
       avatarId = 0
     }
-    this.avatarId = avatarId
     this.socket.sendMessage({type: 'avatar', data: avatarId})
-    this.world.setAvatar(this.world.avatarList[avatarId].geometry)
+    this.world.avatarSub.next(avatarId)
   }
 
   public connect(worldId = 1) {
@@ -89,6 +88,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       })
     })
     this.userSvc.listChanged.subscribe((l) => this.list = l)
+    this.world.avatarSub.subscribe((avatarId) => this.avatarId = avatarId)
   }
 
   public ngAfterViewInit(): void {

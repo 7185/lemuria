@@ -1,4 +1,4 @@
-import {Observable, Subscription, throwError, from, of} from 'rxjs'
+import {BehaviorSubject, Observable, Subscription, throwError, from, of} from 'rxjs'
 import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
 import {UserService} from './../user/user.service'
 import {User} from './../user/user.model'
@@ -18,6 +18,7 @@ export const RES_PATH = config.url.resource
 export class WorldService {
 
   public avatarList: {name: string; geometry: string}[] = []
+  public avatarSub = new BehaviorSubject<number>(0)
   private avatar: Group
   private textureLoader: TextureLoader
   private actionParser = new AWActionParser()
@@ -128,11 +129,16 @@ export class WorldService {
       const avatarId = u.avatar >= this.avatarList.length ? 0 : u.avatar
       this.setAvatar(this.avatarList[avatarId].geometry, user as Group)
     })
+
+    this.avatarSub.subscribe((avatarId) => {
+      this.setAvatar(this.avatarList[avatarId].geometry)
+    })
   }
 
   destroyWorld() {
     this.uAvatarListener.unsubscribe()
     this.uListListener.unsubscribe()
+    this.avatarSub.unsubscribe()
   }
 
   public resetChunks() {
@@ -305,7 +311,7 @@ export class WorldService {
     this.objSvc.setPath(world.path)
     this.objSvc.loadAvatars().subscribe((list) => {
       this.avatarList = list
-      this.setAvatar(this.avatarList[0].geometry, this.avatar)
+      this.avatarSub.next(0)
     })
     this.initTerrain(world.elev)
 

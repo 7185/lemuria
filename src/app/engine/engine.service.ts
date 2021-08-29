@@ -607,6 +607,7 @@ export class EngineService implements OnDestroy {
       this.deselect()
       return
     }
+    const allowRotation = this.selectedObject.userData.rwx?.axisAlignment === 'none'
     let moveStep = 0.5
     let rotStep = Math.PI / 12
     if (this.inputSysSvc.controls[PressedKey.shift]) {
@@ -649,27 +650,39 @@ export class EngineService implements OnDestroy {
         break
       }
       case (ObjectAct.rotY): {
-        this.selectedObject.rotateOnAxis(yAxis, rotStep)
+        if (allowRotation) {
+          this.selectedObject.rotateOnAxis(yAxis, rotStep)
+        }
         break
       }
       case (ObjectAct.rotnY): {
-        this.selectedObject.rotateOnAxis(yAxis, -rotStep)
+        if (allowRotation) {
+          this.selectedObject.rotateOnAxis(yAxis, -rotStep)
+        }
         break
       }
       case (ObjectAct.rotX): {
-        this.selectedObject.rotateOnAxis(xAxis, rotStep)
+        if (allowRotation) {
+          this.selectedObject.rotateOnAxis(xAxis, rotStep)
+        }
         break
       }
       case (ObjectAct.rotnX): {
-        this.selectedObject.rotateOnAxis(xAxis, -rotStep)
+        if (allowRotation) {
+          this.selectedObject.rotateOnAxis(xAxis, -rotStep)
+        }
         break
       }
       case (ObjectAct.rotZ): {
-        this.selectedObject.rotateOnAxis(zAxis, rotStep)
+        if (allowRotation) {
+          this.selectedObject.rotateOnAxis(zAxis, rotStep)
+        }
         break
       }
       case (ObjectAct.rotnZ): {
-        this.selectedObject.rotateOnAxis(zAxis, -rotStep)
+        if (allowRotation) {
+          this.selectedObject.rotateOnAxis(zAxis, -rotStep)
+        }
         break
       }
       case (ObjectAct.snapGrid): {
@@ -679,7 +692,9 @@ export class EngineService implements OnDestroy {
         break
       }
       case (ObjectAct.rotReset): {
-        this.selectedObject.rotation.set(0, 0, 0)
+        if (allowRotation) {
+          this.selectedObject.rotation.set(0, 0, 0)
+        }
         break
       }
       case (ObjectAct.copy): {
