@@ -1,4 +1,4 @@
-import {BehaviorSubject, Observable, Subscription, throwError, from, of} from 'rxjs'
+import {Subject, Observable, Subscription, throwError, from, of} from 'rxjs'
 import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
 import {UserService} from './../user/user.service'
 import {User} from './../user/user.model'
@@ -18,7 +18,7 @@ export const RES_PATH = config.url.resource
 export class WorldService {
 
   public avatarList: {name: string; geometry: string}[] = []
-  public avatarSub = new BehaviorSubject<number>(0)
+  public avatarSub = new Subject<number>()
   private avatar: Group
   private textureLoader: TextureLoader
   private actionParser = new AWActionParser()
