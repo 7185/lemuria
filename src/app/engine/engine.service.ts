@@ -297,6 +297,13 @@ export class EngineService implements OnDestroy {
     chunk.updateMatrix()
   }
 
+  public setChunksDistance(meters: number) {
+    for (const chunk of this.objectsNode.children as LOD[]) {
+      chunk.levels[0].distance = meters
+      chunk.levels[1].distance = meters + 1
+    }
+  }
+
   public addWorldObject(group: Group) {
     if (group.name === 'skybox') {
       this.skybox = group

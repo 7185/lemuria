@@ -295,8 +295,7 @@ export class WorldService {
 
   setVisibility(visibility: number) {
     this.maxLodDistance = visibility
-    this.engine.clearObjects()
-    this.resetChunks()
+    this.engine.setChunksDistance(visibility)
   }
 
   public setWorld(world: any) {
