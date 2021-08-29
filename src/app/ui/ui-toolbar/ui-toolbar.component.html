@@ -18,7 +18,9 @@
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
           <li role="menuitem" *ngFor="let a of world.avatarList" (click)="changeAvatar(world.avatarList.indexOf(a))">
-            <button class="dropdown-item">{{ a.name }}</button>
+            <button class="dropdown-item">
+              <fa-icon [class.invisible]="world.avatarList.indexOf(a) !== avatarId" [icon]="['fas', 'check']"></fa-icon> {{ a.name }}
+            </button>
           </li>
         </ul>
       </div>
@@ -27,8 +29,10 @@
           Visibility
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
-          <li role="menuitem" *ngFor="let a of visibilityList" (click)="changeVisibility(a)">
-            <button class="dropdown-item">{{ a }} meters</button>
+          <li role="menuitem" *ngFor="let v of visibilityList" (click)="changeVisibility(v)">
+            <button class="dropdown-item">
+              <fa-icon [class.invisible]="v !== visibility" [icon]="['fas', 'check']"></fa-icon> {{ v }} meters
+            </button>
           </li>
         </ul>
       </div>

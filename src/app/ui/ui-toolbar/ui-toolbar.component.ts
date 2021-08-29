@@ -5,6 +5,7 @@ import {UserService} from './../../user/user.service'
 import {AfterViewInit, Component, ElementRef, OnInit, Renderer2, ViewChild} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import {User} from '../../user/user.model'
+import {config} from '../../app.config'
 import {Vector3} from 'three'
 
 @Component({
@@ -19,9 +20,11 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public firstPerson = true
   public name = 'Anonymous'
   public userId: string
+  public avatarId = 0
   public list: User[] = []
   public worldList = []
   public visibilityList = new Array(11).fill(40).map((n, i) => n + i * 20)
+  public visibility = config.world.lod.maxDistance
 
   public constructor(
     private renderer: Renderer2,
@@ -33,6 +36,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public changeVisibility(visibility: number) {
+    this.visibility = visibility
     this.world.setVisibility(visibility)
   }
 
@@ -40,6 +44,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     if (avatarId >= this.world.avatarList.length) {
       avatarId = 0
     }
+    this.avatarId = avatarId
     this.socket.sendMessage({type: 'avatar', data: avatarId})
     this.world.setAvatar(this.world.avatarList[avatarId].geometry)
   }
