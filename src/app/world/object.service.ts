@@ -14,7 +14,7 @@ export enum ObjectAct { nop = 0, forward, backward, left, right, up, down, rotX,
 @Injectable({providedIn: 'root'})
 export class ObjectService {
 
-  public objectAction = new Subject<number>()
+  public objectAction = new Subject<ObjectAct>()
   private errorCone: Group
   private rwxLoader = new RWXLoader(new LoadingManager())
   private rwxMaterialManager: RWXMaterialManager

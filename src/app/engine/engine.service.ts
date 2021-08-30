@@ -27,6 +27,7 @@ const zAxis = new Vector3(0, 0, 1)
 export class EngineService {
 
   public compassSub: Subject<any> = new Subject()
+  public selectedObject: Group
   public selectedObjectSub = new BehaviorSubject<any>({})
   private compass = new Spherical()
   private canvas: HTMLCanvasElement
@@ -45,7 +46,6 @@ export class EngineService {
   private skybox: Group
   private buildMode = false
   private flyMode = false
-  private selectedObject: Group
   private hoveredObject: Group
 
   private playerCollider: Capsule
@@ -463,6 +463,27 @@ export class EngineService {
     this.updateCapsule()
   }
 
+  public getLODs(): LOD[] {
+    return this.objectsNode.children as LOD[]
+  }
+
+  public updateSelectionBox(): void {
+    this.selectedObject.updateMatrix()
+    const chunkData = this.selectedObject.parent.userData.world.chunk
+    const center = new Vector3(this.selectedObject.userData.boxCenter.x,
+                               this.selectedObject.userData.boxCenter.y,
+                               this.selectedObject.userData.boxCenter.z)
+    this.selectionBox.position.copy(center)
+    center.applyAxisAngle(yAxis, this.selectedObject.rotation.y)
+    center.applyAxisAngle(zAxis, this.selectedObject.rotation.z)
+    center.applyAxisAngle(xAxis, this.selectedObject.rotation.x)
+    this.selectionGroup.position.copy(new Vector3(chunkData.x + this.selectedObject.position.x,
+                                                  this.selectedObject.position.y,
+                                                  chunkData.z + this.selectedObject.position.z))
+    this.selectionGroup.rotation.copy(this.selectedObject.rotation)
+    this.selectionGroup.updateMatrix()
+  }
+
   private handleSpecialObject(group: Group) {
     if (group.userData.rwx?.axisAlignment !== 'none') {
       this.sprites.add(group)
@@ -547,36 +568,10 @@ export class EngineService {
     this.axesHelper = new AxesHelper(5)
     ;(this.axesHelper.material as Material).depthTest = false
     this.selectionGroup.add(this.selectionBox, this.axesHelper)
-    const chunkData = this.selectedObject.parent.userData.world.chunk
-    const center = new Vector3(this.selectedObject.userData.boxCenter.x,
-                               this.selectedObject.userData.boxCenter.y,
-                               this.selectedObject.userData.boxCenter.z)
-    this.selectionBox.position.copy(center)
-    center.applyAxisAngle(yAxis, this.selectedObject.rotation.y)
-    center.applyAxisAngle(zAxis, this.selectedObject.rotation.z)
-    center.applyAxisAngle(xAxis, this.selectedObject.rotation.x)
-    this.selectionGroup.position.copy(new Vector3(chunkData.x + this.selectedObject.position.x,
-                                                  this.selectedObject.position.y,
-                                                  chunkData.z + this.selectedObject.position.z))
-    this.selectionGroup.rotation.copy(this.selectedObject.rotation)
-    this.selectionGroup.updateMatrix()
-    this.scene.add(this.selectionGroup)
-  }
 
-  private setObjectChunk(object: Group) {
-    const oldChunkPos = object.parent.parent.position
-    const absPos = object.position.clone().add(oldChunkPos)
-    const chunkX = Math.floor((absPos.x * 100 + config.world.chunk.width / 2) / config.world.chunk.width)
-    const chunkZ = Math.floor((absPos.z * 100 + config.world.chunk.depth / 2) / config.world.chunk.depth)
-    for (const lod of this.objectsNode.children as LOD[]) {
-      if (lod.userData.world.chunk.x === chunkX && lod.userData.world.chunk.z === chunkZ) {
-        object.parent.remove(object)
-        lod.levels[0].object.add(object)
-        object.position.add(oldChunkPos).sub(object.parent.parent.position)
-        return
-      }
-    }
-    console.log(`Warning: Trying to move object ${object.name} to an uninitialized chunk (${chunkX}, ${chunkZ})`)
+    this.updateSelectionBox()
+
+    this.scene.add(this.selectionGroup)
   }
 
   private pointedItem() {
@@ -604,7 +599,7 @@ export class EngineService {
     }
   }
 
-  private moveItem(action: number) {
+  private moveItem(action: ObjectAct) {
     if (action === ObjectAct.deselect) {
       this.deselect()
       return
@@ -629,61 +624,73 @@ export class EngineService {
     switch (action) {
       case (ObjectAct.up): {
         this.selectedObject.translateY(moveStep)
+        this.updateSelectionBox()
         break
       }
       case (ObjectAct.down): {
         this.selectedObject.translateY(-moveStep)
+        this.updateSelectionBox()
         break
       }
       case (ObjectAct.forward): {
         this.selectedObject.position.add(v.multiplyScalar(moveStep))
+        this.updateSelectionBox()
         break
       }
       case (ObjectAct.backward): {
         this.selectedObject.position.add(v.multiplyScalar(-moveStep))
+        this.updateSelectionBox()
         break
       }
       case (ObjectAct.left): {
         this.selectedObject.position.add(new Vector3(v.z * moveStep, 0, v.x * -moveStep))
+        this.updateSelectionBox()
         break
       }
       case (ObjectAct.right): {
         this.selectedObject.position.add(new Vector3(v.z * -moveStep, 0, v.x * moveStep))
+        this.updateSelectionBox()
         break
       }
       case (ObjectAct.rotY): {
         if (allowRotation) {
           this.selectedObject.rotateOnAxis(yAxis, rotStep)
+          this.updateSelectionBox()
         }
         break
       }
       case (ObjectAct.rotnY): {
         if (allowRotation) {
           this.selectedObject.rotateOnAxis(yAxis, -rotStep)
+          this.updateSelectionBox()
         }
         break
       }
       case (ObjectAct.rotX): {
         if (allowRotation) {
           this.selectedObject.rotateOnAxis(xAxis, rotStep)
+          this.updateSelectionBox()
         }
         break
       }
       case (ObjectAct.rotnX): {
         if (allowRotation) {
           this.selectedObject.rotateOnAxis(xAxis, -rotStep)
+          this.updateSelectionBox()
         }
         break
       }
       case (ObjectAct.rotZ): {
         if (allowRotation) {
           this.selectedObject.rotateOnAxis(zAxis, rotStep)
+          this.updateSelectionBox()
         }
         break
       }
       case (ObjectAct.rotnZ): {
         if (allowRotation) {
           this.selectedObject.rotateOnAxis(zAxis, -rotStep)
+          this.updateSelectionBox()
         }
         break
       }
@@ -691,11 +698,13 @@ export class EngineService {
         this.selectedObject.position.set(Math.round(this.selectedObject.position.x * 2) / 2,
                                          Math.round(this.selectedObject.position.y * 2) / 2,
                                          Math.round(this.selectedObject.position.z * 2) / 2)
+        this.updateSelectionBox()
         break
       }
       case (ObjectAct.rotReset): {
         if (allowRotation) {
           this.selectedObject.rotation.set(0, 0, 0)
+          this.updateSelectionBox()
         }
         break
       }
@@ -704,6 +713,7 @@ export class EngineService {
         this.selectedObject = this.selectedObject.clone()
         this.selectedObject.position.add(v.multiplyScalar(moveStep))
         parent.add(this.selectedObject)
+        this.updateSelectionBox()
         break
       }
       case (ObjectAct.delete): {
@@ -713,21 +723,6 @@ export class EngineService {
       default:
         return
     }
-    this.setObjectChunk(this.selectedObject)
-    this.selectedObject.updateMatrix()
-    const chunkData = this.selectedObject.parent.userData.world.chunk
-    const center = new Vector3(this.selectedObject.userData.boxCenter.x,
-                               this.selectedObject.userData.boxCenter.y,
-                               this.selectedObject.userData.boxCenter.z)
-    this.selectionBox.position.copy(center)
-    center.applyAxisAngle(yAxis, this.selectedObject.rotation.y)
-    center.applyAxisAngle(zAxis, this.selectedObject.rotation.z)
-    center.applyAxisAngle(xAxis, this.selectedObject.rotation.x)
-    this.selectionGroup.position.copy(new Vector3(chunkData.x + this.selectedObject.position.x,
-                                                  this.selectedObject.position.y,
-                                                  chunkData.z + this.selectedObject.position.z))
-    this.selectionGroup.rotation.copy(this.selectedObject.rotation)
-    this.selectionGroup.updateMatrix()
   }
 
   private moveCamera() {

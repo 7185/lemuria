@@ -4,12 +4,11 @@ import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
 import {UserService} from './../user/user.service'
 import type {User} from './../user/user.model'
 import {EngineService, DEG} from './../engine/engine.service'
-import {ObjectService} from './object.service'
+import {ObjectService, ObjectAct} from './object.service'
 import {HttpService} from './../network/http.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {AWActionParser} from 'aw-action-parser'
-import {flattenGroup} from 'three-rwx-loader'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, LOD,
   BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, BufferAttribute} from 'three'
 import type {Object3D} from 'three'
@@ -36,7 +35,6 @@ export class WorldService {
   private chunkLoadCircular: boolean = config.world.chunk.loadCircular
   private chunkLoadRadius: number = config.world.chunk.loadRadius
   private prioritizeNearestChunks: boolean = config.world.chunk.prioritizeNearest
-  private flattenChunks: boolean = config.world.chunk.flatten
 
   private maxLodDistance: number = config.world.lod.maxDistance
 
@@ -75,6 +73,25 @@ export class WorldService {
 
     // Register texture animator to the engine
     this.engine.texturesAnimationObservable().subscribe(() => { this.objSvc.texturesNextFrame() })
+
+    // Register object chunk updater to the engine
+    this.objSvc.objectAction.subscribe((action: ObjectAct) => {
+      switch (action) {
+        case (ObjectAct.up):
+        case (ObjectAct.down):
+        case (ObjectAct.forward):
+        case (ObjectAct.backward):
+        case (ObjectAct.left):
+        case (ObjectAct.right):
+        case (ObjectAct.snapGrid):
+        case (ObjectAct.copy): {
+          this.setObjectChunk(this.engine.selectedObject)
+          break
+        }
+        default:
+          return
+      }
+    })
   }
 
   initWorld() {
@@ -334,18 +351,29 @@ export class WorldService {
     this.userSvc.listChanged.next(this.userSvc.userList)
   }
 
+  // Get chunk tile X and Z ids from position
+  public getChunkTile(pos: Vector3) {
+    const tileX = Math.floor((Math.floor(pos.x * 100) + this.chunkWidth / 2) / this.chunkWidth)
+    const tileZ = Math.floor((Math.floor(pos.z * 100) + this.chunkDepth / 2) / this.chunkDepth)
+
+    return [tileX, tileZ]
+  }
+
+  // Get chunk position from tile X and Z ids
+  public getChunkCenter(tileX: number, tileZ: number) {
+    const xPos = (tileX * this.chunkWidth) / 100.0
+    const zPos = (tileZ * this.chunkDepth) / 100.0
+
+    return new Vector3(xPos, 0, zPos)
+  }
+
   // this method is method to be called on each frame to update the state of chunks if needed
   public autoUpdateChunks(pos: Vector3) {
-    const posX: number = Math.floor(pos.x * 100)
-    const posZ: number = Math.floor(pos.z * 100)
-
-    const chunkX = Math.floor((posX + this.chunkWidth / 2) / this.chunkWidth)
-    const chunkZ = Math.floor((posZ + this.chunkDepth / 2) / this.chunkDepth)
+    const [chunkX, chunkZ] = this.getChunkTile(pos)
 
     // Only trigger a chunk update if we've actually moved to another chunk
     if (this.previousLocalUserPos !== null) {
-      const previousChunkX = Math.floor((Math.floor(this.previousLocalUserPos.x * 100) + this.chunkWidth / 2) / this.chunkWidth)
-      const previousChunkZ = Math.floor((Math.floor(this.previousLocalUserPos.z * 100) + this.chunkDepth / 2) / this.chunkDepth)
+      const [previousChunkX, previousChunkZ] = this.getChunkTile(this.previousLocalUserPos)
 
       if (previousChunkX === chunkX && previousChunkZ === chunkZ) {
         return
@@ -384,8 +412,7 @@ export class WorldService {
       this.chunkMap.get(x).add(z)
     }
 
-    const chunkXpos = (x * this.chunkWidth) / 100.0
-    const chunkZpos = (z * this.chunkDepth) / 100.0
+    const chunkPos = this.getChunkCenter(x, z)
 
     // We first need to fetch the list of props using HttpService, we cannot go further
     // with this chunk if this call fails
@@ -404,7 +431,7 @@ export class WorldService {
                                                 item[0], item[8], item[9])
           ),
           mergeMap((item: Object3D) => {
-            const chunkOffset = new Vector3(chunkXpos, 0, chunkZpos)
+            const chunkOffset = new Vector3(chunkPos.x, 0, chunkPos.z)
             item.position.sub(chunkOffset)
             if (item.userData.move !== undefined) {
                 item.userData.move.orig.sub(chunkOffset)
@@ -420,13 +447,12 @@ export class WorldService {
             lod.userData.rwx = {axisAlignment: 'none'}
             lod.userData.world = {chunk: {x, z}}
 
-            chunkGroup = this.flattenChunks ? flattenGroup(chunkGroup) : chunkGroup
             chunkGroup.userData.rwx = {axisAlignment: 'none'}
-            chunkGroup.userData.world = {chunk: {x: chunkXpos, z: chunkZpos}}
+            chunkGroup.userData.world = {chunk: {x: chunkPos.x, z: chunkPos.z}}
 
             lod.addLevel(chunkGroup, this.maxLodDistance)
             lod.addLevel(new Group(), this.maxLodDistance + 1)
-            lod.position.set(chunkXpos, 0, chunkZpos)
+            lod.position.set(chunkPos.x, 0, chunkPos.z)
             lod.autoUpdate = false
             lod.updateMatrix()
 
@@ -436,6 +462,21 @@ export class WorldService {
       ),
       catchError(err => throwError(() => ({x, z, err})))
     )
+  }
+
+  private setObjectChunk(object: Object3D) {
+    const oldChunkPos = object.parent.parent.position
+    const absPos = object.position.clone().add(oldChunkPos)
+    const [chunkX, chunkZ] = this.getChunkTile(absPos)
+    for (const lod of this.engine.getLODs()) {
+      if (lod.userData.world.chunk.x === chunkX && lod.userData.world.chunk.z === chunkZ) {
+        object.parent.remove(object)
+        lod.levels[0].object.add(object)
+        object.position.add(oldChunkPos).sub(object.parent.parent.position)
+        return
+      }
+    }
+    console.log(`Warning: Trying to move object ${object.name} to an uninitialized chunk (${chunkX}, ${chunkZ})`)
   }
 
   private addUser(u: User) {

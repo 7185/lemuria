@@ -11,8 +11,7 @@ export const config: any = {
       depth: 2000, // Depth of each chunk, in centimeters
       loadCircular: true, // If true: will load chunks within a circular radius instead of a squared area
       loadRadius: 5, // In number of chunks
-      prioritizeNearest: true, // If true: will load nearest chunks first
-      flatten: false // Experimental, will hinder interaction with individual objects if true
+      prioritizeNearest: true // If true: will load nearest chunks first
     },
     lod: {
       maxDistance: 100 // In meters
