@@ -1,4 +1,5 @@
-import {Component, ElementRef, OnInit, OnDestroy, ViewChild} from '@angular/core'
+import {Component, ElementRef, ViewChild} from '@angular/core'
+import type {AfterViewInit, OnInit, OnDestroy} from '@angular/core'
 import {EngineService} from './engine.service'
 import {WorldService} from '../world/world.service'
 
@@ -7,7 +8,7 @@ import {WorldService} from '../world/world.service'
   templateUrl: './engine.component.html',
   styleUrls: ['./engine.component.scss']
 })
-export class EngineComponent implements OnInit, OnDestroy {
+export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @ViewChild('rendererCanvas', {static: true})
   public rendererCanvas: ElementRef<HTMLCanvasElement>
@@ -21,12 +22,16 @@ export class EngineComponent implements OnInit, OnDestroy {
 
   public ngOnInit(): void {
     this.engServ.createScene(this.rendererCanvas, this.labelZone, this.labelDesc)
+  }
+
+  public ngAfterViewInit(): void {
     this.world.initWorld()
     this.engServ.animate()
   }
 
   public ngOnDestroy(): void {
-    this.engServ.clearScene()
     this.world.destroyWorld()
+    this.engServ.clearScene()
+    this.engServ.cancel()
   }
 }

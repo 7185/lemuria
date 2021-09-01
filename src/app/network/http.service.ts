@@ -1,6 +1,8 @@
-import {BehaviorSubject, Observable, throwError} from 'rxjs'
+import {BehaviorSubject, throwError} from 'rxjs'
+import type {Observable} from 'rxjs'
 import {Injectable} from '@angular/core'
-import {HttpClient, HttpHandler, HttpResponse} from '@angular/common/http'
+import {HttpClient, HttpHandler} from '@angular/common/http'
+import type {HttpResponse} from '@angular/common/http'
 import {Router} from '@angular/router'
 import {config} from '../app.config'
 import {User} from '../user/user.model'
@@ -62,7 +64,7 @@ export class HttpService extends HttpClient {
   public logout() {
     this.expiration = 0
     return this.delete(`${this.baseUrl}/auth`).pipe(
-      tap(data => {
+      tap(() => {
         this.setLogged(new User())
         this.router.navigate(['login'])
       })

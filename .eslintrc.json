@@ -57,6 +57,14 @@
         "@typescript-eslint/no-shadow": [
           "error"
         ],
+        "@typescript-eslint/consistent-type-imports": "error",
+        "@typescript-eslint/no-unused-vars": [
+          "error",
+          {
+            "argsIgnorePattern": "_"
+          }
+        ],
+        "@typescript-eslint/array-type": "error",
         "no-tabs": [
           "error"
         ],
@@ -70,6 +78,13 @@
         "object-curly-spacing": [
           "error",
           "never"
+        ],
+        "brace-style": [
+          "error",
+          "1tbs",
+          {
+            "allowSingleLine": true
+          }
         ]
       }
     },

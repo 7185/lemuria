@@ -1,8 +1,8 @@
 import {Subject} from 'rxjs'
 import {Injectable} from '@angular/core'
 import {HttpService} from './../network/http.service'
-import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, Texture, RepeatWrapping,
-  TextureLoader, MeshPhongMaterial, Object3D} from 'three'
+import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, RepeatWrapping, MeshPhongMaterial} from 'three'
+import type {Texture, TextureLoader, Object3D} from 'three'
 import RWXLoader, {RWXMaterialManager} from 'three-rwx-loader'
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'
@@ -93,7 +93,7 @@ export class ObjectService {
     if (this.objects.get(name) !== undefined) {
       return this.objects.get(name)
     } else {
-      const promise = new Promise((resolve, reject) => {
+      const promise = new Promise((resolve) => {
         this.rwxLoader.load(name, (rwx: Group) => resolve(rwx), null, () => resolve(this.errorCone))
       })
       this.objects.set(name, promise)

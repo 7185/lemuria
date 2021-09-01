@@ -1,5 +1,6 @@
 import {ObjectService, ObjectAct} from './../../world/object.service'
-import {Component, OnInit} from '@angular/core'
+import {Component} from '@angular/core'
+import type {OnInit} from '@angular/core'
 import {EngineService} from '../../engine/engine.service'
 
 @Component({

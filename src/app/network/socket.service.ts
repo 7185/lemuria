@@ -1,8 +1,10 @@
 import {EngineService} from './../engine/engine.service'
 import {UserService} from './../user/user.service'
 import {Injectable} from '@angular/core'
-import {interval, Subject, Subscription} from 'rxjs'
-import {webSocket, WebSocketSubject} from 'rxjs/webSocket'
+import {interval, Subject} from 'rxjs'
+import type {Subscription} from 'rxjs'
+import {webSocket} from 'rxjs/webSocket'
+import type {WebSocketSubject} from 'rxjs/webSocket'
 import {Vector3} from 'three'
 import {config} from '../app.config'
 

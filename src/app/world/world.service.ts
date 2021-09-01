@@ -1,7 +1,8 @@
-import {Subject, Observable, Subscription, throwError, from, of} from 'rxjs'
+import {Subject, Observable, throwError, from, of} from 'rxjs'
+import type {Subscription} from 'rxjs'
 import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
 import {UserService} from './../user/user.service'
-import {User} from './../user/user.model'
+import type {User} from './../user/user.model'
 import {EngineService, DEG} from './../engine/engine.service'
 import {ObjectService} from './object.service'
 import {HttpService} from './../network/http.service'
@@ -10,7 +11,8 @@ import {config} from '../app.config'
 import {AWActionParser} from 'aw-action-parser'
 import {flattenGroup} from 'three-rwx-loader'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, LOD,
-  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, BufferAttribute, Object3D} from 'three'
+  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, BufferAttribute} from 'three'
+import type {Object3D} from 'three'
 import Utils from '../utils/utils'
 export const RES_PATH = config.url.resource
 
@@ -40,6 +42,7 @@ export class WorldService {
 
   private uListListener: Subscription
   private uAvatarListener: Subscription
+  private avatarListener: Subscription
 
   constructor(private engine: EngineService, private userSvc: UserService, private objSvc: ObjectService,
     private httpSvc: HttpService) {
@@ -71,7 +74,7 @@ export class WorldService {
     this.engine.localUserPosObservable().subscribe((pos: Vector3) => { this.autoUpdateChunks(pos) })
 
     // Register texture animator to the engine
-    this.engine.texturesAnimationObservable().subscribe((bar: any) => { this.objSvc.texturesNextFrame() })
+    this.engine.texturesAnimationObservable().subscribe(() => { this.objSvc.texturesNextFrame() })
   }
 
   initWorld() {
@@ -130,7 +133,7 @@ export class WorldService {
       this.setAvatar(this.avatarList[avatarId].geometry, user as Group)
     })
 
-    this.avatarSub.subscribe((avatarId) => {
+    this.avatarListener = this.avatarSub.subscribe((avatarId) => {
       this.setAvatar(this.avatarList[avatarId].geometry)
     })
   }
@@ -138,7 +141,7 @@ export class WorldService {
   destroyWorld() {
     this.uAvatarListener.unsubscribe()
     this.uListListener.unsubscribe()
-    this.avatarSub.unsubscribe()
+    this.avatarListener.unsubscribe()
   }
 
   public resetChunks() {

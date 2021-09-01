@@ -44,7 +44,7 @@ async def world_list():
     """World list"""
     return jsonify(await World.get_list()), 200
 
-@api_world.route('/<world_id>', methods=['GET'])
+@api_world.route('/<int:world_id>', methods=['GET'])
 @login_required
 async def world_get(world_id):
     """World fetching"""
@@ -56,7 +56,7 @@ async def world_get(world_id):
             return world, 200
     return {}, 401
 
-@api_world.route('/<world_id>/props', methods=['GET'])
+@api_world.route('/<int:world_id>/props', methods=['GET'])
 @login_required
 async def world_props_get(world_id):
     """World props fetching"""

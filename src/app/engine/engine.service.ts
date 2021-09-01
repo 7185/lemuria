@@ -1,11 +1,13 @@
 import {BehaviorSubject, fromEvent, Subject, timer} from 'rxjs'
-import {ElementRef, Injectable, NgZone, OnDestroy} from '@angular/core'
+import {Injectable, NgZone} from '@angular/core'
+import type {ElementRef} from '@angular/core'
 import {
-  AmbientLight, Clock, Material, PerspectiveCamera, Raycaster, Scene, Group, BoxBufferGeometry,
-  Vector2, Vector3, WebGLRenderer, DirectionalLight, CameraHelper, Object3D, Spherical, LOD,
+  AmbientLight, Clock, PerspectiveCamera, Raycaster, Scene, Group, BoxBufferGeometry,
+  Vector2, Vector3, WebGLRenderer, DirectionalLight, CameraHelper, Object3D, Spherical,
   Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper, EdgesGeometry,
   LineSegments, LineBasicMaterial
 } from 'three'
+import type {Material, LOD} from 'three'
 import {Octree} from 'three/examples/jsm/math/Octree'
 import {Capsule} from 'three/examples/jsm/math/Capsule'
 import {UserService} from './../user/user.service'
@@ -22,7 +24,7 @@ const yAxis = new Vector3(0, 1, 0)
 const zAxis = new Vector3(0, 0, 1)
 
 @Injectable({providedIn: 'root'})
-export class EngineService implements OnDestroy {
+export class EngineService {
 
   public compassSub: Subject<any> = new Subject()
   public selectedObjectSub = new BehaviorSubject<any>({})
@@ -97,7 +99,7 @@ export class EngineService implements OnDestroy {
      private objSvc: ObjectService) {
   }
 
-  public ngOnDestroy(): void {
+  public cancel(): void {
     if (this.frameId != null) {
       cancelAnimationFrame(this.frameId)
     }

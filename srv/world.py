@@ -24,7 +24,6 @@ class World:
 
             if data[2] is not None:
                 world_data = json.loads(data[2])
-                self._id = data[0]
                 self._name = data[1]
                 self._welcome = world_data['welcome']
                 self._path = world_data['path']
