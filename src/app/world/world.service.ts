@@ -246,6 +246,7 @@ export class WorldService {
             loop: cmd.loop || false,
             reset: cmd.reset || false,
             wait: cmd.wait || 0,
+            waiting: 0,
             completion: 0,
             direction: 1,
             orig: item.position.clone()
@@ -258,6 +259,7 @@ export class WorldService {
             loop: cmd.loop || false,
             reset: cmd.reset || false,
             wait: cmd.wait || 0,
+            waiting: 0,
             completion: 0,
             direction: 1,
             orig: item.rotation.clone()

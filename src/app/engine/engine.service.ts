@@ -831,7 +831,9 @@ export class EngineService {
   private animateItems() {
     for (const item of this.animatedObjects) {
       if (item.userData.move) {
-        if (item.userData.move.completion < 1) {
+        if (item.userData.move.waiting > 0) {
+          item.userData.move.waiting -= this.deltaSinceLastFrame
+        } else if (item.userData.move.completion < 1) {
           item.position.x += (item.userData.move.distance.x / item.userData.move.time)
             * this.deltaSinceLastFrame * item.userData.move.direction
           item.position.y += (item.userData.move.distance.y / item.userData.move.time)
@@ -856,6 +858,7 @@ export class EngineService {
                 item.userData.move.completion = 0
               }
             } else {
+              item.userData.move.waiting = item.userData.move.wait
               // wayback is starting
               item.userData.move.direction = item.userData.move.direction * -1
               item.userData.move.completion = 0
@@ -864,21 +867,26 @@ export class EngineService {
         }
       }
       if (item.userData.rotate) {
-        item.rotateOnAxis(yAxis, item.userData.rotate.speed.y * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
-        item.rotateOnAxis(zAxis, item.userData.rotate.speed.z * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
-        item.rotateOnAxis(xAxis, item.userData.rotate.speed.x * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
-        if (item.userData.rotate.time) {
-          if (item.userData.rotate.completion >= 1) {
-            if (item.userData.rotate.loop) {
-              item.userData.rotate.completion = 0
-              if (item.userData.rotate.reset) {
-                item.rotation.copy(item.userData.rotate.orig)
-              } else {
-                item.userData.rotate.direction = item.userData.rotate.direction * -1
+        if (item.userData.rotate.waiting > 0) {
+          item.userData.move.waiting -= this.deltaSinceLastFrame
+        } else {
+          item.rotateOnAxis(yAxis, item.userData.rotate.speed.y * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
+          item.rotateOnAxis(zAxis, item.userData.rotate.speed.z * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
+          item.rotateOnAxis(xAxis, item.userData.rotate.speed.x * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
+          if (item.userData.rotate.time) {
+            if (item.userData.rotate.completion >= 1) {
+              if (item.userData.rotate.loop) {
+                item.userData.rotate.completion = 0
+                if (item.userData.rotate.reset) {
+                  item.rotation.copy(item.userData.rotate.orig)
+                } else {
+                  item.userData.rotate.waiting = item.userData.rotate.wait
+                  item.userData.rotate.direction = item.userData.rotate.direction * -1
+                }
               }
             }
+            item.userData.rotate.completion += this.deltaSinceLastFrame / item.userData.rotate.time
           }
-          item.userData.rotate.completion += this.deltaSinceLastFrame / item.userData.rotate.time
         }
       }
       item.updateMatrix()
