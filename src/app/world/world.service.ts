@@ -10,7 +10,7 @@ import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {AWActionParser} from 'aw-action-parser'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, LOD,
-  BoxGeometry, MeshBasicMaterial, BackSide, Vector2, Box3, BufferAttribute} from 'three'
+  MeshBasicMaterial, Box3, BufferAttribute} from 'three'
 import type {Object3D} from 'three'
 import Utils from '../utils/utils'
 export const RES_PATH = config.url.resource
@@ -21,7 +21,7 @@ export class WorldService {
   public avatarList: {name: string; geometry: string}[] = []
   public avatarSub = new Subject<number>()
   private avatar: Group
-  private textureLoader: TextureLoader
+  private textureLoader = new TextureLoader()
   private actionParser = new AWActionParser()
   private terrain: Group
   private worldId: number
@@ -95,34 +95,7 @@ export class WorldService {
   }
 
   initWorld() {
-    this.textureLoader = new TextureLoader()
-    const skyGeometry = new BoxGeometry(100, 100, 100)
-
     this.resetChunks()
-
-    const skyMaterials = []
-    const textureFt = this.textureLoader.load(`${RES_PATH}/textures/faesky02back.jpg`)
-    const textureBk = this.textureLoader.load(`${RES_PATH}/textures/faesky02front.jpg`)
-    const textureUp = this.textureLoader.load(`${RES_PATH}/textures/faesky02up.jpg`)
-    const textureDn = this.textureLoader.load(`${RES_PATH}/textures/faesky02down.jpg`)
-    const textureRt = this.textureLoader.load(`${RES_PATH}/textures/faesky02right.jpg`)
-    const textureLf = this.textureLoader.load(`${RES_PATH}/textures/faesky02left.jpg`)
-    textureUp.center = new Vector2(0.5, 0.5)
-    textureUp.rotation = Math.PI / 2
-    textureDn.center = new Vector2(0.5, 0.5)
-    textureDn.rotation = Math.PI / 2
-
-    skyMaterials.push(new MeshBasicMaterial({map: textureFt, depthWrite: false, side: BackSide}))
-    skyMaterials.push(new MeshBasicMaterial({map: textureBk, depthWrite: false, side: BackSide}))
-    skyMaterials.push(new MeshBasicMaterial({map: textureUp, depthWrite: false, side: BackSide}))
-    skyMaterials.push(new MeshBasicMaterial({map: textureDn, depthWrite: false, side: BackSide}))
-    skyMaterials.push(new MeshBasicMaterial({map: textureRt, depthWrite: false, side: BackSide}))
-    skyMaterials.push(new MeshBasicMaterial({map: textureLf, depthWrite: false, side: BackSide}))
-
-    const skybox = new Group()
-    skybox.add(new Mesh(skyGeometry, skyMaterials))
-    skybox.name = 'skybox'
-    this.engine.addWorldObject(skybox)
 
     this.avatar = new Group()
     this.avatar.name = 'avatar'
@@ -329,8 +302,31 @@ export class WorldService {
   public setWorld(world: any) {
     this.worldId = world.id
     this.engine.clearObjects()
+    this.engine.clearSkybox()
     this.objSvc.cleanCache()
     this.objSvc.setPath(world.path)
+
+    if (world.skybox) {
+      if (!world.skybox.endsWith('.rwx')) {
+        world.skybox += '.rwx'
+      }
+      this.objSvc.loadObject(world.skybox).then(s => {
+        const skybox = s.clone()
+        const materials = []
+        for (const m of skybox.material) {
+          const texture = this.textureLoader.load(`${RES_PATH}/textures/${m.userData.rwx.material.texture}.jpg`)
+          const skyMaterial = new MeshBasicMaterial({map: texture, depthWrite: false, side: m.side})
+          materials.push(skyMaterial)
+        }
+        skybox.material = materials
+        const box = new Box3()
+        box.setFromObject(skybox)
+        const center = box.getCenter(new Vector3())
+        skybox.position.set(0, -center.y, 0)
+        this.engine.setSkybox(skybox)
+      })
+    }
+
     this.objSvc.loadAvatars().subscribe((list) => {
       this.avatarList = list
       this.avatarSub.next(0)

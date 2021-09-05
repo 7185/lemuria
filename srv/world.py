@@ -11,6 +11,7 @@ class World:
         self._name = None
         self._welcome = None
         self._path = None
+        self._skybox = None
         self._entry = '0N 0W'
         self._objects = None
         self._elev = None
@@ -27,6 +28,7 @@ class World:
                 self._name = data[1]
                 self._welcome = world_data['welcome']
                 self._path = world_data['path']
+                self._skybox = world_data['skybox']
 
                 if 'entry' in world_data:
                     self._entry = world_data['entry'] or '0N 0W'
@@ -51,6 +53,7 @@ class World:
             'name': await self.name,
             'welcome': self._welcome,
             'path': self._path,
+            'skybox': self._skybox,
             'entry': self._entry,
             'elev': self._elev
         }

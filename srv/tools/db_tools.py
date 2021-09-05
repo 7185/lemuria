@@ -14,7 +14,26 @@ world_attr = {
     0: 'name',
     3: 'path',
     25: 'welcome',
-    69: 'entry'
+    61: 'skybox',
+    69: 'entry',
+    70: 'sky_color_top_r',
+    71: 'sky_color_top_g',
+    72: 'sky_color_top_b',
+    73: 'sky_color_north_r',
+    74: 'sky_color_north_g',
+    75: 'sky_color_north_b',
+    76: 'sky_color_east_r',
+    77: 'sky_color_east_g',
+    78: 'sky_color_east_b',
+    79: 'sky_color_south_r',
+    80: 'sky_color_south_g',
+    81: 'sky_color_south_b',
+    82: 'sky_color_west_r',
+    83: 'sky_color_west_g',
+    84: 'sky_color_west_b',
+    85: 'sky_color_bottom_r',
+    86: 'sky_color_bottom_g',
+    87: 'sky_color_bottom_b'
 }
 
 user = Table(
@@ -94,7 +113,11 @@ async def import_world(attr_file, prop_file):
     attr_dict = {}
     async for entry in attr_dump(attr_file):
         if entry[0] in world_attr:
-            attr_dict[world_attr[entry[0]]] = entry[1]
+            if world_attr[entry[0]].startswith('sky_color'):
+                # TODO
+                pass
+            else:
+                attr_dict[world_attr[entry[0]]] = entry[1]
 
     w_query = f"select id from world where lower(name) = '{attr_dict['name'].lower()}'"
     result = await conn.execute(w_query)

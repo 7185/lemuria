@@ -150,6 +150,11 @@ export class EngineService {
 
     this.activeCamera = this.camera
 
+    this.skybox = new Group()
+    this.skybox.scale.set(500, 500, 500)
+    this.skybox.name = 'skybox'
+    this.worldNode.add(this.skybox)
+
     this.light = new AmbientLight(0x404040)
     this.light.position.z = 100
     this.worldNode.add(this.light)
@@ -307,9 +312,6 @@ export class EngineService {
   }
 
   public addWorldObject(group: Group) {
-    if (group.name === 'skybox') {
-      this.skybox = group
-    }
     this.worldNode.add(group)
   }
 
@@ -323,6 +325,14 @@ export class EngineService {
         100 * Math.sqrt((group.position.x - this.player.position.x) ** 2 + (group.position.z - this.player.position.z) ** 2)
       )
     }
+  }
+
+  public clearSkybox() {
+    this.skybox.clear()
+  }
+
+  public setSkybox(skybox: Mesh) {
+    this.skybox.add(skybox)
   }
 
   public disposeMaterial(group: Group) {
