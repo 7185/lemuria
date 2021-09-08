@@ -1,8 +1,8 @@
 import {Subject} from 'rxjs'
 import {Injectable} from '@angular/core'
 import {HttpService} from './../network/http.service'
-import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, RepeatWrapping, MeshPhongMaterial} from 'three'
-import type {Texture, TextureLoader, Object3D} from 'three'
+import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial} from 'three'
+import type {MeshPhongMaterial, Object3D} from 'three'
 import RWXLoader, {RWXMaterialManager} from 'three-rwx-loader'
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'
@@ -17,9 +17,9 @@ export class ObjectService {
   public objectAction = new Subject<ObjectAct>()
   private errorCone: Group
   private rwxLoader = new RWXLoader(new LoadingManager())
+  private basicLoader = new RWXLoader(new LoadingManager())
   private rwxMaterialManager: RWXMaterialManager
   private objects: Map<string, Promise<any>> = new Map()
-  private textures: Map<string, any> = new Map()
   private path = 'http://localhost'
 
   constructor(private http: HttpService) {
@@ -32,12 +32,14 @@ export class ObjectService {
     this.errorCone.userData.isError = true
     this.rwxMaterialManager = new RWXMaterialManager(this.path, 'jpg', 'zip', JSZip, JSZipUtils)
     this.rwxLoader.setRWXMaterialManager(this.rwxMaterialManager).setFlatten(true)
+    this.basicLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true).setUseBasicMaterial(true)
   }
 
   setPath(path: string) {
     this.path = path
     this.rwxMaterialManager.folder = `${this.path}/textures`
     this.rwxLoader.setPath(`${this.path}/rwx`).setResourcePath(`${this.path}/textures`)
+    this.basicLoader.setPath(`${this.path}/rwx`).setResourcePath(`${this.path}/textures`)
   }
 
   loadAvatars() {
@@ -57,7 +59,7 @@ export class ObjectService {
               newRWXMat.color = [color.r / 255.0, color.g / 255.0, color.b / 255.0]
             }
             this.rwxMaterialManager.currentRWXMaterial = newRWXMat
-            newMaterials.push(this.rwxMaterialManager.getCurrentMaterial().phongMat)
+            newMaterials.push(this.rwxMaterialManager.getCurrentMaterial().threeMat)
           }
           if (m.alphaMap != null) {
             m.alphaMap.dispose()
@@ -74,27 +76,13 @@ export class ObjectService {
     this.rwxMaterialManager.resetCurrentMaterialList()
   }
 
-  loadTexture(name: string, loader: TextureLoader): any {
-    let texture: Texture
-    if (this.textures.get(name) !== undefined) {
-      texture = this.textures.get(name)
-    } else {
-      texture = loader.load(`${this.path}/textures/${name}`)
-      texture.wrapS = RepeatWrapping
-      texture.wrapT = RepeatWrapping
-      this.textures.set(name, texture)
-    }
-    const material = new MeshPhongMaterial({map: texture})
-    material.needsUpdate = true
-    return material
-  }
-
-  loadObject(name: string): Promise<any> {
+  loadObject(name: string, basic = false): Promise<any> {
     if (this.objects.get(name) !== undefined) {
       return this.objects.get(name)
     } else {
+      const loader = basic ? this.basicLoader : this.rwxLoader
       const promise = new Promise((resolve) => {
-        this.rwxLoader.load(name, (rwx: Group) => resolve(rwx), null, () => resolve(this.errorCone))
+        loader.load(name, (rwx: Group) => resolve(rwx), null, () => resolve(this.errorCone))
       })
       this.objects.set(name, promise)
       return promise
@@ -103,7 +91,6 @@ export class ObjectService {
 
   cleanCache() {
     this.objects = new Map()
-    this.textures = new Map()
   }
 
   public texturesNextFrame() {

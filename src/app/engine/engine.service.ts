@@ -327,11 +327,8 @@ export class EngineService {
     }
   }
 
-  public clearSkybox() {
+  public setSkybox(skybox: Group) {
     this.skybox.clear()
-  }
-
-  public setSkybox(skybox: Mesh) {
     this.skybox.add(skybox)
   }
 
@@ -378,7 +375,7 @@ export class EngineService {
           child.geometry.dispose()
         }
       })
-      this.worldNode.remove(group)
+      group.parent.remove(group)
     }
   }
 

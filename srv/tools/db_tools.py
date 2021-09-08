@@ -114,8 +114,12 @@ async def import_world(attr_file, prop_file):
     async for entry in attr_dump(attr_file):
         if entry[0] in world_attr:
             if world_attr[entry[0]].startswith('sky_color'):
-                # TODO
-                pass
+                if 'sky_color' not in attr_dict:
+                    attr_dict['sky_color'] = {}
+                split = world_attr[entry[0]].split('_')
+                if (split[2] not in attr_dict['sky_color']):
+                    attr_dict['sky_color'][split[2]] = [0, 0, 0]
+                attr_dict['sky_color'][split[2]]['rgb'.index(split[3])] = int(entry[1])
             else:
                 attr_dict[world_attr[entry[0]]] = entry[1]
 
@@ -127,6 +131,10 @@ async def import_world(attr_file, prop_file):
                                                  data=json.dumps(attr_dict)))
         result = await conn.execute(w_query)
         data = await result.first()
+    else:
+        world_id = data[0]
+        await conn.execute(world.update().values(name=attr_dict['name'],
+                                                 data=json.dumps(attr_dict)).where(world.c.id==world_id))
     world_id = data[0]
     await conn.execute(prop.delete().where(prop.c.wid==world_id))
     trans = await conn.begin()

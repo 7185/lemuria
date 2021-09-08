@@ -9,7 +9,7 @@ import {HttpService} from './../network/http.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {AWActionParser} from 'aw-action-parser'
-import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, LOD,
+import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, LOD, BufferGeometry,
   MeshBasicMaterial, Box3, BufferAttribute} from 'three'
 import type {Object3D} from 'three'
 import Utils from '../utils/utils'
@@ -302,30 +302,60 @@ export class WorldService {
   public setWorld(world: any) {
     this.worldId = world.id
     this.engine.clearObjects()
-    this.engine.clearSkybox()
     this.objSvc.cleanCache()
     this.objSvc.setPath(world.path)
+
+    const skyboxGroup = new Group()
+    const octGeom = new BufferGeometry()
+
+    // 6 vertices to make an octahedron
+    const positions = [
+       0.0,  0.0,  1.0, // north vertex (0)
+      -1.0,  0.0,  0.0, // east vertex (1)
+       0.0,  0.0, -1.0, // south vertex (2)
+       1.0,  0.0,  0.0, // west vertex (3)
+       0.0,  1.0,  0.0, // top vertex (4)
+       0.0, -1.0,  0.0  // bottom vertex (5)
+    ]
+
+    const wsc = world.sky_color
+    const colors = wsc.north.concat(wsc.east, wsc.south, wsc.west, wsc.top, wsc.bottom).map((v: number) => v / 255.0)
+
+    octGeom.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3))
+    octGeom.setAttribute('color', new BufferAttribute(new Float32Array(colors), 3))
+
+    // 8 triangle faces to make an octahedron
+    octGeom.setIndex([
+      4, 0, 1, // top north east face
+      4, 1, 2, // top south east face
+      4, 2, 3, // top south west face
+      4, 3, 0, // top north west face
+      5, 1, 0, // bottom north east face
+      5, 2, 1, // bottom south east face
+      5, 3, 2, // bottom south west face
+      5, 0, 3  // bottom north west face
+    ])
+
+    octGeom.addGroup(0, octGeom.getIndex().count, 0)
+
+    const oct = new Mesh(octGeom, [new MeshBasicMaterial({vertexColors: true, depthWrite: false})])
+    skyboxGroup.add(oct)
 
     if (world.skybox) {
       if (!world.skybox.endsWith('.rwx')) {
         world.skybox += '.rwx'
       }
-      this.objSvc.loadObject(world.skybox).then(s => {
+      this.objSvc.loadObject(world.skybox, true).then(s => {
         const skybox = s.clone()
-        const materials = []
-        for (const m of skybox.material) {
-          const texture = this.textureLoader.load(`${RES_PATH}/textures/${m.userData.rwx.material.texture}.jpg`)
-          const skyMaterial = new MeshBasicMaterial({map: texture, depthWrite: false, side: m.side})
-          materials.push(skyMaterial)
-        }
-        skybox.material = materials
         const box = new Box3()
         box.setFromObject(skybox)
         const center = box.getCenter(new Vector3())
         skybox.position.set(0, -center.y, 0)
-        this.engine.setSkybox(skybox)
+        skyboxGroup.add(skybox)
       })
     }
+
+    this.engine.setSkybox(skyboxGroup)
 
     this.objSvc.loadAvatars().subscribe((list) => {
       this.avatarList = list
