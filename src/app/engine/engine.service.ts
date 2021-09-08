@@ -875,7 +875,7 @@ export class EngineService {
       }
       if (item.userData.rotate) {
         if (item.userData.rotate.waiting > 0) {
-          item.userData.move.waiting -= this.deltaSinceLastFrame
+          item.userData.rotate.waiting -= this.deltaSinceLastFrame
         } else {
           item.rotateOnAxis(yAxis, item.userData.rotate.speed.y * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
           item.rotateOnAxis(zAxis, item.userData.rotate.speed.z * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
