@@ -1,4 +1,5 @@
 import {NgModule} from '@angular/core'
+import {APP_BASE_HREF} from '@angular/common'
 import {BrowserModule} from '@angular/platform-browser'
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations'
 import {FormsModule, ReactiveFormsModule} from '@angular/forms'
@@ -19,6 +20,8 @@ import {
   faArrowLeft,
   faArrowUp,
   faArrowRight,
+  faArrowRotateLeft,
+  faArrowRotateRight,
   faBolt,
   faBorderNone,
   faCheck,
@@ -29,12 +32,10 @@ import {
   faGlobe,
   faKey,
   faLocationArrow,
-  faRedoAlt,
+  faRightFromBracket,
   faRoad,
-  faTrashAlt,
-  faSignOutAlt,
-  faSyncAlt,
-  faUndoAlt,
+  faTrashCan,
+  faRotate,
   faUser,
   faUsers,
   faVideo
@@ -61,7 +62,9 @@ import {
     BsDropdownModule.forRoot(),
     AppRoutingModule
   ],
-  providers: [],
+  providers: [
+    {provide: APP_BASE_HREF, useValue: '/'}
+  ],
   bootstrap: [
     AppComponent
   ]
@@ -73,6 +76,8 @@ export class AppModule {
       faArrowLeft,
       faArrowUp,
       faArrowRight,
+      faArrowRotateLeft,
+      faArrowRotateRight,
       faBolt,
       faBorderNone,
       faCheck,
@@ -83,12 +88,10 @@ export class AppModule {
       faGlobe,
       faKey,
       faLocationArrow,
-      faRedoAlt,
+      faRightFromBracket,
       faRoad,
-      faSyncAlt,
-      faSignOutAlt,
-      faTrashAlt,
-      faUndoAlt,
+      faRotate,
+      faTrashCan,
       faUser,
       faUsers,
       faVideo
