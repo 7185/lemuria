@@ -5,8 +5,7 @@ import asyncio
 import toml
 from quart import Quart, render_template, websocket, request, jsonify
 from quart_auth import AuthManager, login_required
-from sqlalchemy import create_engine
-from sqlalchemy_aio import ASYNCIO_STRATEGY
+from databases import Database
 from api import api_auth, api_world
 from ws import sending, receiving
 from user import User
@@ -25,7 +24,7 @@ app.secret_key = config['SECRET_KEY']
 auth_manager = AuthManager()
 auth_manager.user_class = User
 
-app.engine = create_engine(f"sqlite:///{app.config['DB_FILE']}", strategy=ASYNCIO_STRATEGY)
+app.engine = Database(f"sqlite:///{app.config['DB_FILE']}")
 
 @app.route('/')
 async def index():

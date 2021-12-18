@@ -13,7 +13,6 @@ import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrappin
   MeshBasicMaterial, Box3, BufferAttribute} from 'three'
 import type {Object3D} from 'three'
 import Utils from '../utils/utils'
-export const RES_PATH = config.url.resource
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
@@ -139,22 +138,22 @@ export class WorldService {
     this.chunkMap = new Map<number, Set<number>>()
   }
 
-  public initTerrain(elev: any) {
+  public initTerrain(world: any) {
     if (this.terrain != null) {
       this.engine.removeWorldObject(this.terrain)
     }
 
     this.terrain = new Group()
     this.terrain.name = 'terrain'
-    const terrainTexture = this.textureLoader.load(`${RES_PATH}/textures/terrain17.jpg`)
+    const terrainTexture = this.textureLoader.load(`${world.path}/textures/terrain17.jpg`)
     terrainTexture.wrapS = RepeatWrapping
     terrainTexture.wrapT = RepeatWrapping
     terrainTexture.repeat.set(128, 128)
 
     const terrainMaterial = [new MeshBasicMaterial({map: terrainTexture})]
 
-    if (elev != null) {
-      for (const d of Object.entries(elev)) {
+    if (world.elev != null) {
+      for (const d of Object.entries(world.elev)) {
         const geometry = new PlaneGeometry(1280, 1280, 128, 128)
         geometry.rotateX(-Math.PI / 2)
 
@@ -361,7 +360,7 @@ export class WorldService {
       this.avatarList = list
       this.avatarSub.next(0)
     })
-    this.initTerrain(world.elev)
+    this.initTerrain(world)
 
     this.resetChunks()
 

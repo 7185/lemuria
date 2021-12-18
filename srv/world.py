@@ -20,10 +20,10 @@ class World:
 
     async def _resolve(self):
         if not self._resolved:
-            conn = await current_app.engine.connect()
+            conn = current_app.engine
+            await conn.connect()
 
-            result = await conn.execute(f"select * from world where id = {self.world_id}")
-            data = await result.first()
+            data = await conn.fetch_one(f"select * from world where id = {self.world_id}")
 
             if data[2] is not None:
                 world_data = json.loads(data[2])
@@ -47,7 +47,7 @@ class World:
 
                 self._resolved = True
 
-            await conn.close()
+            await conn.disconnect()
 
     @property
     async def name(self):
@@ -68,7 +68,8 @@ class World:
 
     # Having a 'None' value on one of those coordinate criterias means no bound will be applied when querying all objects
     async def props(self, min_x = None, max_x = None, min_y = None, max_y = None, min_z = None, max_z = None):
-        conn = await current_app.engine.connect()
+        conn = current_app.engine
+        await conn.connect()
 
         final_query = "select * from prop where wid = {world_id}{xmin}{xmax}{ymin}{ymax}{zmin}{zmax}".format(
             world_id = self.world_id,
@@ -80,25 +81,24 @@ class World:
             zmax = f" AND z < {max_z}" if max_z is not None else "")
 
         props = []
-        result = await conn.execute(final_query)
 
-        for prop in await result.fetchall():
+        for prop in await conn.fetch_all(final_query):
             props.append(list(prop)[3:13])
 
-        await conn.close()
+        await conn.disconnect()
 
         return { 'entries': props }
 
     @classmethod
     async def get_list(cls):
         world_list = []
-        conn = await current_app.engine.connect()
+        conn = current_app.engine
+        await conn.connect()
 
-        result = await conn.execute("select id, name from world")
-        for world in await result.fetchall():
+        for world in await conn.fetch_all("select id, name from world"):
             world_list.append({'id': world[0], 'name': world[1]})
 
-        await conn.close()
+        await conn.disconnect()
         return world_list
 
     async def elev_dump(self):
