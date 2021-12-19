@@ -1,6 +1,4 @@
 aiofiles
-Quart
-quart-auth>=0.5.0
-Quart-Trio
-SQLAlchemy<1.4
-sqlalchemy-aio
+Quart>=0.16.2
+quart-auth>=0.6.0
+databases[sqlite]

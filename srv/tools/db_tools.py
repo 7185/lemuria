@@ -2,12 +2,12 @@
 """Database tools module"""
 
 import json
-import trio
-from sqlalchemy_aio import TRIO_STRATEGY
+import aiofiles
+from databases import Database
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, Text
 from sqlalchemy.schema import CreateTable
 
-engine = create_engine('sqlite:///../app.db', strategy=TRIO_STRATEGY)
+engine = Database('sqlite:///../app.db')
 metadata = MetaData()
 
 world_attr = {
@@ -69,7 +69,7 @@ prop = Table(
 
 
 async def attr_dump(file):
-    async with await trio.open_file(file, 'r', encoding='ISO-8859-1') as f:
+    async with aiofiles.open(file, 'r', encoding='ISO-8859-1') as f:
         async for l in f:
             s = l.split(' ', 1)
             if s[0] == 'atdump':
@@ -78,7 +78,7 @@ async def attr_dump(file):
 
 
 async def prop_dump(file):
-    async with await trio.open_file(file, 'r', encoding='ISO-8859-1') as f:
+    async with aiofiles.open(file, 'r', encoding='ISO-8859-1') as f:
         async for l in f:
             s = l.split(' ', 11)
             if s[0] == 'propdump':
@@ -94,18 +94,17 @@ async def prop_dump(file):
 
 
 async def init_db():
+    await engine.connect()
     await engine.execute(CreateTable(user))
     await engine.execute(CreateTable(world))
     await engine.execute(CreateTable(prop))
-
-    conn = await engine.connect()
-    await conn.execute(user.insert().values(name='admin', password='', email=''))
+    await engine.execute(user.insert().values(name='admin', password='', email=''))
+    await engine.disconnect()
 
 
 async def import_world(attr_file, prop_file):
-    conn = await engine.connect()
-    result = await conn.execute("select id from user where lower(name) = 'admin'")
-    data = await result.first()
+    await engine.connect()
+    data = await engine.fetch_one("select id from user where lower(name) = 'admin'")
     if data is None:
         print("Create admin user first")
         return
@@ -124,22 +123,21 @@ async def import_world(attr_file, prop_file):
                 attr_dict[world_attr[entry[0]]] = entry[1]
 
     w_query = f"select id from world where lower(name) = '{attr_dict['name'].lower()}'"
-    result = await conn.execute(w_query)
-    data = await result.first()
+    data = await engine.fetch_one(w_query)
     if data is None:
-        await conn.execute(world.insert().values(name=attr_dict['name'],
-                                                 data=json.dumps(attr_dict)))
-        result = await conn.execute(w_query)
-        data = await result.first()
+        await engine.execute(world.insert().values(name=attr_dict['name'],
+                                                   data=json.dumps(attr_dict)))
+        data = await engine.fetch_one(w_query)
     else:
         world_id = data[0]
-        await conn.execute(world.update().values(name=attr_dict['name'],
-                                                 data=json.dumps(attr_dict)).where(world.c.id==world_id))
+        await engine.execute(world.update().values(name=attr_dict['name'],
+                                                   data=json.dumps(attr_dict)).where(world.c.id==world_id))
     world_id = data[0]
-    await conn.execute(prop.delete().where(prop.c.wid==world_id))
-    trans = await conn.begin()
+    await engine.execute(prop.delete().where(prop.c.wid==world_id))
+    trans = await engine.transaction()
     async for o in prop_dump(prop_file):
-        await conn.execute(prop.insert().values(wid=world_id, uid=admin_id, date=o[0], name=o[1],
-                                                x=o[2], y=o[3], z=o[4], pi=o[5], ya=o[6], ro=o[7],
-                                                desc=o[8], act=o[9]))
+        await engine.execute(prop.insert().values(wid=world_id, uid=admin_id, date=o[0], name=o[1],
+                                                  x=o[2], y=o[3], z=o[4], pi=o[5], ya=o[6], ro=o[7],
+                                                  desc=o[8], act=o[9]))
     await trans.commit()
+    await engine.disconnect()

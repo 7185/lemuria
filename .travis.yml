@@ -2,7 +2,7 @@ language: node_js
 node_js:
   - 14
 os: linux
-dist: trusty
+dist: focal
 branches:
   only:
   - master
