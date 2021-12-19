@@ -21,11 +21,6 @@ export class HttpService extends HttpClient {
     this.mExpiration = parseInt(localStorage.getItem('expiration'), 10) || 0
   }
 
-  public static getCookie(name: string) {
-    const c = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')
-    return c ? c.pop() : ''
-  }
-
   get expiration(): number {
     return this.mExpiration
   }
@@ -33,6 +28,11 @@ export class HttpService extends HttpClient {
   set expiration(value: number) {
     this.mExpiration = value
     localStorage.setItem('expiration', value.toString())
+  }
+
+  public static getCookie(name: string) {
+    const c = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')
+    return c ? c.pop() : ''
   }
 
   isLogged(): boolean {
