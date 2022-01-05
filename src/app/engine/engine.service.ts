@@ -415,8 +415,8 @@ export class EngineService {
         this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1
       })
       fromEvent(this.canvas, 'mousedown').subscribe((e: MouseEvent) => {
-        if (e.button === 0 && this.selectionBox != null) {
-          this.deselect()
+        if (e.button === 0) {
+          this.leftClick(e)
         }
       })
       this.inputSysSvc.keyDownEvent.subscribe((k) => {
@@ -439,8 +439,14 @@ export class EngineService {
       })
       timer(0, 100).subscribe(() => {
         this.mouseIdle++
+        document.body.style.cursor = 'default'
+        const item = this.pointedItem()
+        if (item != null) {
+          if (item.userData?.clickable === true) {
+            document.body.style.cursor = 'pointer'
+          }
+        }
         if (this.mouseIdle >= 10) {
-          const item = this.pointedItem()
           if (item !== this.hoveredObject) {
             this.labelDesc.style.display = 'none'
             this.hoveredObject = item
@@ -596,6 +602,22 @@ export class EngineService {
       }
     }
     return item
+  }
+
+  private leftClick(event: MouseEvent) {
+    event.preventDefault()
+    if (this.selectionBox != null) {
+      this.deselect()
+    } else {
+      const item = this.pointedItem()
+      if (item != null && item.userData?.clickable) {
+        if (item.userData.teleportClick != null) {
+          this.teleport(new Vector3(item.userData.teleportClick.coordinates.EW * -10,
+                                    item.userData.teleportClick.altitude.value * 10,
+                                    item.userData.teleportClick.coordinates.NS * 10))
+        }
+      }
+    }
   }
 
   private rightClick(event: MouseEvent) {

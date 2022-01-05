@@ -239,6 +239,14 @@ export class WorldService {
         }
       }
     }
+    if (result.activate != null) {
+      for (const cmd of result.activate) {
+        item.userData.clickable = true
+        if (cmd.commandType === 'teleport') {
+          item.userData.teleportClick = cmd.coordinates[0]
+        }
+      }
+    }
   }
 
   public async loadItem(item: string, pos: Vector3, rot: Vector3, date = 0, desc = null, act = null): Promise<Object3D> {
