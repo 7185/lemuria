@@ -210,6 +210,9 @@ export class WorldService {
               this.objSvc.applyTexture(item, cmd.texture, cmd.mask)
             }
           }
+          if (cmd.commandType === 'sign') {
+            this.objSvc.makeSign(item, cmd.color, cmd.bcolor)
+          }
         }
         if (cmd.commandType === 'move') {
           item.userData.move = {

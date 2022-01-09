@@ -83,11 +83,14 @@ class World:
         props = []
 
         for prop in await conn.fetch_all(final_query):
-            props.append(list(prop)[3:13])
+            p = list(prop)
+            if p[11] is not None:
+                p[11] = p[11].encode().replace(b'\xc2\x80\x7f', b'\x0a').decode()
+            props.append(p[3:13])
 
         await conn.disconnect()
 
-        return { 'entries': props }
+        return {'entries': props}
 
     @classmethod
     async def get_list(cls):

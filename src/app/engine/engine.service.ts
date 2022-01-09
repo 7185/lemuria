@@ -604,17 +604,33 @@ export class EngineService {
     return item
   }
 
-  private leftClick(event: MouseEvent) {
-    event.preventDefault()
+  private leftClick(_: MouseEvent) {
     if (this.selectionBox != null) {
       this.deselect()
     } else {
       const item = this.pointedItem()
       if (item != null && item.userData?.clickable) {
         if (item.userData.teleportClick != null) {
-          this.teleport(new Vector3(item.userData.teleportClick.coordinates.EW * -10,
-                                    item.userData.teleportClick.altitude.value * 10,
-                                    item.userData.teleportClick.coordinates.NS * 10))
+          let newX = 0
+          let newY = 0
+          let newZ = 0
+          if (item.userData.teleportClick.altitude != null) {
+            if (item.userData.teleportClick.altitude.altitudeType === 'absolute') {
+              newY = item.userData.teleportClick.altitude.value * 10
+            } else {
+              newY = this.player.position.y + item.userData.teleportClick.altitude.value * 10
+            }
+          }
+          if (item.userData.teleportClick.coordinates != null) {
+            if (item.userData.teleportClick.coordinates.coordinateType === 'absolute') {
+              newX = item.userData.teleportClick.coordinates.EW * -10
+              newZ = item.userData.teleportClick.coordinates.NS * 10
+            } else {
+              newX = this.player.position.x + item.userData.teleportClick.coordinates.x * -10
+              newZ = this.player.position.z + item.userData.teleportClick.coordinates.y * 10
+            }
+          }
+          this.teleport(new Vector3(newX, newY, newZ))
         }
       }
     }
