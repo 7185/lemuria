@@ -1,11 +1,12 @@
 import {Subject} from 'rxjs'
 import {Injectable} from '@angular/core'
 import {HttpService} from './../network/http.service'
-import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, CanvasTexture} from 'three'
+import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, CanvasTexture, TextureLoader} from 'three'
 import type {MeshPhongMaterial, Object3D} from 'three'
 import RWXLoader, {RWXMaterialManager} from 'three-rwx-loader'
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'
+import {config} from '../app.config'
 
 // can't be const (angular#25963)
 export enum ObjectAct { nop = 0, forward, backward, left, right, up, down, rotX, rotnX, rotY, rotnY, rotZ, rotnZ,
@@ -20,6 +21,7 @@ export class ObjectService {
   private basicLoader = new RWXLoader(new LoadingManager())
   private rwxMaterialManager: RWXMaterialManager
   private objects: Map<string, Promise<any>> = new Map()
+  private pictureLoader = new TextureLoader()
   private path = 'http://localhost'
 
   constructor(private http: HttpService) {
@@ -44,6 +46,26 @@ export class ObjectService {
 
   loadAvatars() {
     return this.http.avatars(this.path)
+  }
+
+  makePicture(item: Group, url: string) {
+    this.pictureLoader.load(`${config.url.imgProxy}${url}`, (image) => {
+      item.traverse((child: Object3D) => {
+        if (child instanceof Mesh) {
+          const newMaterials = []
+          newMaterials.push(...child.material)
+          if (item.userData.taggedMaterials[200]) {
+            for (const i of item.userData.taggedMaterials[200]) {
+              newMaterials[i] = child.material[i].clone()
+              newMaterials[i].map = image
+              newMaterials[i].needsUpdate = true
+            }
+          }
+          child.material = newMaterials
+          child.material.needsUpdate = true
+        }
+      })
+    })
   }
 
   makeSign(item: Group, color, bcolor) {

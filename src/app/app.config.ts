@@ -1,7 +1,8 @@
 export const config: any = {
   url: {
     websocket: 'ws://localhost:8080/ws',
-    server: 'http://localhost:8080/api/v1'
+    server: 'http://localhost:8080/api/v1',
+    imgProxy: 'https://images.weserv.nl/?url='
   },
   world: {
     chunk: {

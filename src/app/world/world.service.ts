@@ -213,6 +213,9 @@ export class WorldService {
           if (cmd.commandType === 'sign') {
             this.objSvc.makeSign(item, cmd.color, cmd.bcolor)
           }
+          if (cmd.commandType === 'picture') {
+            this.objSvc.makePicture(item, cmd.resource)
+          }
         }
         if (cmd.commandType === 'move') {
           item.userData.move = {
