@@ -1,6 +1,8 @@
-import {Subject} from 'rxjs'
+import {forkJoin, Subject} from 'rxjs'
+import type {Observable} from 'rxjs'
 import {Injectable} from '@angular/core'
 import {HttpService} from './../network/http.service'
+import {AWActionParser} from 'aw-action-parser'
 import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, CanvasTexture, TextureLoader} from 'three'
 import type {MeshPhongMaterial, Object3D} from 'three'
 import RWXLoader, {RWXMaterialManager} from 'three-rwx-loader'
@@ -20,9 +22,11 @@ export class ObjectService {
   private rwxLoader = new RWXLoader(new LoadingManager())
   private basicLoader = new RWXLoader(new LoadingManager())
   private rwxMaterialManager: RWXMaterialManager
+  private actionParser = new AWActionParser()
   private objects: Map<string, Promise<any>> = new Map()
   private pictureLoader = new TextureLoader()
   private path = 'http://localhost'
+  private remoteUrl = /.+\..+\/.+/g
 
   constructor(private http: HttpService) {
     const coneGeometry = new ConeGeometry(0.5, 0.5, 3)
@@ -48,8 +52,102 @@ export class ObjectService {
     return this.http.avatars(this.path)
   }
 
+  public execActions(item: Group) {
+    let textured = false
+    let texturing = null
+    const result = this.actionParser.parse(item.userData.act)
+    if (result.create != null) {
+      for (const cmd of result.create) {
+        if (cmd.commandType === 'texture' || cmd.commandType === 'color') {
+          textured = true
+        }
+      }
+      for (const cmd of result.create) {
+        if (cmd.commandType === 'solid') {
+          item.userData.notSolid = !cmd.value
+        }
+        if (cmd.commandType === 'visible') {
+          item.visible = cmd.value
+        } else {
+          if (cmd.commandType === 'color') {
+            texturing = this.applyTexture(item, null, null, cmd.color)
+          } else {
+            if (cmd.commandType === 'texture') {
+              if (cmd.texture) {
+                cmd.texture = cmd.texture.lastIndexOf('.') !== -1 ? cmd.texture.substring(0, cmd.texture.lastIndexOf('.')) : cmd.texture
+                if (cmd.mask) {
+                  cmd.mask = cmd.mask.lastIndexOf('.') !== -1 ? cmd.mask.substring(0, cmd.mask.lastIndexOf('.')) : cmd.mask
+                }
+              }
+              texturing = this.applyTexture(item, cmd.texture, cmd.mask)
+            }
+          }
+          if (!textured) {
+            if (cmd.commandType === 'sign') {
+              this.makeSign(item, cmd.color, cmd.bcolor)
+            }
+            if (cmd.commandType === 'picture') {
+              this.makePicture(item, cmd.resource)
+            }
+          }
+        }
+        if (cmd.commandType === 'move') {
+          item.userData.move = {
+            distance: cmd.distance,
+            time: cmd.time || 1,
+            loop: cmd.loop || false,
+            reset: cmd.reset || false,
+            wait: cmd.wait || 0,
+            waiting: 0,
+            completion: 0,
+            direction: 1,
+            orig: item.position.clone()
+          }
+        }
+        if (cmd.commandType === 'rotate') {
+          item.userData.rotate = {
+            speed: cmd.speed,
+            time: cmd.time || null,
+            loop: cmd.loop || false,
+            reset: cmd.reset || false,
+            wait: cmd.wait || 0,
+            waiting: 0,
+            completion: 0,
+            direction: 1,
+            orig: item.rotation.clone()
+          }
+        }
+      }
+    }
+    if (result.activate != null) {
+      for (const cmd of result.activate) {
+        item.userData.clickable = true
+        if (cmd.commandType === 'teleport') {
+          item.userData.teleportClick = cmd.coordinates[0]
+        }
+      }
+    }
+    if (textured) {
+      texturing.subscribe(() => {
+        for (const cmd of result.create) {
+          if (cmd.commandType === 'sign') {
+            this.makeSign(item, cmd.color, cmd.bcolor)
+          }
+          if (cmd.commandType === 'picture') {
+            this.makePicture(item, cmd.resource)
+          }
+        }
+      })
+    }
+  }
+
   makePicture(item: Group, url: string) {
-    this.pictureLoader.load(`${config.url.imgProxy}${url}`, (image) => {
+    if (url.match(this.remoteUrl)) {
+      url = `${config.url.imgProxy}${url}`
+    } else {
+      url = `${this.path}/textures/${url}`
+    }
+    this.pictureLoader.load(url, (image) => {
       item.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           const newMaterials = []
@@ -164,7 +262,8 @@ export class ObjectService {
     })
   }
 
-  applyTexture(item: Group, textureName: string = null, maskName: string = null, color: any = null) {
+  applyTexture(item: Group, textureName: string = null, maskName: string = null, color: any = null): Observable<any> {
+    const promises = []
     item.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         const newMaterials = []
@@ -177,7 +276,9 @@ export class ObjectService {
               newRWXMat.color = [color.r / 255.0, color.g / 255.0, color.b / 255.0]
             }
             this.rwxMaterialManager.currentRWXMaterial = newRWXMat
-            newMaterials.push(this.rwxMaterialManager.getCurrentMaterial().threeMat)
+            const curMat = this.rwxMaterialManager.getCurrentMaterial()
+            newMaterials.push(curMat.threeMat)
+            promises.push(forkJoin(curMat.loadingPromises))
           }
           if (m.alphaMap != null) {
             m.alphaMap.dispose()
@@ -192,6 +293,7 @@ export class ObjectService {
       }
     })
     this.rwxMaterialManager.resetCurrentMaterialList()
+    return forkJoin(promises)
   }
 
   loadObject(name: string, basic = false): Promise<any> {

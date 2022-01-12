@@ -8,7 +8,6 @@ import {ObjectService, ObjectAct} from './object.service'
 import {HttpService} from './../network/http.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
-import {AWActionParser} from 'aw-action-parser'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, LOD, BufferGeometry,
   MeshBasicMaterial, Box3, BufferAttribute} from 'three'
 import type {Object3D} from 'three'
@@ -21,7 +20,6 @@ export class WorldService {
   public avatarSub = new Subject<number>()
   private avatar: Group
   private textureLoader = new TextureLoader()
-  private actionParser = new AWActionParser()
   private terrain: Group
   private worldId: number
   private previousLocalUserPos = null
@@ -187,73 +185,6 @@ export class WorldService {
     this.engine.refreshOctree()
   }
 
-  public execActions(item: Group) {
-    const result = this.actionParser.parse(item.userData.act)
-    if (result.create != null) {
-      for (const cmd of result.create) {
-        if (cmd.commandType === 'solid') {
-          item.userData.notSolid = !cmd.value
-        }
-        if (cmd.commandType === 'visible') {
-          item.visible = cmd.value
-        } else {
-          if (cmd.commandType === 'color') {
-            this.objSvc.applyTexture(item, null, null, cmd.color)
-          } else {
-            if (cmd.commandType === 'texture') {
-              if (cmd.texture) {
-                cmd.texture = cmd.texture.lastIndexOf('.') !== -1 ? cmd.texture.substring(0, cmd.texture.lastIndexOf('.')) : cmd.texture
-                if (cmd.mask) {
-                  cmd.mask = cmd.mask.lastIndexOf('.') !== -1 ? cmd.mask.substring(0, cmd.mask.lastIndexOf('.')) : cmd.mask
-                }
-              }
-              this.objSvc.applyTexture(item, cmd.texture, cmd.mask)
-            }
-          }
-          if (cmd.commandType === 'sign') {
-            this.objSvc.makeSign(item, cmd.color, cmd.bcolor)
-          }
-          if (cmd.commandType === 'picture') {
-            this.objSvc.makePicture(item, cmd.resource)
-          }
-        }
-        if (cmd.commandType === 'move') {
-          item.userData.move = {
-            distance: cmd.distance,
-            time: cmd.time || 1,
-            loop: cmd.loop || false,
-            reset: cmd.reset || false,
-            wait: cmd.wait || 0,
-            waiting: 0,
-            completion: 0,
-            direction: 1,
-            orig: item.position.clone()
-          }
-        }
-        if (cmd.commandType === 'rotate') {
-          item.userData.rotate = {
-            speed: cmd.speed,
-            time: cmd.time || null,
-            loop: cmd.loop || false,
-            reset: cmd.reset || false,
-            wait: cmd.wait || 0,
-            waiting: 0,
-            completion: 0,
-            direction: 1,
-            orig: item.rotation.clone()
-          }
-        }
-      }
-    }
-    if (result.activate != null) {
-      for (const cmd of result.activate) {
-        item.userData.clickable = true
-        if (cmd.commandType === 'teleport') {
-          item.userData.teleportClick = cmd.coordinates[0]
-        }
-      }
-    }
-  }
 
   public async loadItem(item: string, pos: Vector3, rot: Vector3, date = 0, desc = null, act = null): Promise<Object3D> {
     if (!item.endsWith('.rwx')) {
@@ -278,7 +209,7 @@ export class WorldService {
     g.rotation.set(rot.x * DEG / 10, rot.y * DEG / 10, rot.z * DEG / 10, 'YZX')
 
     if (act && g.userData?.isError !== true) {
-      this.execActions(g)
+      this.objSvc.execActions(g)
     }
 
     g.updateMatrix()
