@@ -9,7 +9,7 @@ import {HttpService} from './../network/http.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrapping, LOD, BufferGeometry,
-  MeshBasicMaterial, Box3, BufferAttribute} from 'three'
+  MeshBasicMaterial, Box3, BufferAttribute, sRGBEncoding} from 'three'
 import type {Object3D} from 'three'
 import Utils from '../utils/utils'
 
@@ -143,12 +143,18 @@ export class WorldService {
 
     this.terrain = new Group()
     this.terrain.name = 'terrain'
-    const terrainTexture = this.textureLoader.load(`${world.path}/textures/terrain17.jpg`)
-    terrainTexture.wrapS = RepeatWrapping
-    terrainTexture.wrapT = RepeatWrapping
-    terrainTexture.repeat.set(128, 128)
+    const terrainMaterials = []
 
-    const terrainMaterial = [new MeshBasicMaterial({map: terrainTexture})]
+    for (let i = 0; i < 4; i++) {
+      for (let j = 0; j < 64; j++) {
+        const terrainTexture = this.textureLoader.load(`${world.path}/textures/terrain${j}.jpg`)
+        terrainTexture.encoding = sRGBEncoding
+        terrainTexture.wrapS = RepeatWrapping
+        terrainTexture.wrapT = RepeatWrapping
+        terrainTexture.repeat.set(128, 128)
+        terrainMaterials.push(new MeshBasicMaterial({map: terrainTexture}))
+      }
+    }
 
     if (world.elev != null) {
       for (const d of Object.entries(world.elev)) {
@@ -159,16 +165,39 @@ export class WorldService {
         let gap = 0
         for (let i = 0, j = 0; i < positions.length; i++, j += 3) {
           if (i % 128 !== 0) {
-            positions[j + 1 + gap * 3] = d[1][i] / 100 || 0
+            if (d[1][i] != null) {
+              positions[j + 1 + gap * 3] = d[1][i][0] / 100
+            } else {
+              positions[j + 1 + gap * 3] = 0
+            }
           } else {
             // skip edge
             gap++
           }
         }
         geometry.setAttribute('position', new BufferAttribute(positions, 3))
-        geometry.addGroup(0, geometry.getIndex().count, 0)
 
-        const terrainMesh = new Mesh(geometry, terrainMaterial)
+        let changeTexture = 0
+        let currTexture = 0
+        for (let k = 0; k < 128 * 128; k++) {
+          if (d[1][k] != null) {
+            if (d[1][k][1] !== currTexture) {
+              geometry.addGroup(changeTexture, k * 6 - changeTexture, currTexture)
+              changeTexture = k * 6
+              currTexture = d[1][k][1]
+            }
+          } else {
+            if (currTexture !== 0) {
+              geometry.addGroup(changeTexture, k * 6 - changeTexture, currTexture)
+              changeTexture = k * 6
+              currTexture = 0
+            }
+          }
+        }
+
+        geometry.addGroup(changeTexture, geometry.getIndex().count, currTexture)
+
+        const terrainMesh = new Mesh(geometry, terrainMaterials)
         const pos = d[0].split('_').map(p => parseInt(p, 10))
         // move terrain by 1E (-10x)
         terrainMesh.position.set(pos[0] * 10 - 10, 0, pos[1] * 10)
@@ -178,7 +207,7 @@ export class WorldService {
       const geometry = new PlaneGeometry(1280, 1280, 128, 128)
       geometry.rotateX(-Math.PI / 2)
       geometry.addGroup(0, geometry.getIndex().count, 0)
-      const terrainMesh = new Mesh(geometry, terrainMaterial)
+      const terrainMesh = new Mesh(geometry, terrainMaterials)
       this.terrain.add(terrainMesh)
     }
     this.engine.addWorldObject(this.terrain)
@@ -310,14 +339,17 @@ export class WorldService {
     this.resetChunks()
 
     const entry = new Vector3(0, 0, 0)
+    let entryYaw = 0
     if (world.entry) {
+      const yawMatch = world.entry.match(/\s([0-9]+)$/)
+      entryYaw = yawMatch ? parseInt(yawMatch[1], 10) : 0
       entry.copy(Utils.stringToPos(world.entry))
     }
 
     // Load a few chunks on world initialization
     this.autoUpdateChunks(entry)
 
-    this.engine.teleport(entry)
+    this.engine.teleport(world.entry, entryYaw)
 
     // Trigger list update to create users
     this.userSvc.listChanged.next(this.userSvc.userList)

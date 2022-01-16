@@ -123,6 +123,8 @@ class World:
             x_page = 128 * p[0]
             z_page = 128 * p[1]
             for n in nodes:
+                if len(n['textures']) == 1:
+                    n['textures'] = 64 * n['textures']
                 if f"{x_page}_{z_page}" not in d:
                     # new page
                     d[f"{x_page}_{z_page}"] = {}
@@ -135,5 +137,6 @@ class World:
                         row = i * 128
                         for j in range(size):
                             if n['elevs'][size * i + j] != 0:
-                                d[f"{x_page}_{z_page}"][row + j + x_node + z_node * 128] = n['elevs'][size * i + j]
+                                d[f"{x_page}_{z_page}"][row + j + x_node + z_node * 128] = (n['elevs'][size * i + j],
+                                                                                            n['textures'][size * i + j])
         return d

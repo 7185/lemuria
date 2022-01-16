@@ -3,7 +3,7 @@ import type {Observable} from 'rxjs'
 import {Injectable} from '@angular/core'
 import {HttpService} from './../network/http.service'
 import {AWActionParser} from 'aw-action-parser'
-import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, CanvasTexture, TextureLoader} from 'three'
+import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, CanvasTexture, TextureLoader, sRGBEncoding} from 'three'
 import type {MeshPhongMaterial, Object3D} from 'three'
 import RWXLoader, {RWXMaterialManager} from 'three-rwx-loader'
 import * as JSZip from 'jszip'
@@ -36,9 +36,9 @@ export class ObjectService {
     cone.position.y = 0.5
     this.errorCone = new Group().add(cone)
     this.errorCone.userData.isError = true
-    this.rwxMaterialManager = new RWXMaterialManager(this.path, 'jpg', 'zip', JSZip, JSZipUtils)
+    this.rwxMaterialManager = new RWXMaterialManager(this.path, 'jpg', 'zip', JSZip, JSZipUtils, false, sRGBEncoding)
     this.rwxLoader.setRWXMaterialManager(this.rwxMaterialManager).setFlatten(true)
-    this.basicLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true).setUseBasicMaterial(true)
+    this.basicLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true).setUseBasicMaterial(true).setTextureEncoding(sRGBEncoding)
   }
 
   setPath(path: string) {
@@ -148,6 +148,7 @@ export class ObjectService {
       url = `${this.path}/textures/${url}`
     }
     this.pictureLoader.load(url, (image) => {
+      image.encoding = sRGBEncoding
       item.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           const newMaterials = []
@@ -254,6 +255,7 @@ export class ObjectService {
           for (const i of item.userData.taggedMaterials[100]) {
             newMaterials[i] = child.material[i].clone()
             newMaterials[i].map = new CanvasTexture(canvas)
+            newMaterials[i].map.encoding = sRGBEncoding
           }
         }
         child.material = newMaterials

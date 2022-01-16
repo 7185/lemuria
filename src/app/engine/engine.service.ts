@@ -5,7 +5,7 @@ import {
   AmbientLight, Clock, PerspectiveCamera, Raycaster, Scene, Group, BoxBufferGeometry,
   Vector2, Vector3, WebGLRenderer, DirectionalLight, CameraHelper, Object3D, Spherical,
   Mesh, CylinderGeometry, SphereGeometry, MeshBasicMaterial, AxesHelper, EdgesGeometry,
-  LineSegments, LineBasicMaterial
+  LineSegments, LineBasicMaterial, sRGBEncoding
 } from 'three'
 import type {Material, LOD} from 'three'
 import {Octree} from 'three/examples/jsm/math/Octree'
@@ -128,6 +128,7 @@ export class EngineService {
     })
     this.renderer.setSize(window.innerWidth, window.innerHeight)
     this.renderer.shadowMap.enabled = false
+    this.renderer.outputEncoding = sRGBEncoding
 
     this.scene = new Scene()
 
@@ -468,11 +469,14 @@ export class EngineService {
     this.avatar.visible = this.activeCamera === this.thirdCamera
   }
 
-  public teleport(pos: Vector3 | string): void {
+  public teleport(pos: Vector3 | string, yaw = 0): void {
     if (typeof pos === 'string') {
+      const yawMatch = pos.match(/\s([0-9]+)$/)
+      yaw = yawMatch ? parseInt(yawMatch[1], 10) : 0
       pos = Utils.stringToPos(pos)
     }
     this.player.position.copy(pos)
+    this.player.rotation.y = this.radNormalized(yaw * DEG + Math.PI)
     this.updateCapsule()
   }
 
@@ -614,6 +618,7 @@ export class EngineService {
           let newX = 0
           let newY = 0
           let newZ = 0
+          const yaw = item.userData.teleportClick?.direction || 0
           if (item.userData.teleportClick.altitude != null) {
             if (item.userData.teleportClick.altitude.altitudeType === 'absolute') {
               newY = item.userData.teleportClick.altitude.value * 10
@@ -630,7 +635,7 @@ export class EngineService {
               newZ = this.player.position.z + item.userData.teleportClick.coordinates.y * 10
             }
           }
-          this.teleport(new Vector3(newX, newY, newZ))
+          this.teleport(new Vector3(newX, newY, newZ), yaw)
         }
       }
     }
