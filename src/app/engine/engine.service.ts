@@ -875,7 +875,14 @@ export class EngineService {
 
     // compass
     this.compass.setFromVector3(this.cameraDirection)
-    this.compassSub.next(Math.round(this.compass.theta / DEG))
+    this.compassSub.next({
+      pos: {
+        x: Math.round(this.player.position.x * 100) / 100,
+        y: Math.round(this.player.position.y * 100) / 100,
+        z: Math.round(this.player.position.z * 100) / 100
+      },
+      theta: Math.round(this.compass.theta / DEG)
+    })
   }
 
   private animateItems() {

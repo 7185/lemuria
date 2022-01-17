@@ -2,12 +2,14 @@ import {HttpService} from './../../network/http.service'
 import {EngineService} from './../../engine/engine.service'
 import {WorldService} from './../../world/world.service'
 import {UserService} from './../../user/user.service'
-import {Component, ElementRef, Renderer2, ViewChild} from '@angular/core'
+import {ChangeDetectorRef, Component, ElementRef, Renderer2, ViewChild} from '@angular/core'
 import type {AfterViewInit, OnInit} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import type {User} from '../../user/user.model'
 import {config} from '../../app.config'
 import {Vector3} from 'three'
+import {distinctUntilChanged, throttleTime} from 'rxjs'
+import Utils from '../../utils/utils'
 
 @Component({
   selector: 'app-ui-toolbar',
@@ -26,9 +28,12 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public worldList = []
   public visibilityList = new Array(11).fill(40).map((n, i) => n + i * 20)
   public visibility = config.world.lod.maxDistance
+  public strPos: string
+  public strAlt: string
 
   public constructor(
     private renderer: Renderer2,
+    private cdRef: ChangeDetectorRef,
     public socket: SocketService,
     private engine: EngineService,
     public world: WorldService,
@@ -93,8 +98,19 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public ngAfterViewInit(): void {
-    this.engine.compassSub.subscribe((o: number) => {
-      this.renderer.setStyle(this.compass.nativeElement, 'transform', `rotate(${o}deg)`)
+    this.engine.compassSub.pipe(
+      throttleTime(100),
+      distinctUntilChanged((prev: any, curr: any) =>
+        prev.pos.x === curr.pos.x &&
+        prev.pos.y === curr.pos.y &&
+        prev.pos.z === curr.pos.z &&
+        prev.theta === curr.theta
+      )
+    ).subscribe((o: any) => {
+      this.strPos = Utils.posToString(o.pos)
+      this.strAlt = Utils.altToString(o.pos)
+      this.renderer.setStyle(this.compass.nativeElement, 'transform', `rotate(${o.theta}deg)`)
+      this.cdRef.detectChanges()
     })
   }
 }

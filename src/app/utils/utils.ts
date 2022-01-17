@@ -6,6 +6,10 @@ export default class Utils {
       (Math.abs(pos.x) / 10).toFixed(2).concat(pos.x >= 0 ? 'W' : 'E')
   }
 
+  static altToString(pos: Vector3): string {
+    return pos.y.toFixed(2)
+  }
+
   static stringToPos(pos: string): Vector3 {
     const r = new Vector3()
     const m = /([+-]?([0-9]*[.])?[0-9]+)(N|S)\s([+-]?([0-9]*[.])?[0-9]+)(W|E).*/i.exec(pos)
