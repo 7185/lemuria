@@ -3,7 +3,8 @@ import type {Observable} from 'rxjs'
 import {Injectable} from '@angular/core'
 import {HttpService} from './../network/http.service'
 import {AWActionParser} from 'aw-action-parser'
-import {Group, Mesh, ConeGeometry, LoadingManager, MeshBasicMaterial, CanvasTexture, TextureLoader, sRGBEncoding} from 'three'
+import {Group, Mesh, BufferAttribute, BufferGeometry, LoadingManager, MeshBasicMaterial,
+  CanvasTexture, TextureLoader, sRGBEncoding} from 'three'
 import type {MeshPhongMaterial, Object3D} from 'three'
 import RWXLoader, {RWXMaterialManager} from 'three-rwx-loader'
 import * as JSZip from 'jszip'
@@ -18,7 +19,7 @@ export enum ObjectAct { nop = 0, forward, backward, left, right, up, down, rotX,
 export class ObjectService {
 
   public objectAction = new Subject<ObjectAct>()
-  private errorCone: Group
+  private unknown: Group
   private rwxLoader = new RWXLoader(new LoadingManager())
   private basicLoader = new RWXLoader(new LoadingManager())
   private rwxMaterialManager: RWXMaterialManager
@@ -29,13 +30,18 @@ export class ObjectService {
   private remoteUrl = /.+\..+\/.+/g
 
   constructor(private http: HttpService) {
-    const coneGeometry = new ConeGeometry(0.5, 0.5, 3)
-    coneGeometry.clearGroups()
-    coneGeometry.addGroup(0, coneGeometry.getIndex().count, 0)
-    const cone = new Mesh(coneGeometry, [new MeshBasicMaterial({color: 0x000000})])
-    cone.position.y = 0.5
-    this.errorCone = new Group().add(cone)
-    this.errorCone.userData.isError = true
+    const unknownGeometry = new BufferGeometry()
+    const positions = [
+      -0.2,  0.0,  0.0,
+       0.2,  0.0,  0.0,
+       0.0,  0.2,  0.0
+    ]
+    unknownGeometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3))
+    unknownGeometry.setIndex([0, 1, 2])
+    unknownGeometry.clearGroups()
+    unknownGeometry.addGroup(0, unknownGeometry.getIndex().count, 0)
+    this.unknown = new Group().add(new Mesh(unknownGeometry, [new MeshBasicMaterial({color: 0x000000})]))
+    this.unknown.userData.isError = true
     this.rwxMaterialManager = new RWXMaterialManager(this.path, 'jpg', 'zip', JSZip, JSZipUtils, false, sRGBEncoding)
     this.rwxLoader.setRWXMaterialManager(this.rwxMaterialManager).setFlatten(true)
     this.basicLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true).setUseBasicMaterial(true).setTextureEncoding(sRGBEncoding)
@@ -304,7 +310,7 @@ export class ObjectService {
     } else {
       const loader = basic ? this.basicLoader : this.rwxLoader
       const promise = new Promise((resolve) => {
-        loader.load(name, (rwx: Group) => resolve(rwx), null, () => resolve(this.errorCone))
+        loader.load(name, (rwx: Group) => resolve(rwx), null, () => resolve(this.unknown))
       })
       this.objects.set(name, promise)
       return promise
