@@ -8,7 +8,10 @@
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
           <li *ngFor="let w of worldList" role="menuitem" (click)="connect(w.id)">
-            <button class="dropdown-item"><fa-icon [icon]="['fas', 'globe']"></fa-icon> {{w.name}}</button>
+            <button class="dropdown-item">
+              <fa-icon [icon]="['fas', 'globe']"></fa-icon> {{ w.name }}
+              <span class="badge rounded-pill bg-secondary float-end">{{ w.users }}</span>
+            </button>
           </li>
         </ul>
       </div>
@@ -45,7 +48,7 @@
       <input class="form-check-input" type="checkbox" (click)="enableCollision()" btnCheckbox>
       <label class="form-check-label text-info">Slow mode</label>
     </div -->
-    <div class="text-center text-light">
+    <div class="text-center text-light lh-1">
       {{strPos}}<br />
       {{strAlt}}m
     </div>
@@ -64,10 +67,10 @@
     <div class="nav navbar-nav ml-auto">
       <div class="btn-group" dropdown>
         <div dropdownToggle type="button" class="btn btn-info">
-          <fa-icon [icon]="['fas', 'users']" [fixedWidth]="true"></fa-icon> {{ list.length }}
+          <fa-icon [icon]="['fas', 'users']" [fixedWidth]="true"></fa-icon> {{ userList.length }}
         </div>
         <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
-          <li *ngFor="let u of list" role="menuitem" class="dropdown-item">
+          <li *ngFor="let u of userList" role="menuitem" class="dropdown-item">
             <fa-icon [icon]="['fas', 'user']"></fa-icon>
             {{u.name}}
             <button *ngIf="u.id !== userId" class="btn btn-sm btn-warning" (click)="join(u.id)" type="button" title="Join user">

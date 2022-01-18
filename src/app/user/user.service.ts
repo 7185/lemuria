@@ -26,7 +26,13 @@ export class UserService {
     this.userList = this.userList.filter(u => list.map(c => c.id).indexOf(u.id) > -1)
     for (const u of list) {
       if (this.userList.map(c => c.id).indexOf(u.id) === -1) {
-        this.userList.push(new User({id: u.id, name: u.name, avatar: u.avatar}))
+        this.userList.push(new User({id: u.id, name: u.name, avatar: u.avatar, world: u.world}))
+      } else {
+        this.userList.forEach(user => {
+          if (user.id === u.id) {
+            user.world = u.world
+          }
+        })
       }
     }
     this.listChanged.next(this.userList)

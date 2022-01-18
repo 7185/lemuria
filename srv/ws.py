@@ -2,13 +2,12 @@
 """Websocket module"""
 
 from quart import websocket
-from user import authorized_users, broadcast, User
+from user import broadcast, broadcast_userlist, User
 
 
 async def sending(user: User):
     await broadcast({'type': 'join', 'data': await user.name})
-    await broadcast({'type': 'list',
-                     'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
+    await broadcast_userlist()
     try:
         while True:
             data = await user.queue.get()
@@ -21,8 +20,7 @@ async def sending(user: User):
             # Force Timer cancel
             await user.set_timer()
             await broadcast({'type': 'part', 'data': await user.name})
-            await broadcast({'type': 'list',
-                             'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
+            await broadcast_userlist()
 
 
 async def receiving(user: User):

@@ -24,7 +24,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public name = 'Anonymous'
   public userId: string
   public avatarId = 0
-  public list: User[] = []
+  public userList: User[] = []
   public worldList = []
   public visibilityList = new Array(11).fill(40).map((n, i) => n + i * 20)
   public visibility = config.world.lod.maxDistance
@@ -85,16 +85,27 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public ngOnInit(): void {
+    this.userSvc.listChanged.subscribe((l) => {
+      this.userList = l
+      this.worldList.forEach((w)=> w.users = 0)
+      for (const u of this.userList) {
+        for (const w of this.worldList) {
+          if (u.world === w.id) {
+            w.users++
+          }
+        }
+      }
+    })
+    this.world.avatarSub.subscribe((avatarId) => this.avatarId = avatarId)
     this.http.getLogged().subscribe((u: any) => {
       this.userId = u.id
       this.name = u.name
       this.userSvc.currentName = u.name
       this.http.worlds().subscribe((w: any) => {
         this.worldList = w
+        this.userSvc.listChanged.next(this.userList)
       })
     })
-    this.userSvc.listChanged.subscribe((l) => this.list = l)
-    this.world.avatarSub.subscribe((avatarId) => this.avatarId = avatarId)
   }
 
   public ngAfterViewInit(): void {

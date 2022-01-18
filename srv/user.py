@@ -26,6 +26,7 @@ class User(AuthUser):
         self.position = [0, 0, 0]
         self.orientation = [0, 0, 0]
         self.avatar = 0
+        self.world = 0
         self.pos_timer = None
 
     async def _resolve(self):
@@ -45,6 +46,7 @@ class User(AuthUser):
             'id': self.auth_id,
             'name': await self.name,
             'avatar': self.avatar,
+            'world': self.world,
             'x': self.position[0],
             'y': self.position[1],
             'z': self.position[2],
@@ -52,6 +54,10 @@ class User(AuthUser):
             'yaw': self.orientation[1],
             'picth': self.orientation[2]
         }
+
+    async def set_world(self, world_id):
+        self.world = world_id
+        await broadcast_userlist()
 
     async def set_timer(self):
         if self.pos_timer:
@@ -61,18 +67,28 @@ class User(AuthUser):
             await self.pos_timer.start()
 
     async def send_pos(self):
-        await broadcast({'type': 'pos', 'user': self.auth_id,
+        await broadcast_world(self.world, {
+            'type': 'pos', 'user': self.auth_id,
             'data': {'pos': {'x': self.position[0], 'y': self.position[1], 'z': self.position[2]},
                      'ori': {'x': self.orientation[0],
                              'y': self.orientation[1],
-                             'z': self.orientation[2]}}})
+                             'z': self.orientation[2]}}
+            })
         await self.set_timer()
 
     async def send_avatar(self):
         await broadcast({'type': 'avatar', 'user': self.auth_id, 'data': self.avatar})
 
-async def broadcast(message):
-    for user in [u for u in authorized_users if u.connected]:
+async def broadcast_world(world, message):
+    for user in [u for u in authorized_users if u.connected and u.world == world]:
         if message['type'] == 'pos' and message['user'] == user.auth_id:
             continue
+        await user.queue.put(message)
+
+async def broadcast_userlist():
+    await broadcast({'type': 'list',
+                    'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
+
+async def broadcast(message):
+    for user in [u for u in authorized_users if u.connected]:
         await user.queue.put(message)

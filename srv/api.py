@@ -53,6 +53,7 @@ async def world_get(world_id):
             world = await World(world_id).to_dict()
             if world['name'] is None:
                 return world, 404
+            await user.set_world(world_id)
             return world, 200
     return {}, 401
 

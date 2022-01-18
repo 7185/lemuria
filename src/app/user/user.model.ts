@@ -15,6 +15,7 @@ export class User {
   oldPitch? = 0
   completion? = 1
   avatar? = 0
+  world? = 0
   constructor(params: User = {}) {
     Object.assign(this, params)
   }

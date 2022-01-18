@@ -3,6 +3,7 @@
 
 import aiofiles
 from quart import json, current_app
+from user import authorized_users, broadcast_userlist
 
 class World:
     def __init__(self, world_id):
@@ -99,7 +100,11 @@ class World:
         await conn.connect()
 
         for world in await conn.fetch_all("select id, name from world"):
-            world_list.append({'id': world[0], 'name': world[1]})
+            world_list.append({
+                'id': world[0],
+                'name': world[1],
+                'users': len([u for u in authorized_users if u.connected and u.world == world[0]])
+            })
 
         await conn.disconnect()
         return world_list
