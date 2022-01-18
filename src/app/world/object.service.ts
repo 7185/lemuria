@@ -271,7 +271,7 @@ export class ObjectService {
   }
 
   applyTexture(item: Group, textureName: string = null, maskName: string = null, color: any = null): Observable<any> {
-    const promises = []
+    const promises: Observable<any>[] = []
     item.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         const newMaterials = []

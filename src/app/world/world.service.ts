@@ -108,7 +108,7 @@ export class WorldService {
       }
       for (const u of userList) {
         const user = this.engine.users().find(o => o.name === u.id)
-        if (user == null) {
+        if (user == null && this.avatarList.length > 0) {
           this.addUser(u)
         }
       }
@@ -332,7 +332,10 @@ export class WorldService {
 
     this.objSvc.loadAvatars().subscribe((list) => {
       this.avatarList = list
+      // Set first avatar on self
       this.avatarSub.next(0)
+      // Trigger list update to create users
+      this.userSvc.listChanged.next(this.userSvc.userList)
     })
     this.initTerrain(world)
 
@@ -350,9 +353,6 @@ export class WorldService {
     this.autoUpdateChunks(entry)
 
     this.engine.teleport(world.entry, entryYaw)
-
-    // Trigger list update to create users
-    this.userSvc.listChanged.next(this.userSvc.userList)
   }
 
   // Get chunk tile X and Z ids from position
