@@ -470,12 +470,14 @@ export class EngineService {
   }
 
   public teleport(pos: Vector3 | string, yaw = 0): void {
-    if (typeof pos === 'string') {
-      const yawMatch = pos.match(/\s([0-9]+)$/)
-      yaw = yawMatch ? parseInt(yawMatch[1], 10) : 0
-      pos = Utils.stringToPos(pos)
+    if (pos != null) {
+      if (typeof pos === 'string') {
+        const yawMatch = pos.match(/\s([0-9]+)$/)
+        yaw = yawMatch ? parseInt(yawMatch[1], 10) : 0
+        pos = Utils.stringToPos(pos)
+      }
+      this.player.position.copy(pos)
     }
-    this.player.position.copy(pos)
     this.player.rotation.y = this.radNormalized(yaw * DEG + Math.PI)
     this.updateCapsule()
   }

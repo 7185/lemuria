@@ -52,7 +52,7 @@
       {{strPos}}<br />
       {{strAlt}}m
     </div>
-    <button class="d-inline-block btn btn-dark btn-circle" type="button">
+    <button class="d-inline-block btn btn-dark btn-circle" (click)="compassClick(true)" (contextmenu)="compassClick(false)" type="button">
       <div #compass>
         <fa-layers [fixedWidth]="true">
           <fa-icon class="d-inline-block" [icon]="['fas', 'location-arrow']" transform="rotate-135 down-5"></fa-icon>
