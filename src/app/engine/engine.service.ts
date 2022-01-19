@@ -959,7 +959,10 @@ export class EngineService {
         u.completion = (u.completion + this.deltaSinceLastFrame / 0.2) > 1 ? 1 : u.completion + this.deltaSinceLastFrame / 0.2
         user.position.x = u.oldX + (u.x - u.oldX) * u.completion
         user.position.y = u.oldY + (u.y - u.oldY) * u.completion
-        user.position.y += user.userData.offsetY
+        if (user.userData.offsetY != null) {
+          // when the avatar is not loaded yet, the position should not be corrected
+          user.position.y += user.userData.offsetY
+        }
         user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
         user.rotation.x = u.oldRoll + (u.roll - u.oldRoll) * u.completion
         user.rotation.y = u.oldYaw + (u.yaw - u.oldYaw) * u.completion + Math.PI

@@ -108,7 +108,6 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       this.userSvc.currentName = u.name
       this.http.worlds().subscribe((w: any) => {
         this.worldList = w
-        this.userSvc.listChanged.next(this.userList)
       })
     })
   }
