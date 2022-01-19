@@ -18,10 +18,10 @@ export class WorldService {
 
   public avatarList: {name: string; geometry: string}[] = []
   public avatarSub = new Subject<number>()
+  public worldId = 0
   private avatar: Group
   private textureLoader = new TextureLoader()
   private terrain: Group
-  private worldId: number
   private previousLocalUserPos = null
 
   private propBatchSize: number = config.world.propBatchSize
@@ -102,13 +102,13 @@ export class WorldService {
     // listeners
     this.uListListener = this.userSvc.listChanged.subscribe((userList: User[]) => {
       for (const user of this.engine.users()) {
-        if (userList.map(u => u.id).indexOf(user.name) === -1) {
+        if (userList.filter(u => u.world === this.worldId).map(u => u.id).indexOf(user.name) === -1) {
           this.engine.removeUser(user as Group)
         }
       }
       for (const u of userList) {
         const user = this.engine.users().find(o => o.name === u.id)
-        if (user == null && this.avatarList.length > 0) {
+        if (user == null && this.avatarList.length > 0 && u.world === this.worldId) {
           this.addUser(u)
         }
       }
@@ -345,14 +345,14 @@ export class WorldService {
     let entryYaw = 0
     if (world.entry) {
       const yawMatch = world.entry.match(/\s([0-9]+)$/)
-      entryYaw = yawMatch ? parseInt(yawMatch[1], 10) : 0
+      entryYaw = yawMatch ? parseInt(yawMatch[1], 10) : entryYaw
       entry.copy(Utils.stringToPos(world.entry))
     }
 
     // Load a few chunks on world initialization
     this.autoUpdateChunks(entry)
 
-    this.engine.teleport(world.entry, entryYaw)
+    this.engine.teleport(entry, entryYaw)
   }
 
   // Get chunk tile X and Z ids from position

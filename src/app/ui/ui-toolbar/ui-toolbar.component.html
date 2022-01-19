@@ -73,7 +73,7 @@
           <li *ngFor="let u of userList" role="menuitem" class="dropdown-item">
             <fa-icon [icon]="['fas', 'user']"></fa-icon>
             {{u.name}}
-            <button *ngIf="u.id !== userId" class="btn btn-sm btn-warning" (click)="join(u.id)" type="button" title="Join user">
+            <button *ngIf="u.id !== userId && u.world === world.worldId" class="btn btn-sm btn-warning" (click)="join(u.id)" type="button" title="Join user">
               <fa-icon [icon]="['fas', 'bolt']"></fa-icon>
             </button>
           </li>
