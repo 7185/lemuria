@@ -84,6 +84,11 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.engine.teleport(new Vector3(user.x, user.y, user.z))
   }
 
+  public compassClick(north: boolean) {
+    this.engine.teleport(null, !north && 180)
+    return false
+  }
+
   public ngOnInit(): void {
     this.userSvc.listChanged.subscribe((l) => {
       this.userList = l
