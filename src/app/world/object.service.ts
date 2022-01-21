@@ -4,7 +4,7 @@ import {Injectable} from '@angular/core'
 import {HttpService} from './../network/http.service'
 import {AWActionParser} from 'aw-action-parser'
 import {Group, Mesh, BufferAttribute, BufferGeometry, LoadingManager, MeshBasicMaterial,
-  CanvasTexture, TextureLoader, sRGBEncoding} from 'three'
+  CanvasTexture, TextureLoader, sRGBEncoding, Color} from 'three'
 import type {MeshPhongMaterial, Object3D} from 'three'
 import RWXLoader, {RWXMaterialManager} from 'three-rwx-loader'
 import * as JSZip from 'jszip'
@@ -260,6 +260,7 @@ export class ObjectService {
         if (item.userData.taggedMaterials[100]) {
           for (const i of item.userData.taggedMaterials[100]) {
             newMaterials[i] = child.material[i].clone()
+            newMaterials[i].color = new Color(1, 1, 1)
             newMaterials[i].map = new CanvasTexture(canvas)
             newMaterials[i].map.encoding = sRGBEncoding
           }

@@ -134,10 +134,12 @@ async def import_world(attr_file, prop_file):
                                                    data=json.dumps(attr_dict)).where(world.c.id==world_id))
     world_id = data[0]
     await engine.execute(prop.delete().where(prop.c.wid==world_id))
-    trans = await engine.transaction()
-    async for o in prop_dump(prop_file):
-        await engine.execute(prop.insert().values(wid=world_id, uid=admin_id, date=o[0], name=o[1],
-                                                  x=o[2], y=o[3], z=o[4], pi=o[5], ya=o[6], ro=o[7],
-                                                  desc=o[8], act=o[9]))
-    await trans.commit()
     await engine.disconnect()
+
+    # For some reason, we need a new connection to handle the transaction properly
+    async with engine.connection() as connection:
+        async with connection.transaction():
+            async for o in prop_dump(prop_file):
+                await engine.execute(prop.insert().values(wid=world_id, uid=admin_id, date=o[0], name=o[1],
+                                                          x=o[2], y=o[3], z=o[4], pi=o[5], ya=o[6], ro=o[7],
+                                                          desc=o[8], act=o[9]))
