@@ -69,7 +69,7 @@ prop = Table(
 
 
 async def attr_dump(file):
-    async with aiofiles.open(file, 'r', encoding='ISO-8859-1') as f:
+    async with aiofiles.open(file, 'r', encoding='windows-1252') as f:
         async for l in f:
             s = l.split(' ', 1)
             if s[0] == 'atdump':
@@ -78,8 +78,9 @@ async def attr_dump(file):
 
 
 async def prop_dump(file):
-    async with aiofiles.open(file, 'r', encoding='ISO-8859-1') as f:
+    async with aiofiles.open(file, 'r', encoding='windows-1252') as f:
         async for l in f:
+            l = l.encode('windows-1252').replace(b'\x7f', b'\n').replace(b'\x80', b'\r').decode('windows-1252')
             s = l.split(' ', 11)
             if s[0] == 'propdump':
                 continue

@@ -85,8 +85,6 @@ class World:
 
         for prop in await conn.fetch_all(final_query):
             p = list(prop)
-            if p[11] is not None:
-                p[11] = p[11].encode().replace(b'\xc2\x80\x7f', b'\x0a').decode()
             props.append(p[3:13])
 
         await conn.disconnect()
