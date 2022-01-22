@@ -14,6 +14,7 @@ import {UiToolbarComponent} from './ui/ui-toolbar/ui-toolbar.component'
 import {UiChatZoneComponent} from './ui/ui-chat-zone/ui-chat-zone.component'
 import {UiBuilderZoneComponent} from './ui/ui-builder-zone/ui-builder-zone.component'
 import {AppRoutingModule, routingComponents} from './app-routing.module'
+import {LinkifyPipe} from './utils/linkify.pipe'
 
 import {
   faArrowDown,
@@ -43,6 +44,7 @@ import {
 
 @NgModule({
   declarations: [
+    LinkifyPipe,
     AppComponent,
     routingComponents,
     LogoComponent,
