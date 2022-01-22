@@ -151,6 +151,7 @@ export class WorldService {
         terrainTexture.encoding = sRGBEncoding
         terrainTexture.wrapS = RepeatWrapping
         terrainTexture.wrapT = RepeatWrapping
+        terrainTexture.rotation = i * Math.PI / 2
         terrainTexture.repeat.set(128, 128)
         terrainMaterials.push(new MeshBasicMaterial({map: terrainTexture}))
       }
