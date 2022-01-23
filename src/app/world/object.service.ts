@@ -90,7 +90,7 @@ export class ObjectService {
           }
           if (!textured) {
             if (cmd.commandType === 'sign') {
-              this.makeSign(item, cmd.color, cmd.bcolor)
+              this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
             }
             if (cmd.commandType === 'picture') {
               this.makePicture(item, cmd.resource)
@@ -137,7 +137,7 @@ export class ObjectService {
       texturing.subscribe(() => {
         for (const cmd of result.create) {
           if (cmd.commandType === 'sign') {
-            this.makeSign(item, cmd.color, cmd.bcolor)
+            this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
           }
           if (cmd.commandType === 'picture') {
             this.makePicture(item, cmd.resource)
@@ -173,7 +173,10 @@ export class ObjectService {
     })
   }
 
-  makeSign(item: Group, color, bcolor) {
+  makeSign(item: Group, text: string, color: {r: number; g: number; b: number}, bcolor: {r: number; g: number; b: number}) {
+    if (text == null) {
+      text = item.userData.desc != null ? item.userData.desc : ''
+    }
     if (color == null) {
       color = {r: 255, g: 255, b: 255}
     }
@@ -187,15 +190,11 @@ export class ObjectService {
     ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    let txt = ''
-    if (item.userData.desc != null) {
-      txt = item.userData.desc
-    }
 
     const fontSizes = [120, 50, 40, 30, 20, 10, 5]
     let fontIndex = 0
 
-    const words = txt.split(/([ \n])/)
+    const words = text.split(/([ \n])/)
     let lines = ['']
     const maxWidth = canvas.width * 0.9
     const maxHeight = canvas.height * 0.9

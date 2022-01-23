@@ -855,57 +855,49 @@ export class EngineService {
   }
 
   private moveCamera() {
-    let steps = 0
-    if (!this.flyMode) {
-      steps = 3 * this.deltaSinceLastFrame
-      if (this.inputSysSvc.controls[PressedKey.ctrl]) {
-        steps = 9 * this.deltaSinceLastFrame
-      }
-    } else {
-      steps = 12 * this.deltaSinceLastFrame
-      if (this.inputSysSvc.controls[PressedKey.ctrl]) {
-        steps = 30 * this.deltaSinceLastFrame
-      }
+    let movSteps = 12 * this.deltaSinceLastFrame
+    let rotSteps = 1.1 * this.deltaSinceLastFrame
+    if (this.inputSysSvc.controls[PressedKey.ctrl]) {
+      movSteps = this.flyMode ? 72 * this.deltaSinceLastFrame : 24 * this.deltaSinceLastFrame
+      rotSteps *= 2
     }
     if (this.inputSysSvc.controls[PressedKey.up]) {
-      this.playerVelocity.add(new Vector3(this.cameraDirection.x, 0, this.cameraDirection.z).multiplyScalar(steps))
+      this.playerVelocity.add(new Vector3(this.cameraDirection.x, 0, this.cameraDirection.z).multiplyScalar(movSteps))
     }
     if (this.inputSysSvc.controls[PressedKey.down]) {
-      this.playerVelocity.add(new Vector3(-this.cameraDirection.x, 0, -this.cameraDirection.z).multiplyScalar(steps))
+      this.playerVelocity.add(new Vector3(-this.cameraDirection.x, 0, -this.cameraDirection.z).multiplyScalar(movSteps))
     }
     if (this.inputSysSvc.controls[PressedKey.left]) {
       if (this.inputSysSvc.controls[PressedKey.shift]) {
-        this.playerVelocity.add(new Vector3(this.cameraDirection.z, 0, -this.cameraDirection.x).multiplyScalar(steps))
+        this.playerVelocity.add(new Vector3(this.cameraDirection.z, 0, -this.cameraDirection.x).multiplyScalar(movSteps))
       } else {
-        this.player.rotation.y += 0.1 * steps
-        this.player.rotation.y = this.radNormalized(this.player.rotation.y)
+        this.player.rotation.y = this.radNormalized(this.player.rotation.y + rotSteps)
       }
     }
     if (this.inputSysSvc.controls[PressedKey.right]) {
       if (this.inputSysSvc.controls[PressedKey.shift]) {
-        this.playerVelocity.add(new Vector3(-this.cameraDirection.z, 0, this.cameraDirection.x).multiplyScalar(steps))
+        this.playerVelocity.add(new Vector3(-this.cameraDirection.z, 0, this.cameraDirection.x).multiplyScalar(movSteps))
       } else {
-        this.player.rotation.y -= 0.1 * steps
-        this.player.rotation.y = this.radNormalized(this.player.rotation.y)
+        this.player.rotation.y = this.radNormalized(this.player.rotation.y - rotSteps)
       }
     }
     if (this.inputSysSvc.controls[PressedKey.pgUp]) {
       if (this.player.rotation.x < Math.PI / 2) {
-        this.player.rotation.x += 0.1 * steps
+        this.player.rotation.x += rotSteps
       }
     }
     if (this.inputSysSvc.controls[PressedKey.pgDown]) {
       if (this.player.rotation.x > -Math.PI / 2) {
-        this.player.rotation.x -= 0.1 * steps
+        this.player.rotation.x -= rotSteps
       }
     }
     if (this.inputSysSvc.controls[PressedKey.plus]) {
       this.flyMode = true
-      this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(steps))
+      this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(movSteps))
     }
     if (this.inputSysSvc.controls[PressedKey.minus]) {
       this.flyMode = true
-      this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(-steps))
+      this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(-movSteps))
     }
     const damping = Math.exp(-3 * this.deltaSinceLastFrame) - 1
     if (this.playerOnFloor) {
