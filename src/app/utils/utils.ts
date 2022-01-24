@@ -19,4 +19,15 @@ export default class Utils {
     }
     return r
   }
+
+  static modelName(name: string) {
+    if (name.endsWith('.zip')) {
+      name = name.slice(0, -4) + '.rwx'
+    } else {
+      if (!name.endsWith('.rwx')) {
+        name += '.rwx'
+      }
+    }
+    return name
+  }
 }

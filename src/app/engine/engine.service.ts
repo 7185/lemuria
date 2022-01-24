@@ -551,6 +551,10 @@ export class EngineService {
   }
 
   public updateTerrainBVH(terrain: Group) {
+    if (terrain == null) {
+      return
+    }
+
     // Regenerate boundsTree for associated LOD
     const bvhMesh = flattenGroup(terrain)
 
@@ -1025,6 +1029,11 @@ export class EngineService {
       }
     } else {
       this.player.position.copy(newPosition)
+    }
+
+    if (this.player.position.y < -350) {
+      this.playerVelocity.set(0.0, 0.0, 0.0)
+      this.player.position.y = 0
     }
 
     this.localUserPosSub.next(this.player.position)

@@ -123,7 +123,7 @@ export class WorldService {
       this.setAvatar(this.avatarList[avatarId].geometry, user as Group)
     })
 
-    this.avatarListener = this.avatarSub.subscribe((avatarId) => {
+    this.avatarListener = this.avatarSub.subscribe((avatarId: number) => {
       this.setAvatar(this.avatarList[avatarId].geometry)
     })
   }
@@ -143,87 +143,90 @@ export class WorldService {
     if (this.terrain != null) {
       this.engine.removeWorldObject(this.terrain)
     }
+    if (world.terrain) {
+      this.terrain = new Group()
+      this.terrain.name = 'terrain'
+      const terrainMaterials = []
 
-    this.terrain = new Group()
-    this.terrain.name = 'terrain'
-    const terrainMaterials = []
-
-    for (let i = 0; i < 4; i++) {
-      for (let j = 0; j < 64; j++) {
-        const terrainTexture = this.textureLoader.load(`${world.path}/textures/terrain${j}.jpg`)
-        terrainTexture.encoding = sRGBEncoding
-        terrainTexture.wrapS = RepeatWrapping
-        terrainTexture.wrapT = RepeatWrapping
-        terrainTexture.rotation = i * Math.PI / 2
-        terrainTexture.repeat.set(128, 128)
-        terrainMaterials.push(new MeshBasicMaterial({map: terrainTexture}))
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 64; j++) {
+          const terrainTexture = this.textureLoader.load(`${world.path}/textures/terrain${j}.jpg`)
+          terrainTexture.encoding = sRGBEncoding
+          terrainTexture.wrapS = RepeatWrapping
+          terrainTexture.wrapT = RepeatWrapping
+          terrainTexture.rotation = i * Math.PI / 2
+          terrainTexture.repeat.set(128, 128)
+          terrainMaterials.push(new MeshBasicMaterial({map: terrainTexture}))
+        }
       }
-    }
 
-    if (world.elev != null) {
-      for (const d of Object.entries(world.elev)) {
+      if (world.elev != null) {
+        for (const d of Object.entries(world.elev)) {
+          const geometry = new PlaneGeometry(1280, 1280, 128, 128)
+          geometry.rotateX(-Math.PI / 2)
+
+          const positions = new Float32Array(geometry.attributes.position.array)
+          let gap = 0
+          for (let i = 0, j = 0; i < positions.length; i++, j += 3) {
+            if (i % 128 !== 0) {
+              if (d[1][i] != null) {
+                positions[j + 1 + gap * 3] = d[1][i][0] / 100
+              } else {
+                positions[j + 1 + gap * 3] = 0
+              }
+            } else {
+              // skip edge
+              gap++
+            }
+          }
+          geometry.setAttribute('position', new BufferAttribute(positions, 3))
+
+          let changeTexture = 0
+          let currTexture = 0
+          for (let k = 0; k < 128 * 128; k++) {
+            if (d[1][k] != null) {
+              if (d[1][k][1] !== currTexture) {
+                geometry.addGroup(changeTexture, k * 6 - changeTexture, currTexture)
+                changeTexture = k * 6
+                currTexture = d[1][k][1]
+              }
+            } else {
+              if (currTexture !== 0) {
+                geometry.addGroup(changeTexture, k * 6 - changeTexture, currTexture)
+                changeTexture = k * 6
+                currTexture = 0
+              }
+            }
+          }
+
+          geometry.addGroup(changeTexture, geometry.getIndex().count, currTexture)
+
+          const terrainMesh = new Mesh(geometry, terrainMaterials)
+          const pos = d[0].split('_').map(p => parseInt(p, 10))
+          // move terrain by 1E (-10x)
+          terrainMesh.position.set(pos[0] * 10 - 10, 0, pos[1] * 10)
+          this.terrain.add(terrainMesh)
+        }
+      } else {
         const geometry = new PlaneGeometry(1280, 1280, 128, 128)
         geometry.rotateX(-Math.PI / 2)
-
-        const positions = new Float32Array(geometry.attributes.position.array)
-        let gap = 0
-        for (let i = 0, j = 0; i < positions.length; i++, j += 3) {
-          if (i % 128 !== 0) {
-            if (d[1][i] != null) {
-              positions[j + 1 + gap * 3] = d[1][i][0] / 100
-            } else {
-              positions[j + 1 + gap * 3] = 0
-            }
-          } else {
-            // skip edge
-            gap++
-          }
-        }
-        geometry.setAttribute('position', new BufferAttribute(positions, 3))
-
-        let changeTexture = 0
-        let currTexture = 0
-        for (let k = 0; k < 128 * 128; k++) {
-          if (d[1][k] != null) {
-            if (d[1][k][1] !== currTexture) {
-              geometry.addGroup(changeTexture, k * 6 - changeTexture, currTexture)
-              changeTexture = k * 6
-              currTexture = d[1][k][1]
-            }
-          } else {
-            if (currTexture !== 0) {
-              geometry.addGroup(changeTexture, k * 6 - changeTexture, currTexture)
-              changeTexture = k * 6
-              currTexture = 0
-            }
-          }
-        }
-
-        geometry.addGroup(changeTexture, geometry.getIndex().count, currTexture)
-
+        geometry.addGroup(0, geometry.getIndex().count, 0)
         const terrainMesh = new Mesh(geometry, terrainMaterials)
-        const pos = d[0].split('_').map(p => parseInt(p, 10))
-        // move terrain by 1E (-10x)
-        terrainMesh.position.set(pos[0] * 10 - 10, 0, pos[1] * 10)
         this.terrain.add(terrainMesh)
       }
     } else {
-      const geometry = new PlaneGeometry(1280, 1280, 128, 128)
-      geometry.rotateX(-Math.PI / 2)
-      geometry.addGroup(0, geometry.getIndex().count, 0)
-      const terrainMesh = new Mesh(geometry, terrainMaterials)
-      this.terrain.add(terrainMesh)
+      this.terrain = null
     }
-    this.engine.addWorldObject(this.terrain)
-    this.terrain.updateMatrixWorld()
+    if (this.terrain != null) {
+      this.engine.addWorldObject(this.terrain)
+      this.terrain.updateMatrixWorld()
+    }
     this.engine.updateTerrainBVH(this.terrain)
   }
 
 
   public async loadItem(item: string, pos: Vector3, rot: Vector3, date = 0, desc = null, act = null): Promise<Object3D> {
-    if (!item.endsWith('.rwx')) {
-      item += '.rwx'
-    }
+    item = Utils.modelName(item)
     const o = await this.objSvc.loadObject(item)
     const g = o.clone()
     g.name = item
@@ -251,9 +254,7 @@ export class WorldService {
   }
 
   setAvatar(name: string, group: Group = this.avatar) {
-    if (!name.endsWith('.rwx')) {
-      name += '.rwx'
-    }
+    name = Utils.modelName(name)
     this.objSvc.loadObject(name).then((o) => {
       this.engine.disposeMaterial(group)
       group.clear()
@@ -320,9 +321,7 @@ export class WorldService {
     skyboxGroup.add(oct)
 
     if (world.skybox) {
-      if (!world.skybox.endsWith('.rwx')) {
-        world.skybox += '.rwx'
-      }
+      world.skybox = Utils.modelName(world.skybox)
       this.objSvc.loadObject(world.skybox, true).then(s => {
         const skybox = s.clone()
         const box = new Box3()
@@ -342,6 +341,7 @@ export class WorldService {
       // Trigger list update to create users
       this.userSvc.listChanged.next(this.userSvc.userList)
     })
+
     this.initTerrain(world)
 
     this.resetChunks()
@@ -416,7 +416,6 @@ export class WorldService {
             continue
           }
 
-          console.log('Add chunk %d, %d', chunk.x, chunk.z)
           newLODs.push(lod)
 
         }
@@ -529,10 +528,7 @@ export class WorldService {
 
   private addUser(u: User) {
     if (u.name !== this.userSvc.currentName) {
-      let avatar = this.avatarList[u.avatar].geometry || 'michel'
-      if (!avatar.endsWith('.rwx')) {
-        avatar += '.rwx'
-      }
+      const avatar = Utils.modelName(this.avatarList[u.avatar].geometry || 'michel')
       const group = new Group()
       group.name = u.id
       group.position.x = u.x

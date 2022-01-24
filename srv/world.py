@@ -17,6 +17,7 @@ class World:
                            "south": [0, 0, 0], "west": [0, 0, 0], "bottom": [0, 0, 0]}
         self._entry = '0N 0W'
         self._objects = None
+        self._terrain = False
         self._elev = None
 
     async def _resolve(self):
@@ -41,6 +42,9 @@ class World:
                 if 'entry' in world_data:
                     self._entry = world_data['entry'] or '0N 0W'
 
+                if 'enable_terrain' in world_data:
+                    self._terrain = world_data['enable_terrain']
+
                 try:
                     self._elev = await self.elev_dump()
                 except FileNotFoundError:
@@ -64,6 +68,7 @@ class World:
             'sky_color': self._sky_color,
             'skybox': self._skybox,
             'entry': self._entry,
+            'terrain': self._terrain,
             'elev': self._elev
         }
 

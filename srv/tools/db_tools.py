@@ -15,6 +15,8 @@ world_attr = {
     3: 'path',
     25: 'welcome',
     61: 'skybox',
+    64: 'keywords',
+    65: 'enable_terrain',
     69: 'entry',
     70: 'sky_color_top_r',
     71: 'sky_color_top_g',
@@ -120,8 +122,11 @@ async def import_world(attr_file, prop_file):
                 if (split[2] not in attr_dict['sky_color']):
                     attr_dict['sky_color'][split[2]] = [0, 0, 0]
                 attr_dict['sky_color'][split[2]]['rgb'.index(split[3])] = int(entry[1])
+            elif world_attr[entry[0]] in ['enable_terrain']:
+                attr_dict[world_attr[entry[0]]] = True if entry[1] == 'Y' else False
             else:
                 attr_dict[world_attr[entry[0]]] = entry[1]
+        
 
     w_query = f"select id from world where lower(name) = '{attr_dict['name'].lower()}'"
     data = await engine.fetch_one(w_query)
