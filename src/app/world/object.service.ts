@@ -61,7 +61,7 @@ export class ObjectService {
   public execActions(item: Group) {
     let textured = false
     let texturing = null
-    const result = this.actionParser.parse(item.userData.act)
+    const result = this.actionParser.parse(item.userData.act.toLowerCase())
     if (result.create != null) {
       for (const cmd of result.create) {
         if (cmd.commandType === 'texture' || cmd.commandType === 'color') {
