@@ -456,6 +456,13 @@ export class EngineService {
         fromEvent(window, 'DOMContentLoaded').subscribe(() => this.render())
       }
       fromEvent(window, 'resize').subscribe(() => this.resize())
+      fromEvent(window, 'visibilitychange').subscribe(() => {
+        if (document.visibilityState === 'visible') {
+          this.clock.start()
+        } else {
+          this.clock.stop()
+        }
+      })
       fromEvent(this.canvas, 'contextmenu').subscribe((e: MouseEvent) => this.rightClick(e))
       fromEvent(this.canvas, 'mousemove').subscribe((e: MouseEvent) => {
         this.mouseIdle = 0
