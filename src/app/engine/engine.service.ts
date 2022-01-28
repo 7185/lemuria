@@ -972,9 +972,8 @@ export class EngineService {
       }
 
       terrain?.userData.boundsTree?.shapecast (
-        terrain,
         {
-          intersectsBounds: box => box.intersectsBox(this.playerCollider.mainBox),
+          intersectsBounds: (box: Box3) => box.intersectsBox(this.playerCollider.mainBox),
           intersectsTriangle
         }
       )
@@ -985,9 +984,8 @@ export class EngineService {
         this.playerCollider.translate(lodOffset.negate())
 
         lod.userData.boundsTree?.shapecast (
-          (lod as any),
           {
-            intersectsBounds: box => box.intersectsBox(this.playerCollider.mainBox),
+            intersectsBounds: (box: Box3) => box.intersectsBox(this.playerCollider.mainBox),
             intersectsTriangle
           }
         )

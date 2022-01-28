@@ -173,17 +173,15 @@ export class ObjectService {
     })
   }
 
-  makeSign(item: Group, text: string, color: {r: number; g: number; b: number}, bcolor: {r: number; g: number; b: number}) {
-    if (text == null) {
-      text = item.userData.desc != null ? item.userData.desc : ''
-    }
-    if (color == null) {
-      color = {r: 255, g: 255, b: 255}
-    }
-    if (bcolor == null) {
-      bcolor = {r: 0, g: 0, b: 255}
-    }
+  textCanvas(text: string, ratio = 1, color: {r: number; g: number; b: number}, bcolor: {r: number; g: number; b: number}) {
     const canvas = document.createElement('canvas')
+    if (ratio > 1.0) {
+      canvas.width = 256
+      canvas.height = 256 / ratio
+    } else {
+      canvas.width = 256 * ratio
+      canvas.height = 256
+    }
     const ctx = canvas.getContext('2d')
     ctx.fillStyle = `rgb(${bcolor.r},${bcolor.g},${bcolor.b})`
     ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -196,8 +194,8 @@ export class ObjectService {
 
     const words = text.split(/([ \n])/)
     let lines = ['']
-    const maxWidth = canvas.width * 0.9
-    const maxHeight = canvas.height * 0.9
+    const maxWidth = canvas.width * 0.95
+    const maxHeight = canvas.height * 0.95
 
     ctx.font = `${fontSizes[fontIndex]}px Arial`
 
@@ -252,6 +250,20 @@ export class ObjectService {
       ctx.fillText(line, canvas.width / 2, canvas.height / 2 + i * lineHeight - (lines.length - 1) * lineHeight / 2)
     })
 
+    return canvas
+  }
+
+  makeSign(item: Group, text: string, color: {r: number; g: number; b: number}, bcolor: {r: number; g: number; b: number}) {
+    if (text == null) {
+      text = item.userData.desc != null ? item.userData.desc : ''
+    }
+    if (color == null) {
+      color = {r: 255, g: 255, b: 255}
+    }
+    if (bcolor == null) {
+      bcolor = {r: 0, g: 0, b: 255}
+    }
+
     item.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         const newMaterials = []
@@ -260,7 +272,7 @@ export class ObjectService {
           for (const i of item.userData.taggedMaterials[100]) {
             newMaterials[i] = child.material[i].clone()
             newMaterials[i].color = new Color(1, 1, 1)
-            newMaterials[i].map = new CanvasTexture(canvas)
+            newMaterials[i].map = new CanvasTexture(this.textCanvas(text, newMaterials[i].userData.ratio, color, bcolor))
             newMaterials[i].map.encoding = sRGBEncoding
           }
         }
