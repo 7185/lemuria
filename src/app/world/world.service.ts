@@ -392,6 +392,7 @@ export class WorldService {
   // this method is method to be called on each frame to update the state of chunks if needed
   public autoUpdateChunks(pos: Vector3) {
     const [chunkX, chunkZ] = this.getChunkTile(pos)
+    this.engine.setChunkTile(chunkX, chunkZ)
 
     if (!this.hasChunkChanged(chunkX, chunkZ)) {
       return
@@ -405,22 +406,7 @@ export class WorldService {
     from(this.chunkLoadingLayout)
       .pipe(concatMap(val => this.loadChunk(chunkX + val[0], chunkZ + val[1])),
       finalize(() => {
-        const newLODs: LOD[] = []
-
-        for (const lod of this.engine.getLODs()) {
-          const chunk = lod.userData.world.chunk
-
-          if (chunk.x < chunkX - 1 || chunk.x > chunkX + 1 ||
-              chunk.z < chunkZ - 1 || chunk.z > chunkZ + 1) {
-            // This is not a nearby chunk, skip it
-            continue
-          }
-
-          newLODs.push(lod)
-
-        }
-
-        this.engine.currentLODs = newLODs
+        this.engine.updateNearbyLODsList()
       }))
       .subscribe({
         next: (chunk: LOD) => { this.engine.addChunk(chunk) },
