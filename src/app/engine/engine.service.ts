@@ -1218,9 +1218,9 @@ export class EngineService {
           user.position.y += user.userData.offsetY
         }
         user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
-        user.rotation.x = u.oldRoll + (u.roll - u.oldRoll) * u.completion
-        user.rotation.y = u.oldYaw + (u.yaw - u.oldYaw) * u.completion + Math.PI
-        user.rotation.z = u.oldPitch + (u.pitch - u.oldPitch) * u.completion
+        user.rotation.x = u.oldRoll + this.shortestAngle(u.oldRoll, u.roll) * u.completion
+        user.rotation.y = u.oldYaw + Math.PI + this.shortestAngle(u.oldYaw, u.yaw) * u.completion
+        user.rotation.z = u.oldPitch + this.shortestAngle(u.oldPitch, u.pitch) * u.completion
       }
     }
   }
@@ -1254,5 +1254,20 @@ export class EngineService {
       value += 2 * Math.PI
     }
     return value
+  }
+
+  private shortestAngle(oldValue: number, newValue: number): number {
+    // Work within [0, 2*PI] instead of [-Pi, Pi] for the original values
+    let diff = newValue - oldValue + Math.PI
+
+    // /!\ Careful there: the modulo ( % ) operator doesn't change anything on negative values,
+    //     so even the difference itself needs to fit into [0, 2*PI]
+    if (diff < 0) {
+      diff += 2 * Math.PI
+    }
+
+    // The final result still needs to be expressed within [-Pi, Pi],
+    // so we translate the result back into it.
+    return (diff % (2 * Math.PI)) - Math.PI
   }
 }
