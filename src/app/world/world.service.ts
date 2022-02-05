@@ -1,6 +1,6 @@
 import {Subject, Observable, throwError, from, of} from 'rxjs'
 import type {Subscription} from 'rxjs'
-import {mergeMap, concatMap, bufferCount, catchError, finalize} from 'rxjs/operators'
+import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
 import {UserService} from './../user/user.service'
 import type {User} from './../user/user.model'
 import {EngineService, DEG} from './../engine/engine.service'
@@ -404,10 +404,7 @@ export class WorldService {
     // in subscribe() (note that if the chunk has already been loaded, it won't reach the operator).
     // We also tag the chunk as not being loaded if any error were to happen (like a failed http request)
     from(this.chunkLoadingLayout)
-      .pipe(concatMap(val => this.loadChunk(chunkX + val[0], chunkZ + val[1])),
-      finalize(() => {
-        this.engine.updateNearbyLODsList()
-      }))
+      .pipe(concatMap(val => this.loadChunk(chunkX + val[0], chunkZ + val[1])))
       .subscribe({
         next: (chunk: LOD) => { this.engine.addChunk(chunk) },
         error: (val: any) => {
@@ -476,6 +473,7 @@ export class WorldService {
             lod.position.set(chunkPos.x, 0, chunkPos.z)
             lod.autoUpdate = false
             lod.updateMatrix()
+            chunkGroup.parent.visible = false
             this.engine.updateChunkBVH(chunkGroup)
 
             return of(lod)

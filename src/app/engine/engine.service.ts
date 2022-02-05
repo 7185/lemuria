@@ -28,6 +28,14 @@ const playerClimbHeight = config.world.collider.climbHeight
 const playerGroundAdjust = config.world.collider.groundAdjust
 const playerMaxStepLength = config.world.collider.maxStepLength
 const playerMaxNbSteps = config.world.collider.maxNbSteps
+const chunkIndexStep = 100000
+
+// This defines which chunks (offset from the current chunk we sit in) we will
+// query for collisions for each player movement step
+const nearestChunkPattern =
+  [{x: -1, z: -1}, {x: -1, z: 0}, {x: -1, z: 1},
+   {x: 0, z: -1}, {x: 0, z: 0}, {x: 0, z: 1},
+   {x: 1, z: -1}, {x: 1, z: 0}, {x: 1, z: 1}]
 
 class PlayerCollider {
   public boxHeight: number
@@ -100,7 +108,7 @@ export class EngineService {
   public compassSub: Subject<any> = new Subject()
   public selectedObject: Group
   public selectedObjectSub = new BehaviorSubject<any>({})
-  private nearbyLODsList: LOD[] = []
+  private chunkMap = new Map<number, LOD>()
   private compass = new Spherical()
   private canvas: HTMLCanvasElement
   private labelZone: HTMLDivElement
@@ -367,6 +375,8 @@ export class EngineService {
       this.handleSpecialObject(child as Group)
     }
 
+    this.chunkMap.set(chunk.userData.world.chunk.x * chunkIndexStep + chunk.userData.world.chunk.z, chunk)
+
     chunk.updateMatrix()
   }
 
@@ -568,7 +578,12 @@ export class EngineService {
     if (bvhMesh.geometry.getIndex().array.length === 0) {
       chunk.parent.userData.boundsTree = null
     } else {
-      chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {lazyGeneration: false})
+      chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
+        lazyGeneration: false,
+        onProgress: progress => {
+          if (progress === 1.0) { chunk.parent.visible = true }
+        }
+      })
     }
   }
 
@@ -609,24 +624,20 @@ export class EngineService {
     this.chunkTile = [chunkX, chunkZ]
   }
 
-  public updateNearbyLODsList() {
-    const newLODs: LOD[] = []
+  public resetChunkMap() {
+    this.chunkMap = new Map<number, LOD>()
+  }
 
-    for (const lod of this.getLODs()) {
-      const chunk = lod.userData.world.chunk
-
-      const [chunkX, chunkZ] = this.chunkTile
-
-      if (chunk.x < chunkX - 1 || chunk.x > chunkX + 1 ||
-        chunk.z < chunkZ - 1 || chunk.z > chunkZ + 1) {
-        // This is not a nearby chunk, skip it
-        continue
+  public getNearestChunks() {
+    const lods = []
+    nearestChunkPattern.forEach(offset => {
+      const lod = this.chunkMap.get((this.chunkTile[0] + offset.x)  * chunkIndexStep + this.chunkTile[1] + offset.z)
+      if (lod !== undefined) {
+        lods.push(lod)
       }
+    })
 
-      newLODs.push(lod)
-    }
-
-    this.nearbyLODsList = newLODs
+    return lods
   }
 
   private handleSpecialObject(group: Group) {
@@ -957,13 +968,9 @@ export class EngineService {
       }
     )
 
-    // We expect 9 LODs to be available before testing collision: the one the player
+    // We expect maximum 9 LODs to be available to test collision: the one the player
     // stands in and the 8 neighbouring ones (sides and corners)
-    if (this.nearbyLODsList.length !== 9) {
-      this.updateNearbyLODsList()
-    }
-
-    for (const lod of this.nearbyLODsList) {
+    for (const lod of this.getNearestChunks()) {
       const lodOffset = lod.position
       this.playerCollider.translate(lodOffset.negate())
 
