@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core'
 import {fromEvent} from 'rxjs'
-import {tap} from 'rxjs/operators'
+import {filter, tap} from 'rxjs/operators'
 
 export const enum PressedKey { nop = 0, moveFwd, moveBck, turnLft, turnRgt, moveLft, moveRgt, moveUp, moveDwn, lookUp, lookDwn,
    run, clip, side, jmp, cpy, del, esc, len }
@@ -10,18 +10,16 @@ export class InputSystemService {
 
   public controls: boolean[] = Array(PressedKey.len).fill(false)
   public keyUpEvent = fromEvent(window, 'keyup').pipe(
+    filter((e: KeyboardEvent) => ['INPUT', 'TEXTAREA'].indexOf((e.target as HTMLElement).nodeName) === -1),
     tap((e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).nodeName === 'BODY') {
-        this.handleKeys(e.code, false)
-        e.preventDefault()
-      }
+      this.handleKeys(e.code, false)
+      e.preventDefault()
     }))
   public keyDownEvent = fromEvent(window, 'keydown').pipe(
+    filter((e: KeyboardEvent) => ['INPUT', 'TEXTAREA'].indexOf((e.target as HTMLElement).nodeName) === -1),
     tap((e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).nodeName === 'BODY') {
-        this.handleKeys(e.code, true)
-        e.preventDefault()
-      }
+      this.handleKeys(e.code, true)
+      e.preventDefault()
     }))
 
   private readonly defaultKeymap = new Map([

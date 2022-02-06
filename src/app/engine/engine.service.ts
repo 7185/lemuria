@@ -162,8 +162,10 @@ export class EngineService {
   private keyActionMap = new Map([
     [PressedKey.moveFwd, ObjectAct.forward],
     [PressedKey.turnRgt, ObjectAct.right],
+    [PressedKey.moveRgt, ObjectAct.right],
     [PressedKey.moveBck, ObjectAct.backward],
     [PressedKey.turnLft, ObjectAct.left],
+    [PressedKey.moveLft, ObjectAct.left],
     [PressedKey.lookUp, ObjectAct.rotY],
     [PressedKey.lookDwn, ObjectAct.rotnY],
     [PressedKey.moveUp, ObjectAct.up],
@@ -1097,6 +1099,12 @@ export class EngineService {
         this.player.rotation.y = this.radNormalized(this.player.rotation.y - rotSteps)
       }
     }
+    if (this.inputSysSvc.controls[PressedKey.moveLft]) {
+      this.playerVelocity.add(new Vector3(this.cameraDirection.z, 0, -this.cameraDirection.x).multiplyScalar(movSteps))
+    }
+    if (this.inputSysSvc.controls[PressedKey.moveRgt]) {
+      this.playerVelocity.add(new Vector3(-this.cameraDirection.z, 0, this.cameraDirection.x).multiplyScalar(movSteps))
+    }
     if (this.inputSysSvc.controls[PressedKey.lookUp]) {
       if (this.player.rotation.x < Math.PI / 2) {
         this.player.rotation.x += rotSteps
@@ -1114,6 +1122,9 @@ export class EngineService {
     if (this.inputSysSvc.controls[PressedKey.moveDwn]) {
       this.flyMode = true
       this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(-movSteps))
+    }
+    if (this.inputSysSvc.controls[PressedKey.jmp] && this.playerOnFloor) {
+      this.player.position.setY(this.player.position.y + playerClimbHeight)
     }
     const damping = Math.exp(-3 * this.deltaSinceLastFrame) - 1
     if (this.playerOnFloor) {

@@ -1,7 +1,7 @@
 import {InputSystemService, PressedKey} from './../../engine/inputsystem.service'
 import type {OnInit} from '@angular/core'
 import {Component, EventEmitter, Output} from '@angular/core'
-import type {Subscription} from 'rxjs'
+import {Subject, takeUntil} from 'rxjs'
 import {take, timeout} from 'rxjs'
 
 @Component({
@@ -33,26 +33,44 @@ export class UiControlsComponent implements OnInit {
 
   public activeKey = [null, null]
 
-  private waitForKey: Subscription
+  private cancel: Subject<boolean>
+  private oldKey: string
 
   constructor(private input: InputSystemService) {}
 
   setKey(key: number, pos: number) {
-    this.activeKey = [key, pos]
-    const oldKey = this.controlsKeymap[key][pos]
-    this.controlsKeymap[key][pos] = 'Press key...'
-    if (this.waitForKey) {
-      this.waitForKey.unsubscribe()
+    if (this.cancel != null) {
+      // Mapping already in progress, cancel it
+      this.controlsKeymap[this.activeKey[0]][this.activeKey[1]] = this.oldKey
+      this.activeKey = [null, null]
+      this.cancel.next(true)
+      this.cancel.complete()
     }
-    this.waitForKey = this.input.keyDownEvent.pipe(
+    this.activeKey = [key, pos]
+    this.oldKey = this.controlsKeymap[key][pos]
+    this.controlsKeymap[key][pos] = 'Press key...'
+    this.cancel = new Subject()
+    this.input.keyDownEvent.pipe(
+      takeUntil(this.cancel),
       take(1),
       timeout(5000)
     ).subscribe({
-      next: (e: KeyboardEvent) => this.controlsKeymap[key][pos] = e.code,
-      error: () => this.controlsKeymap[key][pos] = oldKey,
-      complete: () => {
-        this.activeKey = [null, null]
+      next: (e: KeyboardEvent) => {
+        this.controlsKeymap[key][pos] = e.code
         this.setKeymap()
+        this.activeKey = [null, null]
+        if (this.cancel != null) {
+          this.cancel.complete()
+          this.cancel = null
+        }
+      },
+      error: () => {
+        this.controlsKeymap[key][pos] = this.oldKey
+        this.activeKey = [null, null]
+        if (this.cancel != null) {
+          this.cancel.complete()
+          this.cancel = null
+        }
       }
     })
   }
