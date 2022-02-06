@@ -160,20 +160,20 @@ export class EngineService {
   private chunkTile = [0, 0]
 
   private keyActionMap = new Map([
-    [PressedKey.up, ObjectAct.forward],
-    [PressedKey.right, ObjectAct.right],
-    [PressedKey.down, ObjectAct.backward],
-    [PressedKey.left, ObjectAct.left],
-    [PressedKey.pgUp, ObjectAct.rotY],
-    [PressedKey.pgDown, ObjectAct.rotnY],
-    [PressedKey.plus, ObjectAct.up],
-    [PressedKey.minus, ObjectAct.down],
-    [PressedKey.divide, ObjectAct.rotX],
-    [PressedKey.multiply, ObjectAct.rotnX],
-    [PressedKey.home, ObjectAct.rotZ],
-    [PressedKey.end, ObjectAct.rotnZ],
+    [PressedKey.moveFwd, ObjectAct.forward],
+    [PressedKey.turnRgt, ObjectAct.right],
+    [PressedKey.moveBck, ObjectAct.backward],
+    [PressedKey.turnLft, ObjectAct.left],
+    [PressedKey.lookUp, ObjectAct.rotY],
+    [PressedKey.lookDwn, ObjectAct.rotnY],
+    [PressedKey.moveUp, ObjectAct.up],
+    [PressedKey.moveDwn, ObjectAct.down],
+   // [PressedKey.divide, ObjectAct.rotX],
+   // [PressedKey.multiply, ObjectAct.rotnX],
+   // [PressedKey.home, ObjectAct.rotZ],
+   // [PressedKey.end, ObjectAct.rotnZ],
     [PressedKey.esc, ObjectAct.deselect],
-    [PressedKey.ins, ObjectAct.copy],
+    [PressedKey.cpy, ObjectAct.copy],
     [PressedKey.del, ObjectAct.delete]
   ])
 
@@ -505,7 +505,7 @@ export class EngineService {
         this.labelDesc.style.display = 'none'
         this.hoveredObject = null
         if (this.buildMode) {
-          const act = this.keyActionMap.get(k) || ObjectAct.nop
+          const act = this.keyActionMap.get(this.inputSysSvc.getKey(k.code)) || ObjectAct.nop
           this.objSvc.objectAction.next(act)
         }
       })
@@ -797,10 +797,10 @@ export class EngineService {
     const allowRotation = this.selectedObject.userData.rwx?.axisAlignment === 'none'
     let moveStep = 0.5
     let rotStep = Math.PI / 12
-    if (this.inputSysSvc.controls[PressedKey.shift]) {
+    if (this.inputSysSvc.controls[PressedKey.clip]) {
       moveStep = 0.05
       rotStep = Math.PI / 120
-      if (this.inputSysSvc.controls[PressedKey.ctrl]) {
+      if (this.inputSysSvc.controls[PressedKey.run]) {
         moveStep = 0.01
         rotStep = Math.PI / 180
       }
@@ -1037,7 +1037,7 @@ export class EngineService {
     const oldPosition = this.player.position.clone()
     const newPosition = oldPosition.clone().add(deltaPosition)
 
-    if (!this.inputSysSvc.controls[PressedKey.shift] && this.playerCollider) {
+    if (!this.inputSysSvc.controls[PressedKey.clip] && this.playerCollider) {
 
       let deltaLength = deltaPosition.length()
 
@@ -1073,45 +1073,45 @@ export class EngineService {
   private moveCamera() {
     let movSteps = 12 * this.deltaSinceLastFrame
     let rotSteps = 1.1 * this.deltaSinceLastFrame
-    if (this.inputSysSvc.controls[PressedKey.ctrl]) {
+    if (this.inputSysSvc.controls[PressedKey.run]) {
       movSteps = this.flyMode ? 72 * this.deltaSinceLastFrame : 24 * this.deltaSinceLastFrame
       rotSteps *= 2
     }
-    if (this.inputSysSvc.controls[PressedKey.up]) {
+    if (this.inputSysSvc.controls[PressedKey.moveFwd]) {
       this.playerVelocity.add(new Vector3(this.cameraDirection.x, 0, this.cameraDirection.z).multiplyScalar(movSteps))
     }
-    if (this.inputSysSvc.controls[PressedKey.down]) {
+    if (this.inputSysSvc.controls[PressedKey.moveBck]) {
       this.playerVelocity.add(new Vector3(-this.cameraDirection.x, 0, -this.cameraDirection.z).multiplyScalar(movSteps))
     }
-    if (this.inputSysSvc.controls[PressedKey.left]) {
-      if (this.inputSysSvc.controls[PressedKey.shift]) {
+    if (this.inputSysSvc.controls[PressedKey.turnLft]) {
+      if (this.inputSysSvc.controls[PressedKey.clip]) {
         this.playerVelocity.add(new Vector3(this.cameraDirection.z, 0, -this.cameraDirection.x).multiplyScalar(movSteps))
       } else {
         this.player.rotation.y = this.radNormalized(this.player.rotation.y + rotSteps)
       }
     }
-    if (this.inputSysSvc.controls[PressedKey.right]) {
-      if (this.inputSysSvc.controls[PressedKey.shift]) {
+    if (this.inputSysSvc.controls[PressedKey.turnRgt]) {
+      if (this.inputSysSvc.controls[PressedKey.clip]) {
         this.playerVelocity.add(new Vector3(-this.cameraDirection.z, 0, this.cameraDirection.x).multiplyScalar(movSteps))
       } else {
         this.player.rotation.y = this.radNormalized(this.player.rotation.y - rotSteps)
       }
     }
-    if (this.inputSysSvc.controls[PressedKey.pgUp]) {
+    if (this.inputSysSvc.controls[PressedKey.lookUp]) {
       if (this.player.rotation.x < Math.PI / 2) {
         this.player.rotation.x += rotSteps
       }
     }
-    if (this.inputSysSvc.controls[PressedKey.pgDown]) {
+    if (this.inputSysSvc.controls[PressedKey.lookDwn]) {
       if (this.player.rotation.x > -Math.PI / 2) {
         this.player.rotation.x -= rotSteps
       }
     }
-    if (this.inputSysSvc.controls[PressedKey.plus]) {
+    if (this.inputSysSvc.controls[PressedKey.moveUp]) {
       this.flyMode = true
       this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(movSteps))
     }
-    if (this.inputSysSvc.controls[PressedKey.minus]) {
+    if (this.inputSysSvc.controls[PressedKey.moveDwn]) {
       this.flyMode = true
       this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(-movSteps))
     }
@@ -1119,7 +1119,7 @@ export class EngineService {
     if (this.playerOnFloor) {
       this.playerVelocity.addScaledVector(this.playerVelocity, damping)
     } else {
-      if (!this.flyMode && !this.inputSysSvc.controls[PressedKey.shift]) {
+      if (!this.flyMode && !this.inputSysSvc.controls[PressedKey.clip]) {
         this.playerVelocity.y -= 30 * this.deltaSinceLastFrame
       } else {
         this.playerVelocity.addScaledVector(this.playerVelocity, damping)

@@ -1,54 +1,82 @@
 import {Injectable} from '@angular/core'
 import {fromEvent} from 'rxjs'
-import {map} from 'rxjs/operators'
+import {tap} from 'rxjs/operators'
 
-export const enum PressedKey { up = 0, right, down, left, pgUp, pgDown, plus, minus, divide, multiply,
-   home, end, ctrl, shift, esc, ins, del, len }
+export const enum PressedKey { nop = 0, moveFwd, moveBck, turnLft, turnRgt, moveLft, moveRgt, moveUp, moveDwn, lookUp, lookDwn,
+   run, clip, side, jmp, cpy, del, esc, len }
 
 @Injectable({providedIn: 'root'})
 export class InputSystemService {
 
   public controls: boolean[] = Array(PressedKey.len).fill(false)
   public keyUpEvent = fromEvent(window, 'keyup').pipe(
-    map((e: KeyboardEvent) => {
+    tap((e: KeyboardEvent) => {
       if ((e.target as HTMLElement).nodeName === 'BODY') {
         this.handleKeys(e.code, false)
         e.preventDefault()
       }
-      return this.keyMap.get(e.code)
     }))
   public keyDownEvent = fromEvent(window, 'keydown').pipe(
-    map((e: KeyboardEvent) => {
+    tap((e: KeyboardEvent) => {
       if ((e.target as HTMLElement).nodeName === 'BODY') {
         this.handleKeys(e.code, true)
         e.preventDefault()
       }
-      return this.keyMap.get(e.code)
     }))
 
-  private keyMap = new Map([
-    ['ArrowUp', PressedKey.up],
-    ['ArrowDown', PressedKey.down],
-    ['ArrowLeft', PressedKey.left],
-    ['ArrowRight', PressedKey.right],
-    ['PageUp', PressedKey.pgUp],
-    ['PageDown', PressedKey.pgDown],
-    ['NumpadAdd', PressedKey.plus],
-    ['NumpadSubtract', PressedKey.minus],
-    ['NumpadDivide', PressedKey.divide],
-    ['NumpadMultiply', PressedKey.multiply],
-    ['Home', PressedKey.home],
-    ['End', PressedKey.end],
-    ['ControlLeft', PressedKey.ctrl],
-    ['ControlRight', PressedKey.ctrl],
-    ['ShiftLeft', PressedKey.shift],
-    ['ShiftRight', PressedKey.shift],
+  private readonly defaultKeymap = new Map([
+    ['ArrowUp', PressedKey.moveFwd],
+    ['KeyW', PressedKey.moveFwd],
+    ['ArrowDown', PressedKey.moveBck],
+    ['KeyS', PressedKey.moveBck],
+    ['ArrowLeft', PressedKey.turnLft],
+    ['KeyQ', PressedKey.turnLft],
+    ['ArrowRight', PressedKey.turnRgt],
+    ['KeyE', PressedKey.turnRgt],
+    ['KeyA', PressedKey.moveLft],
+    ['KeyD', PressedKey.moveRgt],
+    ['PageUp', PressedKey.lookUp],
+    ['PageDown', PressedKey.lookDwn],
+    ['NumpadAdd', PressedKey.moveUp],
+    ['NumpadSubtract', PressedKey.moveDwn],
+    //['NumpadDivide', PressedKey.divide],
+    //['NumpadMultiply', PressedKey.multiply],
+    //['Home', PressedKey.home],
+    //['End', PressedKey.end],
+    ['ShiftLeft', PressedKey.clip],
+    ['ShiftRight', PressedKey.clip],
+    ['ControlLeft', PressedKey.run],
+    ['ControlRight', PressedKey.run],
+    ['Numpad0', PressedKey.jmp],
+    ['Space', PressedKey.jmp],
     ['Escape', PressedKey.esc],
-    ['Insert', PressedKey.ins],
-    ['Delete', PressedKey.del]
+    ['Insert', PressedKey.cpy],
+    ['Delete', PressedKey.del],
   ])
 
+  private keyMap = new Map(this.defaultKeymap)
+
   constructor() {
+  }
+
+  public clearKeys() {
+    this.keyMap.clear()
+  }
+
+  public getKeyMap() {
+    return this.keyMap
+  }
+
+  public getKey(k: string) {
+    return this.keyMap.get(k)
+  }
+
+  public setDefault() {
+    this.keyMap = new Map(this.defaultKeymap)
+  }
+
+  public mapKey(k: string, value: PressedKey) {
+    this.keyMap.set(k, value)
   }
 
   public handleKeys(k: string, value: boolean) {

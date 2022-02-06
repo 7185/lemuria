@@ -6,6 +6,7 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms'
 import {HttpClientModule} from '@angular/common/http'
 import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {BsDropdownModule} from 'ngx-bootstrap/dropdown'
+import {BsModalService} from 'ngx-bootstrap/modal'
 import {VirtualScrollerModule} from 'ngx-virtual-scroller'
 import {AppComponent} from './app.component'
 import {LogoComponent} from './logo/logo.component'
@@ -13,6 +14,8 @@ import {EngineComponent} from './engine/engine.component'
 import {UiToolbarComponent} from './ui/ui-toolbar/ui-toolbar.component'
 import {UiChatZoneComponent} from './ui/ui-chat-zone/ui-chat-zone.component'
 import {UiBuilderZoneComponent} from './ui/ui-builder-zone/ui-builder-zone.component'
+import {UiControlsComponent} from './ui/ui-controls/ui-controls.component'
+import {UiSettingsComponent} from './ui/ui-settings/ui-settings.component'
 import {AppRoutingModule, routingComponents} from './app-routing.module'
 import {LinkifyPipe} from './utils/linkify.pipe'
 
@@ -28,10 +31,12 @@ import {
   faCheck,
   faCircleNotch,
   faClone,
+  faCog,
   faComments,
   faEye,
   faGlobe,
   faKey,
+  faKeyboard,
   faLocationArrow,
   faRightFromBracket,
   faRoad,
@@ -51,7 +56,9 @@ import {
     EngineComponent,
     UiToolbarComponent,
     UiChatZoneComponent,
-    UiBuilderZoneComponent
+    UiBuilderZoneComponent,
+    UiControlsComponent,
+    UiSettingsComponent
   ],
   imports: [
     BrowserModule,
@@ -65,7 +72,8 @@ import {
     AppRoutingModule
   ],
   providers: [
-    {provide: APP_BASE_HREF, useValue: '/'}
+    {provide: APP_BASE_HREF, useValue: '/'},
+    BsModalService
   ],
   bootstrap: [
     AppComponent
@@ -85,10 +93,12 @@ export class AppModule {
       faCheck,
       faCircleNotch,
       faClone,
+      faCog,
       faComments,
       faEye,
       faGlobe,
       faKey,
+      faKeyboard,
       faLocationArrow,
       faRightFromBracket,
       faRoad,

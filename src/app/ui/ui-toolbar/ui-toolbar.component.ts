@@ -2,12 +2,14 @@ import {HttpService} from './../../network/http.service'
 import {EngineService} from './../../engine/engine.service'
 import {WorldService} from './../../world/world.service'
 import {UserService} from './../../user/user.service'
-import {ChangeDetectorRef, Component, ElementRef, Renderer2, ViewChild} from '@angular/core'
+import {ChangeDetectorRef, Component, ElementRef, Renderer2, TemplateRef, ViewChild} from '@angular/core'
 import type {AfterViewInit, OnInit} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import type {User} from '../../user/user.model'
 import {config} from '../../app.config'
 import {Vector3} from 'three'
+import type {BsModalRef} from 'ngx-bootstrap/modal'
+import {BsModalService} from 'ngx-bootstrap/modal'
 import {distinctUntilChanged, throttleTime} from 'rxjs'
 import Utils from '../../utils/utils'
 
@@ -19,7 +21,11 @@ import Utils from '../../utils/utils'
 export class UiToolbarComponent implements OnInit, AfterViewInit {
 
   @ViewChild('compass', {static: true}) compass: ElementRef
+  @ViewChild('settingsModal') settingsModalTpl: TemplateRef<any>
+  @ViewChild('controlsModal') controlsModalTpl: TemplateRef<any>
 
+  public settingsModal: BsModalRef
+  public controlsModal: BsModalRef
   public firstPerson = true
   public name = 'Anonymous'
   public userId: string
@@ -34,6 +40,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public constructor(
     private renderer: Renderer2,
     private cdRef: ChangeDetectorRef,
+    private modalSvc: BsModalService,
     public socket: SocketService,
     private engine: EngineService,
     public world: WorldService,
@@ -68,6 +75,22 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       this.socket.close()
     }
     this.http.logout().subscribe()
+  }
+
+  public openSettings() {
+    this.settingsModal = this.modalSvc.show(this.settingsModalTpl, {backdrop: false})
+  }
+
+  public closeSettings() {
+    this.settingsModal.hide()
+  }
+
+  public openControls() {
+    this.controlsModal = this.modalSvc.show(this.controlsModalTpl, {backdrop: false})
+  }
+
+  public closeControls() {
+    this.controlsModal.hide()
   }
 
   public toggleCamera(): void {

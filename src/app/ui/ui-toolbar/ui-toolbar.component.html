@@ -15,6 +15,23 @@
           </li>
         </ul>
       </div>
+      <div class="btn-group" dropdown>
+        <div dropdownToggle type="button" class="nav-link dropdown-toggle">
+          Options
+        </div>
+        <ul *dropdownMenu class="dropdown-menu" role="menu">
+          <li role="menuitem" (click)="openSettings()">
+            <button class="dropdown-item">
+              <fa-icon [icon]="['fas', 'cog']"></fa-icon> Settings...
+            </button>
+          </li>
+          <li role="menuitem" (click)="openControls()">
+            <button class="dropdown-item">
+              <fa-icon [icon]="['fas', 'keyboard']"></fa-icon> Controls...
+            </button>
+          </li>
+        </ul>
+      </div>
       <div class="btn-group" dropdown [isDisabled]="!socket.connected">
         <div dropdownToggle type="button" class="nav-link dropdown-toggle">
           Avatar
@@ -91,3 +108,10 @@
     </div>
   </div>
 </nav>
+
+<ng-template #settingsModal>
+  <app-ui-settings (closeModal)="closeSettings()"></app-ui-settings>
+</ng-template>
+<ng-template #controlsModal>
+  <app-ui-controls (closeModal)="closeControls()"></app-ui-controls>
+</ng-template>
