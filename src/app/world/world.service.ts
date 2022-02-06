@@ -96,6 +96,7 @@ export class WorldService {
 
   initWorld() {
     this.resetChunks()
+    this.engine.resetChunkMap()
 
     this.avatar = new Group()
     this.avatar.name = 'avatar'

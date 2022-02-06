@@ -627,7 +627,7 @@ export class EngineService {
   }
 
   public resetChunkMap() {
-    this.chunkMap = new Map<number, LOD>()
+    this.chunkMap.clear()
   }
 
   public getNearestChunks() {
