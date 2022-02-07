@@ -2,6 +2,7 @@ import {Subject, Observable, throwError, from, of} from 'rxjs'
 import type {Subscription} from 'rxjs'
 import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
 import {UserService} from './../user/user.service'
+import {SettingsService} from './../settings/settings.service'
 import type {User} from './../user/user.model'
 import {EngineService, DEG} from './../engine/engine.service'
 import {ObjectService, ObjectAct} from './object.service'
@@ -41,7 +42,7 @@ export class WorldService {
   private avatarListener: Subscription
 
   constructor(private engine: EngineService, private userSvc: UserService, private objSvc: ObjectService,
-    private httpSvc: HttpService) {
+    private httpSvc: HttpService, private settings: SettingsService) {
 
     for (let i = -this.chunkLoadRadius; i <= this.chunkLoadRadius; i++) {
       for (let j = -this.chunkLoadRadius; j <= this.chunkLoadRadius; j++) {
@@ -126,6 +127,10 @@ export class WorldService {
 
     this.avatarListener = this.avatarSub.subscribe((avatarId: number) => {
       this.setAvatar(this.avatarList[avatarId].geometry)
+      const savedAvatars = JSON.parse(this.settings.get('avatar'))
+      const avatarMap = savedAvatars != null ? new Map<number, number>(savedAvatars) : new Map<number, number>()
+      avatarMap.set(this.worldId, avatarId)
+      this.settings.set('avatar', JSON.stringify(Array.from(avatarMap.entries())))
     })
   }
 
@@ -338,7 +343,9 @@ export class WorldService {
     this.objSvc.loadAvatars().subscribe((list) => {
       this.avatarList = list
       // Set first avatar on self
-      this.avatarSub.next(0)
+      const savedAvatars = JSON.parse(this.settings.get('avatar'))
+      const avatarMap = savedAvatars != null ? new Map<number, number>(savedAvatars) : new Map<number, number>()
+      this.avatarSub.next(avatarMap.get(this.worldId) || 0)
       // Trigger list update to create users
       this.userSvc.listChanged.next(this.userSvc.userList)
     })

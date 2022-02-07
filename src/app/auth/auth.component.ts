@@ -5,6 +5,7 @@ import type {FormControl, FormGroup} from '@angular/forms'
 import {ActivatedRoute, Router} from '@angular/router'
 import {finalize} from 'rxjs/operators'
 import {HttpService} from '../network/http.service'
+import {SettingsService} from './../settings/settings.service'
 
 @Component({
   selector: 'app-auth',
@@ -24,7 +25,8 @@ export class AuthComponent implements OnInit {
   constructor(private fb: FormBuilder,
               private router: Router,
               private route: ActivatedRoute,
-              private http: HttpService) {
+              private http: HttpService,
+              private settings: SettingsService) {
     this.usernameCtl = fb.control('', [Validators.required, Validators.minLength(2)])
     this.passwordCtl = fb.control('', [Validators.required])
     this.loginForm = fb.group({username: this.usernameCtl, password: this.passwordCtl})
@@ -38,6 +40,7 @@ export class AuthComponent implements OnInit {
       }))
       .subscribe({
         next: () => {
+          this.settings.set('login', this.loginForm.value.username)
           this.loginError = false
           this.router.navigate([this.returnUrl])
         },
@@ -48,6 +51,7 @@ export class AuthComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.loginForm.setValue({username: this.settings.get('login'), password: ''})
     this.returnUrl = this.route.snapshot.queryParams.next || '/'
     if (this.http.isLogged()) {
       this.router.navigate([this.returnUrl])

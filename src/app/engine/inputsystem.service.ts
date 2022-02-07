@@ -1,6 +1,7 @@
 import {Injectable} from '@angular/core'
 import {fromEvent} from 'rxjs'
 import {filter, tap} from 'rxjs/operators'
+import {SettingsService} from './../settings/settings.service'
 
 export const enum PressedKey { nop = 0, moveFwd, moveBck, turnLft, turnRgt, moveLft, moveRgt, moveUp, moveDwn, lookUp, lookDwn,
    run, clip, side, jmp, cpy, del, esc, len }
@@ -52,13 +53,16 @@ export class InputSystemService {
     ['Delete', PressedKey.del],
   ])
 
-  private keyMap = new Map(this.defaultKeymap)
+  private keyMap: Map<string, PressedKey>
 
-  constructor() {
+  constructor(private settings: SettingsService) {
+    const savedKeyMap = JSON.parse(this.settings.get('keymap'))
+    this.keyMap = savedKeyMap != null ? new Map(savedKeyMap) : new Map(this.defaultKeymap)
   }
 
   public clearKeys() {
     this.keyMap.clear()
+    this.saveKeyMap()
   }
 
   public getKeyMap() {
@@ -71,10 +75,12 @@ export class InputSystemService {
 
   public setDefault() {
     this.keyMap = new Map(this.defaultKeymap)
+    this.saveKeyMap()
   }
 
   public mapKey(k: string, value: PressedKey) {
     this.keyMap.set(k, value)
+    this.saveKeyMap()
   }
 
   public handleKeys(k: string, value: boolean) {
@@ -82,5 +88,9 @@ export class InputSystemService {
     if (key != null) {
       this.controls[key] = value
     }
+  }
+
+  private saveKeyMap() {
+    this.settings.set('keymap', JSON.stringify(Array.from(this.keyMap.entries())))
   }
 }
