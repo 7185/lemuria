@@ -291,6 +291,7 @@ export class WorldService {
     this.objSvc.setPath(world.path)
 
     const skyboxGroup = new Group()
+    skyboxGroup.renderOrder = -1
     const octGeom = new BufferGeometry()
 
     // 6 vertices to make an octahedron
