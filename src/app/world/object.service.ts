@@ -76,7 +76,7 @@ export class ObjectService {
           item.visible = cmd.value
         } else {
           if (cmd.commandType === 'color') {
-            texturing = this.applyTexture(item, null, null, cmd.color)
+            this.applyTexture(item, null, null, cmd.color)
           } else {
             if (cmd.commandType === 'texture') {
               if (cmd.texture) {
@@ -134,7 +134,20 @@ export class ObjectService {
       }
     }
     if (textured) {
-      texturing.subscribe(() => {
+      if (texturing != null) {
+        // there are textures, we wait for them to load
+        texturing.subscribe(() => {
+          for (const cmd of result.create) {
+            if (cmd.commandType === 'sign') {
+              this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
+            }
+            if (cmd.commandType === 'picture') {
+              this.makePicture(item, cmd.resource)
+            }
+          }
+        })
+      } else {
+        // color, no need to wait
         for (const cmd of result.create) {
           if (cmd.commandType === 'sign') {
             this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
@@ -143,7 +156,7 @@ export class ObjectService {
             this.makePicture(item, cmd.resource)
           }
         }
-      })
+      }
     }
   }
 
@@ -162,6 +175,7 @@ export class ObjectService {
           if (item.userData.taggedMaterials[200]) {
             for (const i of item.userData.taggedMaterials[200]) {
               newMaterials[i] = child.material[i].clone()
+              newMaterials[i].color = new Color(1, 1, 1)
               newMaterials[i].map = image
               newMaterials[i].needsUpdate = true
             }
