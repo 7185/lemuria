@@ -52,7 +52,7 @@ class User(AuthUser):
             'z': self.position[2],
             'roll': self.orientation[0],
             'yaw': self.orientation[1],
-            'picth': self.orientation[2]
+            'pitch': self.orientation[2]
         }
 
     async def set_world(self, world_id):

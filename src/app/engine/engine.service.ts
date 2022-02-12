@@ -246,7 +246,7 @@ export class EngineService {
 
     // this.scene.fog = new Fog(0xCCCCCC, 10, 50)
 
-    this.dirLight = new DirectionalLight(0xffffff, 0.5)
+    this.dirLight = new DirectionalLight(0xffffff, 1)
     this.dirLight.name = 'dirlight'
     this.dirLight.position.set(-50, 80, 10)
     this.dirLight.shadow.camera.left = 100
@@ -1074,10 +1074,10 @@ export class EngineService {
 
   private moveCamera() {
     let movSteps = 12 * this.deltaSinceLastFrame
-    let rotSteps = 1.1 * this.deltaSinceLastFrame
+    let rotSteps = 1.5 * this.deltaSinceLastFrame
     if (this.inputSysSvc.controls[PressedKey.run]) {
       movSteps = this.flyMode ? 72 * this.deltaSinceLastFrame : 24 * this.deltaSinceLastFrame
-      rotSteps *= 2
+      rotSteps *= 3
     }
     if (this.inputSysSvc.controls[PressedKey.moveFwd]) {
       this.playerVelocity.add(new Vector3(this.cameraDirection.x, 0, this.cameraDirection.z).multiplyScalar(movSteps))
@@ -1236,9 +1236,10 @@ export class EngineService {
           user.position.y += user.userData.offsetY
         }
         user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
-        user.rotation.x = u.oldRoll + this.shortestAngle(u.oldRoll, u.roll) * u.completion
-        user.rotation.y = u.oldYaw + Math.PI + this.shortestAngle(u.oldYaw, u.yaw) * u.completion
-        user.rotation.z = u.oldPitch + this.shortestAngle(u.oldPitch, u.pitch) * u.completion
+        user.rotation.set(
+          u.oldRoll + this.shortestAngle(u.oldRoll, u.roll) * u.completion,
+          u.oldYaw + this.shortestAngle(u.oldYaw, u.yaw) * u.completion,
+          0, 'YZX')
       }
     }
   }

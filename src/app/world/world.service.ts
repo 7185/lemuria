@@ -101,7 +101,6 @@ export class WorldService {
 
     this.avatar = new Group()
     this.avatar.name = 'avatar'
-    this.avatar.rotation.copy(new Euler(0, Math.PI, 0))
     this.engine.attachCam(this.avatar)
 
     // listeners
@@ -264,6 +263,7 @@ export class WorldService {
     this.objSvc.loadObject(name).then((o) => {
       this.engine.disposeMaterial(group)
       group.clear()
+      o.rotation.copy(new Euler(0, Math.PI, 0))
       group.add(o.clone())
       const box = new Box3()
       box.setFromObject(group)
@@ -528,7 +528,7 @@ export class WorldService {
       group.position.y = u.y
       group.position.z = u.z
       group.rotation.x = u.roll
-      group.rotation.y = u.yaw + Math.PI
+      group.rotation.y = u.yaw
       group.rotation.z = u.pitch
       group.userData.player = true
       this.engine.createTextLabel(group)
