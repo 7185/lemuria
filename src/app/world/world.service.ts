@@ -403,7 +403,7 @@ export class WorldService {
     const [chunkX, chunkZ] = this.getChunkTile(pos)
     this.engine.setChunkTile(chunkX, chunkZ)
 
-    if (!this.hasChunkChanged(chunkX, chunkZ)) {
+    if (this.worldId === 0 || !this.hasChunkChanged(chunkX, chunkZ)) {
       return
     }
 
