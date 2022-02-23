@@ -6,6 +6,8 @@ import {SettingsService} from './../settings/settings.service'
 import type {User} from './../user/user.model'
 import {EngineService, DEG} from './../engine/engine.service'
 import {ObjectService, ObjectAct} from './object.service'
+import {AnimationService} from '../animation/animation.service'
+import type {AvatarAnimationManager} from '../animation/avatar.animation.manager'
 import {HttpService} from './../network/http.service'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
@@ -14,18 +16,18 @@ import {Euler, Mesh, Group, Vector3, PlaneGeometry, TextureLoader, RepeatWrappin
 import type {Object3D} from 'three'
 import Utils from '../utils/utils'
 
-
 @Injectable({providedIn: 'root'})
 export class WorldService {
 
   public avatarList: {
     name: string
     geometry: string
+    animationMgr: Promise<AvatarAnimationManager>
     implicit: Map<string, string>
     explicit: Map<string, string>
   }[] = []
   public avatarSub = new Subject<number>()
-  public animationSub = new Subject<Map<string, string>>()
+  public animationMapSub = new Subject<Map<string, string>>()
   public worldId = 0
   private avatar: Group
   private textureLoader = new TextureLoader()
@@ -48,7 +50,7 @@ export class WorldService {
   private avatarListener: Subscription
 
   constructor(private engine: EngineService, private userSvc: UserService, private objSvc: ObjectService,
-    private httpSvc: HttpService, private settings: SettingsService) {
+    private anmSvc: AnimationService, private httpSvc: HttpService, private settings: SettingsService) {
 
     for (let i = -this.chunkLoadRadius; i <= this.chunkLoadRadius; i++) {
       for (let j = -this.chunkLoadRadius; j <= this.chunkLoadRadius; j++) {
@@ -128,13 +130,19 @@ export class WorldService {
     this.uAvatarListener = this.userSvc.avatarChanged.subscribe((u) => {
       const user = this.engine.users().find(o => o.name === u.id)
       const avatarId = u.avatar >= this.avatarList.length ? 0 : u.avatar
-      this.setAvatar(this.avatarList[avatarId].geometry, user as Group)
+      const avatarEntry = this.avatarList[avatarId]
+      const animationManager: Promise<AvatarAnimationManager> = this.anmSvc.getAvatarAnimationManager(avatarEntry.name,
+        avatarEntry.implicit, avatarEntry.explicit)
+      this.setAvatar(avatarEntry.geometry, animationManager, user as Group)
     })
 
     // own avatar
     this.avatarListener = this.avatarSub.subscribe((avatarId: number) => {
-      this.animationSub.next(this.avatarList[avatarId].explicit)
-      this.setAvatar(this.avatarList[avatarId].geometry)
+      this.animationMapSub.next(this.avatarList[avatarId].explicit)
+      const avatarEntry = this.avatarList[avatarId]
+      const animationManager: Promise<AvatarAnimationManager> = this.anmSvc.getAvatarAnimationManager(avatarEntry.name,
+        avatarEntry.implicit, avatarEntry.explicit)
+      this.setAvatar(avatarEntry.geometry, animationManager)
       const savedAvatars = JSON.parse(this.settings.get('avatar'))
       const avatarMap = savedAvatars != null ? new Map<number, number>(savedAvatars) : new Map<number, number>()
       avatarMap.set(this.worldId, avatarId)
@@ -267,9 +275,9 @@ export class WorldService {
     return g
   }
 
-  setAvatar(name: string, group: Group = this.avatar) {
+  setAvatar(name: string, animationMgr: Promise<AvatarAnimationManager>, group: Group = this.avatar) {
     name = Utils.modelName(name)
-    this.objSvc.loadObject(name).then((o) => {
+    this.objSvc.loadAvatar(name).then((o) => {
       this.engine.disposeMaterial(group)
       group.clear()
       o.rotation.copy(new Euler(0, Math.PI, 0))
@@ -278,6 +286,7 @@ export class WorldService {
       box.setFromObject(group)
       group.userData.height = box.max.y - box.min.y
       group.userData.offsetY = group.position.y - box.min.y
+      group.userData.animationPlayer = animationMgr.then(mgr => mgr.spawnAnimationPlayer(group))
       if (group.name === 'avatar') {
         this.engine.setCameraOffset(group.userData.height * 0.9)
         this.engine.updateBoundingBox()
@@ -297,7 +306,8 @@ export class WorldService {
     this.worldId = world.id
     this.engine.clearObjects()
     this.objSvc.cleanCache()
-    this.objSvc.setPath(world.path)
+    this.anmSvc.cleanCache()
+    this.objSvc.path.next(world.path)
 
     const skyboxGroup = new Group()
     skyboxGroup.renderOrder = -1
@@ -541,7 +551,10 @@ export class WorldService {
       group.rotation.z = u.pitch
       group.userData.player = true
       this.engine.createTextLabel(group)
-      this.setAvatar(avatar, group)
+      const avatarEntry = this.avatarList[u.avatar]
+      const animationManager: Promise<AvatarAnimationManager> = this.anmSvc.getAvatarAnimationManager(avatarEntry.name,
+        avatarEntry.implicit, avatarEntry.explicit)
+      this.setAvatar(avatar, animationManager, group)
       this.engine.addUser(group)
     }
   }
