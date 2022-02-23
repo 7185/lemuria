@@ -46,11 +46,12 @@ export class UserService {
     }
   }
 
-  setPosition(userId: string, postion: [THREE.Vector3, THREE.Vector3]) {
+  setPosition(userId: string, postion: [THREE.Vector3, THREE.Vector3], state: string = 'idle', gesture: string = null) {
     for (const u of this.userList) {
       if (u.id === userId) {
         if (u.x !== postion[0].x || u.y !== postion[0].y || u.z !== postion[0].z ||
-            u.roll !== postion[1].x || u.yaw !== postion[1].y || u.pitch !== postion[1].z) {
+            u.roll !== postion[1].x || u.yaw !== postion[1].y || u.pitch !== postion[1].z ||
+            u.gesture !== gesture) {
           u.oldX = u.x
           u.oldY = u.y
           u.oldZ = u.z
@@ -64,6 +65,8 @@ export class UserService {
           u.yaw = postion[1].y
           u.pitch = postion[1].z
           u.completion = 0
+          u.state = state
+          u.gesture = gesture
         }
       }
     }

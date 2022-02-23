@@ -39,6 +39,8 @@ async def process_msg(user: User, data: dict) -> None:
         user.orientation[0] = data['data']['ori']['x']
         user.orientation[1] = data['data']['ori']['y']
         user.orientation[2] = data['data']['ori']['z']
+        user.state = data['state']
+        user.gesture = data['gesture']
     elif data['type'] == 'avatar':
         user.avatar = data['data']
         await broadcast({'type': 'avatar', 'user': user.auth_id, 'data': user.avatar})

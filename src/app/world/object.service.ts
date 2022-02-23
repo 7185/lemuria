@@ -1,4 +1,4 @@
-import {forkJoin, Subject} from 'rxjs'
+import {forkJoin, BehaviorSubject, Subject} from 'rxjs'
 import type {Observable} from 'rxjs'
 import {Injectable} from '@angular/core'
 import {HttpService} from './../network/http.service'
@@ -19,14 +19,16 @@ export enum ObjectAct { nop = 0, forward, backward, left, right, up, down, rotX,
 export class ObjectService {
 
   public objectAction = new Subject<ObjectAct>()
+  public path = new BehaviorSubject('http://localhost')
   private unknown: Group
-  private rwxLoader = new RWXLoader(new LoadingManager())
+  private rwxPropLoader = new RWXLoader(new LoadingManager())
+  private rwxAvatarLoader = new RWXLoader(new LoadingManager())
   private basicLoader = new RWXLoader(new LoadingManager())
   private rwxMaterialManager: RWXMaterialManager
   private actionParser = new AWActionParser()
   private objects: Map<string, Promise<any>> = new Map()
+  private avatars: Map<string, Promise<any>> = new Map()
   private pictureLoader = new TextureLoader()
-  private path = 'http://localhost'
   private remoteUrl = /.+\..+\/.+/g
 
   constructor(private http: HttpService) {
@@ -42,20 +44,20 @@ export class ObjectService {
     unknownGeometry.addGroup(0, unknownGeometry.getIndex().count, 0)
     this.unknown = new Group().add(new Mesh(unknownGeometry, [new MeshBasicMaterial({color: 0x000000})]))
     this.unknown.userData.isError = true
-    this.rwxMaterialManager = new RWXMaterialManager(this.path, 'jpg', 'zip', JSZip, JSZipUtils, false, sRGBEncoding)
-    this.rwxLoader.setRWXMaterialManager(this.rwxMaterialManager).setFlatten(true)
+    this.rwxMaterialManager = new RWXMaterialManager(this.path.value, 'jpg', 'zip', JSZip, JSZipUtils, false, sRGBEncoding)
+    this.rwxPropLoader.setRWXMaterialManager(this.rwxMaterialManager).setFlatten(true)
+    this.rwxAvatarLoader.setRWXMaterialManager(this.rwxMaterialManager)
     this.basicLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true).setUseBasicMaterial(true).setTextureEncoding(sRGBEncoding)
-  }
-
-  setPath(path: string) {
-    this.path = path
-    this.rwxMaterialManager.folder = `${this.path}/textures`
-    this.rwxLoader.setPath(`${this.path}/rwx`).setResourcePath(`${this.path}/textures`)
-    this.basicLoader.setPath(`${this.path}/rwx`).setResourcePath(`${this.path}/textures`)
+    this.path.subscribe(url => {
+      this.rwxMaterialManager.folder = `${url}/textures`
+      this.rwxPropLoader.setPath(`${url}/rwx`).setResourcePath(`${url}/textures`)
+      this.rwxAvatarLoader.setPath(`${url}/rwx`).setResourcePath(`${url}/textures`)
+      this.basicLoader.setPath(`${url}/rwx`).setResourcePath(`${url}/textures`)
+    })
   }
 
   loadAvatars() {
-    return this.http.avatars(this.path)
+    return this.http.avatars(this.path.value)
   }
 
   public execActions(item: Group) {
@@ -164,7 +166,7 @@ export class ObjectService {
     if (url.match(this.remoteUrl)) {
       url = `${config.url.imgProxy}${url}`
     } else {
-      url = `${this.path}/textures/${url}`
+      url = `${this.path.value}/textures/${url}`
     }
     this.pictureLoader.load(url, (image) => {
       image.encoding = sRGBEncoding
@@ -334,7 +336,7 @@ export class ObjectService {
     if (this.objects.get(name) !== undefined) {
       return this.objects.get(name)
     } else {
-      const loader = basic ? this.basicLoader : this.rwxLoader
+      const loader = basic ? this.basicLoader : this.rwxPropLoader
       const promise = new Promise((resolve) => {
         loader.load(name, (rwx: Group) => resolve(rwx), null, () => resolve(this.unknown))
       })
@@ -343,8 +345,21 @@ export class ObjectService {
     }
   }
 
+  loadAvatar(name: string, basic = false): Promise<any> {
+    if (this.avatars.get(name) !== undefined) {
+      return this.avatars.get(name)
+    } else {
+      const loader = basic ? this.basicLoader : this.rwxAvatarLoader
+      const promise = new Promise((resolve) => {
+        loader.load(name, (rwx: Group) => resolve(rwx), null, () => resolve(this.unknown))
+      })
+      this.avatars.set(name, promise)
+      return promise
+    }
+  }
+
   cleanCache() {
-    this.objects = new Map()
+    this.objects.clear()
   }
 
   public texturesNextFrame() {

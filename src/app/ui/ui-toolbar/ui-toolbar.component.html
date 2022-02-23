@@ -67,7 +67,7 @@
           <fa-icon [icon]="['fas', 'person']" [fixedWidth]="true"></fa-icon>
         </div>
         <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
-          <li *ngFor="let a of animations | keyvalue" role="menuitem" class="dropdown-item">
+          <li *ngFor="let a of animations | keyvalue" role="menuitem" class="dropdown-item" (click)="setAnimation(a.key)">
             {{a.key}}
           </li>
         </ul>

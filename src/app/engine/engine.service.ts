@@ -13,6 +13,7 @@ import {flattenGroup} from 'three-rwx-loader'
 import {MeshBVH} from 'three-mesh-bvh/build/index.module'
 import {UserService} from './../user/user.service'
 import {ObjectAct, ObjectService} from './../world/object.service'
+import type {AvatarAnimationPlayer} from '../animation/avatar.animation.player'
 import {PressedKey, InputSystemService} from './inputsystem.service'
 import {config} from '../app.config'
 import Utils from '../utils/utils'
@@ -128,6 +129,8 @@ export class EngineService {
   private skybox: Group
   private buildMode = false
   private flyMode = false
+  private userState = 'idle'
+  private userGesture: string = null
   private hoveredObject: Group
 
   private playerCollider: PlayerCollider
@@ -359,6 +362,18 @@ export class EngineService {
     const p = this.player.position.clone()
     const o = new Vector3().setFromEuler(this.player.rotation)
     return [p, o]
+  }
+
+  public setGesture(gesture: string) {
+    this.userGesture = gesture
+  }
+
+  public getGesture(): string {
+    return this.userGesture
+  }
+
+  public getState(): string {
+    return this.userState
   }
 
   public attachCam(group: Group) {
@@ -670,8 +685,16 @@ export class EngineService {
   private render(): void {
     this.frameId = requestAnimationFrame(() => this.render())
 
-    this.deltaSinceLastFrame = this.clock.getDelta()
-    this.deltaFps += this.deltaSinceLastFrame
+    this.deltaFps += this.clock.getDelta()
+
+    if (this.deltaFps > 1 / this.maxFps.value) {
+      this.fpsSub.next((1 / this.deltaFps).toFixed())
+      this.deltaSinceLastFrame = this.deltaFps
+      this.deltaFps = this.deltaFps % 1 / this.maxFps.value
+      this.renderer.render(this.scene, this.activeCamera)
+    } else {
+      return
+    }
 
     if (this.animationElapsed > 0.10) {
       this.texturesAnimationSub.next(null)
@@ -688,12 +711,6 @@ export class EngineService {
     this.updateLODs()
     this.moveUsers()
     this.moveLabels()
-
-    if (this.deltaFps > 1 / this.maxFps.value) {
-      this.fpsSub.next((1 / this.deltaFps).toFixed())
-      this.renderer.render(this.scene, this.activeCamera)
-      this.deltaFps = this.deltaFps % 1 / this.maxFps.value
-    }
   }
 
   private resize(): void {
@@ -1046,6 +1063,28 @@ export class EngineService {
     const oldPosition = this.player.position.clone()
     const newPosition = oldPosition.clone().add(deltaPosition)
 
+    this.avatar.userData.animationPlayer?.then((animation: AvatarAnimationPlayer) => {
+      const velocity = this.playerVelocity.length()
+
+      this.userState = 'idle'
+
+      if (Math.abs(velocity) > 0.1) {
+        this.userState = 'walk'
+      }
+
+      if (Math.abs(velocity) > 5.5) {
+        this.userState = 'run'
+      }
+
+      if (this.flyMode) {
+        this.userState = 'fly'
+      }
+
+      // When applicable: reset gesture on completion
+      this.userGesture = animation.animate(this.deltaSinceLastFrame, this.userState, this.userGesture,
+        this.inputSysSvc.controls[PressedKey.moveBck] ? -velocity : velocity) ? null : this.userGesture
+    })
+
     if (!this.inputSysSvc.controls[PressedKey.clip] && this.playerCollider) {
 
       let deltaLength = deltaPosition.length()
@@ -1233,21 +1272,34 @@ export class EngineService {
   }
 
   private moveUsers() {
-    for (const u of this.userSvc.userList.filter(usr => usr.completion < 1)) {
+    for (const u of this.userSvc.userList) {
       const user = this.usersNode.children.find(o => o.name === u.id)
       if (user != null) {
-        u.completion = (u.completion + this.deltaSinceLastFrame / 0.2) > 1 ? 1 : u.completion + this.deltaSinceLastFrame / 0.2
-        user.position.x = u.oldX + (u.x - u.oldX) * u.completion
-        user.position.y = u.oldY + (u.y - u.oldY) * u.completion
-        if (user.userData.offsetY != null) {
-          // when the avatar is not loaded yet, the position should not be corrected
-          user.position.y += user.userData.offsetY
+        if (u.completion < 1) {
+          u.completion = (u.completion + this.deltaSinceLastFrame / 0.2) > 1 ? 1 : u.completion + this.deltaSinceLastFrame / 0.2
+          const previousPos = user.position.clone()
+          user.position.x = u.oldX + (u.x - u.oldX) * u.completion
+          user.position.y = u.oldY + (u.y - u.oldY) * u.completion
+          if (user.userData.offsetY != null) {
+            // when the avatar is not loaded yet, the position should not be corrected
+            user.position.y += user.userData.offsetY
+          }
+          user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
+          user.rotation.set(
+            u.oldRoll + this.shortestAngle(u.oldRoll, u.roll) * u.completion,
+            u.oldYaw + this.shortestAngle(u.oldYaw, u.yaw) * u.completion,
+            0, 'YZX')
+          user.userData.animationPlayer?.then((animation: AvatarAnimationPlayer) => {
+            const velocity = (previousPos.distanceTo(user.position)) / this.deltaSinceLastFrame
+            // When applicable: reset gesture on completion
+            u.gesture = animation.animate(this.deltaSinceLastFrame, u.state, u.gesture, velocity) ? null : u.gesture
+          })
+        } else {
+          user.userData.animationPlayer?.then((animation: AvatarAnimationPlayer) => {
+            // Same here: reset gesture on completion
+            u.gesture = animation.animate(this.deltaSinceLastFrame, u.state, u.gesture) ? null : u.gesture
+          })
         }
-        user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
-        user.rotation.set(
-          u.oldRoll + this.shortestAngle(u.oldRoll, u.roll) * u.completion,
-          u.oldYaw + this.shortestAngle(u.oldYaw, u.yaw) * u.completion,
-          0, 'YZX')
       }
     }
   }

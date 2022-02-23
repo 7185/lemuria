@@ -26,6 +26,8 @@ class User(AuthUser):
         self.position = [0, 0, 0]
         self.orientation = [0, 0, 0]
         self.avatar = 0
+        self.state = 'idle'
+        self.gesture = None
         self.world = 0
         self.pos_timer = None
 
@@ -68,7 +70,7 @@ class User(AuthUser):
 
     async def send_pos(self):
         await broadcast_world(self.world, {
-            'type': 'pos', 'user': self.auth_id,
+            'type': 'pos', 'user': self.auth_id, 'state': self.state, 'gesture': self.gesture,
             'data': {'pos': {'x': self.position[0], 'y': self.position[1], 'z': self.position[2]},
                      'ori': {'x': self.orientation[0],
                              'y': self.orientation[1],

@@ -55,6 +55,10 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.world.setVisibility(visibility)
   }
 
+  public setAnimation(animation: string) {
+    this.engine.setGesture(animation)
+  }
+
   public changeAvatar(avatarId: number) {
     if (avatarId >= this.world.avatarList.length) {
       avatarId = 0
@@ -123,7 +127,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       }
     })
     this.world.avatarSub.subscribe((avatarId) => this.avatarId = avatarId)
-    this.world.animationSub.subscribe(animations => this.animations = animations)
+    this.world.animationMapSub.subscribe(animations => this.animations = animations)
     this.http.getLogged().subscribe((u: any) => {
       this.userId = u.id
       this.name = u.name
