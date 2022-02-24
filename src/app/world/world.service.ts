@@ -18,8 +18,14 @@ import Utils from '../utils/utils'
 @Injectable({providedIn: 'root'})
 export class WorldService {
 
-  public avatarList: {name: string; geometry: string}[] = []
+  public avatarList: {
+    name: string
+    geometry: string
+    implicit: Map<string, string>
+    explicit: Map<string, string>
+  }[] = []
   public avatarSub = new Subject<number>()
+  public animationSub = new Subject<Map<string, string>>()
   public worldId = 0
   private avatar: Group
   private textureLoader = new TextureLoader()
@@ -118,13 +124,16 @@ export class WorldService {
       }
     })
 
+    // other avatars
     this.uAvatarListener = this.userSvc.avatarChanged.subscribe((u) => {
       const user = this.engine.users().find(o => o.name === u.id)
       const avatarId = u.avatar >= this.avatarList.length ? 0 : u.avatar
       this.setAvatar(this.avatarList[avatarId].geometry, user as Group)
     })
 
+    // own avatar
     this.avatarListener = this.avatarSub.subscribe((avatarId: number) => {
+      this.animationSub.next(this.avatarList[avatarId].explicit)
       this.setAvatar(this.avatarList[avatarId].geometry)
       const savedAvatars = JSON.parse(this.settings.get('avatar'))
       const avatarMap = savedAvatars != null ? new Map<number, number>(savedAvatars) : new Map<number, number>()

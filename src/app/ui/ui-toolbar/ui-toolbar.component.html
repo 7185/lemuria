@@ -57,10 +57,22 @@
         </ul>
       </div>
     </div>
-    <button class="btn btn-primary my-2 my-sm-0" (click)="toggleCamera()" type="button">
-      <fa-icon *ngIf="firstPerson" [icon]="['fas', 'eye']"></fa-icon>
-      <fa-icon *ngIf="!firstPerson" [icon]="['fas', 'video']"></fa-icon>
-    </button>
+    <div class="my-2 my-sm-0">
+      <div class="btn-group mx-1" dropdown [isDisabled]="animations.size === 0">
+        <div dropdownToggle type="button" class="btn btn-info" title="Animations">
+          <fa-icon [icon]="['fas', 'person']" [fixedWidth]="true"></fa-icon>
+        </div>
+        <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
+          <li *ngFor="let a of animations | keyvalue" role="menuitem" class="dropdown-item">
+            {{a.key}}
+          </li>
+        </ul>
+      </div>
+      <button class="btn btn-primary mx-1" title="Toggle camera" (click)="toggleCamera()" type="button">
+        <fa-icon *ngIf="firstPerson" [icon]="['fas', 'eye']"></fa-icon>
+        <fa-icon *ngIf="!firstPerson" [icon]="['fas', 'video']"></fa-icon>
+      </button>
+    </div>
     <div class="text-center text-light lh-1">
       {{strPos}}<br />
       {{strAlt}}m
@@ -78,7 +90,7 @@
       </div>
     </button>
     <div class="nav navbar-nav ml-auto">
-      <div class="btn-group" dropdown>
+      <div class="btn-group" dropdown [isDisabled]="userList.length === 0">
         <div dropdownToggle type="button" class="btn btn-info">
           <fa-icon [icon]="['fas', 'users']" [fixedWidth]="true"></fa-icon> {{ userList.length }}
         </div>

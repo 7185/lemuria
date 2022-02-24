@@ -85,16 +85,32 @@ export class HttpService extends HttpClient {
     return this.get(`${path}/avatars/avatars.dat`, {responseType: 'text'}).pipe(
       map((a: any) => {
         const list = []
+        let readImp = false
+        let readExp = false
         a.split('\n').map((l: string) => l.trim()).forEach((line: string) => {
           const i = list.length - 1
           if (line === 'avatar') {
-            list.push({name: '', geometry: ''})
-          }
-          if (line.startsWith('name=')) {
+            list.push({name: '', geometry: '', implicit: new Map(), explicit: new Map()})
+          } else if (line.startsWith('name=')) {
             list[i].name = line.substring(5)
-          }
-          if (line.startsWith('geometry=')) {
+          } else if (line.startsWith('geometry=')) {
             list[i].geometry = line.substring(9)
+          }
+          if (line.startsWith('beginimp')) {
+            readImp = true
+          } else if (line.startsWith('endimp')) {
+            readImp = false
+          } else if (line.startsWith('beginexp')) {
+            readExp = true
+          } else if (line.startsWith('endexp')) {
+            readExp = false
+          } else {
+            const values = line.split('=')
+            if (readImp && values.length === 2) {
+              list[i].implicit.set(values[0], values[1])
+            } else if (readExp && values.length === 2) {
+              list[i].explicit.set(values[0], values[1])
+            }
           }
         })
         return list

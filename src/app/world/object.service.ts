@@ -6,7 +6,7 @@ import {AWActionParser} from 'aw-action-parser'
 import {Group, Mesh, BufferAttribute, BufferGeometry, LoadingManager, MeshBasicMaterial,
   CanvasTexture, TextureLoader, sRGBEncoding, Color} from 'three'
 import type {MeshPhongMaterial, Object3D} from 'three'
-import RWXLoader, {RWXMaterialManager, RWXtag} from 'three-rwx-loader'
+import RWXLoader, {RWXMaterialManager, pictureTag, signTag} from 'three-rwx-loader'
 import * as JSZip from 'jszip'
 import JSZipUtils from 'jszip-utils'
 import {config} from '../app.config'
@@ -172,8 +172,8 @@ export class ObjectService {
         if (child instanceof Mesh) {
           const newMaterials = []
           newMaterials.push(...child.material)
-          if (item.userData.taggedMaterials[RWXtag.PICTURE]) {
-            for (const i of item.userData.taggedMaterials[RWXtag.PICTURE]) {
+          if (item.userData.taggedMaterials[pictureTag]) {
+            for (const i of item.userData.taggedMaterials[pictureTag]) {
               newMaterials[i] = child.material[i].clone()
               newMaterials[i].color = new Color(1, 1, 1)
               newMaterials[i].map = image
@@ -282,8 +282,8 @@ export class ObjectService {
       if (child instanceof Mesh) {
         const newMaterials = []
         newMaterials.push(...child.material)
-        if (item.userData.taggedMaterials[RWXtag.SIGN]) {
-          for (const i of item.userData.taggedMaterials[RWXtag.SIGN]) {
+        if (item.userData.taggedMaterials[signTag]) {
+          for (const i of item.userData.taggedMaterials[signTag]) {
             newMaterials[i] = child.material[i].clone()
             newMaterials[i].color = new Color(1, 1, 1)
             newMaterials[i].map = new CanvasTexture(this.textCanvas(text, newMaterials[i].userData.ratio, color, bcolor))

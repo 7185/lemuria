@@ -30,6 +30,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public name = 'Anonymous'
   public userId: string
   public avatarId = 0
+  public animations = new Map()
   public userList: User[] = []
   public worldList = []
   public visibilityList = new Array(11).fill(40).map((n, i) => n + i * 20)
@@ -121,6 +122,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       }
     })
     this.world.avatarSub.subscribe((avatarId) => this.avatarId = avatarId)
+    this.world.animationSub.subscribe(animations => this.animations = animations)
     this.http.getLogged().subscribe((u: any) => {
       this.userId = u.id
       this.name = u.name
