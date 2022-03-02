@@ -5,28 +5,28 @@
   </button>
 </div>
 <div class="modal-body">
-    <table class="table table-sm">
-        <thead>
-          <tr>
-            <th scope="col"></th>
-            <th scope="col"></th>
-            <th scope="col"><button class="btn btn-sm btn-primary" (click)="setDefault()">Default</button></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of controlsKeymap; let i = index">
-            <th scope="row">{{ controlsLabels[i][0] }}</th>
-            <td>
-              <button class="btn btn-sm"
-                      [ngClass]="activeKey[0] === i && activeKey[1] === 0 ? 'btn-info' : 'btn-light'"
-                      (click)="setKey(i, 0)">{{ item[0] || 'None' }}</button>
-            </td>
-            <td>
-              <button class="btn btn-sm"
-                      [ngClass]="activeKey[0] === i && activeKey[1] === 1 ? 'btn-info' : 'btn-light'"
-                      (click)="setKey(i, 1)">{{ item[1] || 'None' }}</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th scope="col"></th>
+        <th scope="col"></th>
+        <th scope="col"><button class="btn btn-sm btn-primary" (click)="setDefault()">Default</button></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of controlsKeymap; let i = index">
+        <th scope="row">{{ controlsLabels[i][0] }}</th>
+        <td>
+          <button class="btn btn-sm"
+                  [ngClass]="activeKey[0] === i && activeKey[1] === 0 ? 'btn-info' : 'btn-light'"
+                  (click)="setKey(i, 0)">{{ item[0] || 'None' }}</button>
+        </td>
+        <td>
+          <button class="btn btn-sm"
+                  [ngClass]="activeKey[0] === i && activeKey[1] === 1 ? 'btn-info' : 'btn-light'"
+                  (click)="setKey(i, 1)">{{ item[1] || 'None' }}</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </div>

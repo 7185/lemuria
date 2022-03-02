@@ -2,6 +2,10 @@
   <div class="container-fluid">
     <a class="navbar-brand" href="/">Lemuria</a>
     <div class="nav navbar-nav">
+      <div *ngIf="strFps" class="badge bg-danger">
+        DEBUG<br/>
+        {{strFps}}
+      </div>
       <div class="btn-group" dropdown>
         <div dropdownToggle type="button" class="nav-link dropdown-toggle">
           World

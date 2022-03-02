@@ -106,6 +106,8 @@ class PlayerCollider {
 export class EngineService {
 
   public compassSub: Subject<any> = new Subject()
+  public fpsSub = new BehaviorSubject<string>('0')
+  public maxFps = new BehaviorSubject<number>(60)
   public selectedObject: Group
   public selectedObjectSub = new BehaviorSubject<any>({})
   private chunkMap = new Map<number, LOD>()
@@ -135,6 +137,7 @@ export class EngineService {
   private playerOnFloor = true
 
   private frameId: number = null
+  private deltaFps = 0
   private deltaSinceLastFrame = 0
   private animationElapsed = 0
 
@@ -354,7 +357,7 @@ export class EngineService {
 
   public getPosition(): [Vector3, Vector3] {
     const p = this.player.position.clone()
-    const o = this.player.rotation.toVector3()
+    const o = new Vector3().setFromEuler(this.player.rotation)
     return [p, o]
   }
 
@@ -665,11 +668,10 @@ export class EngineService {
   }
 
   private render(): void {
-    this.frameId = requestAnimationFrame(() => {
-      this.render()
-    })
+    this.frameId = requestAnimationFrame(() => this.render())
+
     this.deltaSinceLastFrame = this.clock.getDelta()
-    this.activeCamera.getWorldDirection(this.cameraDirection)
+    this.deltaFps += this.deltaSinceLastFrame
 
     if (this.animationElapsed > 0.10) {
       this.texturesAnimationSub.next(null)
@@ -686,7 +688,12 @@ export class EngineService {
     this.updateLODs()
     this.moveUsers()
     this.moveLabels()
-    this.renderer.render(this.scene, this.activeCamera)
+
+    if (this.deltaFps > 1 / this.maxFps.value) {
+      this.fpsSub.next((1 / this.deltaFps).toFixed())
+      this.renderer.render(this.scene, this.activeCamera)
+      this.deltaFps = this.deltaFps % 1 / this.maxFps.value
+    }
   }
 
   private resize(): void {
@@ -1073,6 +1080,7 @@ export class EngineService {
   }
 
   private moveCamera() {
+    this.activeCamera.getWorldDirection(this.cameraDirection)
     let movSteps = 12 * this.deltaSinceLastFrame
     let rotSteps = 1.5 * this.deltaSinceLastFrame
     if (this.inputSysSvc.controls[PressedKey.run]) {

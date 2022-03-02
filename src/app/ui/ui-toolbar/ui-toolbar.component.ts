@@ -37,6 +37,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public visibility = config.world.lod.maxDistance
   public strPos: string
   public strAlt: string
+  public strFps: string
 
   public constructor(
     private renderer: Renderer2,
@@ -148,5 +149,11 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       this.renderer.setStyle(this.compass.nativeElement, 'transform', `rotate(${o.theta}deg)`)
       this.cdRef.detectChanges()
     })
+
+    if (config.debug) {
+      this.engine.fpsSub.pipe(
+        throttleTime(1000)
+      ).subscribe((fps) => this.strFps = `${fps} FPS`)
+    }
   }
 }

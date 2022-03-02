@@ -5,4 +5,11 @@
   </button>
 </div>
 <div class="modal-body">
+  <div class="mb-3 row">
+    <label for="maxFps" class="col col-form-label">Maximum FPS</label>
+    <div class="col">
+      <input id="maxFps" class="form-control" minlength="1" pattern="[0-9]*" [(ngModel)]="maxFps">
+    </div>
+  </div>
+  <button class="btn btn-primary float-end mb-3" (click)="save()">Save</button>
 </div>
