@@ -123,7 +123,7 @@ async def import_world(attr_file, prop_file):
                     attr_dict['sky_color'][split[2]] = [0, 0, 0]
                 attr_dict['sky_color'][split[2]]['rgb'.index(split[3])] = int(entry[1])
             elif world_attr[entry[0]] in ['enable_terrain']:
-                attr_dict[world_attr[entry[0]]] = True if entry[1] == 'Y' else False
+                attr_dict[world_attr[entry[0]]] = entry[1] == 'Y'
             else:
                 attr_dict[world_attr[entry[0]]] = entry[1]
         

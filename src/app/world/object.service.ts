@@ -44,7 +44,7 @@ export class ObjectService {
     unknownGeometry.addGroup(0, unknownGeometry.getIndex().count, 0)
     this.unknown = new Group().add(new Mesh(unknownGeometry, [new MeshBasicMaterial({color: 0x000000})]))
     this.unknown.userData.isError = true
-    this.rwxMaterialManager = new RWXMaterialManager(this.path.value, 'jpg', 'zip', JSZip, JSZipUtils, false, sRGBEncoding)
+    this.rwxMaterialManager = new RWXMaterialManager(this.path.value, '.jpg', '.zip', JSZip, JSZipUtils, false, sRGBEncoding)
     this.rwxPropLoader.setRWXMaterialManager(this.rwxMaterialManager).setFlatten(true)
     this.rwxAvatarLoader.setRWXMaterialManager(this.rwxMaterialManager)
     this.basicLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true).setUseBasicMaterial(true).setTextureEncoding(sRGBEncoding)

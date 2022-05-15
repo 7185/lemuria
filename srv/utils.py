@@ -2,8 +2,8 @@
 """Utilities mdoule"""
 
 import asyncio
+import contextlib
 from typing import Callable
-from contextlib import suppress
 
 class Timer:
     """Timer class"""
@@ -23,5 +23,5 @@ class Timer:
             return
         if self._task.cancelled():
             self._task.cancel()
-            with suppress(asyncio.CancelledError):
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._task

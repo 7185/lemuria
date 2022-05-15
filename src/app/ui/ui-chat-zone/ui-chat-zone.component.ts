@@ -1,6 +1,6 @@
 import {Component, ViewChild} from '@angular/core'
 import type {OnInit} from '@angular/core'
-import {VirtualScrollerComponent} from 'ngx-virtual-scroller'
+import {VirtualScrollerComponent} from '@iharbeck/ngx-virtual-scroller'
 import {SocketService} from '../../network/socket.service'
 import {UserService} from './../../user/user.service'
 

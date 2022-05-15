@@ -10,11 +10,8 @@ authorized_users = set()
 class User(AuthUser):
     """User class"""
     @staticmethod
-    def current():
-        for user in authorized_users:
-            if user.auth_id == current_user.auth_id:
-                return user
-        return None
+    def current():    
+        return next((user for user in authorized_users if user.auth_id == current_user.auth_id), None)
 
     def __init__(self, auth_id):
         super().__init__(auth_id)
@@ -49,6 +46,8 @@ class User(AuthUser):
             'name': await self.name,
             'avatar': self.avatar,
             'world': self.world,
+            'state': self.state,
+            'gesture': self.gesture,
             'x': self.position[0],
             'y': self.position[1],
             'z': self.position[2],
@@ -89,7 +88,7 @@ async def broadcast_world(world, message):
 
 async def broadcast_userlist():
     await broadcast({'type': 'list',
-                    'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
+                     'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
 
 async def broadcast(message):
     for user in [u for u in authorized_users if u.connected]:

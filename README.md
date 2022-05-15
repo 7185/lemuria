@@ -8,10 +8,10 @@ Powered with Quart, Angular and Three.js.
 
 ## Installation
 
-First we fetch all dependencies, for the moment it is still preferable to use the `--legacy-peer-deps` option to do so.
+First we fetch all dependencies:
 
 ```bash
-$ npm install --legacy-peer-deps
+$ npm install
 ```
 
 Then we build and run the project:

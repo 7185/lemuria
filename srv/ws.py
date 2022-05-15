@@ -15,7 +15,7 @@ async def sending(user: User):
                 await socket.send_json(data)
     finally:
         user.websockets.remove(websocket._get_current_object())
-        if len(user.websockets) == 0:
+        if not user.websockets:
             user.connected = False
             # Force Timer cancel
             await user.set_timer()

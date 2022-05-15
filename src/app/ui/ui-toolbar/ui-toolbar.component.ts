@@ -37,7 +37,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public visibility = config.world.lod.maxDistance
   public strPos: string
   public strAlt: string
-  public strFps: string
+  public strFps = '0 FPS'
 
   public constructor(
     private renderer: Renderer2,

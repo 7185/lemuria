@@ -10,10 +10,7 @@ asks.init(trio)
 
 def get_cookie_from_response(response, cookie_name):
     """Returns cookie value of cookie_name"""
-    for c in response.cookies:
-        if c.name == cookie_name:
-            return c.value
-    return None
+    return next((c.value for c in response.cookies if c.name == cookie_name), None)
 
 AUTH_COOKIE = 'QUART_AUTH'
 DEBUG = False
@@ -68,8 +65,8 @@ class Bot(User):
                 await f(*parameters)
 
     async def _process_msg(self, msg: dict) -> None:
-        self.log('> ' + str(msg))
-        if not 'type' in msg:
+        self.log(f'> {msg}')
+        if 'type' not in msg:
             self.log('* unknown message')
         t = msg['type']
         if t == 'msg':
@@ -104,7 +101,7 @@ class Bot(User):
     async def send(self, msg: dict) -> None:
         if self.ws is not None:
             await self.ws.send_message(json.dumps(msg))
-            self.log('< ' + str(msg))
+            self.log(f'< {msg}')
         else:
             self.log('* Websocket not initialized')
 
@@ -134,7 +131,7 @@ class Bot(User):
                 break
 
     async def login(self) -> None:
-        rlogin = await asks.post(self.web_url + '/auth',
+        rlogin = await asks.post(f'{self.web_url}/auth',
                                  json={'login': self.name, 'password': 'password'})
         self.cookiejar = {
             AUTH_COOKIE: get_cookie_from_response(rlogin, AUTH_COOKIE)

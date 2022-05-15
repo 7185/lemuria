@@ -2,6 +2,7 @@
 """World module"""
 
 import aiofiles
+import contextlib
 from quart import json, current_app
 from user import authorized_users, broadcast_userlist
 
@@ -21,38 +22,38 @@ class World:
         self._elev = None
 
     async def _resolve(self):
-        if not self._resolved:
-            conn = current_app.engine
-            await conn.connect()
+        if self._resolved:
+            return
 
-            data = await conn.fetch_one(f"select * from world where id = {self.world_id}")
+        conn = current_app.engine
+        await conn.connect()
 
-            if data[2] is not None:
-                world_data = json.loads(data[2])
-                self._name = data[1]
-                self._welcome = world_data['welcome']
-                self._path = world_data['path']
+        data = await conn.fetch_one(f"select * from world where id = {self.world_id}")
 
-                if 'sky_color' in world_data:
-                    self._sky_color = world_data['sky_color']
+        if data[2] is not None:
+            world_data = json.loads(data[2])
+            self._name = data[1]
+            self._welcome = world_data['welcome']
+            self._path = world_data['path']
 
-                if 'skybox' in world_data:
-                    self._skybox = world_data['skybox']
+            if 'sky_color' in world_data:
+                self._sky_color = world_data['sky_color']
 
-                if 'entry' in world_data:
-                    self._entry = world_data['entry'] or '0N 0W'
+            if 'skybox' in world_data:
+                self._skybox = world_data['skybox']
 
-                if 'enable_terrain' in world_data:
-                    self._terrain = world_data['enable_terrain']
+            if 'entry' in world_data:
+                self._entry = world_data['entry'] or '0N 0W'
 
-                try:
-                    self._elev = await self.elev_dump()
-                except FileNotFoundError:
-                    pass
+            if 'enable_terrain' in world_data:
+                self._terrain = world_data['enable_terrain']
 
-                self._resolved = True
+            with contextlib.suppress(FileNotFoundError):
+                self._elev = await self.build_elev()
 
-            await conn.disconnect()
+            self._resolved = True
+
+        await conn.disconnect()
 
     @property
     async def name(self):
@@ -112,9 +113,9 @@ class World:
         await conn.disconnect()
         return world_list
 
-    async def elev_dump(self):
+    async def parse_elev_dump(self):
+        elev = {}
         async with aiofiles.open(f"elev{self._name.lower()}.txt", 'r', encoding='ISO-8859-1') as f:
-            elev = {}
             async for l in f:
                 s = l.strip().split(' ')
                 if s[0] == 'elevdump':
@@ -126,8 +127,11 @@ class World:
                     'node_size': int(s[4]),
                     'textures': [int(x) for x in s[7:7 + int(s[5])]],
                     'elevs': [int(x) for x in s[7 + int(s[5]):7 + int(s[5]) + int(s[6])]]})
+        return elev
+
+    async def build_elev(self):
         d = {}
-        for p, nodes in elev.items():
+        for p, nodes in (await self.parse_elev_dump()).items():
             x_page = 128 * p[0]
             z_page = 128 * p[1]
             for n in nodes:
