@@ -26,6 +26,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
 
   public settingsModal: BsModalRef
   public controlsModal: BsModalRef
+  public debug = config.debug
   public firstPerson = true
   public name = 'Anonymous'
   public userId: string
@@ -38,6 +39,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public strPos: string
   public strAlt: string
   public strFps = '0 FPS'
+  public strMem = '0 Geom. 0 Text.'
 
   public constructor(
     private renderer: Renderer2,
@@ -154,10 +156,14 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       this.cdRef.detectChanges()
     })
 
-    if (config.debug) {
+    if (this.debug) {
       this.engine.fpsSub.pipe(
         throttleTime(1000)
-      ).subscribe((fps) => this.strFps = `${fps} FPS`)
+      ).subscribe((fps) => {
+        const memInfo = this.engine.getMemInfo()
+        this.strFps = `${fps} FPS`
+        this.strMem = `${memInfo.geometries} Geom. ${memInfo.textures} Text.`
+      })
     }
   }
 }

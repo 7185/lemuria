@@ -4,10 +4,10 @@
       <app-logo></app-logo>
     </div>
     <div class="alert alert-danger" *ngIf="loginError">Wrong login or password</div>
-    <div class="alert alert-danger" *ngIf="usernameCtl.dirty && usernameCtl.hasError('required')">
+    <div class="alert alert-danger" *ngIf="usernameCtl.dirty && usernameCtl.errors?.required">
       Username is required
     </div>
-    <div class="alert alert-danger" *ngIf="passwordCtl.dirty && passwordCtl.hasError('required')">
+    <div class="alert alert-danger" *ngIf="passwordCtl.dirty && passwordCtl.errors?.required">
       Password is required
     </div>
     <div class="input-group mb-2">

@@ -29,18 +29,18 @@ async def receiving(user: User):
         await process_msg(user, data)
 
 
-async def process_msg(user: User, data: dict) -> None:
-    if data['type'] == 'msg':
-        await broadcast({'type': 'msg', 'user': await user.name, 'data': data['data']})
-    elif data['type'] == 'pos':
-        user.position[0] = data['data']['pos']['x']
-        user.position[1] = data['data']['pos']['y']
-        user.position[2] = data['data']['pos']['z']
-        user.orientation[0] = data['data']['ori']['x']
-        user.orientation[1] = data['data']['ori']['y']
-        user.orientation[2] = data['data']['ori']['z']
-        user.state = data['state']
-        user.gesture = data['gesture']
-    elif data['type'] == 'avatar':
-        user.avatar = data['data']
+async def process_msg(user: User, payload: dict) -> None:
+    if payload['type'] == 'msg':
+        await broadcast({'type': 'msg', 'user': await user.name, 'data': payload['data']})
+    elif payload['type'] == 'pos':
+        user.position[0] = payload['data']['pos']['x']
+        user.position[1] = payload['data']['pos']['y']
+        user.position[2] = payload['data']['pos']['z']
+        user.orientation[0] = payload['data']['ori']['x']
+        user.orientation[1] = payload['data']['ori']['y']
+        user.orientation[2] = payload['data']['ori']['z']
+        user.state = payload['data']['state']
+        user.gesture = payload['data']['gesture']
+    elif payload['type'] == 'avatar':
+        user.avatar = payload['data']
         await broadcast({'type': 'avatar', 'user': user.auth_id, 'data': user.avatar})

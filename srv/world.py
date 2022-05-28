@@ -85,7 +85,8 @@ class World:
             ymin = f" AND y >= {min_y}" if min_y is not None else "",
             ymax = f" AND y < {max_y}" if max_y is not None else "",
             zmin = f" AND z >= {min_z}" if min_z is not None else "",
-            zmax = f" AND z < {max_z}" if max_z is not None else "")
+            zmax = f" AND z < {max_z}" if max_z is not None else ""
+        )
 
         props = []
 

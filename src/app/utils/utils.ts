@@ -23,10 +23,8 @@ export default class Utils {
   static modelName(name: string) {
     if (name.endsWith('.zip')) {
       name = name.slice(0, -4) + '.rwx'
-    } else {
-      if (!name.endsWith('.rwx')) {
-        name += '.rwx'
-      }
+    } else if (!name.endsWith('.rwx')) {
+      name += '.rwx'
     }
     return name
   }

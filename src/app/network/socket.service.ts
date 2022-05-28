@@ -41,15 +41,13 @@ export class SocketService {
         const gesture = this.engineSvc.getGesture()
 
         for (const [i, vec] of this.engineSvc.getPosition().entries()) {
-          for (const [a, v] of Object.entries(vec)) {
-            pos[i][a] = +v.toFixed(2)
-          }
+          pos[i].fromArray(vec.toArray().map(v => +v.toFixed(2)))
         }
 
         if (!(this.lastSentPos[0].equals(pos[0]) && this.lastSentPos[1].equals(pos[1])) ||
           gesture !== this.lastSentGesture) {
-          this.sendMessage({type: 'pos', data: {pos: pos[0], ori: pos[1]}, state: this.engineSvc.getState(),
-            gesture})
+          this.sendMessage({type: 'pos', data: {pos: pos[0], ori: pos[1], state: this.engineSvc.getState(),
+            gesture}})
           this.lastSentPos[0].copy(pos[0])
           this.lastSentPos[1].copy(pos[1])
           this.lastSentGesture = gesture
@@ -62,7 +60,7 @@ export class SocketService {
     if (msg.type === 'list') {
       this.userSvc.refreshList(msg.data)
     } else if (msg.type === 'pos') {
-      this.userSvc.setPosition(msg.user, [msg.data.pos, msg.data.ori], msg.state, msg.gesture)
+      this.userSvc.setPosition(msg.user, [msg.data.pos, msg.data.ori], msg.data.state, msg.data.gesture)
     } else if (msg.type === 'avatar') {
       this.userSvc.setAvatar(msg.user, msg.data)
     } else {

@@ -76,27 +76,23 @@ export class ObjectService {
         }
         if (cmd.commandType === 'visible') {
           item.visible = cmd.value
-        } else {
-          if (cmd.commandType === 'color') {
-            this.applyTexture(item, null, null, cmd.color)
-          } else {
-            if (cmd.commandType === 'texture') {
-              if (cmd.texture) {
-                cmd.texture = cmd.texture.lastIndexOf('.') !== -1 ? cmd.texture.substring(0, cmd.texture.lastIndexOf('.')) : cmd.texture
-                if (cmd.mask) {
-                  cmd.mask = cmd.mask.lastIndexOf('.') !== -1 ? cmd.mask.substring(0, cmd.mask.lastIndexOf('.')) : cmd.mask
-                }
-              }
-              texturing = this.applyTexture(item, cmd.texture, cmd.mask)
+        } else if (cmd.commandType === 'color') {
+          this.applyTexture(item, null, null, cmd.color)
+        } else if (cmd.commandType === 'texture') {
+          if (cmd.texture) {
+            cmd.texture = cmd.texture.lastIndexOf('.') !== -1 ? cmd.texture.substring(0, cmd.texture.lastIndexOf('.')) : cmd.texture
+            if (cmd.mask) {
+              cmd.mask = cmd.mask.lastIndexOf('.') !== -1 ? cmd.mask.substring(0, cmd.mask.lastIndexOf('.')) : cmd.mask
             }
           }
-          if (!textured) {
-            if (cmd.commandType === 'sign') {
-              this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
-            }
-            if (cmd.commandType === 'picture') {
-              this.makePicture(item, cmd.resource)
-            }
+          texturing = this.applyTexture(item, cmd.texture, cmd.mask)
+        }
+        if (!textured) {
+          if (cmd.commandType === 'sign') {
+            this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
+          }
+          if (cmd.commandType === 'picture') {
+            this.makePicture(item, cmd.resource)
           }
         }
         if (cmd.commandType === 'move') {
@@ -135,21 +131,12 @@ export class ObjectService {
         }
       }
     }
-    if (textured) {
-      if (texturing != null) {
-        // there are textures, we wait for them to load
-        texturing.subscribe(() => {
-          for (const cmd of result.create) {
-            if (cmd.commandType === 'sign') {
-              this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
-            }
-            if (cmd.commandType === 'picture') {
-              this.makePicture(item, cmd.resource)
-            }
-          }
-        })
-      } else {
-        // color, no need to wait
+    if (!textured) {
+      return
+    }
+    if (texturing != null) {
+      // there are textures, we wait for them to load
+      texturing.subscribe(() => {
         for (const cmd of result.create) {
           if (cmd.commandType === 'sign') {
             this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
@@ -158,16 +145,22 @@ export class ObjectService {
             this.makePicture(item, cmd.resource)
           }
         }
+      })
+    } else {
+      // color, no need to wait
+      for (const cmd of result.create) {
+        if (cmd.commandType === 'sign') {
+          this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
+        }
+        if (cmd.commandType === 'picture') {
+          this.makePicture(item, cmd.resource)
+        }
       }
     }
   }
 
   makePicture(item: Group, url: string) {
-    if (url.match(this.remoteUrl)) {
-      url = `${config.url.imgProxy}${url}`
-    } else {
-      url = `${this.path.value}/textures/${url}`
-    }
+    url = url.match(this.remoteUrl) ? `${config.url.imgProxy}${url}` : `${this.path.value}/textures/${url}`
     this.pictureLoader.load(url, (image) => {
       image.encoding = sRGBEncoding
       item.traverse((child: Object3D) => {

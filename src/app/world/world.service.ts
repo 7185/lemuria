@@ -104,8 +104,7 @@ export class WorldService {
   }
 
   initWorld() {
-    this.resetChunks()
-    this.engine.resetChunkMap()
+    this.destroyWorld()
 
     this.avatar = new Group()
     this.avatar.name = 'avatar'
@@ -150,10 +149,12 @@ export class WorldService {
     })
   }
 
-  destroyWorld() {
-    this.uAvatarListener.unsubscribe()
-    this.uListListener.unsubscribe()
-    this.avatarListener.unsubscribe()
+  public destroyWorld() {
+    this.resetChunks()
+    this.engine.resetChunkMap()
+    this.uAvatarListener?.unsubscribe()
+    this.uListListener?.unsubscribe()
+    this.avatarListener?.unsubscribe()
   }
 
   public resetChunks() {
@@ -212,12 +213,10 @@ export class WorldService {
                 changeTexture = k * 6
                 currTexture = d[1][k][1]
               }
-            } else {
-              if (currTexture !== 0) {
-                geometry.addGroup(changeTexture, k * 6 - changeTexture, currTexture)
-                changeTexture = k * 6
-                currTexture = 0
-              }
+            } else if (currTexture !== 0) {
+              geometry.addGroup(changeTexture, k * 6 - changeTexture, currTexture)
+              changeTexture = k * 6
+              currTexture = 0
             }
           }
 

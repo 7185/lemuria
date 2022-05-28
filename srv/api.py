@@ -17,7 +17,7 @@ async def auth_login():
     data = await request.json
     user_id = str(uuid.uuid4())[:8]
     user = User(user_id)
-    user._name = data['login'] or 'Anonymous'+user_id
+    user._name = data['login'] or f'Anonymous{user_id}'
     user.queue = asyncio.Queue()
     login_user(user, True)
     authorized_users.add(user)

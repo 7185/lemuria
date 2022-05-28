@@ -193,6 +193,12 @@ export class EngineService {
     if (this.frameId != null) {
       cancelAnimationFrame(this.frameId)
     }
+    if (this.renderer != null) {
+      this.renderer.dispose()
+      this.renderer.forceContextLoss()
+      this.renderer = null
+      this.canvas = null
+    }
   }
 
   public localUserPosObservable() {
@@ -291,7 +297,6 @@ export class EngineService {
     for (const item of [...this.worldNode.children]) {
       this.removeWorldObject(item as Group)
     }
-    this.renderer.dispose()
     this.scene.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         child.geometry.dispose()
@@ -468,7 +473,9 @@ export class EngineService {
           child.geometry.dispose()
         }
       })
-      group.parent.remove(group)
+      if (group.parent) {
+        group.parent.remove(group)
+      }
     }
   }
 
@@ -488,6 +495,10 @@ export class EngineService {
 
   public users() {
     return this.usersNode.children
+  }
+
+  public getMemInfo() {
+    return this.renderer.info.memory
   }
 
   public animate(): void {
@@ -687,14 +698,13 @@ export class EngineService {
 
     this.deltaFps += this.clock.getDelta()
 
-    if (this.deltaFps > 1 / this.maxFps.value) {
-      this.fpsSub.next((1 / this.deltaFps).toFixed())
-      this.deltaSinceLastFrame = this.deltaFps
-      this.deltaFps = this.deltaFps % 1 / this.maxFps.value
-      this.renderer.render(this.scene, this.activeCamera)
-    } else {
+    if (this.deltaFps <= 1 / this.maxFps.value) {
       return
     }
+    this.fpsSub.next((1 / this.deltaFps).toFixed())
+    this.deltaSinceLastFrame = this.deltaFps
+    this.deltaFps = this.deltaFps % 1 / this.maxFps.value
+    this.renderer.render(this.scene, this.activeCamera)
 
     if (this.animationElapsed > 0.10) {
       this.texturesAnimationSub.next(null)
@@ -714,6 +724,9 @@ export class EngineService {
   }
 
   private resize(): void {
+    if (this.renderer == null) {
+      return
+    }
     const width = window.innerWidth
     const height = window.innerHeight
     this.camera.aspect = width / height
@@ -1152,15 +1165,11 @@ export class EngineService {
     if (this.inputSysSvc.controls[PressedKey.moveRgt]) {
       this.playerVelocity.add(new Vector3(-this.cameraDirection.z, 0, this.cameraDirection.x).multiplyScalar(movSteps))
     }
-    if (this.inputSysSvc.controls[PressedKey.lookUp]) {
-      if (this.player.rotation.x < Math.PI / 2) {
-        this.player.rotation.x += rotSteps
-      }
+    if (this.inputSysSvc.controls[PressedKey.lookUp] && this.player.rotation.x < Math.PI / 2) {
+      this.player.rotation.x += rotSteps
     }
-    if (this.inputSysSvc.controls[PressedKey.lookDwn]) {
-      if (this.player.rotation.x > -Math.PI / 2) {
-        this.player.rotation.x -= rotSteps
-      }
+    if (this.inputSysSvc.controls[PressedKey.lookDwn] && this.player.rotation.x > -Math.PI / 2) {
+      this.player.rotation.x -= rotSteps
     }
     if (this.inputSysSvc.controls[PressedKey.moveUp]) {
       this.flyMode = true
@@ -1176,12 +1185,10 @@ export class EngineService {
     const damping = Math.exp(-3 * this.deltaSinceLastFrame) - 1
     if (this.playerOnFloor) {
       this.playerVelocity.addScaledVector(this.playerVelocity, damping)
+    } else if (!this.flyMode && !this.inputSysSvc.controls[PressedKey.clip]) {
+      this.playerVelocity.y -= 30 * this.deltaSinceLastFrame
     } else {
-      if (!this.flyMode && !this.inputSysSvc.controls[PressedKey.clip]) {
-        this.playerVelocity.y -= 30 * this.deltaSinceLastFrame
-      } else {
-        this.playerVelocity.addScaledVector(this.playerVelocity, damping)
-      }
+      this.playerVelocity.addScaledVector(this.playerVelocity, damping)
     }
 
     this.updatePlayerPosition()
@@ -1212,6 +1219,7 @@ export class EngineService {
         if (item.userData.move.waiting > 0) {
           item.userData.move.waiting -= this.deltaSinceLastFrame
         } else if (item.userData.move.completion < 1) {
+          // move is in progress
           item.position.x += (item.userData.move.distance.x / item.userData.move.time)
             * this.deltaSinceLastFrame * item.userData.move.direction
           item.position.y += (item.userData.move.distance.y / item.userData.move.time)
@@ -1219,29 +1227,24 @@ export class EngineService {
           item.position.z += (item.userData.move.distance.z / item.userData.move.time)
             * this.deltaSinceLastFrame * item.userData.move.direction
           item.userData.move.completion += this.deltaSinceLastFrame / item.userData.move.time
-        } else {
-          // move is done
-          if (item.userData.move.direction === -1) {
-            // wayback is done
-            if (item.userData.move.loop) {
-              item.userData.move.direction = item.userData.move.direction * -1
-              item.userData.move.completion = 0
-            }
-          } else {
-            if (item.userData.move.reset) {
-              // no wayback, all done
-              item.position.copy(item.userData.move.orig)
-              if (item.userData.move.loop) {
-                // loop
-                item.userData.move.completion = 0
-              }
-            } else {
-              item.userData.move.waiting = item.userData.move.wait
-              // wayback is starting
-              item.userData.move.direction = item.userData.move.direction * -1
-              item.userData.move.completion = 0
-            }
+        } else if (item.userData.move.direction === -1) {
+          // wayback is done
+          if (item.userData.move.loop) {
+            item.userData.move.direction = item.userData.move.direction * -1
+            item.userData.move.completion = 0
           }
+        } else if (item.userData.move.reset) {
+          // no wayback, all done
+          item.position.copy(item.userData.move.orig)
+          if (item.userData.move.loop) {
+            // loop
+            item.userData.move.completion = 0
+          }
+        } else {
+          item.userData.move.waiting = item.userData.move.wait
+          // wayback is starting
+          item.userData.move.direction = item.userData.move.direction * -1
+          item.userData.move.completion = 0
         }
       }
       if (item.userData.rotate) {
@@ -1274,32 +1277,33 @@ export class EngineService {
   private moveUsers() {
     for (const u of this.userSvc.userList) {
       const user = this.usersNode.children.find(o => o.name === u.id)
-      if (user != null) {
-        if (u.completion < 1) {
-          u.completion = (u.completion + this.deltaSinceLastFrame / 0.2) > 1 ? 1 : u.completion + this.deltaSinceLastFrame / 0.2
-          const previousPos = user.position.clone()
-          user.position.x = u.oldX + (u.x - u.oldX) * u.completion
-          user.position.y = u.oldY + (u.y - u.oldY) * u.completion
-          if (user.userData.offsetY != null) {
-            // when the avatar is not loaded yet, the position should not be corrected
-            user.position.y += user.userData.offsetY
-          }
-          user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
-          user.rotation.set(
-            u.oldRoll + this.shortestAngle(u.oldRoll, u.roll) * u.completion,
-            u.oldYaw + this.shortestAngle(u.oldYaw, u.yaw) * u.completion,
-            0, 'YZX')
-          user.userData.animationPlayer?.then((animation: AvatarAnimationPlayer) => {
-            const velocity = (previousPos.distanceTo(user.position)) / this.deltaSinceLastFrame
-            // When applicable: reset gesture on completion
-            u.gesture = animation.animate(this.deltaSinceLastFrame, u.state, u.gesture, velocity) ? null : u.gesture
-          })
-        } else {
-          user.userData.animationPlayer?.then((animation: AvatarAnimationPlayer) => {
-            // Same here: reset gesture on completion
-            u.gesture = animation.animate(this.deltaSinceLastFrame, u.state, u.gesture) ? null : u.gesture
-          })
+      if (user == null) {
+        continue
+      }
+      if (u.completion < 1) {
+        u.completion = (u.completion + this.deltaSinceLastFrame / 0.2) > 1 ? 1 : u.completion + this.deltaSinceLastFrame / 0.2
+        const previousPos = user.position.clone()
+        user.position.x = u.oldX + (u.x - u.oldX) * u.completion
+        user.position.y = u.oldY + (u.y - u.oldY) * u.completion
+        if (user.userData.offsetY != null) {
+          // when the avatar is not loaded yet, the position should not be corrected
+          user.position.y += user.userData.offsetY
         }
+        user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
+        user.rotation.set(
+          u.oldRoll + this.shortestAngle(u.oldRoll, u.roll) * u.completion,
+          u.oldYaw + this.shortestAngle(u.oldYaw, u.yaw) * u.completion,
+          0, 'YZX')
+        user.userData.animationPlayer?.then((animation: AvatarAnimationPlayer) => {
+          const velocity = (previousPos.distanceTo(user.position)) / this.deltaSinceLastFrame
+          // When applicable: reset gesture on completion
+          u.gesture = animation.animate(this.deltaSinceLastFrame, u.state, u.gesture, velocity) ? null : u.gesture
+        })
+      } else {
+        user.userData.animationPlayer?.then((animation: AvatarAnimationPlayer) => {
+          // Same here: reset gesture on completion
+          u.gesture = animation.animate(this.deltaSinceLastFrame, u.state, u.gesture) ? null : u.gesture
+        })
       }
     }
   }

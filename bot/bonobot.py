@@ -7,13 +7,12 @@ from random import randint
 WEB_URL = 'https://lemuria.7185.fr/api/v1'
 WS_URL = 'wss://lemuria.7185.fr/ws'
 
-class Bobinot(Bot):
+class Bonobot(Bot):
     def __init__(self, *args, **kwargs):
-        super(Bobinot, self).__init__(*args, **kwargs)
-        self.name = 'bobinot'
+        super().__init__(*args, **kwargs)
+        self.name = '[bonobot]'
         self.following = None
         self.move_speed = 1
-        self.avatar = 12
         self.current_move_thread = 0
         self.logging_enabled = False
 
@@ -22,6 +21,7 @@ class Bobinot(Bot):
         tick = 200
         length = ((dest_x - self.x) ** 2 + (dest_z - self.z) ** 2) ** 0.5
         direction = atan2(dest_x - self.x, dest_z - self.z) + pi
+        self.state = 'walk'
         n = int(length * (1 / self.move_speed))
         if n > 0:
             x_gap = (dest_x - self.x) / n
@@ -35,9 +35,15 @@ class Bobinot(Bot):
             self.set_position(p[0], self.y, p[1], yaw=direction)
             await self.send_position()
             await trio.sleep(tick / 1e3)
+        self.state = 'idle'
+        await self.send_position()
 
     async def on_connected(self) -> None:
         await self.change_avatar(self.avatar)
+        await self.get_world_list()
+        for i, w in self.worldlist.items():
+            if w['name'] == 'Village':
+                await self.world_enter(i)
         await self.send_msg('hello')
         await self.send_position()
 
@@ -56,15 +62,18 @@ class Bobinot(Bot):
             elif msg.startswith('!pos'):
                 await self.send_msg(f'{self.x},{self.y},{self.z}')
             elif msg.startswith('!come'):
-                await self.send_msg('Coming...')
-                for u in self.userlist.values():
-                    if u.name == user:
+                u = next((u for u in self.userlist.values() if u.name == user), None)
+                if u is not None:
+                    if u.world != self.world:
+                        await self.send_msg(f"Sorry, I'm on {self.worldlist[self.world]['name'] if self.world else 'Nowhere'}...")
+                    else:
+                        await self.send_msg('Coming...')
                         self.current_move_thread += 1
                         self.nursery.start_soon(self.move, u.x, u.z)
             elif msg.startswith('!whereami'):
-                for u in self.userlist.values():
-                    if u.name == user:
-                        await self.send_msg(f'{u.x},{u.y},{u.z}')
+                u = next((u for u in self.userlist.values() if u.name == user), None)
+                if u is not None:
+                    await self.send_msg(f'{u.x},{u.y},{u.z}')
             elif msg.startswith('!speed'):
                 value = 1
                 m = msg.split(' ')
@@ -75,5 +84,5 @@ class Bobinot(Bot):
             elif msg.startswith('!change'):
                 await self.change_avatar(randint(0, 16))
 
-b = Bobinot(WEB_URL, WS_URL)
+b = Bonobot(WEB_URL, WS_URL)
 b.run()
