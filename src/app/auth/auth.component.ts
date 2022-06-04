@@ -18,8 +18,8 @@ export class AuthComponent implements OnInit {
   public processing = false
   public loginForm: FormGroup
   public loginError = false
-  public usernameCtl: FormControl
-  public passwordCtl: FormControl
+  public usernameCtl: FormControl<string | null>
+  public passwordCtl: FormControl<string | null>
   private returnUrl: string
 
   constructor(private fb: FormBuilder,

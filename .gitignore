@@ -49,3 +49,7 @@ package-lock.json
 srv/static
 /venv
 __pycache__
+srv/app.db
+srv/dumps/*
+!srv/dumps/atlemuria.txt
+!srv/dumps/proplemuria.txt
