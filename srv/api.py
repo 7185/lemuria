@@ -11,7 +11,7 @@ from world import World
 api_auth = Blueprint('api_auth', __name__, url_prefix='/api/v1/auth')
 api_world = Blueprint('api_world', __name__, url_prefix='/api/v1/world')
 
-@api_auth.route('/', methods=['POST'], strict_slashes=False)
+@api_auth.route('/', methods=['POST'])
 async def auth_login():
     """User login"""
     data = await request.json
@@ -23,14 +23,14 @@ async def auth_login():
     authorized_users.add(user)
     return jsonify({'id': user_id, 'name': await user.name}), 200
 
-@api_auth.route('/', methods=['DELETE'], strict_slashes=False)
+@api_auth.route('/', methods=['DELETE'])
 @login_required
 async def auth_logout():
     """User logout"""
     logout_user()
     return {}, 200
 
-@api_auth.route('/', methods=['GET'], strict_slashes=False)
+@api_auth.route('/', methods=['GET'])
 @login_required
 async def auth_session():
     """User session"""

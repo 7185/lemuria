@@ -1,4 +1,4 @@
 aiofiles
-Quart>=0.16.2
-quart-auth>=0.6.0
+Quart>=0.18
+quart-auth>=0.7.0
 databases[sqlite]

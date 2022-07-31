@@ -17,6 +17,7 @@ $ npm install
 Then we build and run the project:
 
 ```bash
+# You can also use build:prod to build a production-ready bundle
 $ npm run build:watch
 ```
 
@@ -37,7 +38,7 @@ Here you will find a few steps to follow in order to create and populate a worki
 ```bash
 $ pip3 install --user -r srv/requirements.txt
 ```
-### Create an empty database and import the json file
+### Create an empty database and import the dump files
 
 Go into `srv/tools`, then run the following:
 
@@ -45,7 +46,7 @@ Go into `srv/tools`, then run the following:
 $ ./import_lemuria.py
 ```
 
-This will create and init the database `srv/app.db` using the data in `srv/atlemuria.txt` and `srv/proplemuria.txt`.
+This will create and init the database `srv/app.db` using the data in `srv/dumps/atlemuria.txt` and `srv/dumps/proplemuria.txt`.
 
 You will also need the `village2` resource path to be served, to do so you can go to `srv`
 and create a symlink by running the following (but set the path correctly first):
@@ -66,6 +67,6 @@ This will run the API backend, listening on port `8080`.
 
 ## Try it out!
 
-Once `npm run`, `app.py` and `serve_path.py` are running: open your favorite web browser and go to `http://localhost:8080`,
+Once `npm run build`, `app.py` and `serve_path.py` are running: open your favorite web browser and go to `http://localhost:8080`,
 you should be prompted with a login screen, put whatever nickname you want, the password you provide doesn't matter as
 there's no proper authentication for the moment.
