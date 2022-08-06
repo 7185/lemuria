@@ -304,8 +304,9 @@ export class ObjectService {
             if (color != null) {
               newRWXMat.color = [color.r / 255.0, color.g / 255.0, color.b / 255.0]
             }
-            this.rwxMaterialManager.currentRWXMaterial = newRWXMat
-            const curMat = this.rwxMaterialManager.getCurrentMaterial()
+            const signature = newRWXMat.getMatSignature()
+            this.rwxMaterialManager.addRWXMaterial(newRWXMat, signature)
+            const curMat = this.rwxMaterialManager.getThreeMaterialPack(signature)
             newMaterials.push(curMat.threeMat)
             promises.push(forkJoin(curMat.loadingPromises))
           }
@@ -321,7 +322,6 @@ export class ObjectService {
         child.material.needsUpdate = true
       }
     })
-    this.rwxMaterialManager.resetCurrentMaterialList()
     return forkJoin(promises)
   }
 
