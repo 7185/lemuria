@@ -1,0 +1,8 @@
+# Docker settings
+
+accesslog = "-"
+access_log_format = "%(t)s %(h)s %(f)s - %(S)s '%(r)s' %(s)s %(b)s %(D)s"
+bind = "0.0.0.0:8080"
+errorlog = "-"
+worker_class = "uvloop"
+websocket_ping_interval = 60

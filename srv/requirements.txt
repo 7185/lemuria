@@ -2,3 +2,4 @@ aiofiles
 Quart>=0.18
 quart-auth>=0.7.0
 databases[sqlite]
+uvloop

@@ -2,11 +2,10 @@ import {BehaviorSubject, fromEvent, Subject, timer} from 'rxjs'
 import {Injectable, NgZone} from '@angular/core'
 import type {ElementRef} from '@angular/core'
 import {
-  AmbientLight, Clock, PerspectiveCamera, Raycaster, Scene, Group, BoxBufferGeometry,
+  AmbientLight, Clock, PerspectiveCamera, Raycaster, Scene, Group, BoxGeometry,
   Vector2, Vector3, WebGLRenderer, DirectionalLight, CameraHelper, Object3D, Spherical,
   Mesh, MeshBasicMaterial, AxesHelper, EdgesGeometry,
-  LineSegments, LineBasicMaterial, sRGBEncoding, Box3, BoxGeometry,
-  Ray
+  LineSegments, LineBasicMaterial, sRGBEncoding, Box3, Ray
 } from 'three'
 import type {Material, LOD, Triangle} from 'three'
 import {flattenGroup} from 'three-rwx-loader'
@@ -757,7 +756,7 @@ export class EngineService {
     this.selectedObjectSub.next({name: item.name, desc: item.userData.desc, act: item.userData.act, date: item.userData.date})
     console.log(item)
 
-    const geometry = new BoxBufferGeometry(item.userData.box.x, item.userData.box.y, item.userData.box.z)
+    const geometry = new BoxGeometry(item.userData.box.x, item.userData.box.y, item.userData.box.z)
     const edges = new EdgesGeometry(geometry)
     this.selectionGroup = new Group()
     this.selectionBox = new LineSegments(edges, new LineBasicMaterial({color: 0xffff00, depthTest: false}))

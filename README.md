@@ -65,6 +65,16 @@ $ python3 app.py
 
 This will run the API backend, listening on port `8080`.
 
+
+## Docker
+
+You can also generate a docker image to build the project and run the server in a container:
+
+```bash
+$ docker build -t lemuria .
+$ docker run -it -p 8080:8080 -v $PWD/srv/app.db:/app/app.db lemuria
+```
+
 ## Try it out!
 
 Once `npm run build`, `app.py` and `serve_path.py` are running: open your favorite web browser and go to `http://localhost:8080`,

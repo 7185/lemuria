@@ -1,0 +1,6 @@
+.angular
+.git
+node_modules
+srv/*.db
+srv/static
+venv
