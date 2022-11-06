@@ -395,6 +395,9 @@ export class EngineService {
     chunk.matrixAutoUpdate = false
     this.objectsNode.add(chunk)
 
+    // Update levels of the LOD so the chunk doesn't get visible right from the start
+    chunk.update(this.activeCamera)
+
     for (const child of chunk.levels[0].object.children) {
       this.handleSpecialObject(child as Group)
     }
@@ -610,7 +613,7 @@ export class EngineService {
     } else {
       chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
         lazyGeneration: false,
-        onProgress: progress => {
+        onProgress: (progress: number) => {
           if (progress === 1.0) { chunk.parent.visible = true }
         }
       })
@@ -793,9 +796,7 @@ export class EngineService {
       const item = this.pointedItem()
       if (item != null && item.userData?.clickable) {
         if (item.userData.teleportClick != null) {
-          let newX = 0
-          let newY = 0
-          let newZ = 0
+          let [newX, newY, newZ] = [0, 0, 0]
           const yaw = item.userData.teleportClick?.direction || 0
           if (item.userData.teleportClick.altitude != null) {
             if (item.userData.teleportClick.altitude.altitudeType === 'absolute') {
