@@ -116,7 +116,7 @@ class World:
 
     async def parse_elev_dump(self):
         elev = {}
-        async with aiofiles.open(f"elev{self._name.lower()}.txt", 'r', encoding='ISO-8859-1') as f:
+        async with aiofiles.open(f"dumps/elev{self._name.lower()}.txt", 'r', encoding='ISO-8859-1') as f:
             async for l in f:
                 s = l.strip().split(' ')
                 if s[0] == 'elevdump':
