@@ -78,21 +78,24 @@ class World:
         conn = current_app.engine
         await conn.connect()
 
-        final_query = "select * from prop where wid = {world_id}{xmin}{xmax}{ymin}{ymax}{zmin}{zmax}".format(
-            world_id = self.world_id,
-            xmin = f" AND x >= {min_x}" if min_x is not None else "",
-            xmax = f" AND x < {max_x}" if max_x is not None else "",
-            ymin = f" AND y >= {min_y}" if min_y is not None else "",
-            ymax = f" AND y < {max_y}" if max_y is not None else "",
-            zmin = f" AND z >= {min_z}" if min_z is not None else "",
-            zmax = f" AND z < {max_z}" if max_z is not None else ""
-        )
+        # Build the base query
+        query = f"SELECT * FROM prop WHERE wid = {self.world_id}"
 
-        props = []
+        # Build the WHERE clause
+        where_clauses = [
+            f"x >= {min_x}" if min_x is not None else None,
+            f"x < {max_x}" if max_x is not None else None,
+            f"y >= {min_y}" if min_y is not None else None,
+            f"y < {max_y}" if max_y is not None else None,
+            f"z >= {min_z}" if min_z is not None else None,
+            f"z < {max_z}" if max_z is not None else None
+        ]
 
-        for prop in await conn.fetch_all(final_query):
-            p = list(prop)
-            props.append(p[3:13])
+        # Remove None values from the list of where clauses and add the WHERE clause to the query if necessary
+        if where_clauses := [clause for clause in where_clauses if clause is not None]:
+            query += " AND " + " AND ".join(where_clauses)
+
+        props = [list(prop)[3:13] for prop in await conn.fetch_all(query)]
 
         await conn.disconnect()
 

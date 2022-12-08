@@ -68,42 +68,49 @@ class Bot(User):
             if f is not None:
                 await f(*parameters)
 
-    async def _process_msg(self, msg: dict) -> None:
-        self.log(f'> {msg}')
-        if 'type' not in msg:
-            self.log('* unknown message')
-        t = msg['type']
-        if t == 'msg':
-            await self._callback('on_msg', msg['user'], msg['data'])
-        elif t == 'list':
-            self.userlist.clear()
-            for u in msg['data']:
-                self.userlist[u['id']] = User(u['name'])
-                self.userlist[u['id']].avatar = u['avatar']
-                self.userlist[u['id']].world = u['world']
-            await self._callback('on_user_list')
-        elif t == 'join':
-            await self._callback('on_user_join', msg['data'])
-        elif t == 'part':
-            await self._callback('on_user_part', msg['data'])
-        elif t == 'pos':
-            for u in self.userlist:
-                if u == msg['user']:
-                    self.userlist[u].x = msg['data']['pos']['x']
-                    self.userlist[u].y = msg['data']['pos']['y']
-                    self.userlist[u].z = msg['data']['pos']['z']
-                    self.userlist[u].roll = msg['data']['ori']['x']
-                    self.userlist[u].yaw = msg['data']['ori']['y']
-                    self.userlist[u].pitch = msg['data']['ori']['z']
-                    self.userlist[u].state = msg['data']['state']
-                    self.userlist[u].gesture = msg['data']['gesture']
-            await self._callback('on_user_pos', msg['user'], msg['data'])
-        elif t == 'avatar':
-            for u in self.userlist:
-                if u == msg['user']:
-                    self.userlist[u].avatar = msg['data']
-            await self._callback('on_user_avatar', msg['user'], msg['data'])
+async def _process_msg(self, msg: dict) -> None:
+    self.log(f"> {msg}")
 
+    # Return early if the message doesn't have a 'type' field
+    if 'type' not in msg:
+        self.log("* unknown message")
+        return
+
+    t = msg['type']
+
+    # Handle the different message types
+    if t == "avatar":
+        user = self.userlist.get(msg["user"])
+        if user is not None:
+            user.avatar = msg["data"]
+        await self._callback("on_user_avatar", msg["user"], msg["data"])
+    elif t == "join":
+        await self._callback("on_user_join", msg["data"])
+    elif t == "list":
+        self.userlist.clear()
+        for u in msg["data"]:
+            user = User(u["name"])
+            user.avatar = u["avatar"]
+            user.world = u["world"]
+            self.userlist[u["id"]] = user
+        await self._callback("on_user_list")
+    elif t == "msg":
+        await self._callback("on_msg", msg["user"], msg["data"])
+    elif t == "part":
+        await self._callback("on_user_part", msg["data"])
+    elif t == "pos":
+        user = self.userlist.get(msg["user"])
+        if user is not None:
+            data = msg["data"]
+            user.x = data["pos"]["x"]
+            user.y = data["pos"]["y"]
+            user.z = data["pos"]["z"]
+            user.roll = data["ori"]["x"]
+            user.yaw = data["ori"]["y"]
+            user.pitch = data["ori"]["z"]
+            user.state = data["state"]
+            user.gesture = data["gesture"]
+        await self._callback("on_user_pos", msg["user"], msg["data"])
 
     async def send(self, msg: dict) -> None:
         if self.ws is not None:

@@ -19,20 +19,22 @@ class Bonobot(Bot):
     async def move(self, dest_x: float, dest_z: float) -> None:
         thread_id = self.current_move_thread
         tick = 200
-        length = ((dest_x - self.x) ** 2 + (dest_z - self.z) ** 2) ** 0.5
-        direction = atan2(dest_x - self.x, dest_z - self.z) + pi
+        dx = dest_x - self.x
+        dz = dest_z - self.z
+        length = (dx ** 2 + dz ** 2) ** 0.5
+        direction = atan2(dx, dz) + pi
         self.state = 'walk'
-        n = int(length * (1 / self.move_speed))
-        if n > 0:
-            x_gap = (dest_x - self.x) / n
-            z_gap = (dest_z - self.z) / n
-            gaps = [[self.x + i * x_gap, self.z + i * z_gap] for i in range(1, n + 1)]
+        num_step = int(length * (1 / self.move_speed))
+        if num_step > 0:
+            x_gap = dx / num_step
+            z_gap = dz / num_step
+            gaps = [[self.x + i * x_gap, self.z + i * z_gap] for i in range(1, num_step + 1)]
         else:
             gaps = [[dest_x, dest_z]]
-        for p in gaps:
+        for step in gaps:
             if thread_id != self.current_move_thread:
                 break
-            self.set_position(p[0], self.y, p[1], yaw=direction)
+            self.set_position(step[0], self.y, step[1], yaw=direction)
             await self.send_position()
             await trio.sleep(tick / 1e3)
         self.state = 'idle'
@@ -55,34 +57,45 @@ class Bonobot(Bot):
 
     async def on_msg(self, user: str, msg: str) -> None:
         print(f"<{user}> {msg}")
-        if user != self.name:
-            if msg.startswith('!list'):
-                l = ' '.join([f'{u.name}({u.avatar}:{i})' for i, u in self.userlist.items()])
-                await self.send_msg(l)
-            elif msg.startswith('!pos'):
-                await self.send_msg(f'{self.x},{self.y},{self.z}')
-            elif msg.startswith('!come'):
-                u = next((u for u in self.userlist.values() if u.name == user), None)
-                if u is not None:
-                    if u.world != self.world:
-                        await self.send_msg(f"Sorry, I'm on {self.worldlist[self.world]['name'] if self.world else 'Nowhere'}...")
-                    else:
-                        await self.send_msg('Coming...')
-                        self.current_move_thread += 1
-                        self.nursery.start_soon(self.move, u.x, u.z)
-            elif msg.startswith('!whereami'):
-                u = next((u for u in self.userlist.values() if u.name == user), None)
-                if u is not None:
-                    await self.send_msg(f'{u.x},{u.y},{u.z}')
-            elif msg.startswith('!speed'):
+
+        # Return early if the message is from the bot itself
+        if user == self.name:
+            return
+
+        # Parse the message and extract the command and arguments
+        command, *args = msg.split()
+
+        # Handle the different commands
+        if command == "!list":
+            l = ' '.join([f"{u.name}({u.avatar}:{i})" for i, u in self.userlist.items()])
+            await self.send_msg(l)
+        elif command == "!pos":
+            await self.send_msg(f"{self.x},{self.y},{self.z}")
+        elif command == "!come":
+            u = next((u for u in self.userlist.values() if u.name == user), None)
+            if u is None:
+                await self.send_msg("Sorry, I don't know who you are.")
+            elif u.world != self.world:
+                await self.send_msg(f"Sorry, I'm on {self.worldlist[self.world]['name'] if self.world else 'Nowhere'}...")
+            else:
+                await self.send_msg("Coming...")
+                self.current_move_thread += 1
+                self.nursery.start_soon(self.move, u.x, u.z)
+        elif command == "!whereami":
+            u = next((u for u in self.userlist.values() if u.name == user), None)
+            if u is None:
+                await self.send_msg("Sorry, I don't know who you are.")
+            else:
+                await self.send_msg(f"{u.x},{u.y},{u.z}")
+        elif command == "!speed":
+            try:
+                value = int(args[0])
+            except (IndexError, ValueError):
                 value = 1
-                m = msg.split(' ')
-                if len(m) > 1 and m[1].isdigit():
-                    value = m[1]
-                self.move_speed = int(value)
-                await self.send_msg(f'Running at {self.move_speed}')
-            elif msg.startswith('!change'):
-                await self.change_avatar(randint(0, 16))
+            self.move_speed = value
+            await self.send_msg(f"Running at {self.move_speed}")
+        elif command == "!change":
+            await self.change_avatar(randint(0, 16))
 
 b = Bonobot(WEB_URL, WS_URL)
 b.run()

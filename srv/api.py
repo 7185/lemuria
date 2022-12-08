@@ -48,39 +48,43 @@ async def world_list():
 @login_required
 async def world_get(world_id):
     """World fetching"""
-    for user in authorized_users:
-        if user.auth_id == current_user.auth_id:
-            world = await World(world_id).to_dict()
-            if world['name'] is None:
-                return world, 404
-            await user.set_world(world_id)
-            return world, 200
-    return {}, 401
+    curr_user = next((user for user in authorized_users if user.auth_id == current_user.auth_id), None)
+    
+    if curr_user is None:
+        return {}, 401
+    
+    world = await World(world_id).to_dict()
+    if world['name'] is None:
+        return world, 404
+    
+    await curr_user.set_world(world_id)
+    return world, 200
 
 @api_world.route('/<int:world_id>/props', methods=['GET'])
 @login_required
 async def world_props_get(world_id):
     """World props fetching"""
-    for user in authorized_users:
-        if user.auth_id == current_user.auth_id:
-            # Fetch all arguments
-            min_x = request.args.get("min_x")
-            max_x = request.args.get("max_x")
-            min_y = request.args.get("min_y")
-            max_y = request.args.get("max_y")
-            min_z = request.args.get("min_z")
-            max_z = request.args.get("max_z")
+    curr_user = next((user for user in authorized_users if user.auth_id == current_user.auth_id), None)
+    
+    if curr_user is None:
+        return {}, 401
 
-            # Convert them to integers when fitting 
-            min_x = int(min_x) if min_x is not None else None
-            max_x = int(max_x) if max_x is not None else None
-            min_y = int(min_y) if min_y is not None else None
-            max_y = int(max_y) if max_y is not None else None
-            min_z = int(min_z) if min_z is not None else None
-            max_z = int(max_z) if max_z is not None else None
+    # Fetch all arguments
+    min_x = request.args.get("min_x")
+    max_x = request.args.get("max_x")
+    min_y = request.args.get("min_y")
+    max_y = request.args.get("max_y")
+    min_z = request.args.get("min_z")
+    max_z = request.args.get("max_z")
 
-            props = await World(world_id).props(min_x, max_x, min_y, max_y, min_z, max_z)
+    # Convert them to integers when fitting 
+    min_x = int(min_x) if min_x and min_x.lstrip('-').isdigit() else None
+    max_x = int(max_x) if max_x and max_x.lstrip('-').isdigit() else None
+    min_y = int(min_y) if min_y and min_y.lstrip('-').isdigit() else None
+    max_y = int(max_y) if max_y and max_y.lstrip('-').isdigit() else None
+    min_z = int(min_z) if min_z and min_z.lstrip('-').isdigit() else None
+    max_z = int(max_z) if max_z and max_z.lstrip('-').isdigit() else None
 
-            return props, 200
+    props = await World(world_id).props(min_x, max_x, min_y, max_y, min_z, max_z)
 
-    return {}, 401
+    return props, 200

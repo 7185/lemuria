@@ -6,7 +6,8 @@
 /out-tsc
 
 # dependencies
-/node_modules
+/backend/node_modules
+/frontend/node_modules
 
 # profiling files
 chrome-profiler-events.json
@@ -30,7 +31,7 @@ speed-measure-plugin.json
 .history/*
 
 # misc
-/.angular/cache
+frontend/.angular
 /.sass-cache
 /connect.lock
 /coverage
