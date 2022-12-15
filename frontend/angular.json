@@ -20,7 +20,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "outputPath": "../srv/static/",
+            "outputPath": "../static/",
             "baseHref": "static/",
             "index": "src/index.html",
             "main": "src/main.ts",

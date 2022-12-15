@@ -6,5 +6,5 @@ import asyncio
 from db_tools import init_db
 from db_tools import import_world
 
-asyncio.run(init_db())
-asyncio.run(import_world('../dumps/atlemuria.txt', '../dumps/proplemuria.txt'))
+#asyncio.run(init_db())
+asyncio.run(import_world('../dumps/atvillage.txt', '../dumps/propvillage.txt'))

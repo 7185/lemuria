@@ -6,8 +6,8 @@
 /out-tsc
 
 # dependencies
-/backend/node_modules
-/frontend/node_modules
+backend/node_modules
+frontend/node_modules
 
 # profiling files
 chrome-profiler-events.json
@@ -47,10 +47,13 @@ Thumbs.db
 
 # Project specific
 package-lock.json
-srv/static
+static/*
+backend/dist
+backend/coverage
+backend-py/static/*
 /venv
 __pycache__
-srv/app.db
-srv/dumps/*
-!srv/dumps/atlemuria.txt
-!srv/dumps/proplemuria.txt
+backend-py/app.db
+backend-py/dumps/*
+!backend-py/dumps/atlemuria.txt
+!backend-py/dumps/proplemuria.txt

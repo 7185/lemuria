@@ -1,6 +1,6 @@
 .angular
 .git
 node_modules
-srv/*.db
-srv/static
+backend-py/*.db
+backend-py/static
 venv

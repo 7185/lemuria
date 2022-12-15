@@ -82,14 +82,15 @@ async def attr_dump(file):
 async def prop_dump(file):
     async with aiofiles.open(file, 'r', encoding='windows-1252') as f:
         async for l in f:
-            l = l.encode('windows-1252').replace(b'\x7f', b'\n').replace(b'\x80', b'\r').decode('windows-1252')
+            l = l.encode('windows-1252').replace(b'\x80\x7f', b'\r\n').replace(b'\x7f', b'\n').decode('windows-1252')
             s = l.split(' ', 11)
             if s[0] == 'propdump':
                 continue
             data = s[11]
             obj_len = int(s[8])
-            desc_len = int(s[9])
-            act_len = int(s[10])
+            # uncomment for reconstructed dumps
+            desc_len = int(s[9]) - data[obj_len:obj_len + int(s[9])].count('\n')
+            act_len = int(s[10]) + data.count('\n') - 1
             yield [int(s[1]), data[:obj_len], int(s[2]), int(s[3]), int(s[4]),
                    int(s[6]), int(s[5]), int(s[7]),
                    data[obj_len:obj_len + desc_len] or None,

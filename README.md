@@ -21,13 +21,13 @@ Then we build and run the project:
 $ npm run build:watch
 ```
 
-To avoid CORS issues when accessing static files from a web browser, go to `srv` and do the following:
+To avoid CORS issues when accessing static files from a web browser, go to `backend-py` and do the following:
 
 ```bash
 $ tools/serve_path.py
 ```
 
-This will run a script to serve files in `srv` on port `8181`
+This will run a script to serve files in `backend-py` on port `8181`
 
 ## First DB and server setup
 
@@ -36,19 +36,19 @@ Here you will find a few steps to follow in order to create and populate a worki
 ### Install various python3 dependencies for the server
 
 ```bash
-$ pip3 install --user -r srv/requirements.txt
+$ pip3 install --user -r backend-py/requirements.txt
 ```
 ### Create an empty database and import the dump files
 
-Go into `srv/tools`, then run the following:
+Go into `backend-py/tools`, then run the following:
 
 ```bash
 $ ./import_lemuria.py
 ```
 
-This will create and init the database `srv/app.db` using the data in `srv/dumps/atlemuria.txt` and `srv/dumps/proplemuria.txt`.
+This will create and init the database `backend-py/app.db` using the data in `backend-py/dumps/atlemuria.txt` and `backend-py/dumps/proplemuria.txt`.
 
-You will also need the `village2` resource path to be served, to do so you can go to `srv`
+You will also need the `village2` resource path to be served, to do so you can go to `backend-py`
 and create a symlink by running the following (but set the path correctly first):
 
 ```bash
@@ -57,7 +57,7 @@ $ ln -s /my/path/to/resource/folder/for/village2 village2
 
 ### Run the server
 
-Go to `srv` and run the following:
+Go to `backend-py` and run the following:
 
 ```bash
 $ python3 app.py
@@ -72,7 +72,7 @@ You can also generate a docker image to build the project and run the server in 
 
 ```bash
 $ docker build -t lemuria .
-$ docker run -it -p 8080:8080 -v $PWD/srv/app.db:/app/app.db lemuria
+$ docker run -it -p 8080:8080 -v $PWD/backend-py/app.db:/app/app.db lemuria
 ```
 
 ## Try it out!
