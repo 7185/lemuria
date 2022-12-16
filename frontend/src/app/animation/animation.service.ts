@@ -4,8 +4,7 @@ import {EngineService} from '../engine/engine.service'
 import {ObjectService} from '../world/object.service'
 import {AvatarAnimationManager} from './avatar.animation.manager'
 import {Quaternion, Vector3} from 'three'
-import * as JSZip from 'jszip'
-import JSZipUtils from 'jszip-utils'
+import * as fflate from 'fflate'
 
 export type AvatarSequences = {
   implicit: Map<string, string>
@@ -59,7 +58,7 @@ export const interpolateThreeFrames = (threeFrames: any[], firstKeyId: number, s
 export class AnimationService {
   private sequences: Map<string, Promise<ThreeSequence>> = new Map()
   private avatarAnimationManagers: Map<string, Promise<AvatarAnimationManager>> = new Map()
-  private sequenceParserOpts: any = {fileType: FileType.AUTO, jsZip: JSZip, jsZipUtils: JSZipUtils}
+  private sequenceParserOpts: any = {fileType: FileType.AUTO, fflate}
   private frameRate = 60
 
   constructor(private engine: EngineService, private objSvc: ObjectService) {

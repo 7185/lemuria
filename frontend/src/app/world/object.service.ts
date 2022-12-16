@@ -7,8 +7,7 @@ import {Group, Mesh, BufferAttribute, BufferGeometry, LoadingManager, MeshBasicM
   CanvasTexture, TextureLoader, sRGBEncoding, Color} from 'three'
 import type {MeshPhongMaterial, Object3D} from 'three'
 import RWXLoader, {RWXMaterialManager, pictureTag, signTag} from 'three-rwx-loader'
-import * as JSZip from 'jszip'
-import JSZipUtils from 'jszip-utils'
+import * as fflate from 'fflate'
 import {config} from '../app.config'
 
 // can't be const (angular#25963)
@@ -44,10 +43,10 @@ export class ObjectService {
     unknownGeometry.addGroup(0, unknownGeometry.getIndex().count, 0)
     this.unknown = new Group().add(new Mesh(unknownGeometry, [new MeshBasicMaterial({color: 0x000000})]))
     this.unknown.userData.isError = true
-    this.rwxMaterialManager = new RWXMaterialManager(this.path.value, '.jpg', '.zip', JSZip, JSZipUtils, false, sRGBEncoding)
+    this.rwxMaterialManager = new RWXMaterialManager(this.path.value, '.jpg', '.zip', fflate, false, sRGBEncoding)
     this.rwxPropLoader.setRWXMaterialManager(this.rwxMaterialManager).setFlatten(true)
     this.rwxAvatarLoader.setRWXMaterialManager(this.rwxMaterialManager)
-    this.basicLoader.setJSZip(JSZip, JSZipUtils).setFlatten(true).setUseBasicMaterial(true).setTextureEncoding(sRGBEncoding)
+    this.basicLoader.setFflate(fflate).setFlatten(true).setUseBasicMaterial(true).setTextureEncoding(sRGBEncoding)
     this.path.subscribe(url => {
       this.rwxMaterialManager.folder = `${url}/textures`
       this.rwxPropLoader.setPath(`${url}/rwx`).setResourcePath(`${url}/textures`)
