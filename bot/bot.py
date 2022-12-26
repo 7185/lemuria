@@ -12,7 +12,7 @@ def get_cookie_from_response(response, cookie_name):
     """Returns cookie value of cookie_name"""
     return next((c.value for c in response.cookies if c.name == cookie_name), None)
 
-AUTH_COOKIE = 'QUART_AUTH'
+AUTH_COOKIE = 'lemuria_token_access'
 DEBUG = False
 
 class User:
@@ -68,49 +68,49 @@ class Bot(User):
             if f is not None:
                 await f(*parameters)
 
-async def _process_msg(self, msg: dict) -> None:
-    self.log(f"> {msg}")
+    async def _process_msg(self, msg: dict) -> None:
+        self.log(f"> {msg}")
 
-    # Return early if the message doesn't have a 'type' field
-    if 'type' not in msg:
-        self.log("* unknown message")
-        return
+        # Return early if the message doesn't have a 'type' field
+        if 'type' not in msg:
+            self.log("* unknown message")
+            return
 
-    t = msg['type']
+        t = msg['type']
 
-    # Handle the different message types
-    if t == "avatar":
-        user = self.userlist.get(msg["user"])
-        if user is not None:
-            user.avatar = msg["data"]
-        await self._callback("on_user_avatar", msg["user"], msg["data"])
-    elif t == "join":
-        await self._callback("on_user_join", msg["data"])
-    elif t == "list":
-        self.userlist.clear()
-        for u in msg["data"]:
-            user = User(u["name"])
-            user.avatar = u["avatar"]
-            user.world = u["world"]
-            self.userlist[u["id"]] = user
-        await self._callback("on_user_list")
-    elif t == "msg":
-        await self._callback("on_msg", msg["user"], msg["data"])
-    elif t == "part":
-        await self._callback("on_user_part", msg["data"])
-    elif t == "pos":
-        user = self.userlist.get(msg["user"])
-        if user is not None:
-            data = msg["data"]
-            user.x = data["pos"]["x"]
-            user.y = data["pos"]["y"]
-            user.z = data["pos"]["z"]
-            user.roll = data["ori"]["x"]
-            user.yaw = data["ori"]["y"]
-            user.pitch = data["ori"]["z"]
-            user.state = data["state"]
-            user.gesture = data["gesture"]
-        await self._callback("on_user_pos", msg["user"], msg["data"])
+        # Handle the different message types
+        if t == "avatar":
+            user = self.userlist.get(msg["user"])
+            if user is not None:
+                user.avatar = msg["data"]
+            await self._callback("on_user_avatar", msg["user"], msg["data"])
+        elif t == "join":
+            await self._callback("on_user_join", msg["data"])
+        elif t == "list":
+            self.userlist.clear()
+            for u in msg["data"]:
+                user = User(u["name"])
+                user.avatar = u["avatar"]
+                user.world = u["world"]
+                self.userlist[u["id"]] = user
+            await self._callback("on_user_list")
+        elif t == "msg":
+            await self._callback("on_msg", msg["user"], msg["data"])
+        elif t == "part":
+            await self._callback("on_user_part", msg["data"])
+        elif t == "pos":
+            user = self.userlist.get(msg["user"])
+            if user is not None:
+                data = msg["data"]
+                user.x = data["pos"]["x"]
+                user.y = data["pos"]["y"]
+                user.z = data["pos"]["z"]
+                user.roll = data["ori"]["x"]
+                user.yaw = data["ori"]["y"]
+                user.pitch = data["ori"]["z"]
+                user.state = data["state"]
+                user.gesture = data["gesture"]
+            await self._callback("on_user_pos", msg["user"], msg["data"])
 
     async def send(self, msg: dict) -> None:
         if self.ws is not None:
@@ -147,7 +147,7 @@ async def _process_msg(self, msg: dict) -> None:
                 break
 
     async def login(self) -> None:
-        rlogin = await asks.post(f'{self.web_url}/auth',
+        rlogin = await asks.post(f'{self.web_url}/auth/',
                                  json={'login': self.name, 'password': 'password'})
         self.cookiejar = {
             AUTH_COOKIE: get_cookie_from_response(rlogin, AUTH_COOKIE)
