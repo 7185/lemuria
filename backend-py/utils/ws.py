@@ -2,7 +2,7 @@
 """Websocket module"""
 
 from quart import websocket
-from user import broadcast, broadcast_userlist, User
+from user.model import broadcast, broadcast_userlist, User
 
 
 async def sending(user: User):

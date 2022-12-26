@@ -2,7 +2,7 @@
 """User module"""
 
 from quart import current_app
-from utils import Timer
+from utils.timer import Timer
 
 authorized_users = set()
 

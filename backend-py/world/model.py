@@ -4,7 +4,7 @@
 import aiofiles
 import contextlib
 from quart import json, current_app
-from user import authorized_users, broadcast_userlist
+from user.model import authorized_users, broadcast_userlist
 
 class World:
     def __init__(self, world_id):

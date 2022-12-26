@@ -6,9 +6,10 @@ import toml
 from quart import Quart, render_template, websocket, request, jsonify
 from quart_jwt_extended import JWTManager, jwt_required, decode_token
 from databases import Database
-from api import api_auth, api_world
-from ws import sending, receiving
-from user import User, authorized_users
+from user.api import api_auth
+from world.api import api_world
+from user.model import User, authorized_users
+from utils.ws import sending, receiving
 
 with open('config.toml') as config_file:
     toml_data = toml.load(config_file)

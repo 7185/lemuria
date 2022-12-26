@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Utilities mdoule"""
+"""Utilities module"""
 
 import asyncio
 import contextlib
