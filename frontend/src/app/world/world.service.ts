@@ -1,4 +1,4 @@
-import {Subject, Observable, throwError, from, of} from 'rxjs'
+import {Subject, Observable, throwError, from, of, firstValueFrom} from 'rxjs'
 import type {Subscription} from 'rxjs'
 import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
 import {UserService} from '../user/user.service'
@@ -248,7 +248,7 @@ export class WorldService {
 
   public async loadItem(item: string, pos: Vector3, rot: Vector3, date = 0, desc = null, act = null): Promise<Object3D> {
     item = Utils.modelName(item)
-    const o = await this.objSvc.loadObject(item)
+    const o = await firstValueFrom(this.objSvc.loadObject(item))
     const g = o.clone()
     g.name = item
     g.userData.date = date
@@ -276,7 +276,7 @@ export class WorldService {
 
   setAvatar(name: string, animationMgr: Promise<AvatarAnimationManager>, group: Group = this.avatar) {
     name = Utils.modelName(name)
-    this.objSvc.loadAvatar(name).then((o) => {
+    this.objSvc.loadAvatar(name).subscribe((o) => {
       this.engine.disposeMaterial(group)
       group.clear()
       o.rotation.copy(new Euler(0, Math.PI, 0))
@@ -347,7 +347,7 @@ export class WorldService {
 
     if (world.skybox) {
       world.skybox = Utils.modelName(world.skybox)
-      this.objSvc.loadObject(world.skybox, true).then(s => {
+      this.objSvc.loadObject(world.skybox, true).subscribe(s => {
         const skybox = s.clone()
         const box = new Box3()
         box.setFromObject(skybox)

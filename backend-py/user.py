@@ -2,7 +2,6 @@
 """User module"""
 
 from quart import current_app
-from quart_auth import AuthUser, current_user
 from utils import Timer
 
 authorized_users = set()
@@ -22,14 +21,14 @@ async def broadcast_userlist():
                      'data': [await u.to_dict() for u in [u for u in authorized_users if u.connected]]})
 
 
-class User(AuthUser):
+class User:
     """User class"""
     @staticmethod
-    def current():    
-        return next((user for user in authorized_users if user.auth_id == current_user.auth_id), None)
+    def get(uid):    
+        return next((user for user in authorized_users if user.auth_id == uid), None)
 
     def __init__(self, auth_id):
-        super().__init__(auth_id)
+        self.auth_id = auth_id
         self._resolved = False
         self._name = None
         self.queue = None

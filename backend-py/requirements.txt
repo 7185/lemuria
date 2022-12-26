@@ -1,5 +1,6 @@
 aiofiles
 Quart>=0.18
 quart-auth>=0.7.0
+quart-jwt-extended>=0.1.0
 databases[sqlite]
 uvloop

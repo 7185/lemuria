@@ -1,8 +1,12 @@
 export const config: any = {
   url: {
-    websocket: 'ws://localhost:8080/ws',
+    websocket: 'ws://localhost:8080/api/v1/ws',
     server: 'http://localhost:8080/api/v1',
     imgProxy: 'https://images.weserv.nl/?url='
+  },
+  csrf: {
+    access: 'lemuria_csrf_access',
+    renew: 'lemuria_csrf_renew'
   },
   world: {
     chunk: {

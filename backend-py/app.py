@@ -4,11 +4,11 @@
 import asyncio
 import toml
 from quart import Quart, render_template, websocket, request, jsonify
-from quart_auth import AuthManager, login_required
+from quart_jwt_extended import JWTManager, jwt_required, decode_token
 from databases import Database
 from api import api_auth, api_world
 from ws import sending, receiving
-from user import User
+from user import User, authorized_users
 
 with open('config.toml') as config_file:
     toml_data = toml.load(config_file)
@@ -21,8 +21,7 @@ app.static_folder = config['STATIC_PATH']
 app.template_folder = config['STATIC_PATH']
 app.secret_key = config['SECRET_KEY']
 
-auth_manager = AuthManager()
-auth_manager.user_class = User
+jwt = JWTManager(app)
 
 app.engine = Database(f"sqlite:///{app.config['DB_FILE']}")
 
@@ -31,11 +30,21 @@ async def index():
     """Default route"""
     return await render_template("index.html")
 
-@app.websocket('/ws')
-@login_required
+@app.websocket('/api/v1/ws')
 async def wsocket():
     """Websocket"""
-    user = User.current()
+    token = websocket.cookies.get(config['JWT_ACCESS_COOKIE_NAME'])
+
+    if token is None:
+        await websocket.close(code=400, reason='Missing JWT')
+        return
+    try:
+        data = decode_token(token)
+    except Exception as e:
+        await websocket.close(code=401, reason='Invalid JWT')
+        return
+
+    user = next((user for user in authorized_users if user.auth_id == data['identity']), None)
     if user is None:
         return
     user.websockets.add(websocket._get_current_object())
@@ -52,7 +61,6 @@ async def redirect(_):
         return jsonify({'error': 'Not found'}), 404
     return await render_template("index.html")
 
-auth_manager.init_app(app)
 app.register_blueprint(api_auth)
 app.register_blueprint(api_world)
 

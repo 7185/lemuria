@@ -134,9 +134,11 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       this.userId = u.id
       this.name = u.name
       this.userSvc.currentName = u.name
-      this.http.worlds().subscribe((w: any) => {
-        this.worldList = w
-      })
+      if (u.id != null) {
+        this.http.worlds().subscribe((w: any) => {
+          this.worldList = w
+        })
+      }
     })
   }
 

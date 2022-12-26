@@ -1,5 +1,5 @@
-import {forkJoin, BehaviorSubject, Subject} from 'rxjs'
-import type {Observable} from 'rxjs'
+import {forkJoin, of, BehaviorSubject, Observable, Subject} from 'rxjs'
+import {catchError, map} from 'rxjs/operators'
 import {Injectable} from '@angular/core'
 import {HttpService} from '../network/http.service'
 import {AWActionParser} from 'aw-action-parser'
@@ -25,8 +25,8 @@ export class ObjectService {
   private basicLoader = new RWXLoader(new LoadingManager())
   private rwxMaterialManager: RWXMaterialManager
   private actionParser = new AWActionParser()
-  private objects: Map<string, Promise<any>> = new Map()
-  private avatars: Map<string, Promise<any>> = new Map()
+  private objects: Map<string, Observable<any>> = new Map()
+  private avatars: Map<string, Observable<any>> = new Map()
   private pictureLoader = new TextureLoader()
   private remoteUrl = /.+\..+\/.+/g
 
@@ -183,13 +183,8 @@ export class ObjectService {
 
   textCanvas(text: string, ratio = 1, color: {r: number; g: number; b: number}, bcolor: {r: number; g: number; b: number}) {
     const canvas = document.createElement('canvas')
-    if (ratio > 1.0) {
-      canvas.width = 256
-      canvas.height = 256 / ratio
-    } else {
-      canvas.width = 256 * ratio
-      canvas.height = 256
-    }
+    canvas.width = ratio > 1 ? 256 : 256 * ratio
+    canvas.height = ratio > 1 ? 256 / ratio : 256
     const ctx = canvas.getContext('2d')
     ctx.fillStyle = `rgb(${bcolor.r},${bcolor.g},${bcolor.b})`
     ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -203,7 +198,7 @@ export class ObjectService {
     const words = text.split(/([ \n])/)
     let lines = ['']
     const maxWidth = canvas.width * 0.95
-    const maxHeight = canvas.height * 0.95
+    const maxHeight = canvas.height * 0.95 / ratio
 
     ctx.font = `${fontSizes[fontIndex]}px Arial`
 
@@ -324,30 +319,36 @@ export class ObjectService {
     return forkJoin(promises)
   }
 
-  loadObject(name: string, basic = false): Promise<any> {
-    if (this.objects.get(name) !== undefined) {
-      return this.objects.get(name)
-    } else {
-      const loader = basic ? this.basicLoader : this.rwxPropLoader
-      const promise = new Promise((resolve) => {
-        loader.load(name, (rwx: Group) => resolve(rwx), null, () => resolve(this.unknown))
-      })
-      this.objects.set(name, promise)
-      return promise
+  loadObject(name: string, basic = false): Observable<any> {
+    const object = this.objects.get(name)
+    if (object !== undefined) {
+      return object
     }
+    const loader = basic ? this.basicLoader : this.rwxPropLoader
+    const observable = new Observable((observer) => {
+      loader.load(name, (rwx: Group) => observer.next(rwx), null, () => observer.next(this.unknown))
+    })
+    this.objects.set(name, observable)
+    return observable.pipe(
+      map((newObject: Observable<Group>) => newObject),
+      catchError(() => of(this.unknown))
+    )
   }
 
-  loadAvatar(name: string, basic = false): Promise<any> {
-    if (this.avatars.get(name) !== undefined) {
-      return this.avatars.get(name)
-    } else {
-      const loader = basic ? this.basicLoader : this.rwxAvatarLoader
-      const promise = new Promise((resolve) => {
-        loader.load(name, (rwx: Group) => resolve(rwx), null, () => resolve(this.unknown))
-      })
-      this.avatars.set(name, promise)
-      return promise
+  loadAvatar(name: string, basic = false): Observable<any> {
+    const avatar = this.avatars.get(name)
+    if (avatar !== undefined) {
+      return avatar
     }
+    const loader = basic ? this.basicLoader : this.rwxAvatarLoader
+    const observable = new Observable((observer) => {
+      loader.load(name, (rwx: Group) => observer.next(rwx), null, () => observer.next(this.unknown))
+    })
+    this.avatars.set(name, observable)
+    return observable.pipe(
+      map((newAvatar: Observable<Group>) => newAvatar),
+      catchError(() => of(this.unknown))
+    )
   }
 
   cleanCache() {

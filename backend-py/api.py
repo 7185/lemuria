@@ -4,7 +4,7 @@
 import uuid
 import asyncio
 from quart import request, jsonify, Blueprint
-from quart_auth import login_user, logout_user, login_required, current_user
+from quart_jwt_extended import create_access_token, jwt_refresh_token_required, create_refresh_token, set_access_cookies, set_refresh_cookies, get_jwt_identity, jwt_required, unset_jwt_cookies
 from user import User, authorized_users
 from world import World
 
@@ -19,55 +19,63 @@ async def auth_login():
     user = User(user_id)
     user._name = data['login'] or f'Anonymous{user_id}'
     user.queue = asyncio.Queue()
-    login_user(user, True)
     authorized_users.add(user)
-    return jsonify({'id': user_id, 'name': await user.name}), 200
+    access_token = create_access_token(identity=user_id)
+    refresh_token = create_refresh_token(identity=user_id)
+
+    resp = jsonify({'id': user_id, 'name': await user.name})
+    set_access_cookies(resp, access_token)
+    set_refresh_cookies(resp, refresh_token)
+    return resp, 200
 
 @api_auth.route('/', methods=['DELETE'])
-@login_required
 async def auth_logout():
     """User logout"""
-    logout_user()
-    return {}, 200
+    resp = jsonify({})
+    unset_jwt_cookies(resp)
+    return resp, 200
 
 @api_auth.route('/', methods=['GET'])
-@login_required
+@jwt_required
 async def auth_session():
     """User session"""
-    if await current_user.name:
-        return jsonify({'id': current_user.auth_id, 'name': await current_user.name}), 200
+    if curr_user := next((user for user in authorized_users if user.auth_id == get_jwt_identity()), None):
+        return jsonify({'id': curr_user.auth_id, 'name': await curr_user.name}), 200
+    return {}, 401
+
+@api_auth.route("/renew", methods=["POST"])
+@jwt_refresh_token_required
+async def auth_renew():
+    """User token renewal"""
+    if curr_user := next((user for user in authorized_users if user.auth_id == get_jwt_identity()), None):
+        access_token = create_access_token(identity=curr_user.auth_id)
+        resp = jsonify({'id': curr_user.auth_id, 'name': await curr_user.name})
+        set_access_cookies(resp, access_token)
+        return resp, 200
     return {}, 401
 
 @api_world.route('/', methods=['GET'])
-@login_required
+@jwt_required
 async def world_list():
     """World list"""
     return jsonify(await World.get_list()), 200
 
 @api_world.route('/<int:world_id>', methods=['GET'])
-@login_required
+@jwt_required
 async def world_get(world_id):
     """World fetching"""
-    curr_user = next((user for user in authorized_users if user.auth_id == current_user.auth_id), None)
-    
-    if curr_user is None:
-        return {}, 401
-    
-    world = await World(world_id).to_dict()
-    if world['name'] is None:
-        return world, 404
-    
-    await curr_user.set_world(world_id)
-    return world, 200
+    if curr_user := next((user for user in authorized_users if user.auth_id == get_jwt_identity()), None):
+        world = await World(world_id).to_dict()
+        if world['name'] is None:
+            return world, 404
+        await curr_user.set_world(world_id)
+        return world, 200
+    return {}, 401
 
 @api_world.route('/<int:world_id>/props', methods=['GET'])
-@login_required
+@jwt_required
 async def world_props_get(world_id):
     """World props fetching"""
-    curr_user = next((user for user in authorized_users if user.auth_id == current_user.auth_id), None)
-    
-    if curr_user is None:
-        return {}, 401
 
     # Fetch all arguments
     min_x = request.args.get("min_x")
