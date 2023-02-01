@@ -47,9 +47,8 @@
  */
 import 'zone.js' // Included with Angular CLI.
 
-
 /***************************************************************************************************
  * APPLICATION IMPORTS
  */
 // poly2tri
-(window as any).global = window
+;(window as any).global = window

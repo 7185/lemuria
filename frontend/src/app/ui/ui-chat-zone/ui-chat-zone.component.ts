@@ -10,8 +10,6 @@ import {UserService} from '../../user/user.service'
   styleUrls: ['./ui-chat-zone.component.scss']
 })
 export class UiChatZoneComponent implements OnInit {
-
-
   @ViewChild(VirtualScrollerComponent)
   private virtualScroller: VirtualScrollerComponent
 
@@ -20,8 +18,10 @@ export class UiChatZoneComponent implements OnInit {
   public chatActive = false
   public colors = {}
 
-  public constructor(public socket: SocketService, public usrSvc: UserService) {
-  }
+  public constructor(
+    public socket: SocketService,
+    public usrSvc: UserService
+  ) {}
 
   public activeChat() {
     this.chatActive = !this.chatActive
@@ -35,7 +35,7 @@ export class UiChatZoneComponent implements OnInit {
   }
 
   public ngOnInit(): void {
-    this.socket.messages.subscribe(msg => {
+    this.socket.messages.subscribe((msg) => {
       if (['msg', 'err', 'join', 'part', 'info'].indexOf(msg.type) > -1) {
         for (const u of this.usrSvc.userList) {
           this.colors[u.name] = '#' + u.id.substring(0, 6)

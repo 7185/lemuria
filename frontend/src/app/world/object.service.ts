@@ -3,20 +3,51 @@ import {catchError, map} from 'rxjs/operators'
 import {Injectable} from '@angular/core'
 import {HttpService} from '../network/http.service'
 import {AWActionParser} from 'aw-action-parser'
-import {Group, Mesh, BufferAttribute, BufferGeometry, LoadingManager, MeshBasicMaterial,
-  CanvasTexture, TextureLoader, sRGBEncoding, Color} from 'three'
+import {
+  Group,
+  Mesh,
+  BufferAttribute,
+  BufferGeometry,
+  LoadingManager,
+  MeshBasicMaterial,
+  CanvasTexture,
+  TextureLoader,
+  sRGBEncoding,
+  Color
+} from 'three'
 import type {MeshPhongMaterial, Object3D} from 'three'
-import RWXLoader, {RWXMaterialManager, pictureTag, signTag} from 'three-rwx-loader'
+import RWXLoader, {
+  RWXMaterialManager,
+  pictureTag,
+  signTag
+} from 'three-rwx-loader'
 import * as fflate from 'fflate'
 import {config} from '../app.config'
 
 // can't be const (angular#25963)
-export enum ObjectAct { nop = 0, forward, backward, left, right, up, down, rotX, rotnX, rotY, rotnY, rotZ, rotnZ,
-   copy, delete, rotReset, snapGrid, deselect }
+export enum ObjectAct {
+  nop = 0,
+  forward,
+  backward,
+  left,
+  right,
+  up,
+  down,
+  rotX,
+  rotnX,
+  rotY,
+  rotnY,
+  rotZ,
+  rotnZ,
+  copy,
+  delete,
+  rotReset,
+  snapGrid,
+  deselect
+}
 
 @Injectable({providedIn: 'root'})
 export class ObjectService {
-
   public objectAction = new Subject<ObjectAct>()
   public path = new BehaviorSubject('http://localhost')
   private unknown: Group
@@ -32,25 +63,43 @@ export class ObjectService {
 
   constructor(private http: HttpService) {
     const unknownGeometry = new BufferGeometry()
-    const positions = [
-      -0.2,  0.0,  0.0,
-       0.2,  0.0,  0.0,
-       0.0,  0.2,  0.0
-    ]
-    unknownGeometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3))
+    const positions = [-0.2, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.2, 0.0]
+    unknownGeometry.setAttribute(
+      'position',
+      new BufferAttribute(new Float32Array(positions), 3)
+    )
     unknownGeometry.setIndex([0, 1, 2])
     unknownGeometry.clearGroups()
     unknownGeometry.addGroup(0, unknownGeometry.getIndex().count, 0)
-    this.unknown = new Group().add(new Mesh(unknownGeometry, [new MeshBasicMaterial({color: 0x000000})]))
+    this.unknown = new Group().add(
+      new Mesh(unknownGeometry, [new MeshBasicMaterial({color: 0x000000})])
+    )
     this.unknown.userData.isError = true
-    this.rwxMaterialManager = new RWXMaterialManager(this.path.value, '.jpg', '.zip', fflate, false, sRGBEncoding)
-    this.rwxPropLoader.setRWXMaterialManager(this.rwxMaterialManager).setFlatten(true)
+    this.rwxMaterialManager = new RWXMaterialManager(
+      this.path.value,
+      '.jpg',
+      '.zip',
+      fflate,
+      false,
+      sRGBEncoding
+    )
+    this.rwxPropLoader
+      .setRWXMaterialManager(this.rwxMaterialManager)
+      .setFlatten(true)
     this.rwxAvatarLoader.setRWXMaterialManager(this.rwxMaterialManager)
-    this.basicLoader.setFflate(fflate).setFlatten(true).setUseBasicMaterial(true).setTextureEncoding(sRGBEncoding)
-    this.path.subscribe(url => {
+    this.basicLoader
+      .setFflate(fflate)
+      .setFlatten(true)
+      .setUseBasicMaterial(true)
+      .setTextureEncoding(sRGBEncoding)
+    this.path.subscribe((url) => {
       this.rwxMaterialManager.folder = `${url}/textures`
-      this.rwxPropLoader.setPath(`${url}/rwx`).setResourcePath(`${url}/textures`)
-      this.rwxAvatarLoader.setPath(`${url}/rwx`).setResourcePath(`${url}/textures`)
+      this.rwxPropLoader
+        .setPath(`${url}/rwx`)
+        .setResourcePath(`${url}/textures`)
+      this.rwxAvatarLoader
+        .setPath(`${url}/rwx`)
+        .setResourcePath(`${url}/textures`)
       this.basicLoader.setPath(`${url}/rwx`).setResourcePath(`${url}/textures`)
     })
   }
@@ -79,9 +128,15 @@ export class ObjectService {
           this.applyTexture(item, null, null, cmd.color)
         } else if (cmd.commandType === 'texture') {
           if (cmd.texture) {
-            cmd.texture = cmd.texture.lastIndexOf('.') !== -1 ? cmd.texture.substring(0, cmd.texture.lastIndexOf('.')) : cmd.texture
+            cmd.texture =
+              cmd.texture.lastIndexOf('.') !== -1
+                ? cmd.texture.substring(0, cmd.texture.lastIndexOf('.'))
+                : cmd.texture
             if (cmd.mask) {
-              cmd.mask = cmd.mask.lastIndexOf('.') !== -1 ? cmd.mask.substring(0, cmd.mask.lastIndexOf('.')) : cmd.mask
+              cmd.mask =
+                cmd.mask.lastIndexOf('.') !== -1
+                  ? cmd.mask.substring(0, cmd.mask.lastIndexOf('.'))
+                  : cmd.mask
             }
           }
           texturing = this.applyTexture(item, cmd.texture, cmd.mask)
@@ -159,7 +214,9 @@ export class ObjectService {
   }
 
   makePicture(item: Group, url: string) {
-    url = url.match(this.remoteUrl) ? `${config.url.imgProxy}${url}` : `${this.path.value}/textures/${url}`
+    url = url.match(this.remoteUrl)
+      ? `${config.url.imgProxy}${url}`
+      : `${this.path.value}/textures/${url}`
     this.pictureLoader.load(url, (image) => {
       image.encoding = sRGBEncoding
       item.traverse((child: Object3D) => {
@@ -181,7 +238,12 @@ export class ObjectService {
     })
   }
 
-  textCanvas(text: string, ratio = 1, color: {r: number; g: number; b: number}, bcolor: {r: number; g: number; b: number}) {
+  textCanvas(
+    text: string,
+    ratio = 1,
+    color: {r: number; g: number; b: number},
+    bcolor: {r: number; g: number; b: number}
+  ) {
     const canvas = document.createElement('canvas')
     canvas.width = ratio > 1 ? 256 : 256 * ratio
     canvas.height = ratio > 1 ? 256 / ratio : 256
@@ -198,7 +260,7 @@ export class ObjectService {
     const words = text.split(/([ \n])/)
     let lines = ['']
     const maxWidth = canvas.width * 0.95
-    const maxHeight = canvas.height * 0.95 / ratio
+    const maxHeight = (canvas.height * 0.95) / ratio
 
     ctx.font = `${fontSizes[fontIndex]}px Arial`
 
@@ -226,12 +288,18 @@ export class ObjectService {
         tentativeLine = tentativeWord
       }
 
-      if (words[curWordIndex] !== '\n' && ctx.measureText(tentativeLine).width <= maxWidth) {
+      if (
+        words[curWordIndex] !== '\n' &&
+        ctx.measureText(tentativeLine).width <= maxWidth
+      ) {
         // TODO: use actualBoundingBoxLeft and actualBoundingBoxRight instead of .width
         // Adding word to end of line
         lines[curLine] = tentativeLine
         curWordIndex += 1
-      } else if (ctx.measureText(tentativeWord).width <= maxWidth && lineHeight * (curLine + 1) <= maxHeight) {
+      } else if (
+        ctx.measureText(tentativeWord).width <= maxWidth &&
+        lineHeight * (curLine + 1) <= maxHeight
+      ) {
         // Adding word as a new line
         lines.push(tentativeWord)
         curWordIndex += 1
@@ -250,13 +318,24 @@ export class ObjectService {
     }
 
     lines.forEach((line: string, i: number) => {
-      ctx.fillText(line, canvas.width / 2, canvas.height / 2 + i * lineHeight - (lines.length - 1) * lineHeight / 2)
+      ctx.fillText(
+        line,
+        canvas.width / 2,
+        canvas.height / 2 +
+          i * lineHeight -
+          ((lines.length - 1) * lineHeight) / 2
+      )
     })
 
     return canvas
   }
 
-  makeSign(item: Group, text: string, color: {r: number; g: number; b: number}, bcolor: {r: number; g: number; b: number}) {
+  makeSign(
+    item: Group,
+    text: string,
+    color: {r: number; g: number; b: number},
+    bcolor: {r: number; g: number; b: number}
+  ) {
     if (text == null) {
       text = item.userData.desc != null ? item.userData.desc : ''
     }
@@ -275,7 +354,14 @@ export class ObjectService {
           for (const i of item.userData.taggedMaterials[signTag]) {
             newMaterials[i] = child.material[i].clone()
             newMaterials[i].color = new Color(1, 1, 1)
-            newMaterials[i].map = new CanvasTexture(this.textCanvas(text, newMaterials[i].userData.ratio, color, bcolor))
+            newMaterials[i].map = new CanvasTexture(
+              this.textCanvas(
+                text,
+                newMaterials[i].userData.ratio,
+                color,
+                bcolor
+              )
+            )
             newMaterials[i].map.encoding = sRGBEncoding
           }
         }
@@ -285,7 +371,12 @@ export class ObjectService {
     })
   }
 
-  applyTexture(item: Group, textureName: string = null, maskName: string = null, color: any = null): Observable<any> {
+  applyTexture(
+    item: Group,
+    textureName: string = null,
+    maskName: string = null,
+    color: any = null
+  ): Observable<any> {
     const promises: Observable<any>[] = []
     item.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
@@ -296,11 +387,16 @@ export class ObjectService {
             newRWXMat.texture = textureName
             newRWXMat.mask = maskName
             if (color != null) {
-              newRWXMat.color = [color.r / 255.0, color.g / 255.0, color.b / 255.0]
+              newRWXMat.color = [
+                color.r / 255.0,
+                color.g / 255.0,
+                color.b / 255.0
+              ]
             }
             const signature = newRWXMat.getMatSignature()
             this.rwxMaterialManager.addRWXMaterial(newRWXMat, signature)
-            const curMat = this.rwxMaterialManager.getThreeMaterialPack(signature)
+            const curMat =
+              this.rwxMaterialManager.getThreeMaterialPack(signature)
             newMaterials.push(curMat.threeMat)
             promises.push(forkJoin(curMat.loadingPromises))
           }
@@ -326,7 +422,12 @@ export class ObjectService {
     }
     const loader = basic ? this.basicLoader : this.rwxPropLoader
     const observable = new Observable((observer) => {
-      loader.load(name, (rwx: Group) => observer.next(rwx), null, () => observer.next(this.unknown))
+      loader.load(
+        name,
+        (rwx: Group) => observer.next(rwx),
+        null,
+        () => observer.next(this.unknown)
+      )
     })
     this.objects.set(name, observable)
     return observable.pipe(
@@ -342,7 +443,12 @@ export class ObjectService {
     }
     const loader = basic ? this.basicLoader : this.rwxAvatarLoader
     const observable = new Observable((observer) => {
-      loader.load(name, (rwx: Group) => observer.next(rwx), null, () => observer.next(this.unknown))
+      loader.load(
+        name,
+        (rwx: Group) => observer.next(rwx),
+        null,
+        () => observer.next(this.unknown)
+      )
     })
     this.avatars.set(name, observable)
     return observable.pipe(

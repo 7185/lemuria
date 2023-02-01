@@ -9,7 +9,6 @@ import {WorldService} from '../world/world.service'
   styleUrls: ['./engine.component.scss']
 })
 export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {
-
   @ViewChild('rendererCanvas', {static: true})
   public rendererCanvas: ElementRef<HTMLCanvasElement>
   @ViewChild('labelZone', {static: true})
@@ -17,11 +16,17 @@ export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('labelDesc', {static: true})
   public labelDesc: ElementRef<HTMLDivElement>
 
-  public constructor(private engServ: EngineService, private world: WorldService) {
-  }
+  public constructor(
+    private engServ: EngineService,
+    private world: WorldService
+  ) {}
 
   public ngOnInit(): void {
-    this.engServ.createScene(this.rendererCanvas, this.labelZone, this.labelDesc)
+    this.engServ.createScene(
+      this.rendererCanvas,
+      this.labelZone,
+      this.labelDesc
+    )
   }
 
   public ngAfterViewInit(): void {

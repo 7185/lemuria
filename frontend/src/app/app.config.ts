@@ -21,7 +21,7 @@ export const config: any = {
       maxDistance: 100 // In meters
     },
     collider: {
-      boxSide: 0.50,
+      boxSide: 0.5,
       climbHeight: 0.55,
       groundAdjust: 0.00001,
       maxStepLength: 0.2,

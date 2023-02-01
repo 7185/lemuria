@@ -30,10 +30,6 @@ const appRoutes: Routes = [
   exports: [RouterModule],
   providers: [AuthGuard]
 })
-export class AppRoutingModule {
-}
+export class AppRoutingModule {}
 
-export const routingComponents = [
-  AuthComponent,
-  UiComponent
-]
+export const routingComponents = [AuthComponent, UiComponent]

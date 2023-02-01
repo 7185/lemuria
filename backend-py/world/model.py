@@ -103,17 +103,17 @@ class World:
 
     @classmethod
     async def get_list(cls):
-        world_list = []
         conn = current_app.engine
         await conn.connect()
 
-        for world in await conn.fetch_all("select id, name from world"):
-            world_list.append({
+        world_list = [
+            {
                 'id': world[0],
                 'name': world[1],
                 'users': len([u for u in authorized_users if u.connected and u.world == world[0]])
-            })
-
+            }
+            for world in await conn.fetch_all("select id, name from world")
+        ]
         await conn.disconnect()
         return world_list
 

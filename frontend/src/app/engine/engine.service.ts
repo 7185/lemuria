@@ -2,10 +2,29 @@ import {BehaviorSubject, fromEvent, Subject, timer} from 'rxjs'
 import {Injectable, NgZone} from '@angular/core'
 import type {ElementRef} from '@angular/core'
 import {
-  AmbientLight, Clock, PerspectiveCamera, Raycaster, Scene, Group, BoxGeometry,
-  Vector2, Vector3, WebGLRenderer, DirectionalLight, CameraHelper, Object3D, Spherical,
-  Mesh, MeshBasicMaterial, AxesHelper, EdgesGeometry,
-  LineSegments, LineBasicMaterial, sRGBEncoding, Box3, Ray
+  AmbientLight,
+  Clock,
+  PerspectiveCamera,
+  Raycaster,
+  Scene,
+  Group,
+  BoxGeometry,
+  Vector2,
+  Vector3,
+  WebGLRenderer,
+  DirectionalLight,
+  CameraHelper,
+  Object3D,
+  Spherical,
+  Mesh,
+  MeshBasicMaterial,
+  AxesHelper,
+  EdgesGeometry,
+  LineSegments,
+  LineBasicMaterial,
+  sRGBEncoding,
+  Box3,
+  Ray
 } from 'three'
 import type {Material, LOD, Triangle} from 'three'
 import {flattenGroup} from 'three-rwx-loader'
@@ -32,10 +51,17 @@ const chunkIndexStep = 100000
 
 // This defines which chunks (offset from the current chunk we sit in) we will
 // query for collisions for each player movement step
-const nearestChunkPattern =
-  [{x: -1, z: -1}, {x: -1, z: 0}, {x: -1, z: 1},
-   {x: 0, z: -1}, {x: 0, z: 0}, {x: 0, z: 1},
-   {x: 1, z: -1}, {x: 1, z: 0}, {x: 1, z: 1}]
+const nearestChunkPattern = [
+  {x: -1, z: -1},
+  {x: -1, z: 0},
+  {x: -1, z: 1},
+  {x: 0, z: -1},
+  {x: 0, z: 0},
+  {x: 0, z: 1},
+  {x: 1, z: -1},
+  {x: 1, z: 0},
+  {x: 1, z: 1}
+]
 
 class PlayerCollider {
   public boxHeight: number
@@ -46,24 +72,45 @@ class PlayerCollider {
   private currentPos: Vector3
 
   public constructor(boxHeight: number, pos = new Vector3(0, 0, 0)) {
-    if (boxHeight < playerClimbHeight  + 0.1) {
+    if (boxHeight < playerClimbHeight + 0.1) {
       // We need to ensurethe total collider height doesn't go too low
       this.boxHeight = playerClimbHeight + 0.1
     } else {
       this.boxHeight = boxHeight
     }
 
-    this.mainBox = new Box3(new Vector3(-playerHalfSide, 0, -playerHalfSide), new Vector3(playerHalfSide, this.boxHeight, playerHalfSide))
-    this.topBox = new Box3(new Vector3(-playerHalfSide, playerClimbHeight, -playerHalfSide),
-      new Vector3(playerHalfSide, this.boxHeight, playerHalfSide))
-    this.bottomBox = new Box3(new Vector3(-playerHalfSide, 0, -playerHalfSide),
-      new Vector3(playerHalfSide, playerClimbHeight, playerHalfSide))
+    this.mainBox = new Box3(
+      new Vector3(-playerHalfSide, 0, -playerHalfSide),
+      new Vector3(playerHalfSide, this.boxHeight, playerHalfSide)
+    )
+    this.topBox = new Box3(
+      new Vector3(-playerHalfSide, playerClimbHeight, -playerHalfSide),
+      new Vector3(playerHalfSide, this.boxHeight, playerHalfSide)
+    )
+    this.bottomBox = new Box3(
+      new Vector3(-playerHalfSide, 0, -playerHalfSide),
+      new Vector3(playerHalfSide, playerClimbHeight, playerHalfSide)
+    )
     const downward = new Vector3(0, -1, 0)
-    this.rays = [new Ray(new Vector3(0, this.boxHeight, 0), new Vector3(0, -1, 0)),
-                 new Ray(new Vector3(-playerHalfSide, this.boxHeight, -playerHalfSide), downward),
-                 new Ray(new Vector3(-playerHalfSide, this.boxHeight, playerHalfSide), downward),
-                 new Ray(new Vector3(playerHalfSide, this.boxHeight, playerHalfSide), downward),
-                 new Ray(new Vector3(playerHalfSide, this.boxHeight, -playerHalfSide), downward)]
+    this.rays = [
+      new Ray(new Vector3(0, this.boxHeight, 0), new Vector3(0, -1, 0)),
+      new Ray(
+        new Vector3(-playerHalfSide, this.boxHeight, -playerHalfSide),
+        downward
+      ),
+      new Ray(
+        new Vector3(-playerHalfSide, this.boxHeight, playerHalfSide),
+        downward
+      ),
+      new Ray(
+        new Vector3(playerHalfSide, this.boxHeight, playerHalfSide),
+        downward
+      ),
+      new Ray(
+        new Vector3(playerHalfSide, this.boxHeight, -playerHalfSide),
+        downward
+      )
+    ]
     this.currentPos = pos.clone()
 
     this.translate(this.currentPos)
@@ -80,8 +127,17 @@ class PlayerCollider {
   public raysIntersectTriangle(tri: Triangle): Vector3 {
     let intersectionPoint: Vector3 = null
     this.rays.forEach((ray) => {
-      const point = ray.intersectTriangle(tri.a, tri.b, tri.c, true, new Vector3())
-      if (point !== null && (intersectionPoint === null || point.y > intersectionPoint.y)) {
+      const point = ray.intersectTriangle(
+        tri.a,
+        tri.b,
+        tri.c,
+        true,
+        new Vector3()
+      )
+      if (
+        point !== null &&
+        (intersectionPoint === null || point.y > intersectionPoint.y)
+      ) {
         intersectionPoint = point
       }
     })
@@ -92,7 +148,9 @@ class PlayerCollider {
     this.mainBox.translate(delta)
     this.topBox.translate(delta)
     this.bottomBox.translate(delta)
-    this.rays.forEach((ray) => { ray.origin.add(delta) })
+    this.rays.forEach((ray) => {
+      ray.origin.add(delta)
+    })
   }
 
   public copyPos(pos: Vector3): void {
@@ -104,7 +162,6 @@ class PlayerCollider {
 
 @Injectable({providedIn: 'root'})
 export class EngineService {
-
   public compassSub: Subject<any> = new Subject()
   public fpsSub = new BehaviorSubject<string>('0')
   public maxFps = new BehaviorSubject<number>(60)
@@ -175,18 +232,21 @@ export class EngineService {
     [PressedKey.lookDwn, ObjectAct.rotnY],
     [PressedKey.moveUp, ObjectAct.up],
     [PressedKey.moveDwn, ObjectAct.down],
-   // [PressedKey.divide, ObjectAct.rotX],
-   // [PressedKey.multiply, ObjectAct.rotnX],
-   // [PressedKey.home, ObjectAct.rotZ],
-   // [PressedKey.end, ObjectAct.rotnZ],
+    // [PressedKey.divide, ObjectAct.rotX],
+    // [PressedKey.multiply, ObjectAct.rotnX],
+    // [PressedKey.home, ObjectAct.rotZ],
+    // [PressedKey.end, ObjectAct.rotnZ],
     [PressedKey.esc, ObjectAct.deselect],
     [PressedKey.cpy, ObjectAct.copy],
     [PressedKey.del, ObjectAct.delete]
   ])
 
-  public constructor(private ngZone: NgZone, private userSvc: UserService, private inputSysSvc: InputSystemService,
-     private objSvc: ObjectService) {
-  }
+  public constructor(
+    private ngZone: NgZone,
+    private userSvc: UserService,
+    private inputSysSvc: InputSystemService,
+    private objSvc: ObjectService
+  ) {}
 
   public cancel(): void {
     if (this.frameId != null) {
@@ -208,8 +268,11 @@ export class EngineService {
     return this.texturesAnimationSub.asObservable()
   }
 
-  public createScene(canvas: ElementRef<HTMLCanvasElement>, labelZone: ElementRef<HTMLDivElement>,
-                     labelDesc: ElementRef<HTMLDivElement>): void {
+  public createScene(
+    canvas: ElementRef<HTMLCanvasElement>,
+    labelZone: ElementRef<HTMLDivElement>,
+    labelDesc: ElementRef<HTMLDivElement>
+  ): void {
     this.canvas = canvas.nativeElement
     this.labelZone = labelZone.nativeElement
     this.labelDesc = labelDesc.nativeElement
@@ -217,7 +280,7 @@ export class EngineService {
 
     this.renderer = new WebGLRenderer({
       canvas: this.canvas,
-      alpha: false,    // transparent background
+      alpha: false, // transparent background
       antialias: true, // smooth edges
       stencil: false
     })
@@ -231,14 +294,24 @@ export class EngineService {
     this.player.rotation.order = 'YXZ'
     this.worldNode.add(this.player)
 
-    this.camera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000)
+    this.camera = new PerspectiveCamera(
+      50,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    )
     this.camera.rotation.order = 'YXZ'
     this.camera.position.y = 0
     this.lodCamera = this.camera.clone()
     this.scene.add(this.lodCamera)
     this.player.attach(this.camera)
 
-    this.thirdCamera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000)
+    this.thirdCamera = new PerspectiveCamera(
+      50,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    )
     this.thirdCamera.rotation.order = 'YXZ'
     this.thirdCamera.position.z = 6
     this.thirdCamera.position.y = 0.2
@@ -313,26 +386,65 @@ export class EngineService {
     this.playerCollider = new PlayerCollider(boxHeight, position)
 
     if (config.debug) {
-      for (const item of this.worldNode.children.filter(i => i.name === 'boundingBox')) {
+      for (const item of this.worldNode.children.filter(
+        (i) => i.name === 'boundingBox'
+      )) {
         this.disposeMaterial(item as Group)
         this.worldNode.remove(item)
       }
-      const boxPos = (new Vector3(0, boxHeight / 2, 0)).add(position)
+      const boxPos = new Vector3(0, boxHeight / 2, 0).add(position)
       const boundingBox = new Group()
       boundingBox.name = 'boundingBox'
-      const mainBoxGeometry = new BoxGeometry(playerBoxSide, boxHeight, playerBoxSide)
-      const topBoxGeometry = new BoxGeometry(playerBoxSide, boxHeight - playerClimbHeight, playerBoxSide)
-      const bottomBoxGeometry = new BoxGeometry(playerBoxSide, playerClimbHeight, playerBoxSide)
-      this.boxMaterial = new MeshBasicMaterial({color: 0x00ff00, wireframe: true})
+      const mainBoxGeometry = new BoxGeometry(
+        playerBoxSide,
+        boxHeight,
+        playerBoxSide
+      )
+      const topBoxGeometry = new BoxGeometry(
+        playerBoxSide,
+        boxHeight - playerClimbHeight,
+        playerBoxSide
+      )
+      const bottomBoxGeometry = new BoxGeometry(
+        playerBoxSide,
+        playerClimbHeight,
+        playerBoxSide
+      )
+      this.boxMaterial = new MeshBasicMaterial({
+        color: 0x00ff00,
+        wireframe: true
+      })
 
-      const mainBox = new Mesh(mainBoxGeometry, [this.boxMaterial, this.boxMaterial, this.boxMaterial,
-        this.boxMaterial, this.boxMaterial, this.boxMaterial])
-      const topBox = new Mesh(topBoxGeometry, [this.boxMaterial, this.boxMaterial, this.boxMaterial,
-        this.boxMaterial, this.boxMaterial, this.boxMaterial])
-      const bottomBox = new Mesh(bottomBoxGeometry, [this.boxMaterial, this.boxMaterial, this.boxMaterial,
-        this.boxMaterial, this.boxMaterial, this.boxMaterial])
+      const mainBox = new Mesh(mainBoxGeometry, [
+        this.boxMaterial,
+        this.boxMaterial,
+        this.boxMaterial,
+        this.boxMaterial,
+        this.boxMaterial,
+        this.boxMaterial
+      ])
+      const topBox = new Mesh(topBoxGeometry, [
+        this.boxMaterial,
+        this.boxMaterial,
+        this.boxMaterial,
+        this.boxMaterial,
+        this.boxMaterial,
+        this.boxMaterial
+      ])
+      const bottomBox = new Mesh(bottomBoxGeometry, [
+        this.boxMaterial,
+        this.boxMaterial,
+        this.boxMaterial,
+        this.boxMaterial,
+        this.boxMaterial,
+        this.boxMaterial
+      ])
 
-      topBox.position.set(0, (boxHeight - (boxHeight - playerClimbHeight)) / 2, 0)
+      topBox.position.set(
+        0,
+        (boxHeight - (boxHeight - playerClimbHeight)) / 2,
+        0
+      )
       bottomBox.position.set(0, (playerClimbHeight - boxHeight) / 2, 0)
       boundingBox.add(mainBox)
       boundingBox.add(topBox)
@@ -357,7 +469,7 @@ export class EngineService {
     div.id = 'label-' + group.name
     div.style.position = 'absolute'
     div.style.transform = 'translate(-50%, -100%)'
-    const user = this.userSvc.userList.find(u => u.id === group.name)
+    const user = this.userSvc.userList.find((u) => u.id === group.name)
     div.innerHTML = user ? user.name : ''
     this.labelZone.appendChild(div)
   }
@@ -388,7 +500,8 @@ export class EngineService {
 
   public setCameraOffset(offset: number) {
     this.camera.position.y = offset
-    this.avatar.position.y = this.player.position.y + this.avatar.userData.offsetY
+    this.avatar.position.y =
+      this.player.position.y + this.avatar.userData.offsetY
   }
 
   public addChunk(chunk: LOD) {
@@ -402,7 +515,11 @@ export class EngineService {
       this.handleSpecialObject(child as Group)
     }
 
-    this.chunkMap.set(chunk.userData.world.chunk.x * chunkIndexStep + chunk.userData.world.chunk.z, chunk)
+    this.chunkMap.set(
+      chunk.userData.world.chunk.x * chunkIndexStep +
+        chunk.userData.world.chunk.z,
+      chunk
+    )
 
     chunk.updateMatrix()
   }
@@ -521,7 +638,9 @@ export class EngineService {
           this.clock.stop()
         }
       })
-      fromEvent(this.canvas, 'contextmenu').subscribe((e: MouseEvent) => this.rightClick(e))
+      fromEvent(this.canvas, 'contextmenu').subscribe((e: MouseEvent) =>
+        this.rightClick(e)
+      )
       fromEvent(this.canvas, 'mousemove').subscribe((e: MouseEvent) => {
         this.mouseIdle = 0
         this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1
@@ -538,7 +657,9 @@ export class EngineService {
         this.labelDesc.style.display = 'none'
         this.hoveredObject = null
         if (this.buildMode) {
-          const act = this.keyActionMap.get(this.inputSysSvc.getKey(k.code)) || ObjectAct.nop
+          const act =
+            this.keyActionMap.get(this.inputSysSvc.getKey(k.code)) ||
+            ObjectAct.nop
           this.objSvc.objectAction.next(act)
         }
       })
@@ -566,8 +687,10 @@ export class EngineService {
             if (item != null && item.userData?.desc) {
               this.labelDesc.style.display = 'block'
               this.labelDesc.innerHTML = item.userData.desc
-              this.labelDesc.style.left = (this.mouse.x + 1) / 2 * window.innerWidth + 'px'
-              this.labelDesc.style.top = -(this.mouse.y - 1) / 2 * window.innerHeight + 'px'
+              this.labelDesc.style.left =
+                ((this.mouse.x + 1) / 2) * window.innerWidth + 'px'
+              this.labelDesc.style.top =
+                (-(this.mouse.y - 1) / 2) * window.innerHeight + 'px'
             }
           }
           this.mouseIdle = 5
@@ -577,7 +700,8 @@ export class EngineService {
   }
 
   public toggleCamera() {
-    this.activeCamera = this.activeCamera === this.camera ? this.thirdCamera : this.camera
+    this.activeCamera =
+      this.activeCamera === this.camera ? this.thirdCamera : this.camera
     this.avatar.visible = this.activeCamera === this.thirdCamera
   }
 
@@ -605,7 +729,10 @@ export class EngineService {
 
   public updateChunkBVH(chunk: Group) {
     // Regenerate boundsTree for associated LOD
-    const bvhMesh = flattenGroup(chunk, (mesh: Mesh) => mesh.userData?.notSolid !== true)
+    const bvhMesh = flattenGroup(
+      chunk,
+      (mesh: Mesh) => mesh.userData?.notSolid !== true
+    )
 
     // If the mesh is empty (no faces): we don't need a bounds tree
     if (bvhMesh.geometry.getIndex().array.length === 0) {
@@ -614,7 +741,9 @@ export class EngineService {
       chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
         lazyGeneration: false,
         onProgress: (progress: number) => {
-          if (progress === 1.0) { chunk.parent.visible = true }
+          if (progress === 1.0) {
+            chunk.parent.visible = true
+          }
         }
       })
     }
@@ -632,23 +761,31 @@ export class EngineService {
     if (bvhMesh.geometry.getIndex().array.length === 0) {
       terrain.userData.boundsTree = null
     } else {
-      terrain.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {lazyGeneration: false})
+      terrain.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
+        lazyGeneration: false
+      })
     }
   }
 
   public updateSelectionBox(): void {
     this.selectedObject.updateMatrix()
     const chunkData = this.selectedObject.parent.userData.world.chunk
-    const center = new Vector3(this.selectedObject.userData.boxCenter.x,
-                               this.selectedObject.userData.boxCenter.y,
-                               this.selectedObject.userData.boxCenter.z)
+    const center = new Vector3(
+      this.selectedObject.userData.boxCenter.x,
+      this.selectedObject.userData.boxCenter.y,
+      this.selectedObject.userData.boxCenter.z
+    )
     this.selectionBox.position.copy(center)
     center.applyAxisAngle(yAxis, this.selectedObject.rotation.y)
     center.applyAxisAngle(zAxis, this.selectedObject.rotation.z)
     center.applyAxisAngle(xAxis, this.selectedObject.rotation.x)
-    this.selectionGroup.position.copy(new Vector3(chunkData.x + this.selectedObject.position.x,
-                                                  this.selectedObject.position.y,
-                                                  chunkData.z + this.selectedObject.position.z))
+    this.selectionGroup.position.copy(
+      new Vector3(
+        chunkData.x + this.selectedObject.position.x,
+        this.selectedObject.position.y,
+        chunkData.z + this.selectedObject.position.z
+      )
+    )
     this.selectionGroup.rotation.copy(this.selectedObject.rotation)
     this.selectionGroup.updateMatrix()
   }
@@ -663,8 +800,12 @@ export class EngineService {
 
   public getNearestChunks() {
     const lods = []
-    nearestChunkPattern.forEach(offset => {
-      const lod = this.chunkMap.get((this.chunkTile[0] + offset.x)  * chunkIndexStep + this.chunkTile[1] + offset.z)
+    nearestChunkPattern.forEach((offset) => {
+      const lod = this.chunkMap.get(
+        (this.chunkTile[0] + offset.x) * chunkIndexStep +
+          this.chunkTile[1] +
+          offset.z
+      )
       if (lod !== undefined) {
         lods.push(lod)
       }
@@ -685,7 +826,11 @@ export class EngineService {
   private updateLODs() {
     // We trick the LOD into acting like the camera is always on the ground,
     // this avoids having chunks disappearing if we get to high/far on the Y axis
-    this.lodCamera.position.set(this.player.position.x, 0, this.player.position.z)
+    this.lodCamera.position.set(
+      this.player.position.x,
+      0,
+      this.player.position.z
+    )
     this.lodCamera.rotation.copy(this.player.rotation)
     this.lodCamera.updateMatrix()
     this.lodCamera.updateProjectionMatrix()
@@ -705,10 +850,10 @@ export class EngineService {
     }
     this.fpsSub.next((1 / this.deltaFps).toFixed())
     this.deltaSinceLastFrame = this.deltaFps
-    this.deltaFps = this.deltaFps % 1 / this.maxFps.value
+    this.deltaFps = (this.deltaFps % 1) / this.maxFps.value
     this.renderer.render(this.scene, this.activeCamera)
 
-    if (this.animationElapsed > 0.10) {
+    if (this.animationElapsed > 0.1) {
       this.texturesAnimationSub.next(null)
       this.animationElapsed = 0
     } else {
@@ -756,13 +901,25 @@ export class EngineService {
     }
     this.buildMode = true
     this.selectedObject = item
-    this.selectedObjectSub.next({name: item.name, desc: item.userData.desc, act: item.userData.act, date: item.userData.date})
+    this.selectedObjectSub.next({
+      name: item.name,
+      desc: item.userData.desc,
+      act: item.userData.act,
+      date: item.userData.date
+    })
     console.log(item)
 
-    const geometry = new BoxGeometry(item.userData.box.x, item.userData.box.y, item.userData.box.z)
+    const geometry = new BoxGeometry(
+      item.userData.box.x,
+      item.userData.box.y,
+      item.userData.box.z
+    )
     const edges = new EdgesGeometry(geometry)
     this.selectionGroup = new Group()
-    this.selectionBox = new LineSegments(edges, new LineBasicMaterial({color: 0xffff00, depthTest: false}))
+    this.selectionBox = new LineSegments(
+      edges,
+      new LineBasicMaterial({color: 0xffff00, depthTest: false})
+    )
     this.axesHelper = new AxesHelper(5)
     ;(this.axesHelper.material as Material).depthTest = false
     this.selectionGroup.add(this.selectionBox, this.axesHelper)
@@ -774,7 +931,10 @@ export class EngineService {
 
   private pointedItem() {
     this.raycaster.setFromCamera(this.mouse, this.activeCamera)
-    const intersects = this.raycaster.intersectObjects(this.objectsNode.children, true)
+    const intersects = this.raycaster.intersectObjects(
+      this.objectsNode.children,
+      true
+    )
     let item = null
     for (const i of intersects) {
       let obj = i.object
@@ -799,19 +959,30 @@ export class EngineService {
           let [newX, newY, newZ] = [0, 0, 0]
           const yaw = item.userData.teleportClick?.direction || 0
           if (item.userData.teleportClick.altitude != null) {
-            if (item.userData.teleportClick.altitude.altitudeType === 'absolute') {
+            if (
+              item.userData.teleportClick.altitude.altitudeType === 'absolute'
+            ) {
               newY = item.userData.teleportClick.altitude.value * 10
             } else {
-              newY = this.player.position.y + item.userData.teleportClick.altitude.value * 10
+              newY =
+                this.player.position.y +
+                item.userData.teleportClick.altitude.value * 10
             }
           }
           if (item.userData.teleportClick.coordinates != null) {
-            if (item.userData.teleportClick.coordinates.coordinateType === 'absolute') {
+            if (
+              item.userData.teleportClick.coordinates.coordinateType ===
+              'absolute'
+            ) {
               newX = item.userData.teleportClick.coordinates.EW * -10
               newZ = item.userData.teleportClick.coordinates.NS * 10
             } else {
-              newX = this.player.position.x + item.userData.teleportClick.coordinates.x * -10
-              newZ = this.player.position.z + item.userData.teleportClick.coordinates.y * 10
+              newX =
+                this.player.position.x +
+                item.userData.teleportClick.coordinates.x * -10
+              newZ =
+                this.player.position.z +
+                item.userData.teleportClick.coordinates.y * 10
             }
           }
           this.teleport(new Vector3(newX, newY, newZ), yaw)
@@ -833,7 +1004,8 @@ export class EngineService {
       this.deselect()
       return
     }
-    const allowRotation = this.selectedObject.userData.rwx?.axisAlignment === 'none'
+    const allowRotation =
+      this.selectedObject.userData.rwx?.axisAlignment === 'none'
     let moveStep = 0.5
     let rotStep = Math.PI / 12
     if (this.inputSysSvc.controls[PressedKey.clip]) {
@@ -851,93 +1023,99 @@ export class EngineService {
       v.z = Math.sign(this.cameraDirection.z)
     }
     switch (action) {
-      case (ObjectAct.up): {
+      case ObjectAct.up: {
         this.selectedObject.translateY(moveStep)
         this.updateSelectionBox()
         break
       }
-      case (ObjectAct.down): {
+      case ObjectAct.down: {
         this.selectedObject.translateY(-moveStep)
         this.updateSelectionBox()
         break
       }
-      case (ObjectAct.forward): {
+      case ObjectAct.forward: {
         this.selectedObject.position.add(v.multiplyScalar(moveStep))
         this.updateSelectionBox()
         break
       }
-      case (ObjectAct.backward): {
+      case ObjectAct.backward: {
         this.selectedObject.position.add(v.multiplyScalar(-moveStep))
         this.updateSelectionBox()
         break
       }
-      case (ObjectAct.left): {
-        this.selectedObject.position.add(new Vector3(v.z * moveStep, 0, v.x * -moveStep))
+      case ObjectAct.left: {
+        this.selectedObject.position.add(
+          new Vector3(v.z * moveStep, 0, v.x * -moveStep)
+        )
         this.updateSelectionBox()
         break
       }
-      case (ObjectAct.right): {
-        this.selectedObject.position.add(new Vector3(v.z * -moveStep, 0, v.x * moveStep))
+      case ObjectAct.right: {
+        this.selectedObject.position.add(
+          new Vector3(v.z * -moveStep, 0, v.x * moveStep)
+        )
         this.updateSelectionBox()
         break
       }
-      case (ObjectAct.rotY): {
+      case ObjectAct.rotY: {
         if (allowRotation) {
           this.selectedObject.rotateOnAxis(yAxis, rotStep)
           this.updateSelectionBox()
         }
         break
       }
-      case (ObjectAct.rotnY): {
+      case ObjectAct.rotnY: {
         if (allowRotation) {
           this.selectedObject.rotateOnAxis(yAxis, -rotStep)
           this.updateSelectionBox()
         }
         break
       }
-      case (ObjectAct.rotX): {
+      case ObjectAct.rotX: {
         if (allowRotation) {
           this.selectedObject.rotateOnAxis(xAxis, rotStep)
           this.updateSelectionBox()
         }
         break
       }
-      case (ObjectAct.rotnX): {
+      case ObjectAct.rotnX: {
         if (allowRotation) {
           this.selectedObject.rotateOnAxis(xAxis, -rotStep)
           this.updateSelectionBox()
         }
         break
       }
-      case (ObjectAct.rotZ): {
+      case ObjectAct.rotZ: {
         if (allowRotation) {
           this.selectedObject.rotateOnAxis(zAxis, rotStep)
           this.updateSelectionBox()
         }
         break
       }
-      case (ObjectAct.rotnZ): {
+      case ObjectAct.rotnZ: {
         if (allowRotation) {
           this.selectedObject.rotateOnAxis(zAxis, -rotStep)
           this.updateSelectionBox()
         }
         break
       }
-      case (ObjectAct.snapGrid): {
-        this.selectedObject.position.set(Math.round(this.selectedObject.position.x * 2) / 2,
-                                         Math.round(this.selectedObject.position.y * 2) / 2,
-                                         Math.round(this.selectedObject.position.z * 2) / 2)
+      case ObjectAct.snapGrid: {
+        this.selectedObject.position.set(
+          Math.round(this.selectedObject.position.x * 2) / 2,
+          Math.round(this.selectedObject.position.y * 2) / 2,
+          Math.round(this.selectedObject.position.z * 2) / 2
+        )
         this.updateSelectionBox()
         break
       }
-      case (ObjectAct.rotReset): {
+      case ObjectAct.rotReset: {
         if (allowRotation) {
           this.selectedObject.rotation.set(0, 0, 0)
           this.updateSelectionBox()
         }
         break
       }
-      case (ObjectAct.copy): {
+      case ObjectAct.copy: {
         const parent = this.selectedObject.parent
         this.selectedObject = this.selectedObject.clone()
         this.selectedObject.position.add(v.multiplyScalar(moveStep))
@@ -945,7 +1123,7 @@ export class EngineService {
         this.updateSelectionBox()
         break
       }
-      case (ObjectAct.delete): {
+      case ObjectAct.delete: {
         this.removeObject(this.selectedObject)
         return
       }
@@ -954,11 +1132,16 @@ export class EngineService {
     }
   }
 
-  private stepPlayerPosition(oldPosition: Vector3, delta: Vector3, originalDelta: Vector3): boolean {
-
+  private stepPlayerPosition(
+    oldPosition: Vector3,
+    delta: Vector3,
+    originalDelta: Vector3
+  ): boolean {
     let keepGoing = true
     const newPosition = oldPosition.clone().add(delta)
-    const terrain = this.worldNode.children.find(o => o.name === 'terrain') as any
+    const terrain = this.worldNode.children.find(
+      (o) => o.name === 'terrain'
+    ) as any
 
     this.playerCollider.copyPos(newPosition)
 
@@ -976,7 +1159,8 @@ export class EngineService {
       // boundingBox position if it is.
 
       const collision = this.playerCollider.topBoxIntersectsTriangle(tri)
-      const rayIntersectionPoint = this.playerCollider.raysIntersectTriangle(tri)
+      const rayIntersectionPoint =
+        this.playerCollider.raysIntersectTriangle(tri)
 
       if (this.playerCollider.bottomBoxIntersectsTriangle(tri)) {
         feetCollision = true
@@ -987,7 +1171,10 @@ export class EngineService {
         this.boxMaterial?.color.setHex(0xff0000)
       }
 
-      if (rayIntersectionPoint != null && rayIntersectionPoint.y > newPosition.y) {
+      if (
+        rayIntersectionPoint != null &&
+        rayIntersectionPoint.y > newPosition.y
+      ) {
         this.boxMaterial?.color.setHex(0xffff00)
 
         if (climbHeight == null || climbHeight < rayIntersectionPoint.y) {
@@ -1000,12 +1187,11 @@ export class EngineService {
       }
     }
 
-    terrain?.userData.boundsTree?.shapecast (
-      {
-        intersectsBounds: (box: Box3) => box.intersectsBox(this.playerCollider.mainBox),
-        intersectsTriangle
-      }
-    )
+    terrain?.userData.boundsTree?.shapecast({
+      intersectsBounds: (box: Box3) =>
+        box.intersectsBox(this.playerCollider.mainBox),
+      intersectsTriangle
+    })
 
     // We expect maximum 9 LODs to be available to test collision: the one the player
     // stands in and the 8 neighbouring ones (sides and corners)
@@ -1013,12 +1199,11 @@ export class EngineService {
       const lodOffset = lod.position
       this.playerCollider.translate(lodOffset.negate())
 
-      lod.userData.boundsTree?.shapecast (
-        {
-          intersectsBounds: (box: Box3) => box.intersectsBox(this.playerCollider.mainBox),
-          intersectsTriangle
-        }
-      )
+      lod.userData.boundsTree?.shapecast({
+        intersectsBounds: (box: Box3) =>
+          box.intersectsBox(this.playerCollider.mainBox),
+        intersectsTriangle
+      })
 
       this.playerCollider.translate(lodOffset.negate())
     }
@@ -1029,7 +1214,7 @@ export class EngineService {
       this.player.position.copy(oldPosition)
       keepGoing = false
     } else {
-       if (this.playerVelocity.y <= 0 && climbHeight !== null) {
+      if (this.playerVelocity.y <= 0 && climbHeight !== null) {
         // Player is on floor
         this.playerVelocity.setY(0.0)
         newPosition.setY(climbHeight - playerGroundAdjust)
@@ -1037,13 +1222,21 @@ export class EngineService {
         this.flyMode = false
       }
 
-      if (this.playerVelocity.y > 0 && minHeight !== null && climbHeight !== minHeight) {
+      if (
+        this.playerVelocity.y > 0 &&
+        minHeight !== null &&
+        climbHeight !== minHeight
+      ) {
         // Player hits the ceiling
         this.playerVelocity.setY(0.0)
         newPosition.setY(minHeight - playerGroundAdjust)
       }
 
-      if (climbHeight === null && feetCollision && newPosition.y + playerGroundAdjust < oldPosition.y) {
+      if (
+        climbHeight === null &&
+        feetCollision &&
+        newPosition.y + playerGroundAdjust < oldPosition.y
+      ) {
         // Prevent the player from falling in a small gap
         this.playerVelocity.setY(0.0)
         newPosition.setY(oldPosition.y)
@@ -1061,66 +1254,86 @@ export class EngineService {
     }
 
     return keepGoing
-
   }
 
   private updatePlayerPosition() {
-
-    this.playerVelocity.y = this.playerOnFloor && !this.flyMode ? 0 : this.deltaSinceLastFrame * 0.01 + this.playerVelocity.y
+    this.playerVelocity.y =
+      this.playerOnFloor && !this.flyMode
+        ? 0
+        : this.deltaSinceLastFrame * 0.01 + this.playerVelocity.y
 
     this.player.updateMatrixWorld()
 
     const boxHeight: number = this.playerCollider?.boxHeight
 
-    const deltaPosition = this.playerVelocity.clone().multiplyScalar(this.deltaSinceLastFrame)
+    const deltaPosition = this.playerVelocity
+      .clone()
+      .multiplyScalar(this.deltaSinceLastFrame)
     const oldPosition = this.player.position.clone()
     const newPosition = oldPosition.clone().add(deltaPosition)
 
-    this.avatar.userData.animationPlayer?.then((animation: AvatarAnimationPlayer) => {
-      const velocity = this.playerVelocity.length()
+    this.avatar.userData.animationPlayer?.then(
+      (animation: AvatarAnimationPlayer) => {
+        const velocity = this.playerVelocity.length()
 
-      this.userState = 'idle'
+        this.userState = 'idle'
 
-      if (Math.abs(velocity) > 0.1) {
-        this.userState = 'walk'
+        if (Math.abs(velocity) > 0.1) {
+          this.userState = 'walk'
+        }
+
+        if (Math.abs(velocity) > 5.5) {
+          this.userState = 'run'
+        }
+
+        if (this.flyMode) {
+          this.userState = 'fly'
+        }
+
+        // When applicable: reset gesture on completion
+        this.userGesture = animation.animate(
+          this.deltaSinceLastFrame,
+          this.userState,
+          this.userGesture,
+          this.inputSysSvc.controls[PressedKey.moveBck] ? -velocity : velocity
+        )
+          ? null
+          : this.userGesture
       }
-
-      if (Math.abs(velocity) > 5.5) {
-        this.userState = 'run'
-      }
-
-      if (this.flyMode) {
-        this.userState = 'fly'
-      }
-
-      // When applicable: reset gesture on completion
-      this.userGesture = animation.animate(this.deltaSinceLastFrame, this.userState, this.userGesture,
-        this.inputSysSvc.controls[PressedKey.moveBck] ? -velocity : velocity) ? null : this.userGesture
-    })
+    )
 
     if (!this.inputSysSvc.controls[PressedKey.clip] && this.playerCollider) {
-
       let deltaLength = deltaPosition.length()
 
       for (let i = 0; deltaLength > 0.0 && i < playerMaxNbSteps; i++) {
-
         // Do not proceed in steps longer than the dimensions on the colliding box
         // Interpolate the movement by moving step by step, stop if we collide with something, continue otherwise
         const deltaScalar = Math.min(playerMaxStepLength, deltaLength)
-        const nextDelta = deltaPosition.clone().normalize().multiplyScalar(deltaScalar)
+        const nextDelta = deltaPosition
+          .clone()
+          .normalize()
+          .multiplyScalar(deltaScalar)
         deltaLength -= playerMaxStepLength
-        if (!this.stepPlayerPosition(this.player.position.clone(), nextDelta, deltaPosition)) {
+        if (
+          !this.stepPlayerPosition(
+            this.player.position.clone(),
+            nextDelta,
+            deltaPosition
+          )
+        ) {
           break
         }
-
       }
-
     } else {
       this.player.position.copy(newPosition)
     }
 
     this.playerCollider?.copyPos(this.player.position)
-    this.playerColliderBox?.position.set(this.player.position.x, this.player.position.y + boxHeight / 2.0, this.player.position.z)
+    this.playerColliderBox?.position.set(
+      this.player.position.x,
+      this.player.position.y + boxHeight / 2.0,
+      this.player.position.z
+    )
 
     if (this.player.position.y < -350) {
       this.playerVelocity.set(0.0, 0.0, 0.0)
@@ -1128,7 +1341,6 @@ export class EngineService {
     }
 
     this.localUserPosSub.next(this.player.position)
-
   }
 
   private moveCamera() {
@@ -1136,39 +1348,87 @@ export class EngineService {
     let movSteps = 12 * this.deltaSinceLastFrame
     let rotSteps = 1.5 * this.deltaSinceLastFrame
     if (this.inputSysSvc.controls[PressedKey.run]) {
-      movSteps = this.flyMode ? 72 * this.deltaSinceLastFrame : 24 * this.deltaSinceLastFrame
+      movSteps = this.flyMode
+        ? 72 * this.deltaSinceLastFrame
+        : 24 * this.deltaSinceLastFrame
       rotSteps *= 3
     }
     if (this.inputSysSvc.controls[PressedKey.moveFwd]) {
-      this.playerVelocity.add(new Vector3(this.cameraDirection.x, 0, this.cameraDirection.z).multiplyScalar(movSteps))
+      this.playerVelocity.add(
+        new Vector3(
+          this.cameraDirection.x,
+          0,
+          this.cameraDirection.z
+        ).multiplyScalar(movSteps)
+      )
     }
     if (this.inputSysSvc.controls[PressedKey.moveBck]) {
-      this.playerVelocity.add(new Vector3(-this.cameraDirection.x, 0, -this.cameraDirection.z).multiplyScalar(movSteps))
+      this.playerVelocity.add(
+        new Vector3(
+          -this.cameraDirection.x,
+          0,
+          -this.cameraDirection.z
+        ).multiplyScalar(movSteps)
+      )
     }
     if (this.inputSysSvc.controls[PressedKey.turnLft]) {
       if (this.inputSysSvc.controls[PressedKey.clip]) {
-        this.playerVelocity.add(new Vector3(this.cameraDirection.z, 0, -this.cameraDirection.x).multiplyScalar(movSteps))
+        this.playerVelocity.add(
+          new Vector3(
+            this.cameraDirection.z,
+            0,
+            -this.cameraDirection.x
+          ).multiplyScalar(movSteps)
+        )
       } else {
-        this.player.rotation.y = this.radNormalized(this.player.rotation.y + rotSteps)
+        this.player.rotation.y = this.radNormalized(
+          this.player.rotation.y + rotSteps
+        )
       }
     }
     if (this.inputSysSvc.controls[PressedKey.turnRgt]) {
       if (this.inputSysSvc.controls[PressedKey.clip]) {
-        this.playerVelocity.add(new Vector3(-this.cameraDirection.z, 0, this.cameraDirection.x).multiplyScalar(movSteps))
+        this.playerVelocity.add(
+          new Vector3(
+            -this.cameraDirection.z,
+            0,
+            this.cameraDirection.x
+          ).multiplyScalar(movSteps)
+        )
       } else {
-        this.player.rotation.y = this.radNormalized(this.player.rotation.y - rotSteps)
+        this.player.rotation.y = this.radNormalized(
+          this.player.rotation.y - rotSteps
+        )
       }
     }
     if (this.inputSysSvc.controls[PressedKey.moveLft]) {
-      this.playerVelocity.add(new Vector3(this.cameraDirection.z, 0, -this.cameraDirection.x).multiplyScalar(movSteps))
+      this.playerVelocity.add(
+        new Vector3(
+          this.cameraDirection.z,
+          0,
+          -this.cameraDirection.x
+        ).multiplyScalar(movSteps)
+      )
     }
     if (this.inputSysSvc.controls[PressedKey.moveRgt]) {
-      this.playerVelocity.add(new Vector3(-this.cameraDirection.z, 0, this.cameraDirection.x).multiplyScalar(movSteps))
+      this.playerVelocity.add(
+        new Vector3(
+          -this.cameraDirection.z,
+          0,
+          this.cameraDirection.x
+        ).multiplyScalar(movSteps)
+      )
     }
-    if (this.inputSysSvc.controls[PressedKey.lookUp] && this.player.rotation.x < Math.PI / 2) {
+    if (
+      this.inputSysSvc.controls[PressedKey.lookUp] &&
+      this.player.rotation.x < Math.PI / 2
+    ) {
       this.player.rotation.x += rotSteps
     }
-    if (this.inputSysSvc.controls[PressedKey.lookDwn] && this.player.rotation.x > -Math.PI / 2) {
+    if (
+      this.inputSysSvc.controls[PressedKey.lookDwn] &&
+      this.player.rotation.x > -Math.PI / 2
+    ) {
       this.player.rotation.x -= rotSteps
     }
     if (this.inputSysSvc.controls[PressedKey.moveUp]) {
@@ -1199,7 +1459,11 @@ export class EngineService {
     }
 
     this.skybox.position.copy(this.player.position)
-    this.dirLight.position.set(-50 + this.player.position.x, 80 + this.player.position.y, 10 + this.player.position.z)
+    this.dirLight.position.set(
+      -50 + this.player.position.x,
+      80 + this.player.position.y,
+      10 + this.player.position.z
+    )
 
     // compass
     this.compass.setFromVector3(this.cameraDirection)
@@ -1220,13 +1484,20 @@ export class EngineService {
           item.userData.move.waiting -= this.deltaSinceLastFrame
         } else if (item.userData.move.completion < 1) {
           // move is in progress
-          item.position.x += (item.userData.move.distance.x / item.userData.move.time)
-            * this.deltaSinceLastFrame * item.userData.move.direction
-          item.position.y += (item.userData.move.distance.y / item.userData.move.time)
-            * this.deltaSinceLastFrame * item.userData.move.direction
-          item.position.z += (item.userData.move.distance.z / item.userData.move.time)
-            * this.deltaSinceLastFrame * item.userData.move.direction
-          item.userData.move.completion += this.deltaSinceLastFrame / item.userData.move.time
+          item.position.x +=
+            (item.userData.move.distance.x / item.userData.move.time) *
+            this.deltaSinceLastFrame *
+            item.userData.move.direction
+          item.position.y +=
+            (item.userData.move.distance.y / item.userData.move.time) *
+            this.deltaSinceLastFrame *
+            item.userData.move.direction
+          item.position.z +=
+            (item.userData.move.distance.z / item.userData.move.time) *
+            this.deltaSinceLastFrame *
+            item.userData.move.direction
+          item.userData.move.completion +=
+            this.deltaSinceLastFrame / item.userData.move.time
         } else if (item.userData.move.direction === -1) {
           // wayback is done
           if (item.userData.move.loop) {
@@ -1251,9 +1522,27 @@ export class EngineService {
         if (item.userData.rotate.waiting > 0) {
           item.userData.rotate.waiting -= this.deltaSinceLastFrame
         } else {
-          item.rotateOnAxis(yAxis, item.userData.rotate.speed.y * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
-          item.rotateOnAxis(zAxis, item.userData.rotate.speed.z * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
-          item.rotateOnAxis(xAxis, item.userData.rotate.speed.x * RPM * this.deltaSinceLastFrame * item.userData.rotate.direction)
+          item.rotateOnAxis(
+            yAxis,
+            item.userData.rotate.speed.y *
+              RPM *
+              this.deltaSinceLastFrame *
+              item.userData.rotate.direction
+          )
+          item.rotateOnAxis(
+            zAxis,
+            item.userData.rotate.speed.z *
+              RPM *
+              this.deltaSinceLastFrame *
+              item.userData.rotate.direction
+          )
+          item.rotateOnAxis(
+            xAxis,
+            item.userData.rotate.speed.x *
+              RPM *
+              this.deltaSinceLastFrame *
+              item.userData.rotate.direction
+          )
           if (item.userData.rotate.time) {
             if (item.userData.rotate.completion >= 1) {
               if (item.userData.rotate.loop) {
@@ -1262,11 +1551,13 @@ export class EngineService {
                   item.rotation.copy(item.userData.rotate.orig)
                 } else {
                   item.userData.rotate.waiting = item.userData.rotate.wait
-                  item.userData.rotate.direction = item.userData.rotate.direction * -1
+                  item.userData.rotate.direction =
+                    item.userData.rotate.direction * -1
                 }
               }
             }
-            item.userData.rotate.completion += this.deltaSinceLastFrame / item.userData.rotate.time
+            item.userData.rotate.completion +=
+              this.deltaSinceLastFrame / item.userData.rotate.time
           }
         }
       }
@@ -1276,10 +1567,13 @@ export class EngineService {
 
   private moveUsers() {
     this.userSvc.userList
-      .filter(u => this.usersNode.children.find(o => o.name === u.id))
-      .forEach(u => {
-        const user = this.usersNode.children.find(o => o.name === u.id)
-        u.completion = Math.min(1, u.completion + this.deltaSinceLastFrame / 0.2)
+      .filter((u) => this.usersNode.children.find((o) => o.name === u.id))
+      .forEach((u) => {
+        const user = this.usersNode.children.find((o) => o.name === u.id)
+        u.completion = Math.min(
+          1,
+          u.completion + this.deltaSinceLastFrame / 0.2
+        )
         const previousPos = user.position.clone()
         user.position.x = u.oldX + (u.x - u.oldX) * u.completion
         user.position.y = u.oldY + (u.y - u.oldY) * u.completion
@@ -1291,17 +1585,35 @@ export class EngineService {
         user.rotation.set(
           u.oldRoll + this.shortestAngle(u.oldRoll, u.roll) * u.completion,
           u.oldYaw + this.shortestAngle(u.oldYaw, u.yaw) * u.completion,
-          0, 'YZX')
-        user.userData.animationPlayer?.then((animation: AvatarAnimationPlayer) => {
-          const velocity = (previousPos.distanceTo(user.position)) / this.deltaSinceLastFrame
-          if (u.completion < 1) {
-            // When applicable: reset gesture on completion
-            u.gesture = animation.animate(this.deltaSinceLastFrame, u.state, u.gesture, velocity) ? null : u.gesture
-          } else {
-            // Same here: reset gesture on completion
-            u.gesture = animation.animate(this.deltaSinceLastFrame, u.state, u.gesture) ? null : u.gesture
+          0,
+          'YZX'
+        )
+        user.userData.animationPlayer?.then(
+          (animation: AvatarAnimationPlayer) => {
+            const velocity =
+              previousPos.distanceTo(user.position) / this.deltaSinceLastFrame
+            if (u.completion < 1) {
+              // When applicable: reset gesture on completion
+              u.gesture = animation.animate(
+                this.deltaSinceLastFrame,
+                u.state,
+                u.gesture,
+                velocity
+              )
+                ? null
+                : u.gesture
+            } else {
+              // Same here: reset gesture on completion
+              u.gesture = animation.animate(
+                this.deltaSinceLastFrame,
+                u.state,
+                u.gesture
+              )
+                ? null
+                : u.gesture
+            }
           }
-        })
+        )
       })
   }
 
@@ -1314,8 +1626,8 @@ export class EngineService {
         pos.y += user.userData.height
       }
       const vector = pos.project(this.activeCamera)
-      vector.x = (vector.x + 1) / 2 * window.innerWidth
-      vector.y = -(vector.y - 1) / 2 * window.innerHeight
+      vector.x = ((vector.x + 1) / 2) * window.innerWidth
+      vector.y = (-(vector.y - 1) / 2) * window.innerHeight
       const div = document.getElementById('label-' + user.name)
       if (div != null) {
         if (vector.z < 1) {

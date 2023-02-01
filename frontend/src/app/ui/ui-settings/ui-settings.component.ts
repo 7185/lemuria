@@ -7,7 +7,6 @@ import {EngineService} from '../../engine/engine.service'
   templateUrl: './ui-settings.component.html'
 })
 export class UiSettingsComponent implements OnInit {
-
   @Output() closeModal = new EventEmitter()
 
   public maxFps: number

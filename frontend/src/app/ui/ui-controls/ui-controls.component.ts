@@ -9,7 +9,6 @@ import {take, timeout} from 'rxjs'
   templateUrl: './ui-controls.component.html'
 })
 export class UiControlsComponent implements OnInit {
-
   @Output() closeModal = new EventEmitter()
 
   public controlsLabels: [string, PressedKey][] = [
@@ -50,29 +49,27 @@ export class UiControlsComponent implements OnInit {
     this.oldKey = this.controlsKeymap[key][pos]
     this.controlsKeymap[key][pos] = 'Press key...'
     this.cancel = new Subject()
-    this.input.keyDownEvent.pipe(
-      takeUntil(this.cancel),
-      take(1),
-      timeout(5000)
-    ).subscribe({
-      next: (e: KeyboardEvent) => {
-        this.controlsKeymap[key][pos] = e.code
-        this.setKeymap()
-        this.activeKey = [null, null]
-        if (this.cancel != null) {
-          this.cancel.complete()
-          this.cancel = null
+    this.input.keyDownEvent
+      .pipe(takeUntil(this.cancel), take(1), timeout(5000))
+      .subscribe({
+        next: (e: KeyboardEvent) => {
+          this.controlsKeymap[key][pos] = e.code
+          this.setKeymap()
+          this.activeKey = [null, null]
+          if (this.cancel != null) {
+            this.cancel.complete()
+            this.cancel = null
+          }
+        },
+        error: () => {
+          this.controlsKeymap[key][pos] = this.oldKey
+          this.activeKey = [null, null]
+          if (this.cancel != null) {
+            this.cancel.complete()
+            this.cancel = null
+          }
         }
-      },
-      error: () => {
-        this.controlsKeymap[key][pos] = this.oldKey
-        this.activeKey = [null, null]
-        if (this.cancel != null) {
-          this.cancel.complete()
-          this.cancel = null
-        }
-      }
-    })
+      })
   }
 
   setDefault() {

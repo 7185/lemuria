@@ -12,8 +12,10 @@ export class UiBuilderZoneComponent implements OnInit {
   public objectAct = ObjectAct
   public selectedObject: any
 
-  public constructor(private engineSvc: EngineService, private objSvc: ObjectService) {
-  }
+  public constructor(
+    private engineSvc: EngineService,
+    private objSvc: ObjectService
+  ) {}
 
   trigger(event: MouseEvent, action: number) {
     if (event.button === 0) {

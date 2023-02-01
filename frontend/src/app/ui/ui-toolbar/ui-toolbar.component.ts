@@ -2,7 +2,14 @@ import {HttpService} from '../../network/http.service'
 import {EngineService} from '../../engine/engine.service'
 import {WorldService} from '../../world/world.service'
 import {UserService} from '../../user/user.service'
-import {ChangeDetectorRef, Component, ElementRef, Renderer2, TemplateRef, ViewChild} from '@angular/core'
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Renderer2,
+  TemplateRef,
+  ViewChild
+} from '@angular/core'
 import type {AfterViewInit, OnInit} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import type {User} from '../../user/user.model'
@@ -19,7 +26,6 @@ import Utils from '../../utils/utils'
   styleUrls: ['./ui-toolbar.component.scss']
 })
 export class UiToolbarComponent implements OnInit, AfterViewInit {
-
   @ViewChild('compass', {static: true}) compass: ElementRef
   @ViewChild('settingsModal') settingsModalTpl: TemplateRef<any>
   @ViewChild('controlsModal') controlsModalTpl: TemplateRef<any>
@@ -49,8 +55,8 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     private engine: EngineService,
     public world: WorldService,
     private http: HttpService,
-    private userSvc: UserService) {
-  }
+    private userSvc: UserService
+  ) {}
 
   public changeVisibility(visibility: number) {
     this.visibility = visibility
@@ -86,7 +92,9 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public openSettings() {
-    this.settingsModal = this.modalSvc.show(this.settingsModalTpl, {backdrop: false})
+    this.settingsModal = this.modalSvc.show(this.settingsModalTpl, {
+      backdrop: false
+    })
   }
 
   public closeSettings() {
@@ -94,7 +102,9 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public openControls() {
-    this.controlsModal = this.modalSvc.show(this.controlsModalTpl, {backdrop: false})
+    this.controlsModal = this.modalSvc.show(this.controlsModalTpl, {
+      backdrop: false
+    })
   }
 
   public closeControls() {
@@ -107,7 +117,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public join(userId: string) {
-    const user = this.userSvc.userList.find(v => v.id === userId)
+    const user = this.userSvc.userList.find((v) => v.id === userId)
     this.engine.teleport(new Vector3(user.x, user.y, user.z))
   }
 
@@ -119,7 +129,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public ngOnInit(): void {
     this.userSvc.listChanged.subscribe((l) => {
       this.userList = l
-      this.worldList.forEach((w)=> w.users = 0)
+      this.worldList.forEach((w) => (w.users = 0))
       for (const u of this.userList) {
         for (const w of this.worldList) {
           if (u.world === w.id) {
@@ -128,8 +138,10 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
         }
       }
     })
-    this.world.avatarSub.subscribe((avatarId) => this.avatarId = avatarId)
-    this.world.animationMapSub.subscribe(animations => this.animations = animations)
+    this.world.avatarSub.subscribe((avatarId) => (this.avatarId = avatarId))
+    this.world.animationMapSub.subscribe(
+      (animations) => (this.animations = animations)
+    )
     this.http.getLogged().subscribe((u: any) => {
       this.userId = u.id
       this.name = u.name
@@ -143,25 +155,30 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public ngAfterViewInit(): void {
-    this.engine.compassSub.pipe(
-      throttleTime(100),
-      distinctUntilChanged((prev: any, curr: any) =>
-        prev.pos.x === curr.pos.x &&
-        prev.pos.y === curr.pos.y &&
-        prev.pos.z === curr.pos.z &&
-        prev.theta === curr.theta
+    this.engine.compassSub
+      .pipe(
+        throttleTime(100),
+        distinctUntilChanged(
+          (prev: any, curr: any) =>
+            prev.pos.x === curr.pos.x &&
+            prev.pos.y === curr.pos.y &&
+            prev.pos.z === curr.pos.z &&
+            prev.theta === curr.theta
+        )
       )
-    ).subscribe((o: any) => {
-      this.strPos = Utils.posToString(o.pos)
-      this.strAlt = Utils.altToString(o.pos)
-      this.renderer.setStyle(this.compass.nativeElement, 'transform', `rotate(${o.theta}deg)`)
-      this.cdRef.detectChanges()
-    })
+      .subscribe((o: any) => {
+        this.strPos = Utils.posToString(o.pos)
+        this.strAlt = Utils.altToString(o.pos)
+        this.renderer.setStyle(
+          this.compass.nativeElement,
+          'transform',
+          `rotate(${o.theta}deg)`
+        )
+        this.cdRef.detectChanges()
+      })
 
     if (this.debug) {
-      this.engine.fpsSub.pipe(
-        throttleTime(1000)
-      ).subscribe((fps) => {
+      this.engine.fpsSub.pipe(throttleTime(1000)).subscribe((fps) => {
         const memInfo = this.engine.getMemInfo()
         this.strFps = `${fps} FPS`
         this.strMem = `${memInfo.geometries} Geom. ${memInfo.textures} Text.`

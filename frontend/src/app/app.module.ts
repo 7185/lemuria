@@ -4,7 +4,10 @@ import {BrowserModule} from '@angular/platform-browser'
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations'
 import {FormsModule, ReactiveFormsModule} from '@angular/forms'
 import {HttpClientModule, HTTP_INTERCEPTORS} from '@angular/common/http'
-import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome'
+import {
+  FaIconLibrary,
+  FontAwesomeModule
+} from '@fortawesome/angular-fontawesome'
 import {BsDropdownModule} from 'ngx-bootstrap/dropdown'
 import {BsModalService} from 'ngx-bootstrap/modal'
 import {VirtualScrollerModule} from '@floogulinc/ngx-virtual-scroller'
@@ -78,9 +81,7 @@ import {
     {provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true},
     BsModalService
   ],
-  bootstrap: [
-    AppComponent
-  ]
+  bootstrap: [AppComponent]
 })
 export class AppModule {
   constructor(private iconLibrary: FaIconLibrary) {

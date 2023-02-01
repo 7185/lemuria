@@ -12,9 +12,7 @@ import {SettingsService} from '../settings/settings.service'
   templateUrl: './auth.component.html',
   styleUrls: ['./auth.component.scss']
 })
-
 export class AuthComponent implements OnInit {
-
   public processing = false
   public loginForm: FormGroup
   public loginError = false
@@ -22,22 +20,33 @@ export class AuthComponent implements OnInit {
   public passwordCtl: FormControl<string | null>
   private returnUrl: string
 
-  constructor(private fb: FormBuilder,
-              private router: Router,
-              private route: ActivatedRoute,
-              private http: HttpService,
-              private settings: SettingsService) {
-    this.usernameCtl = fb.control('', [Validators.required, Validators.minLength(2)])
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private http: HttpService,
+    private settings: SettingsService
+  ) {
+    this.usernameCtl = fb.control('', [
+      Validators.required,
+      Validators.minLength(2)
+    ])
     this.passwordCtl = fb.control('', [Validators.required])
-    this.loginForm = fb.group({username: this.usernameCtl, password: this.passwordCtl})
+    this.loginForm = fb.group({
+      username: this.usernameCtl,
+      password: this.passwordCtl
+    })
   }
 
   onLogin(): void {
     this.processing = true
-    this.http.login(this.loginForm.value.username, this.loginForm.value.password)
-      .pipe(finalize(() => {
-        this.processing = false
-      }))
+    this.http
+      .login(this.loginForm.value.username, this.loginForm.value.password)
+      .pipe(
+        finalize(() => {
+          this.processing = false
+        })
+      )
       .subscribe({
         next: () => {
           this.settings.set('login', this.loginForm.value.username)
@@ -51,7 +60,10 @@ export class AuthComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loginForm.setValue({username: this.settings.get('login'), password: ''})
+    this.loginForm.setValue({
+      username: this.settings.get('login'),
+      password: ''
+    })
     this.returnUrl = this.route.snapshot.queryParams.next || '/'
     if (this.http.isLogged()) {
       this.router.navigate([this.returnUrl])

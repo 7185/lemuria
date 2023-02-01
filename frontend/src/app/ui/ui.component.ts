@@ -7,11 +7,7 @@ import type {OnInit} from '@angular/core'
   templateUrl: './ui.component.html'
 })
 export class UiComponent implements OnInit {
+  public constructor() {}
 
-  public constructor() {
-  }
-
-  public ngOnInit(): void {
-  }
-
+  public ngOnInit(): void {}
 }

@@ -3,25 +3,51 @@ import {fromEvent} from 'rxjs'
 import {filter, tap} from 'rxjs/operators'
 import {SettingsService} from '../settings/settings.service'
 
-export const enum PressedKey { nop = 0, moveFwd, moveBck, turnLft, turnRgt, moveLft, moveRgt, moveUp, moveDwn, lookUp, lookDwn,
-   run, clip, side, jmp, cpy, del, esc, len }
+export const enum PressedKey {
+  nop = 0,
+  moveFwd,
+  moveBck,
+  turnLft,
+  turnRgt,
+  moveLft,
+  moveRgt,
+  moveUp,
+  moveDwn,
+  lookUp,
+  lookDwn,
+  run,
+  clip,
+  side,
+  jmp,
+  cpy,
+  del,
+  esc,
+  len
+}
 
 @Injectable({providedIn: 'root'})
 export class InputSystemService {
-
   public controls: boolean[] = Array(PressedKey.len).fill(false)
   public keyUpEvent = fromEvent(window, 'keyup').pipe(
-    filter((e: KeyboardEvent) => ['INPUT', 'TEXTAREA'].indexOf((e.target as HTMLElement).nodeName) === -1),
+    filter(
+      (e: KeyboardEvent) =>
+        ['INPUT', 'TEXTAREA'].indexOf((e.target as HTMLElement).nodeName) === -1
+    ),
     tap((e: KeyboardEvent) => {
       this.handleKeys(e.code, false)
       e.preventDefault()
-    }))
+    })
+  )
   public keyDownEvent = fromEvent(window, 'keydown').pipe(
-    filter((e: KeyboardEvent) => ['INPUT', 'TEXTAREA'].indexOf((e.target as HTMLElement).nodeName) === -1),
+    filter(
+      (e: KeyboardEvent) =>
+        ['INPUT', 'TEXTAREA'].indexOf((e.target as HTMLElement).nodeName) === -1
+    ),
     tap((e: KeyboardEvent) => {
       this.handleKeys(e.code, true)
       e.preventDefault()
-    }))
+    })
+  )
 
   private readonly defaultKeymap = new Map([
     ['ArrowUp', PressedKey.moveFwd],
@@ -50,14 +76,15 @@ export class InputSystemService {
     ['Space', PressedKey.jmp],
     ['Escape', PressedKey.esc],
     ['Insert', PressedKey.cpy],
-    ['Delete', PressedKey.del],
+    ['Delete', PressedKey.del]
   ])
 
   private keyMap: Map<string, PressedKey>
 
   constructor(private settings: SettingsService) {
     const savedKeyMap = JSON.parse(this.settings.get('keymap'))
-    this.keyMap = savedKeyMap != null ? new Map(savedKeyMap) : new Map(this.defaultKeymap)
+    this.keyMap =
+      savedKeyMap != null ? new Map(savedKeyMap) : new Map(this.defaultKeymap)
   }
 
   public clearKeys() {
@@ -91,6 +118,9 @@ export class InputSystemService {
   }
 
   private saveKeyMap() {
-    this.settings.set('keymap', JSON.stringify(Array.from(this.keyMap.entries())))
+    this.settings.set(
+      'keymap',
+      JSON.stringify(Array.from(this.keyMap.entries()))
+    )
   }
 }
