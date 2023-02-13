@@ -1,3 +1,4 @@
+import {CommonModule} from '@angular/common'
 import {InputSystemService, PressedKey} from '../../engine/inputsystem.service'
 import type {OnInit} from '@angular/core'
 import {Component, EventEmitter, Output} from '@angular/core'
@@ -5,6 +6,8 @@ import {Subject, takeUntil} from 'rxjs'
 import {take, timeout} from 'rxjs'
 
 @Component({
+  standalone: true,
+  imports: [CommonModule],
   selector: 'app-ui-controls',
   templateUrl: './ui-controls.component.html'
 })

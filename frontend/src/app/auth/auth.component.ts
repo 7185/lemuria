@@ -1,18 +1,33 @@
+import {CommonModule} from '@angular/common'
 import {Component} from '@angular/core'
 import type {OnInit} from '@angular/core'
-import {FormBuilder, Validators} from '@angular/forms'
+import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms'
 import type {FormControl, FormGroup} from '@angular/forms'
 import {ActivatedRoute, Router} from '@angular/router'
+import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {finalize} from 'rxjs/operators'
 import {HttpService} from '../network/http.service'
 import {SettingsService} from '../settings/settings.service'
+import {LogoComponent} from './../logo/logo.component'
+import {faCircleNotch, faKey, faUser} from '@fortawesome/free-solid-svg-icons'
 
 @Component({
+  standalone: true,
+  imports: [
+    FontAwesomeModule,
+    CommonModule,
+    ReactiveFormsModule,
+    LogoComponent
+  ],
   selector: 'app-auth',
   templateUrl: './auth.component.html',
   styleUrls: ['./auth.component.scss']
 })
 export class AuthComponent implements OnInit {
+  public faCircleNotch = faCircleNotch
+  public faKey = faKey
+  public faUser = faUser
+
   public processing = false
   public loginForm: FormGroup
   public loginError = false

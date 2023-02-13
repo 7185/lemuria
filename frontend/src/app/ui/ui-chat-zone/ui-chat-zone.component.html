@@ -12,7 +12,7 @@
   </virtual-scroller>
   <div class="input-group">
     <button class="btn btn-outline-secondary" type="button" (click)="activeChat()" [class.active]="chatActive">
-      <fa-icon [icon]="['fas', 'comments']"></fa-icon>
+      <fa-icon [icon]="faComments"></fa-icon>
     </button>
     <input class="form-control mr-sm-2" [(ngModel)]="message" (keydown.enter)="send()" type="text" 
            placeholder="Message" aria-label="Message" [disabled]="!socket.connected">

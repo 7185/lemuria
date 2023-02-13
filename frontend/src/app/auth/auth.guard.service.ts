@@ -6,7 +6,7 @@ import {HttpService} from '../network/http.service'
 /**
  * Guard for routing
  */
-@Injectable()
+@Injectable({providedIn: 'root'})
 export class AuthGuard implements CanActivate {
   constructor(private router: Router, private http: HttpService) {}
 

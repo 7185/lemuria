@@ -1,10 +1,26 @@
 import {Component, ViewChild} from '@angular/core'
+import {CommonModule} from '@angular/common'
+import {FormsModule} from '@angular/forms'
+import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
+import {LinkifyPipe} from 'src/app/utils/linkify.pipe'
+import {faComments} from '@fortawesome/free-solid-svg-icons'
+import {
+  VirtualScrollerModule,
+  VirtualScrollerComponent
+} from '@floogulinc/ngx-virtual-scroller'
 import type {OnInit} from '@angular/core'
-import {VirtualScrollerComponent} from '@floogulinc/ngx-virtual-scroller'
 import {SocketService} from '../../network/socket.service'
 import {UserService} from '../../user/user.service'
 
 @Component({
+  standalone: true,
+  imports: [
+    CommonModule,
+    FontAwesomeModule,
+    FormsModule,
+    VirtualScrollerModule,
+    LinkifyPipe
+  ],
   selector: 'app-ui-chat-zone',
   templateUrl: './ui-chat-zone.component.html',
   styleUrls: ['./ui-chat-zone.component.scss']
@@ -13,6 +29,7 @@ export class UiChatZoneComponent implements OnInit {
   @ViewChild(VirtualScrollerComponent)
   private virtualScroller: VirtualScrollerComponent
 
+  public faComments = faComments
   public data = []
   public message = ''
   public chatActive = false

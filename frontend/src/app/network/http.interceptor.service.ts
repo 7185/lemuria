@@ -13,7 +13,7 @@ import type {Observable} from 'rxjs'
 import {config} from '../app.config'
 import {catchError, mergeMap} from 'rxjs/operators'
 
-@Injectable()
+@Injectable({providedIn: 'root'})
 export class JwtInterceptor implements HttpInterceptor {
   private authUrl = `${config.url.server}/auth`
 

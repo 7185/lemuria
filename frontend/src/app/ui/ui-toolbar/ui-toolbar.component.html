@@ -13,7 +13,7 @@
         <ul *dropdownMenu class="dropdown-menu" role="menu">
           <li *ngFor="let w of worldList" role="menuitem" (click)="connect(w.id)">
             <button class="dropdown-item">
-              <fa-icon [icon]="['fas', 'globe']"></fa-icon> {{ w.name }}
+              <fa-icon [icon]="faGlobe"></fa-icon> {{ w.name }}
               <span class="badge rounded-pill bg-secondary float-end">{{ w.users }}</span>
             </button>
           </li>
@@ -26,12 +26,12 @@
         <ul *dropdownMenu class="dropdown-menu" role="menu">
           <li role="menuitem" (click)="openSettings()">
             <button class="dropdown-item">
-              <fa-icon [icon]="['fas', 'cog']"></fa-icon> Settings...
+              <fa-icon [icon]="faCog"></fa-icon> Settings...
             </button>
           </li>
           <li role="menuitem" (click)="openControls()">
             <button class="dropdown-item">
-              <fa-icon [icon]="['fas', 'keyboard']"></fa-icon> Controls...
+              <fa-icon [icon]="faKeyboard"></fa-icon> Controls...
             </button>
           </li>
         </ul>
@@ -43,7 +43,7 @@
         <ul *dropdownMenu class="dropdown-menu" role="menu">
           <li role="menuitem" *ngFor="let a of world.avatarList; let index = index" (click)="changeAvatar(index)">
             <button class="dropdown-item">
-              <fa-icon [class.invisible]="index !== avatarId" [icon]="['fas', 'check']"></fa-icon> {{ a.name }}
+              <fa-icon [class.invisible]="index !== avatarId" [icon]="faCheck"></fa-icon> {{ a.name }}
             </button>
           </li>
         </ul>
@@ -55,7 +55,7 @@
         <ul *dropdownMenu class="dropdown-menu" role="menu">
           <li role="menuitem" *ngFor="let v of visibilityList" (click)="changeVisibility(v)">
             <button class="dropdown-item">
-              <fa-icon [class.invisible]="v !== visibility" [icon]="['fas', 'check']"></fa-icon> {{ v }} meters
+              <fa-icon [class.invisible]="v !== visibility" [icon]="faCheck"></fa-icon> {{ v }} meters
             </button>
           </li>
         </ul>
@@ -64,7 +64,7 @@
     <div class="my-2 my-sm-0">
       <div class="btn-group mx-1" dropdown [isDisabled]="animations.size === 0">
         <div dropdownToggle type="button" class="btn btn-info" title="Animations">
-          <fa-icon [icon]="['fas', 'person']" [fixedWidth]="true"></fa-icon>
+          <fa-icon [icon]="faPerson" [fixedWidth]="true"></fa-icon>
         </div>
         <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
           <li *ngFor="let a of animations | keyvalue" role="menuitem" class="dropdown-item" (click)="setAnimation(a.key)">
@@ -73,8 +73,8 @@
         </ul>
       </div>
       <button class="btn btn-primary mx-1" title="Toggle camera" (click)="toggleCamera()" type="button">
-        <fa-icon *ngIf="firstPerson" [icon]="['fas', 'eye']"></fa-icon>
-        <fa-icon *ngIf="!firstPerson" [icon]="['fas', 'video']"></fa-icon>
+        <fa-icon *ngIf="firstPerson" [icon]="faEye"></fa-icon>
+        <fa-icon *ngIf="!firstPerson" [icon]="faVideo"></fa-icon>
       </button>
     </div>
     <div class="text-center text-light lh-1">
@@ -84,8 +84,8 @@
     <button class="d-inline-block btn btn-dark btn-circle" (click)="compassClick(true)" (contextmenu)="compassClick(false)" type="button">
       <div #compass>
         <fa-layers [fixedWidth]="true">
-          <fa-icon class="d-inline-block" [icon]="['fas', 'location-arrow']" transform="rotate-135 down-5"></fa-icon>
-          <fa-icon class="d-inline-block" [icon]="['fas', 'location-arrow']" class="text-danger" transform="rotate-315 up-4"></fa-icon>
+          <fa-icon class="d-inline-block" [icon]="faLocationArrow" transform="rotate-135 down-5"></fa-icon>
+          <fa-icon class="d-inline-block" [icon]="faLocationArrow" class="text-danger" transform="rotate-315 up-4"></fa-icon>
           <fa-layers-text content="N" class="text-warning" transform="shrink-5 up-16"></fa-layers-text>
           <fa-layers-text content="E" class="text-warning" transform="rotate-90 shrink-5 right-16"></fa-layers-text>
           <fa-layers-text content="S" class="text-warning" transform="rotate-180 shrink-5 down-17"></fa-layers-text>
@@ -96,28 +96,28 @@
     <div class="nav navbar-nav ml-auto">
       <div class="btn-group" dropdown [isDisabled]="userList.length === 0">
         <div dropdownToggle type="button" class="btn btn-info">
-          <fa-icon [icon]="['fas', 'users']" [fixedWidth]="true"></fa-icon> {{ userList.length }}
+          <fa-icon [icon]="faUsers" [fixedWidth]="true"></fa-icon> {{ userList.length }}
         </div>
         <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
           <li *ngFor="let u of userList" role="menuitem" class="dropdown-item">
-            <fa-icon [icon]="['fas', 'user']"></fa-icon>
+            <fa-icon [icon]="faUser"></fa-icon>
             {{u.name}}
             <button *ngIf="u.id !== userId && u.world === world.worldId" class="btn btn-sm btn-warning" (click)="join(u.id)" type="button" title="Join user">
-              <fa-icon [icon]="['fas', 'bolt']"></fa-icon>
+              <fa-icon [icon]="faBolt"></fa-icon>
             </button>
           </li>
         </ul>
       </div>
       <div class="btn-group" dropdown>
         <div dropdownToggle type="button" class="nav-link dropdown-toggle">
-          <fa-icon [icon]="['fas', 'user']"></fa-icon> {{ name }} <span class="caret"></span>
+          <fa-icon [icon]="faUser"></fa-icon> {{ name }} <span class="caret"></span>
         </div>
         <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
           <li *ngIf="socket.connected" role="menuitem" (click)="socket.close()">
-            <button class="dropdown-item"><fa-icon [icon]="['fas', 'right-from-bracket']"></fa-icon> Leave world</button>
+            <button class="dropdown-item"><fa-icon [icon]="faRightFromBracket"></fa-icon> Leave world</button>
           </li>
           <li role="menuitem" (click)="logout()">
-            <button class="dropdown-item"><fa-icon [icon]="['fas', 'right-from-bracket']"></fa-icon> Sign out</button>
+            <button class="dropdown-item"><fa-icon [icon]="faRightFromBracket"></fa-icon> Sign out</button>
           </li>
         </ul>
       </div>

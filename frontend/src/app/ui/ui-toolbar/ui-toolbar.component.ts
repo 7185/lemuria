@@ -1,3 +1,8 @@
+import {CommonModule} from '@angular/common'
+import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
+import {BsDropdownModule} from 'ngx-bootstrap/dropdown'
+import {UiControlsComponent} from '../ui-controls/ui-controls.component'
+import {UiSettingsComponent} from './../ui-settings/ui-settings.component'
 import {HttpService} from '../../network/http.service'
 import {EngineService} from '../../engine/engine.service'
 import {WorldService} from '../../world/world.service'
@@ -19,8 +24,30 @@ import type {BsModalRef} from 'ngx-bootstrap/modal'
 import {BsModalService} from 'ngx-bootstrap/modal'
 import {distinctUntilChanged, throttleTime} from 'rxjs'
 import Utils from '../../utils/utils'
+import {
+  faBolt,
+  faCheck,
+  faCog,
+  faEye,
+  faGlobe,
+  faKeyboard,
+  faLocationArrow,
+  faPerson,
+  faRightFromBracket,
+  faUser,
+  faUsers,
+  faVideo
+} from '@fortawesome/free-solid-svg-icons'
 
 @Component({
+  standalone: true,
+  imports: [
+    CommonModule,
+    BsDropdownModule,
+    FontAwesomeModule,
+    UiControlsComponent,
+    UiSettingsComponent
+  ],
   selector: 'app-ui-toolbar',
   templateUrl: './ui-toolbar.component.html',
   styleUrls: ['./ui-toolbar.component.scss']
@@ -29,6 +56,19 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   @ViewChild('compass', {static: true}) compass: ElementRef
   @ViewChild('settingsModal') settingsModalTpl: TemplateRef<any>
   @ViewChild('controlsModal') controlsModalTpl: TemplateRef<any>
+
+  public faBolt = faBolt
+  public faCheck = faCheck
+  public faCog = faCog
+  public faEye = faEye
+  public faGlobe = faGlobe
+  public faKeyboard = faKeyboard
+  public faLocationArrow = faLocationArrow
+  public faRightFromBracket = faRightFromBracket
+  public faPerson = faPerson
+  public faUser = faUser
+  public faUsers = faUsers
+  public faVideo = faVideo
 
   public settingsModal: BsModalRef
   public controlsModal: BsModalRef

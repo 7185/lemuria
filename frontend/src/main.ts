@@ -1,17 +1,26 @@
-import {enableProdMode, ViewEncapsulation} from '@angular/core'
-import {platformBrowserDynamic} from '@angular/platform-browser-dynamic'
-
-import {AppModule} from './app/app.module'
+import {enableProdMode, importProvidersFrom} from '@angular/core'
+import {APP_BASE_HREF} from '@angular/common'
+import {provideHttpClient, HTTP_INTERCEPTORS} from '@angular/common/http'
+import {bootstrapApplication} from '@angular/platform-browser'
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations'
+import {RouterModule} from '@angular/router'
+import {BsModalService} from 'ngx-bootstrap/modal'
+import {APP_ROUTES} from './app/app-routing'
+import {AppComponent} from './app/app.component'
+import {JwtInterceptor} from './app/network/http.interceptor.service'
 import {environment} from './environments/environment'
 
 if (environment.production) {
   enableProdMode()
 }
 
-platformBrowserDynamic()
-  .bootstrapModule(AppModule, [
-    {
-      defaultEncapsulation: ViewEncapsulation.None
-    }
-  ])
-  .catch((err) => console.log(err))
+bootstrapApplication(AppComponent, {
+  providers: [
+    importProvidersFrom(RouterModule.forRoot(APP_ROUTES)),
+    importProvidersFrom(BrowserAnimationsModule),
+    provideHttpClient(),
+    {provide: APP_BASE_HREF, useValue: '/'},
+    {provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true},
+    BsModalService
+  ]
+})

@@ -4,6 +4,7 @@ import {EngineService} from './engine.service'
 import {WorldService} from '../world/world.service'
 
 @Component({
+  standalone: true,
   selector: 'app-engine',
   templateUrl: './engine.component.html',
   styleUrls: ['./engine.component.scss']
