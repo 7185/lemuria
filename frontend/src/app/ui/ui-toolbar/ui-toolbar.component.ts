@@ -2,11 +2,11 @@ import {CommonModule} from '@angular/common'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {BsDropdownModule} from 'ngx-bootstrap/dropdown'
 import {UiControlsComponent} from '../ui-controls/ui-controls.component'
-import {UiSettingsComponent} from './../ui-settings/ui-settings.component'
-import {HttpService} from '../../network/http.service'
+import {UiSettingsComponent} from '../ui-settings/ui-settings.component'
+import {HttpService} from '../../network'
 import {EngineService} from '../../engine/engine.service'
 import {WorldService} from '../../world/world.service'
-import {UserService} from '../../user/user.service'
+import {UserService} from '../../user'
 import {
   ChangeDetectorRef,
   Component,
@@ -17,13 +17,13 @@ import {
 } from '@angular/core'
 import type {AfterViewInit, OnInit} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
-import type {User} from '../../user/user.model'
+import type {User} from '../../user'
 import {config} from '../../app.config'
 import {Vector3} from 'three'
 import type {BsModalRef} from 'ngx-bootstrap/modal'
 import {BsModalService} from 'ngx-bootstrap/modal'
 import {distinctUntilChanged, throttleTime} from 'rxjs'
-import Utils from '../../utils/utils'
+import {Utils} from '../../utils'
 import {
   faBolt,
   faCheck,

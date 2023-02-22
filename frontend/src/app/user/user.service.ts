@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core'
 import {BehaviorSubject, Subject} from 'rxjs'
-import {HttpService} from '../network/http.service'
+import {HttpService} from '../network'
 import {User} from './user.model'
 
 @Injectable({providedIn: 'root'})

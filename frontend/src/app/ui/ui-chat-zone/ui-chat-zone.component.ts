@@ -2,7 +2,7 @@ import {Component, ViewChild} from '@angular/core'
 import {CommonModule} from '@angular/common'
 import {FormsModule} from '@angular/forms'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
-import {LinkifyPipe} from 'src/app/utils/linkify.pipe'
+import {LinkifyPipe} from '../../utils'
 import {faComments} from '@fortawesome/free-solid-svg-icons'
 import {
   VirtualScrollerModule,
@@ -10,7 +10,7 @@ import {
 } from '@floogulinc/ngx-virtual-scroller'
 import type {OnInit} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
-import {UserService} from '../../user/user.service'
+import {UserService} from '../../user'
 
 @Component({
   standalone: true,

@@ -5,7 +5,7 @@ import {HttpClient, HttpHandler} from '@angular/common/http'
 import type {HttpResponse} from '@angular/common/http'
 import {Router} from '@angular/router'
 import {config} from '../app.config'
-import {User} from '../user/user.model'
+import {User} from '../user'
 import {catchError, tap, map} from 'rxjs/operators'
 
 @Injectable({providedIn: 'root'})

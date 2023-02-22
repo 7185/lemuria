@@ -1,10 +1,16 @@
 import {Group, Quaternion, Vector3} from 'three'
-import type {AvatarAnimationManager} from './avatar.animation.manager'
+import type {AvatarAnimationManager} from './avatar-animation.manager'
 import type {ThreeSequence, StepState} from './animation.service'
 import {interpolateThreeFrames} from './animation.service'
 
-type AnimationEntry = {name: string; velocityMultiplier: number}
-type Frame = {joints: Record<string, Quaternion>; location: Vector3}
+interface AnimationEntry {
+  name: string
+  velocityMultiplier: number
+}
+interface Frame {
+  joints: Record<string, Quaternion>
+  location: Vector3
+}
 
 const transitionDuration = 0.1
 

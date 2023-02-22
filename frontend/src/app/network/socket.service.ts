@@ -1,5 +1,5 @@
 import {EngineService} from '../engine/engine.service'
-import {UserService} from '../user/user.service'
+import {UserService} from '../user'
 import {Injectable} from '@angular/core'
 import {interval, Subject} from 'rxjs'
 import type {Subscription} from 'rxjs'

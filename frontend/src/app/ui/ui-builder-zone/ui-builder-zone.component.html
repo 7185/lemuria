@@ -6,82 +6,82 @@
       <tr class="buttons">
         <td>
           <button class="btn btn-sm btn-dark" (mousedown)="trigger($event, objectAct.copy)" type="button">
-            <fa-icon [icon]="faClone" [fixedWidth]="true"></fa-icon>
+            <fa-icon [icon]="faClone" [fixedWidth]="true"/>
           </button>
           <button class="btn btn-sm btn-secondary float-end" (mousedown)="trigger($event, objectAct.snapGrid)" type="button">
-            <fa-icon [icon]="faBorderNone" [fixedWidth]="true"></fa-icon>
+            <fa-icon [icon]="faBorderNone" [fixedWidth]="true"/>
           </button>
           <br />
           <button class="btn btn-sm btn-danger shadow-none" (mousedown)="trigger($event, objectAct.delete)" type="button">
-            <fa-icon [icon]="faTrashCan" [fixedWidth]="true"></fa-icon>
+            <fa-icon [icon]="faTrashCan" [fixedWidth]="true"/>
           </button>
           <button class="btn btn-sm btn-secondary float-end" (mousedown)="trigger($event, objectAct.rotReset)" type="button">
             <fa-layers [fixedWidth]="true">
-              <fa-icon [icon]="faRotate" [fixedWidth]="true"></fa-icon>
-              <fa-layers-text content="0" transform="shrink-2 right-8 down-6" class="fw-bold"></fa-layers-text>
+              <fa-icon [icon]="faRotate" [fixedWidth]="true"/>
+              <fa-layers-text content="0" transform="shrink-2 right-8 down-6" class="fw-bold"/>
             </fa-layers>
           </button>
         </td>
         <td>
           <button class="btn btn-sm btn-secondary" (mousedown)="trigger($event, objectAct.forward)" type="button">
             <fa-layers [fixedWidth]="true">
-              <fa-icon [icon]="faRoad" [fixedWidth]="true"></fa-icon>
-              <fa-icon class="d-inline-block" [icon]="faArrowUp" transform="shrink-6 up-8"></fa-icon>
+              <fa-icon [icon]="faRoad" [fixedWidth]="true"/>
+              <fa-icon class="d-inline-block" [icon]="faArrowUp" transform="shrink-6 up-8"/>
             </fa-layers>
           </button>
           <button class="btn btn-sm btn-secondary" (mousedown)="trigger($event, objectAct.backward)" type="button">
             <fa-layers [fixedWidth]="true">
-              <fa-icon [icon]="faRoad" [fixedWidth]="true"></fa-icon>
-              <fa-icon class="d-inline-block" [icon]="faArrowDown" transform="shrink-3 down-8"></fa-icon>
+              <fa-icon [icon]="faRoad" [fixedWidth]="true"/>
+              <fa-icon class="d-inline-block" [icon]="faArrowDown" transform="shrink-3 down-8"/>
             </fa-layers>
           </button>
           <button class="btn btn-sm btn-secondary" (mousedown)="trigger($event, objectAct.left)" type="button">
-            <fa-icon [icon]="faArrowLeft" [fixedWidth]="true"></fa-icon>
+            <fa-icon [icon]="faArrowLeft" [fixedWidth]="true"/>
           </button>
           <button class="btn btn-sm btn-secondary" (mousedown)="trigger($event, objectAct.right)" type="button">
-            <fa-icon [icon]="faArrowRight" [fixedWidth]="true"></fa-icon>
+            <fa-icon [icon]="faArrowRight" [fixedWidth]="true"/>
           </button>
           <button class="btn btn-sm btn-secondary" (mousedown)="trigger($event, objectAct.up)" type="button">
-            <fa-icon [icon]="faArrowUp" [fixedWidth]="true"></fa-icon>
+            <fa-icon [icon]="faArrowUp" [fixedWidth]="true"/>
           </button>
           <button class="btn btn-sm btn-secondary" (mousedown)="trigger($event, objectAct.down)" type="button">
-            <fa-icon [icon]="faArrowDown" [fixedWidth]="true"></fa-icon>
+            <fa-icon [icon]="faArrowDown" [fixedWidth]="true"/>
           </button>
           <br/>
           <button class="btn btn-sm btn-danger" (mousedown)="trigger($event, objectAct.rotnX)" type="button">
             <fa-layers [fixedWidth]="true">
-              <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"></fa-icon>
-              <fa-layers-text content="X" transform="shrink-2 right-8 down-6" class="fw-bold"></fa-layers-text>
+              <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"/>
+              <fa-layers-text content="X" transform="shrink-2 right-8 down-6" class="fw-bold"/>
             </fa-layers>
           </button>
           <button class="btn btn-sm btn-danger" (mousedown)="trigger($event, objectAct.rotX)" type="button" >
             <fa-layers [fixedWidth]="true">
-              <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"></fa-icon>
-              <fa-layers-text content="X" transform="shrink-2 left-8 down-6" class="fw-bold"></fa-layers-text>
+              <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"/>
+              <fa-layers-text content="X" transform="shrink-2 left-8 down-6" class="fw-bold"/>
             </fa-layers>
           </button>
           <button class="btn btn-sm btn-success" (mousedown)="trigger($event, objectAct.rotnY)" type="button">
             <fa-layers [fixedWidth]="true">
-              <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"></fa-icon>
-              <fa-layers-text content="Y" transform="shrink-2 right-8 down-6" class="fw-bold"></fa-layers-text>
+              <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"/>
+              <fa-layers-text content="Y" transform="shrink-2 right-8 down-6" class="fw-bold"/>
             </fa-layers>
           </button>
           <button class="btn btn-sm btn-success" (mousedown)="trigger($event, objectAct.rotY)" type="button">
             <fa-layers [fixedWidth]="true">
-              <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"></fa-icon>
-              <fa-layers-text content="Y" transform="shrink-2 left-8 down-6" class="fw-bold"></fa-layers-text>
+              <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"/>
+              <fa-layers-text content="Y" transform="shrink-2 left-8 down-6" class="fw-bold"/>
             </fa-layers>
           </button>
           <button class="btn btn-sm btn-primary" (mousedown)="trigger($event, objectAct.rotnZ)" type="button">
             <fa-layers [fixedWidth]="true">
-              <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"></fa-icon>
-              <fa-layers-text content="Z" transform="shrink-2 right-8 down-6" class="fw-bold"></fa-layers-text>
+              <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"/>
+              <fa-layers-text content="Z" transform="shrink-2 right-8 down-6" class="fw-bold"/>
             </fa-layers>
           </button>
           <button class="btn btn-sm btn-primary" (mousedown)="trigger($event, objectAct.rotZ)" type="button">
             <fa-layers [fixedWidth]="true">
-              <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"></fa-icon>
-              <fa-layers-text content="Z" transform="shrink-2 left-8 down-6" class="fw-bold"></fa-layers-text>
+              <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"/>
+              <fa-layers-text content="Z" transform="shrink-2 left-8 down-6" class="fw-bold"/>
             </fa-layers>
           </button>
         </td>

@@ -44,12 +44,13 @@ Thumbs.db
 # Project specific
 package-lock.json
 static/*
+backend/.env
 backend/dist
 backend/coverage
-backend-py/static/*
+backend*/static/*
+backend*/app.db
 /venv
 __pycache__
-backend-py/app.db
 backend-py/dumps/*
 !backend-py/dumps/atlemuria.txt
 !backend-py/dumps/proplemuria.txt

@@ -1,14 +1,15 @@
 import {Subject, Observable, throwError, from, of, firstValueFrom} from 'rxjs'
 import type {Subscription} from 'rxjs'
 import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
-import {UserService} from '../user/user.service'
+import {UserService} from '../user'
 import {SettingsService} from '../settings/settings.service'
-import type {User} from '../user/user.model'
+import type {User} from '../user'
 import {EngineService, DEG} from '../engine/engine.service'
+import {PlayerCollider} from './../engine/player-collider'
 import {ObjectService, ObjectAct} from './object.service'
 import {AnimationService} from '../animation/animation.service'
-import type {AvatarAnimationManager} from '../animation/avatar.animation.manager'
-import {HttpService} from '../network/http.service'
+import type {AvatarAnimationManager} from '../animation/avatar-animation.manager'
+import {HttpService} from '../network'
 import {Injectable} from '@angular/core'
 import {config} from '../app.config'
 import {
@@ -27,7 +28,7 @@ import {
   sRGBEncoding
 } from 'three'
 import type {Object3D} from 'three'
-import Utils from '../utils/utils'
+import {Utils} from '../utils'
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
@@ -308,7 +309,7 @@ export class WorldService {
       this.engine.addWorldObject(this.terrain)
       this.terrain.updateMatrixWorld()
     }
-    this.engine.updateTerrainBVH(this.terrain)
+    PlayerCollider.updateTerrainBVH(this.terrain)
   }
 
   public async loadItem(
@@ -624,7 +625,7 @@ export class WorldService {
               lod.autoUpdate = false
               lod.updateMatrix()
               chunkGroup.parent.visible = false
-              this.engine.updateChunkBVH(chunkGroup)
+              PlayerCollider.updateChunkBVH(chunkGroup)
 
               return of(lod)
             })
@@ -650,7 +651,7 @@ export class WorldService {
 
         // Regenerate boundsTree for source LOD, if it's different from the destination one
         if (oldLOD !== lod) {
-          this.engine.updateChunkBVH(oldChunk)
+          PlayerCollider.updateChunkBVH(oldChunk)
         }
 
         const chunk = lod.levels[0].object

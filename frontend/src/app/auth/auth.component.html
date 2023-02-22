@@ -1,7 +1,7 @@
 <div class="container">
   <form class="form-signin" (ngSubmit)="onLogin()" [formGroup]="loginForm">
     <div class="mx-auto">
-      <app-logo></app-logo>
+      <app-logo/>
     </div>
     <div class="alert alert-danger" *ngIf="loginError">Wrong login or password</div>
     <div class="alert alert-danger" *ngIf="usernameCtl.dirty && usernameCtl.errors?.required">
@@ -12,7 +12,7 @@
     </div>
     <div class="input-group mb-2">
       <div class="input-group-text">
-        <fa-icon [icon]="faUser" [fixedWidth]="true"></fa-icon>
+        <fa-icon [icon]="faUser" [fixedWidth]="true"/>
       </div>
       <div class="form-floating flex-grow-1">
         <input class="form-control" formControlName="username">
@@ -21,7 +21,7 @@
     </div>
     <div class="input-group mb-2">
       <div class="input-group-text">
-        <fa-icon [icon]="faKey" [fixedWidth]="true"></fa-icon>
+        <fa-icon [icon]="faKey" [fixedWidth]="true"/>
       </div>
       <div class="form-floating flex-grow-1">
         <input type="password" class="form-control" formControlName="password">
@@ -34,7 +34,7 @@
     </button>
     <ng-template #processingTemplate>
     <button class="btn btn-lg btn-primary btn-block w-100" type="submit" disabled>
-      <fa-icon [icon]="faCircleNotch" [fixedWidth]="true" [spin]="true"></fa-icon><span class="sr-only">Loading...</span>
+      <fa-icon [icon]="faCircleNotch" [fixedWidth]="true" [spin]="true"/><span class="sr-only">Loading...</span>
     </button>
     </ng-template>
   </form>

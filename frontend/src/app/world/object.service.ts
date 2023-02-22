@@ -1,7 +1,7 @@
 import {forkJoin, of, BehaviorSubject, Observable, Subject} from 'rxjs'
 import {catchError, map} from 'rxjs/operators'
 import {Injectable} from '@angular/core'
-import {HttpService} from '../network/http.service'
+import {HttpService} from '../network'
 import {AWActionParser} from 'aw-action-parser'
 import {
   Group,

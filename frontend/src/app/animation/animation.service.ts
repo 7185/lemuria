@@ -2,23 +2,27 @@ import {Injectable} from '@angular/core'
 import parseSequence, {FileType, getJointTag} from 'aw-sequence-parser'
 import {EngineService} from '../engine/engine.service'
 import {ObjectService} from '../world/object.service'
-import {AvatarAnimationManager} from './avatar.animation.manager'
+import {AvatarAnimationManager} from './avatar-animation.manager'
 import {Quaternion, Vector3} from 'three'
 import * as fflate from 'fflate'
 
-export type AvatarSequences = {
+export interface AvatarSequences {
   implicit: Map<string, string>
   explicit: Map<string, string>
 }
 
-export type ThreeSequence = {
+export interface ThreeSequence {
   original: any
   frames: any[]
   frameRate: number
   rootJointTag: number
   keyFrameIDs: number[]
 }
-export type StepState = {total: number; frameRate: number; current: number}
+export interface StepState {
+  total: number
+  frameRate: number
+  current: number
+}
 
 export const interpolateThreeFrames = (
   threeFrames: any[],

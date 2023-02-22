@@ -3,6 +3,7 @@ import {Injectable, NgZone} from '@angular/core'
 import type {ElementRef} from '@angular/core'
 import {
   AmbientLight,
+  Cache,
   Clock,
   PerspectiveCamera,
   Raycaster,
@@ -22,19 +23,16 @@ import {
   EdgesGeometry,
   LineSegments,
   LineBasicMaterial,
-  sRGBEncoding,
-  Box3,
-  Ray
+  sRGBEncoding
 } from 'three'
-import type {Material, LOD, Triangle} from 'three'
-import {flattenGroup} from 'three-rwx-loader'
-import {MeshBVH} from 'three-mesh-bvh/build/index.module'
-import {UserService} from '../user/user.service'
+import type {Box3, Material, LOD, Triangle} from 'three'
+import {UserService} from '../user'
 import {ObjectAct, ObjectService} from '../world/object.service'
-import type {AvatarAnimationPlayer} from '../animation/avatar.animation.player'
+import type {AvatarAnimationPlayer} from '../animation'
 import {PressedKey, InputSystemService} from './inputsystem.service'
 import {config} from '../app.config'
-import Utils from '../utils/utils'
+import {PlayerCollider} from './player-collider'
+import {Utils} from '../utils'
 
 export const DEG = Math.PI / 180
 export const RPM = Math.PI / 30
@@ -42,7 +40,6 @@ const xAxis = new Vector3(1, 0, 0)
 const yAxis = new Vector3(0, 1, 0)
 const zAxis = new Vector3(0, 0, 1)
 const playerBoxSide = config.world.collider.boxSide
-const playerHalfSide = playerBoxSide / 2
 const playerClimbHeight = config.world.collider.climbHeight
 const playerGroundAdjust = config.world.collider.groundAdjust
 const playerMaxStepLength = config.world.collider.maxStepLength
@@ -62,103 +59,6 @@ const nearestChunkPattern = [
   {x: 1, z: 0},
   {x: 1, z: 1}
 ]
-
-class PlayerCollider {
-  public boxHeight: number
-  public mainBox: Box3
-  private topBox: Box3
-  private bottomBox: Box3
-  private rays: Ray[]
-  private currentPos: Vector3
-
-  public constructor(boxHeight: number, pos = new Vector3(0, 0, 0)) {
-    if (boxHeight < playerClimbHeight + 0.1) {
-      // We need to ensurethe total collider height doesn't go too low
-      this.boxHeight = playerClimbHeight + 0.1
-    } else {
-      this.boxHeight = boxHeight
-    }
-
-    this.mainBox = new Box3(
-      new Vector3(-playerHalfSide, 0, -playerHalfSide),
-      new Vector3(playerHalfSide, this.boxHeight, playerHalfSide)
-    )
-    this.topBox = new Box3(
-      new Vector3(-playerHalfSide, playerClimbHeight, -playerHalfSide),
-      new Vector3(playerHalfSide, this.boxHeight, playerHalfSide)
-    )
-    this.bottomBox = new Box3(
-      new Vector3(-playerHalfSide, 0, -playerHalfSide),
-      new Vector3(playerHalfSide, playerClimbHeight, playerHalfSide)
-    )
-    const downward = new Vector3(0, -1, 0)
-    this.rays = [
-      new Ray(new Vector3(0, this.boxHeight, 0), new Vector3(0, -1, 0)),
-      new Ray(
-        new Vector3(-playerHalfSide, this.boxHeight, -playerHalfSide),
-        downward
-      ),
-      new Ray(
-        new Vector3(-playerHalfSide, this.boxHeight, playerHalfSide),
-        downward
-      ),
-      new Ray(
-        new Vector3(playerHalfSide, this.boxHeight, playerHalfSide),
-        downward
-      ),
-      new Ray(
-        new Vector3(playerHalfSide, this.boxHeight, -playerHalfSide),
-        downward
-      )
-    ]
-    this.currentPos = pos.clone()
-
-    this.translate(this.currentPos)
-  }
-
-  public topBoxIntersectsTriangle(tri: Triangle): boolean {
-    return this.topBox.intersectsTriangle(tri)
-  }
-
-  public bottomBoxIntersectsTriangle(tri: Triangle): boolean {
-    return this.bottomBox.intersectsTriangle(tri)
-  }
-
-  public raysIntersectTriangle(tri: Triangle): Vector3 {
-    let intersectionPoint: Vector3 = null
-    this.rays.forEach((ray) => {
-      const point = ray.intersectTriangle(
-        tri.a,
-        tri.b,
-        tri.c,
-        true,
-        new Vector3()
-      )
-      if (
-        point !== null &&
-        (intersectionPoint === null || point.y > intersectionPoint.y)
-      ) {
-        intersectionPoint = point
-      }
-    })
-    return intersectionPoint
-  }
-
-  public translate(delta: Vector3): void {
-    this.mainBox.translate(delta)
-    this.topBox.translate(delta)
-    this.bottomBox.translate(delta)
-    this.rays.forEach((ray) => {
-      ray.origin.add(delta)
-    })
-  }
-
-  public copyPos(pos: Vector3): void {
-    const delta = pos.clone().sub(this.currentPos)
-    this.translate(delta)
-    this.currentPos = pos.clone()
-  }
-}
 
 @Injectable({providedIn: 'root'})
 export class EngineService {
@@ -278,6 +178,7 @@ export class EngineService {
     this.labelDesc = labelDesc.nativeElement
     this.labelDesc.innerHTML = ''
 
+    Cache.enabled = true
     this.renderer = new WebGLRenderer({
       canvas: this.canvas,
       alpha: false, // transparent background
@@ -581,7 +482,7 @@ export class EngineService {
     chunk.remove(group)
 
     // Regenerate boundsTree for this LOD
-    this.updateChunkBVH(chunk)
+    PlayerCollider.updateChunkBVH(chunk)
   }
 
   public removeWorldObject(group: Group) {
@@ -714,57 +615,12 @@ export class EngineService {
       }
       this.player.position.copy(pos)
     }
-    this.player.rotation.y = this.radNormalized(yaw * DEG + Math.PI)
+    this.player.rotation.y = Utils.radNormalized(yaw * DEG + Math.PI)
     this.updateBoundingBox()
   }
 
   public getLODs(): LOD[] {
     return this.objectsNode.children as LOD[]
-  }
-
-  public updateObjectBVH(object: Object3D) {
-    // Regenerate boundsTree for associated LOD
-    this.updateChunkBVH(object.parent as Group)
-  }
-
-  public updateChunkBVH(chunk: Group) {
-    // Regenerate boundsTree for associated LOD
-    const bvhMesh = flattenGroup(
-      chunk,
-      (mesh: Mesh) => mesh.userData?.notSolid !== true
-    )
-
-    // If the mesh is empty (no faces): we don't need a bounds tree
-    if (bvhMesh.geometry.getIndex().array.length === 0) {
-      chunk.parent.userData.boundsTree = null
-    } else {
-      chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
-        lazyGeneration: false,
-        onProgress: (progress: number) => {
-          if (progress === 1.0) {
-            chunk.parent.visible = true
-          }
-        }
-      })
-    }
-  }
-
-  public updateTerrainBVH(terrain: Group) {
-    if (terrain == null) {
-      return
-    }
-
-    // Regenerate boundsTree for associated LOD
-    const bvhMesh = flattenGroup(terrain)
-
-    // If the mesh is empty (no faces): we don't need a bounds tree
-    if (bvhMesh.geometry.getIndex().array.length === 0) {
-      terrain.userData.boundsTree = null
-    } else {
-      terrain.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
-        lazyGeneration: false
-      })
-    }
   }
 
   public updateSelectionBox(): void {
@@ -882,7 +738,7 @@ export class EngineService {
   }
 
   private deselect() {
-    this.updateObjectBVH(this.selectedObject)
+    PlayerCollider.updateObjectBVH(this.selectedObject)
     this.buildMode = false
     this.selectedObject = null
     this.selectedObjectSub.next({})
@@ -1381,7 +1237,7 @@ export class EngineService {
           ).multiplyScalar(movSteps)
         )
       } else {
-        this.player.rotation.y = this.radNormalized(
+        this.player.rotation.y = Utils.radNormalized(
           this.player.rotation.y + rotSteps
         )
       }
@@ -1396,7 +1252,7 @@ export class EngineService {
           ).multiplyScalar(movSteps)
         )
       } else {
-        this.player.rotation.y = this.radNormalized(
+        this.player.rotation.y = Utils.radNormalized(
           this.player.rotation.y - rotSteps
         )
       }
@@ -1583,8 +1439,8 @@ export class EngineService {
         }
         user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
         user.rotation.set(
-          u.oldRoll + this.shortestAngle(u.oldRoll, u.roll) * u.completion,
-          u.oldYaw + this.shortestAngle(u.oldYaw, u.yaw) * u.completion,
+          u.oldRoll + Utils.shortestAngle(u.oldRoll, u.roll) * u.completion,
+          u.oldYaw + Utils.shortestAngle(u.oldYaw, u.yaw) * u.completion,
           0,
           'YZX'
         )
@@ -1637,29 +1493,5 @@ export class EngineService {
         div.style.visibility = vector.z < 1 ? 'visible' : 'hidden'
       }
     }
-  }
-
-  private radNormalized(value: number): number {
-    if (value > Math.PI) {
-      value -= 2 * Math.PI
-    } else if (value < -Math.PI) {
-      value += 2 * Math.PI
-    }
-    return value
-  }
-
-  private shortestAngle(oldValue: number, newValue: number): number {
-    // Work within [0, 2*PI] instead of [-Pi, Pi] for the original values
-    let diff = newValue - oldValue + Math.PI
-
-    // /!\ Careful there: the modulo ( % ) operator doesn't change anything on negative values,
-    //     so even the difference itself needs to fit into [0, 2*PI]
-    if (diff < 0) {
-      diff += 2 * Math.PI
-    }
-
-    // The final result still needs to be expressed within [-Pi, Pi],
-    // so we translate the result back into it.
-    return (diff % (2 * Math.PI)) - Math.PI
   }
 }
