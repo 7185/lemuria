@@ -1,10 +1,15 @@
-import {DbService} from './../db/db.service'
+import {UserModule} from './../user/user.module'
+import {UserService} from '../user/user.service'
 import {Test, TestingModule} from '@nestjs/testing'
+import type {FastifyReply} from 'fastify'
+import {DbService} from './../db/db.service'
 import {WorldController} from './world.controller'
 import {WorldService} from './world.service'
+import {User} from '../user/user'
 
 describe('WorldController', () => {
   let controller: WorldController
+  let offlineController: WorldController
 
   beforeEach(async () => {
     const mockDb = {
@@ -22,15 +27,38 @@ describe('WorldController', () => {
           Promise.resolve([[0, 'tracteur1', 0, 0, 0, 0, 0, 0, null, null]])
       }
     }
+    const mockUser = {
+      authorizedUsers: new Set([
+        new User({id: 'dummy', name: 'alice', world: 1, connected: true})
+      ]),
+      getUserFromCookie: () => new User({id: 'dummy'})
+    }
     const module: TestingModule = await Test.createTestingModule({
+      imports: [UserModule],
       controllers: [WorldController],
       providers: [WorldService, DbService]
     })
       .overrideProvider(DbService)
       .useValue(mockDb)
+      .overrideProvider(UserService)
+      .useValue(mockUser)
       .compile()
 
     controller = module.get<WorldController>(WorldController)
+
+    const mockUserWithNullId = {
+      getUserFromCookie: () => new User({id: null})
+    }
+    const offlineModule: TestingModule = await Test.createTestingModule({
+      imports: [UserModule],
+      controllers: [WorldController],
+      providers: [WorldService, DbService]
+    })
+      .overrideProvider(UserService)
+      .useValue(mockUserWithNullId)
+      .compile()
+
+    offlineController = offlineModule.get<WorldController>(WorldController)
   })
 
   it('should be defined', () => {
@@ -40,14 +68,36 @@ describe('WorldController', () => {
   describe('worldList', () => {
     it('should return world list', async () => {
       expect(await controller.worldList()).toStrictEqual([
-        {id: 1, name: 'Lemuria', users: 0}
+        {id: 1, name: 'Lemuria', users: 1}
       ])
     })
   })
 
   describe('worldGet', () => {
+    it('should return none', async () => {
+      const statusResponseMock = {
+        send: jest.fn((x) => x)
+      }
+      const responseMock = {
+        status: jest.fn().mockReturnValue(statusResponseMock),
+        send: jest.fn((x) => x)
+      } as unknown as FastifyReply
+      expect(
+        await offlineController.worldGet('cookie', '1', responseMock)
+      ).toStrictEqual(undefined)
+      expect(responseMock.status).toHaveBeenCalledWith(401)
+    })
     it('should return world 1', async () => {
-      expect(await controller.worldGet('1')).toStrictEqual({
+      const statusResponseMock = {
+        send: jest.fn((x) => x)
+      }
+      const responseMock = {
+        status: jest.fn().mockReturnValue(statusResponseMock),
+        send: jest.fn((x) => x)
+      } as unknown as FastifyReply
+      expect(
+        await controller.worldGet('cookie', '1', responseMock)
+      ).toStrictEqual({
         entry: '0N 0W',
         id: 1,
         name: 'Lemuria',

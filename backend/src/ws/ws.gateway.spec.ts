@@ -1,7 +1,6 @@
 import {UserService} from '../user/user.service'
 import {UserModule} from '../user/user.module'
 import {User} from '../user/user'
-import {JwtService} from '@nestjs/jwt'
 import {Test, TestingModule} from '@nestjs/testing'
 import {WsGateway} from './ws.gateway'
 import {IncomingMessage} from 'http'
@@ -12,11 +11,12 @@ describe('WsGateway', () => {
 
   beforeEach(async () => {
     const mockUser = {
-      authorizedUsers: new Set([new User({id: 0, name: 'bob'})])
+      authorizedUsers: new Set([new User({id: 'dummy', name: 'alice'})]),
+      getUserFromCookie: jest.fn((x) => x)
     }
     const module: TestingModule = await Test.createTestingModule({
       imports: [UserModule],
-      providers: [WsGateway, UserService, JwtService]
+      providers: [WsGateway]
     })
       .overrideProvider(UserService)
       .useValue(mockUser)

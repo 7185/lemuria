@@ -1,3 +1,4 @@
+import type {Subscription} from 'rxjs'
 import type {WebSocket} from 'ws'
 
 export class User {
@@ -11,6 +12,7 @@ export class User {
   world?: number
   state?: string
   gesture?: string | null
+  positionTimer?: Subscription
 
   constructor(params: User | object = {}) {
     this.id = null

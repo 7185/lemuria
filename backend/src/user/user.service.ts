@@ -1,11 +1,16 @@
 import {Injectable} from '@nestjs/common'
+import {JwtService} from '@nestjs/jwt'
 import {randomUUID} from 'crypto'
 import {Message} from 'src/ws/ws.gateway'
 import {User} from './user'
+import {config} from '../app.config'
 
 @Injectable()
 export class UserService {
   public authorizedUsers = new Set<User>()
+  private cookieRegex = new RegExp(`${config.cookie.access}=([^;]+)`)
+
+  constructor(private readonly jwtService: JwtService) {}
 
   login(username: string) {
     const userId = randomUUID().substring(0, 8)
@@ -27,6 +32,15 @@ export class UserService {
       if (user.id === userId) {
         return user
       }
+    }
+    return new User()
+  }
+
+  getUserFromCookie(cookie: string) {
+    const accessCookie = cookie?.match(this.cookieRegex)
+    if (accessCookie) {
+      const userId = this.jwtService.decode(accessCookie[1])['id']
+      return this.getUser(userId)
     }
     return new User()
   }
@@ -63,8 +77,8 @@ export class UserService {
       })
   }
 
-  sendPos(user: User, world: number) {
-    this.broadcastWorld(world, {
+  sendPosition(user: User) {
+    this.broadcastWorld(user.world, {
       type: 'pos',
       user: user.id,
       data: {

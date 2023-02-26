@@ -1,5 +1,5 @@
 import {WebSocketServer, WebSocketGateway} from '@nestjs/websockets'
-import {JwtService} from '@nestjs/jwt'
+import {timer} from 'rxjs'
 import type {IncomingMessage} from 'http'
 import {Server, WebSocket} from 'ws'
 import {UserService} from '../user/user.service'
@@ -17,24 +17,19 @@ export class WsGateway {
 
   private cookieRegex = new RegExp(`${config.cookie.access}=([^;]+)`)
 
-  constructor(
-    private readonly userSvc: UserService,
-    private readonly jwtService: JwtService
-  ) {}
+  constructor(private readonly userSvc: UserService) {}
 
   afterInit() {
     this.server.on(
       'connection',
       (client: WebSocket, request: IncomingMessage) => {
-        const accessCookie = request.headers.cookie?.match(this.cookieRegex)
-        if (!accessCookie) {
+        const user = this.userSvc.getUserFromCookie(request.headers.cookie)
+        if (!user.id) {
           client.close()
           return
         }
-        const userId = this.jwtService.decode(accessCookie[1])['id']
-        const user = this.userSvc.getUser(userId)
         client.on('message', (payload: string) => {
-          const message = JSON.parse(payload)
+          const message: Message = JSON.parse(payload)
           // handle client message
           switch (message.type) {
             case 'msg':
@@ -58,6 +53,11 @@ export class WsGateway {
               break
             case 'avatar':
               user.avatar = message.data
+              this.userSvc.broadcast({
+                type: 'avatar',
+                user: user.id,
+                data: user.avatar
+              })
               break
             default:
               console.log('Unknown message type:', message.type)
@@ -69,19 +69,16 @@ export class WsGateway {
   }
 
   handleConnection(client: WebSocket, request: IncomingMessage) {
-    const accessCookie = request.headers.cookie?.match(this.cookieRegex)
-    if (!accessCookie) {
-      client.close()
-      return
-    }
-    const userId = this.jwtService.decode(accessCookie[1])['id']
-    const user = this.userSvc.getUser(userId)
-    if (user.id) {
+    const user = this.userSvc.getUserFromCookie(request.headers.cookie)
+    if (!user.id) {
       client.close()
       return
     }
     user.websockets.add(client)
     user.connected = true
+    user.positionTimer = timer(0, config.positionUpdateTick).subscribe(() => {
+      this.userSvc.sendPosition(user)
+    })
     this.userSvc.broadcast({type: 'join', data: user.name})
     this.userSvc.broadcastUserlist()
   }
@@ -92,7 +89,10 @@ export class WsGateway {
         if (websocket === client) {
           user.websockets.delete(client)
           if (user.websockets.size === 0) {
+            user.positionTimer.unsubscribe()
             user.connected = false
+            this.userSvc.broadcast({type: 'part', data: user.name})
+            this.userSvc.broadcastUserlist()
           }
         }
       }

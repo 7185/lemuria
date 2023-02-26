@@ -40,7 +40,9 @@ describe('DbService', () => {
     it('should call $on and successfully close the app', async () => {
       const spy = jest
         .spyOn(DbService.prototype, '$on')
-        .mockImplementation(async (_, cb) => cb(() => Promise.resolve()))
+        .mockImplementation(async (_, cb: (_: () => Promise<void>) => void) =>
+          cb(() => Promise.resolve())
+        )
 
       await service.enableShutdownHooks(app)
 

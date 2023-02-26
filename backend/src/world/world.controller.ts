@@ -1,21 +1,41 @@
-import {Controller, Get, Param, Query} from '@nestjs/common'
+import {Controller, Get, Headers, Param, Query, Res} from '@nestjs/common'
+import type {FastifyReply} from 'fastify'
+import {UserService} from '../user/user.service'
 import {WorldService} from './world.service'
 
 @Controller('/api/v1/world')
 export class WorldController {
-  constructor(private readonly worldService: WorldService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly worldService: WorldService
+  ) {}
 
   @Get('/')
   async worldList() {
-    return (await this.worldService.getList()).map((w) => {
-      return {id: w.id, name: w.name, users: 0}
+    return (await this.worldService.getList()).map((world: any) => {
+      return {
+        id: world.id,
+        name: world.name,
+        users: Array.from(this.userService.authorizedUsers).filter(
+          (user) => user.connected && user.world === world.id
+        ).length
+      }
     })
   }
 
   @Get(':id')
-  async worldGet(@Param('id') id: string) {
+  async worldGet(
+    @Headers('cookie') cookie: string,
+    @Param('id') id: string,
+    @Res() res: FastifyReply
+  ) {
+    const user = this.userService.getUserFromCookie(cookie)
+    if (!user.id) {
+      return res.status(401).send()
+    }
     const world = await this.worldService.getWorld(parseInt(id))
-    return {
+    user.world = parseInt(id)
+    return res.status(200).send({
       id: world.id,
       name: world.name,
       welcome: world.welcome,
@@ -25,7 +45,7 @@ export class WorldController {
       entry: world.entry,
       terrain: world.terrain,
       elev: world.elev
-    }
+    })
   }
 
   @Get(':id/props')
