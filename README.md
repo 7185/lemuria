@@ -1,30 +1,30 @@
 # Lemuria
 
-[![Build Status](https://app.travis-ci.com/7185/lemuria.svg?branch=master)](https://app.travis-ci.com/7185/lemuria)
+[![Lemuria CI](https://github.com/7185/lemuria/actions/workflows/lemuria.yml/badge.svg)](https://github.com/7185/lemuria/actions/workflows/lemuria.yml)
 
 Yet another project about creating a 3D virtual world and stuff.
 
-Powered with Quart, Angular and Three.js.
+Powered with Nest (or Quart), Angular and Three.js.
 
 ## Installation
 
-First we fetch all dependencies:
+First we need to fetch all dependencies for the frontend, go to `frontend` and do the following:
 
 ```bash
-$ npm install
+$ npm ci
 ```
 
 Then we build and run the project:
 
 ```bash
 # You can also use build:prod to build a production-ready bundle
-$ npm run build:watch
+$ npm run build
 ```
 
 To avoid CORS issues when accessing static files from a web browser, go to `backend-py` and do the following:
 
 ```bash
-$ tools/serve_path.py
+$ python tools/serve_path.py
 ```
 
 This will run a script to serve files in `backend-py` on port `8181`
@@ -33,8 +33,17 @@ This will run a script to serve files in `backend-py` on port `8181`
 
 Here you will find a few steps to follow in order to create and populate a working database for Lemuria.
 
-### Install various python3 dependencies for the server
+### Install various dependencies for the server
 
+There are two different implementations for the backend server.
+
+#### Node backend
+```bash
+$ cd backend
+$ npm ci
+```
+
+#### Python backend
 ```bash
 $ pip3 install --user -r backend-py/requirements.txt
 ```
@@ -43,7 +52,7 @@ $ pip3 install --user -r backend-py/requirements.txt
 Go into `backend-py/tools`, then run the following:
 
 ```bash
-$ ./import_lemuria.py
+$ python import_lemuria.py
 ```
 
 This will create and init the database `backend-py/app.db` using the data in `backend-py/dumps/atlemuria.txt` and `backend-py/dumps/proplemuria.txt`.
@@ -57,26 +66,37 @@ $ ln -s /my/path/to/resource/folder/for/village2 village2
 
 ### Run the server
 
+The API backend is listening on port `8080`.
+
+#### Node backend
+Go to `backend` and run the following:
+
+```bash
+$ npm run start
+```
+
+#### Python backend
 Go to `backend-py` and run the following:
 
 ```bash
 $ python3 app.py
 ```
 
-This will run the API backend, listening on port `8080`.
-
-
 ## Docker
 
 You can also generate a docker image to build the project and run the server in a container:
 
 ```bash
-$ docker build -t lemuria .
-$ docker run -it -p 8080:8080 -v $PWD/backend-py/app.db:/app/app.db lemuria
+# Build with the node backend
+$ docker build --target backend -t lemuria .
+# OR with the python backend
+$ docker build --target backend-py -t lemuria .
+
+$ docker run -it -p 8080:8080 -v $PWD/backend-py/app.db:/app/app.db -v $PWD/dumps:/app/dumps lemuria
 ```
 
 ## Try it out!
 
-Once `npm run build`, `app.py` and `serve_path.py` are running: open your favorite web browser and go to `http://localhost:8080`,
+Once `npm run build`, `npm run start` (or `app.py`) and `serve_path.py` are running: open your favorite web browser and go to `http://localhost:8080`,
 you should be prompted with a login screen, put whatever nickname you want, the password you provide doesn't matter as
 there's no proper authentication for the moment.

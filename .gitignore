@@ -49,6 +49,7 @@ backend*/static/*
 backend*/app.db
 /venv
 __pycache__
-backend-py/dumps/*
-!backend-py/dumps/atlemuria.txt
-!backend-py/dumps/proplemuria.txt
+dumps/*
+!dumps/atlemuria.txt
+!dumps/elevlemuria.txt
+!dumps/proplemuria.txt

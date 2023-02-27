@@ -6,8 +6,6 @@ import {config} from '../app.config'
 
 @Controller('/api/v1/auth')
 export class UserController {
-  private cookieRegex = new RegExp(`${config.cookie.access}=([^;]+)`)
-
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService
@@ -15,12 +13,7 @@ export class UserController {
 
   @Get('/')
   authSession(@Headers('cookie') cookie: string, @Res() res: FastifyReply) {
-    const accessCookie = cookie?.match(this.cookieRegex)
-    if (!accessCookie) {
-      return res.status(401).send()
-    }
-    const userId = this.jwtService.decode(accessCookie[1])['id']
-    const user = this.userService.getUser(userId)
+    const user = this.userService.getUserFromCookie(cookie)
     if (user.id != null) {
       return res.status(200).send({id: user.id, name: user.name})
     }
@@ -42,7 +35,11 @@ export class UserController {
   }
 
   @Delete('/')
-  authLogout() {
-    return this.userService.logout()
+  authLogout(@Res({passthrough: true}) res: FastifyReply) {
+    res.clearCookie(config.cookie.access, {
+      httpOnly: true,
+      secure: false
+    })
+    return res.status(200).send(this.userService.logout())
   }
 }

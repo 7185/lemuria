@@ -1,6 +1,7 @@
 import {Injectable} from '@nestjs/common'
 import {DbService} from '../db/db.service'
 import {World} from './world'
+import * as fs from 'fs/promises'
 
 @Injectable()
 export class WorldService {
@@ -12,10 +13,17 @@ export class WorldService {
 
   async getWorld(id: number) {
     const world = await this.db.world.findFirst({where: {id}})
+    const attr = JSON.parse(world.data)
+    if (attr.enable_terrain != null) {
+      attr.terrain = attr.enable_terrain
+      delete attr.enable_terrain
+    }
+
     return new World({
       id: world.id,
       name: world.name,
-      ...JSON.parse(world.data)
+      ...attr,
+      elev: await WorldService.buildElev(world.name)
     })
   }
 
@@ -52,5 +60,75 @@ export class WorldService {
       },
       where: {AND: [{wid}, {AND: orClause}]}
     })
+  }
+
+  static async parseElevDump(name: string): Promise<{[index: string]: any[]}> {
+    const elev: {[index: string]: any[]} = {}
+    let file: string
+    try {
+      file = await fs.readFile(`dumps/elev${name.toLowerCase()}.txt`, 'latin1')
+    } catch {
+      return elev
+    }
+    const lines = file.trim().split('\n')
+    for await (const line of lines) {
+      const s = line.trim().split(' ')
+      if (s[0] === 'elevdump') {
+        continue
+      }
+      const coords = [parseInt(s[0]), parseInt(s[1])]
+      const node: any = {
+        node: [parseInt(s[2]), parseInt(s[3])],
+        node_size: parseInt(s[4]),
+        textures: s
+          .slice(7, 7 + parseInt(s[5]))
+          .map((x: string) => parseInt(x)),
+        elevs: s
+          .slice(7 + parseInt(s[5]), 7 + parseInt(s[5]) + parseInt(s[6]))
+          .map((x: string) => parseInt(x))
+      }
+      const key = coords.toString()
+      if (!elev[key]) {
+        elev[key] = []
+      }
+      elev[key].push(node)
+    }
+    return elev
+  }
+
+  static async buildElev(name: string): Promise<any> {
+    const d: any = {}
+    const elev = await WorldService.parseElevDump(name)
+    for (const [coordsStr, nodes] of Object.entries(elev)) {
+      const coords = coordsStr.split(',').map((x) => parseInt(x))
+      const xPage = 128 * coords[0]
+      const zPage = 128 * coords[1]
+      for (const n of nodes as Array<any>) {
+        if (n.textures.length === 1) {
+          n.textures = Array(64).fill(n.textures[0])
+        }
+        if (n.node_size === 4 && n.elevs.length > 1) {
+          const size = n.node_size * 2
+          const [xNode, zNode] = n.node
+          for (let i = 0; i < size; i++) {
+            const row = i * 128
+            for (let j = 0; j < size; j++) {
+              const elevIndex = size * i + j
+              if (n.elevs[elevIndex] !== 0) {
+                const key = row + j + xNode + zNode * 128
+                if (!d[`${xPage}_${zPage}`]) {
+                  d[`${xPage}_${zPage}`] = {}
+                }
+                d[`${xPage}_${zPage}`][key] = [
+                  n.elevs[elevIndex],
+                  n.textures[elevIndex]
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+    return d
   }
 }

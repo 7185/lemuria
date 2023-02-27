@@ -120,39 +120,42 @@ class World:
     async def parse_elev_dump(self):
         elev = {}
         async with aiofiles.open(f"dumps/elev{self._name.lower()}.txt", 'r', encoding='ISO-8859-1') as f:
-            async for l in f:
-                s = l.strip().split(' ')
-                if s[0] == 'elevdump':
+            async for line in f:
+                parts = line.strip().split(' ')
+                if parts[0] == 'elevdump':
                     continue
-                if (int(s[0]), int(s[1])) not in elev:
-                    elev[(int(s[0]), int(s[1]))] = []
-                elev[(int(s[0]), int(s[1]))].append({
-                    'node': (int(s[2]), int(s[3])),
-                    'node_size': int(s[4]),
-                    'textures': [int(x) for x in s[7:7 + int(s[5])]],
-                    'elevs': [int(x) for x in s[7 + int(s[5]):7 + int(s[5]) + int(s[6])]]})
+                coords = (int(parts[0]), int(parts[1]))
+                if coords not in elev:
+                    elev[coords] = []
+                elev[coords].append({
+                    'node': (int(parts[2]), int(parts[3])),
+                    'node_size': int(parts[4]),
+                    'textures': [int(x) for x in parts[7:7 + int(parts[5])]],
+                    'elevs': [int(x) for x in parts[7 + int(parts[5]):7 + int(parts[5]) + int(parts[6])]]
+                })
         return elev
 
     async def build_elev(self):
-        d = {}
-        for p, nodes in (await self.parse_elev_dump()).items():
-            x_page = 128 * p[0]
-            z_page = 128 * p[1]
-            for n in nodes:
-                if len(n['textures']) == 1:
-                    n['textures'] = 64 * n['textures']
-                if f"{x_page}_{z_page}" not in d:
-                    # new page
-                    d[f"{x_page}_{z_page}"] = {}
+        elev_data = await self.parse_elev_dump()
+        elev_pages = {}
+        for coords, nodes in elev_data.items():
+            x_page = 128 * coords[0]
+            z_page = 128 * coords[1]
+            if f"{x_page}_{z_page}" not in elev_pages:
+                elev_pages[f"{x_page}_{z_page}"] = {}
+            for node in nodes:
+                if len(node['textures']) == 1:
+                    node['textures'] = 64 * node['textures']
                 # ignore big nodes and nodes with few elevs for now
-                if n['node_size'] == 4 and len(n['elevs']) > 1:
-                    size = n['node_size'] * 2
-                    x_node = n['node'][0]
-                    z_node = n['node'][1]
+                if len(node['elevs']) > 1:
+                    size = node['node_size'] * 2
+                    x_node, z_node = node['node']
                     for i in range(size):
                         row = i * 128
                         for j in range(size):
-                            if n['elevs'][size * i + j] != 0:
-                                d[f"{x_page}_{z_page}"][row + j + x_node + z_node * 128] = (n['elevs'][size * i + j],
-                                                                                            n['textures'][size * i + j])
-        return d
+                            idx = size * i + j
+                            if node['elevs'][idx] != 0:
+                                elev_pages[f"{x_page}_{z_page}"][row + j + x_node + z_node * 128] = (
+                                    node['elevs'][idx], node['textures'][idx]
+                                )
+        return elev_pages

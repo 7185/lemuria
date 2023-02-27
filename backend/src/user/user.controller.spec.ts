@@ -1,18 +1,34 @@
 import {Test, TestingModule} from '@nestjs/testing'
 import {JwtModule} from '@nestjs/jwt'
+import {User} from './user'
 import {UserController} from './user.controller'
 import {UserService} from './user.service'
 import type {FastifyReply} from 'fastify'
 
 describe('UserController', () => {
+  let offlineController: UserController
   let controller: UserController
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const offlineModule: TestingModule = await Test.createTestingModule({
       imports: [JwtModule.register({secret: '**changeme**'})],
       controllers: [UserController],
       providers: [UserService]
     }).compile()
+
+    offlineController = offlineModule.get<UserController>(UserController)
+
+    const mockUser = {
+      getUserFromCookie: () => new User({id: 'dummy'})
+    }
+    const module: TestingModule = await Test.createTestingModule({
+      imports: [JwtModule],
+      controllers: [UserController],
+      providers: [UserService]
+    })
+      .overrideProvider(UserService)
+      .useValue(mockUser)
+      .compile()
 
     controller = module.get<UserController>(UserController)
   })
@@ -31,7 +47,7 @@ describe('UserController', () => {
         setCookie: jest.fn(),
         send: jest.fn((x) => x)
       } as unknown as FastifyReply
-      controller.authLogin(
+      offlineController.authLogin(
         {
           login: '',
           password: 'P@$$w0rd!'
@@ -55,14 +71,37 @@ describe('UserController', () => {
         status: jest.fn().mockReturnValue(statusResponseMock),
         send: jest.fn((x) => x)
       } as unknown as FastifyReply
-      controller.authSession('cookie', responseMock)
+      offlineController.authSession('cookie', responseMock)
       expect(responseMock.status).toHaveBeenCalledWith(401)
+    })
+    it('should return 200', () => {
+      const statusResponseMock = {
+        send: jest.fn((x) => x)
+      }
+      const responseMock = {
+        status: jest.fn().mockReturnValue(statusResponseMock),
+        send: jest.fn((x) => x)
+      } as unknown as FastifyReply
+      expect(controller.authSession('cookie', responseMock)).toStrictEqual({
+        id: 'dummy',
+        name: undefined
+      })
+      expect(responseMock.status).toHaveBeenCalledWith(200)
     })
   })
 
   describe('authLogout', () => {
-    it('should return 200', () => {
-      expect(controller.authLogout()).toStrictEqual({})
+    const statusResponseMock = {
+      send: jest.fn((x) => x)
+    }
+    const responseMock = {
+      status: jest.fn().mockReturnValue(statusResponseMock),
+      clearCookie: jest.fn(),
+      send: jest.fn((x) => x)
+    } as unknown as FastifyReply
+    it('should return empty', () => {
+      expect(offlineController.authLogout(responseMock)).toStrictEqual({})
+      expect(responseMock.status).toHaveBeenCalledWith(200)
     })
   })
 })

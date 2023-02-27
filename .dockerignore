@@ -1,6 +1,10 @@
 .angular
 .git
 frontend/node_modules
+backend/*.db
+backend/coverage
+backend/dist
+backend/node_modules
 backend-py/*.db
 backend-py/static
 venv

@@ -18,7 +18,7 @@ describe('WorldController', () => {
           Promise.resolve({
             id: 1,
             name: 'Lemuria',
-            data: '{"welcome": "Bienvenue sur Lemuria"}'
+            data: '{"welcome": "Bienvenue sur Lemuria", "enable_terrain": false}'
           }),
         findMany: () => Promise.resolve([{id: 1, name: 'Lemuria', data: '{}'}])
       },
@@ -102,7 +102,7 @@ describe('WorldController', () => {
         id: 1,
         name: 'Lemuria',
         welcome: 'Bienvenue sur Lemuria',
-        elev: undefined,
+        elev: expect.any(Object),
         path: undefined,
         sky_color: {
           top: [0, 0, 0],
