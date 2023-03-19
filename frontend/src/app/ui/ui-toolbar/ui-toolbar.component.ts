@@ -25,11 +25,14 @@ import {BsModalService} from 'ngx-bootstrap/modal'
 import {distinctUntilChanged, throttleTime} from 'rxjs'
 import {Utils} from '../../utils'
 import {
+  faArrowLeft,
+  faArrowRight,
   faBolt,
   faCheck,
   faCog,
   faEye,
   faGlobe,
+  faHand,
   faKeyboard,
   faLocationArrow,
   faPerson,
@@ -57,11 +60,14 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   @ViewChild('settingsModal') settingsModalTpl: TemplateRef<any>
   @ViewChild('controlsModal') controlsModalTpl: TemplateRef<any>
 
+  public faArrowLeft = faArrowLeft
+  public faArrowRight = faArrowRight
   public faBolt = faBolt
   public faCheck = faCheck
   public faCog = faCog
   public faEye = faEye
   public faGlobe = faGlobe
+  public faHand = faHand
   public faKeyboard = faKeyboard
   public faLocationArrow = faLocationArrow
   public faRightFromBracket = faRightFromBracket
@@ -73,7 +79,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public settingsModal: BsModalRef
   public controlsModal: BsModalRef
   public debug = config.debug
-  public firstPerson = true
+  public cameraType = 0
   public name = 'Anonymous'
   public userId: string
   public avatarId = 0
@@ -115,12 +121,12 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.world.avatarSub.next(avatarId)
   }
 
-  public connect(worldId = 1) {
+  public teleportWorld(worldId = 1, entry = null) {
     this.socket.connect()
 
     this.http.world(worldId).subscribe((w: any) => {
       this.socket.messages.next({type: 'info', data: w.welcome})
-      this.world.setWorld(w)
+      this.world.setWorld(w, entry)
     })
   }
 
@@ -152,7 +158,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public toggleCamera(): void {
-    this.firstPerson = !this.firstPerson
+    this.cameraType = (this.cameraType + 1) % 3
     this.engine.toggleCamera()
   }
 

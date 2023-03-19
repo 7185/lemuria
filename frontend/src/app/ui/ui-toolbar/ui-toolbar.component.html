@@ -11,7 +11,7 @@
           World
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
-          <li *ngFor="let w of worldList" role="menuitem" (click)="connect(w.id)">
+          <li *ngFor="let w of worldList" role="menuitem" (click)="teleportWorld(w.id)">
             <button class="dropdown-item">
               <fa-icon [icon]="faGlobe"/> {{ w.name }}
               <span class="badge rounded-pill bg-secondary float-end">{{ w.users }}</span>
@@ -62,9 +62,15 @@
       </div>
     </div>
     <div class="my-2 my-sm-0">
+      <button class="btn btn-secondary ml-1" type="button" disabled>
+        <fa-icon [icon]="faArrowLeft" [fixedWidth]="true"/>
+      </button>
+      <button class="btn btn-secondary mr-1" type="button" disabled>
+        <fa-icon [icon]="faArrowRight" [fixedWidth]="true"/>
+      </button>
       <div class="btn-group mx-1" dropdown [isDisabled]="animations.size === 0">
         <div dropdownToggle type="button" class="btn btn-info" title="Animations">
-          <fa-icon [icon]="faPerson" [fixedWidth]="true"/>
+          <fa-icon [icon]="faHand" [fixedWidth]="true"/>
         </div>
         <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
           <li *ngFor="let a of animations | keyvalue" role="menuitem" class="dropdown-item" (click)="setAnimation(a.key)">
@@ -72,9 +78,10 @@
           </li>
         </ul>
       </div>
-      <button class="btn btn-primary mx-1" title="Toggle camera" (click)="toggleCamera()" type="button">
-        <fa-icon *ngIf="firstPerson" [icon]="faEye"/>
-        <fa-icon *ngIf="!firstPerson" [icon]="faVideo"/>
+      <button [ngSwitch]="cameraType" class="btn btn-primary mx-1" title="Toggle camera" (click)="toggleCamera()" type="button">
+        <fa-icon *ngSwitchCase="0" [icon]="faEye" [fixedWidth]="true"/>
+        <fa-icon *ngSwitchCase="1" [icon]="faVideo" [fixedWidth]="true"/>
+        <fa-icon *ngSwitchCase="2" [icon]="faPerson" [fixedWidth]="true"/>
       </button>
     </div>
     <div class="text-center text-light lh-1">

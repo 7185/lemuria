@@ -38,12 +38,24 @@ export class WorldService {
   ) {
     // Having a null value on one of those coordinate criterias means no bound will be applied when querying all objects
     const orClause = []
-    if (minX != null) orClause.push({x: {gte: minX}})
-    if (maxX != null) orClause.push({x: {lt: maxX}})
-    if (minY != null) orClause.push({y: {gte: minY}})
-    if (maxY != null) orClause.push({y: {lt: maxY}})
-    if (minZ != null) orClause.push({z: {gte: minZ}})
-    if (maxZ != null) orClause.push({z: {lt: maxZ}})
+    if (minX != null) {
+      orClause.push({x: {gte: minX}})
+    }
+    if (maxX != null) {
+      orClause.push({x: {lt: maxX}})
+    }
+    if (minY != null) {
+      orClause.push({y: {gte: minY}})
+    }
+    if (maxY != null) {
+      orClause.push({y: {lt: maxY}})
+    }
+    if (minZ != null) {
+      orClause.push({z: {gte: minZ}})
+    }
+    if (maxZ != null) {
+      orClause.push({z: {lt: maxZ}})
+    }
 
     return await this.db.prop.findMany({
       select: {

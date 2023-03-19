@@ -16,12 +16,8 @@ export class PlayerCollider {
   private currentPos: Vector3
 
   public constructor(boxHeight: number, pos = new Vector3(0, 0, 0)) {
-    if (boxHeight < playerClimbHeight + 0.1) {
-      // We need to ensure the total collider height doesn't go too low
-      this.boxHeight = playerClimbHeight + 0.1
-    } else {
-      this.boxHeight = boxHeight
-    }
+    // We need to ensure the total collider height doesn't go too low
+    this.boxHeight = Math.max(boxHeight, playerClimbHeight + 0.1)
 
     this.mainBox = new Box3(
       new Vector3(-playerHalfSide, 0, -playerHalfSide),

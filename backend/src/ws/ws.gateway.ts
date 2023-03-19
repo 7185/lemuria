@@ -14,9 +14,6 @@ export interface Message {
 @WebSocketGateway({path: '/api/v1/ws'})
 export class WsGateway {
   @WebSocketServer() server: Server
-
-  private cookieRegex = new RegExp(`${config.cookie.access}=([^;]+)`)
-
   constructor(private readonly userSvc: UserService) {}
 
   afterInit() {

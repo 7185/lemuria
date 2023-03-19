@@ -31,10 +31,11 @@ export class JwtInterceptor implements HttpInterceptor {
         ) {
           return this.renewCookie(req).pipe(mergeMap(() => next.handle(req)))
         }
-        if (err instanceof HttpErrorResponse) {
-          if (err.status === 0 || err.status === 502) {
-            console.log('Connection lost')
-          }
+        if (
+          err instanceof HttpErrorResponse &&
+          (err.status === 0 || err.status === 502)
+        ) {
+          console.log('Connection lost')
         }
         return throwError(() => err)
       })

@@ -75,6 +75,7 @@ export class EngineService {
   private clock: Clock
   private camera: PerspectiveCamera
   private thirdCamera: PerspectiveCamera
+  private thirdFrontCamera: PerspectiveCamera
   private activeCamera: PerspectiveCamera
   private lodCamera: PerspectiveCamera
   private player: Object3D
@@ -218,6 +219,18 @@ export class EngineService {
     this.thirdCamera.position.y = 0.2
     this.camera.attach(this.thirdCamera)
 
+    this.thirdFrontCamera = new PerspectiveCamera(
+      50,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    )
+    this.thirdFrontCamera.rotation.order = 'YXZ'
+    this.thirdFrontCamera.position.z = -6
+    this.thirdFrontCamera.position.y = 0.2
+    this.thirdFrontCamera.rotation.y = Math.PI
+    this.camera.attach(this.thirdFrontCamera)
+
     this.activeCamera = this.camera
 
     this.skybox = new Group()
@@ -283,7 +296,7 @@ export class EngineService {
 
   public updateBoundingBox() {
     const boxHeight = this.camera.position.y * 1.11
-    const position = this.player.position
+    const {position} = this.player
     this.playerCollider = new PlayerCollider(boxHeight, position)
 
     if (config.debug) {
@@ -576,10 +589,8 @@ export class EngineService {
         this.mouseIdle++
         document.body.style.cursor = 'default'
         const item = this.pointedItem()
-        if (item != null) {
-          if (item.userData?.clickable === true) {
-            document.body.style.cursor = 'pointer'
-          }
+        if (item != null && item.userData?.clickable === true) {
+          document.body.style.cursor = 'pointer'
         }
         if (this.mouseIdle >= 10) {
           if (item !== this.hoveredObject) {
@@ -601,9 +612,14 @@ export class EngineService {
   }
 
   public toggleCamera() {
-    this.activeCamera =
-      this.activeCamera === this.camera ? this.thirdCamera : this.camera
-    this.avatar.visible = this.activeCamera === this.thirdCamera
+    if (this.activeCamera === this.camera) {
+      this.activeCamera = this.thirdCamera
+    } else if (this.activeCamera === this.thirdCamera) {
+      this.activeCamera = this.thirdFrontCamera
+    } else if (this.activeCamera === this.thirdFrontCamera) {
+      this.activeCamera = this.camera
+    }
+    this.avatar.visible = this.activeCamera !== this.camera
   }
 
   public teleport(pos: Vector3 | string, yaw = 0): void {
@@ -810,39 +826,41 @@ export class EngineService {
       this.deselect()
     } else {
       const item = this.pointedItem()
-      if (item != null && item.userData?.clickable) {
-        if (item.userData.teleportClick != null) {
-          let [newX, newY, newZ] = [0, 0, 0]
-          const yaw = item.userData.teleportClick?.direction || 0
-          if (item.userData.teleportClick.altitude != null) {
-            if (
-              item.userData.teleportClick.altitude.altitudeType === 'absolute'
-            ) {
-              newY = item.userData.teleportClick.altitude.value * 10
-            } else {
-              newY =
-                this.player.position.y +
-                item.userData.teleportClick.altitude.value * 10
-            }
+      if (
+        item != null &&
+        item.userData?.clickable &&
+        item.userData.teleportClick != null
+      ) {
+        let [newX, newY, newZ] = [0, 0, 0]
+        const yaw = item.userData.teleportClick?.direction || 0
+        if (item.userData.teleportClick.altitude != null) {
+          if (
+            item.userData.teleportClick.altitude.altitudeType === 'absolute'
+          ) {
+            newY = item.userData.teleportClick.altitude.value * 10
+          } else {
+            newY =
+              this.player.position.y +
+              item.userData.teleportClick.altitude.value * 10
           }
-          if (item.userData.teleportClick.coordinates != null) {
-            if (
-              item.userData.teleportClick.coordinates.coordinateType ===
-              'absolute'
-            ) {
-              newX = item.userData.teleportClick.coordinates.EW * -10
-              newZ = item.userData.teleportClick.coordinates.NS * 10
-            } else {
-              newX =
-                this.player.position.x +
-                item.userData.teleportClick.coordinates.x * -10
-              newZ =
-                this.player.position.z +
-                item.userData.teleportClick.coordinates.y * 10
-            }
-          }
-          this.teleport(new Vector3(newX, newY, newZ), yaw)
         }
+        if (item.userData.teleportClick.coordinates != null) {
+          if (
+            item.userData.teleportClick.coordinates.coordinateType ===
+            'absolute'
+          ) {
+            newX = item.userData.teleportClick.coordinates.EW * -10
+            newZ = item.userData.teleportClick.coordinates.NS * 10
+          } else {
+            newX =
+              this.player.position.x +
+              item.userData.teleportClick.coordinates.x * -10
+            newZ =
+              this.player.position.z +
+              item.userData.teleportClick.coordinates.y * 10
+          }
+        }
+        this.teleport(new Vector3(newX, newY, newZ), yaw)
       }
     }
   }
@@ -972,7 +990,7 @@ export class EngineService {
         break
       }
       case ObjectAct.copy: {
-        const parent = this.selectedObject.parent
+        const {parent} = this.selectedObject
         this.selectedObject = this.selectedObject.clone()
         this.selectedObject.position.add(v.multiplyScalar(moveStep))
         parent.add(this.selectedObject)
@@ -1203,6 +1221,7 @@ export class EngineService {
     this.activeCamera.getWorldDirection(this.cameraDirection)
     let movSteps = 12 * this.deltaSinceLastFrame
     let rotSteps = 1.5 * this.deltaSinceLastFrame
+    const reverse = this.activeCamera === this.thirdFrontCamera ? -1 : 1
     if (this.inputSysSvc.controls[PressedKey.run]) {
       movSteps = this.flyMode
         ? 72 * this.deltaSinceLastFrame
@@ -1212,18 +1231,18 @@ export class EngineService {
     if (this.inputSysSvc.controls[PressedKey.moveFwd]) {
       this.playerVelocity.add(
         new Vector3(
-          this.cameraDirection.x,
+          reverse * this.cameraDirection.x,
           0,
-          this.cameraDirection.z
+          reverse * this.cameraDirection.z
         ).multiplyScalar(movSteps)
       )
     }
     if (this.inputSysSvc.controls[PressedKey.moveBck]) {
       this.playerVelocity.add(
         new Vector3(
-          -this.cameraDirection.x,
+          reverse * -this.cameraDirection.x,
           0,
-          -this.cameraDirection.z
+          reverse * -this.cameraDirection.z
         ).multiplyScalar(movSteps)
       )
     }
@@ -1231,14 +1250,14 @@ export class EngineService {
       if (this.inputSysSvc.controls[PressedKey.clip]) {
         this.playerVelocity.add(
           new Vector3(
-            this.cameraDirection.z,
+            reverse * this.cameraDirection.z,
             0,
-            -this.cameraDirection.x
+            reverse * -this.cameraDirection.x
           ).multiplyScalar(movSteps)
         )
       } else {
         this.player.rotation.y = Utils.radNormalized(
-          this.player.rotation.y + rotSteps
+          this.player.rotation.y + reverse * rotSteps
         )
       }
     }
@@ -1246,32 +1265,32 @@ export class EngineService {
       if (this.inputSysSvc.controls[PressedKey.clip]) {
         this.playerVelocity.add(
           new Vector3(
-            -this.cameraDirection.z,
+            reverse * -this.cameraDirection.z,
             0,
-            this.cameraDirection.x
+            reverse * this.cameraDirection.x
           ).multiplyScalar(movSteps)
         )
       } else {
         this.player.rotation.y = Utils.radNormalized(
-          this.player.rotation.y - rotSteps
+          this.player.rotation.y - reverse * rotSteps
         )
       }
     }
     if (this.inputSysSvc.controls[PressedKey.moveLft]) {
       this.playerVelocity.add(
         new Vector3(
-          this.cameraDirection.z,
+          reverse * this.cameraDirection.z,
           0,
-          -this.cameraDirection.x
+          reverse * -this.cameraDirection.x
         ).multiplyScalar(movSteps)
       )
     }
     if (this.inputSysSvc.controls[PressedKey.moveRgt]) {
       this.playerVelocity.add(
         new Vector3(
-          -this.cameraDirection.z,
+          reverse * -this.cameraDirection.z,
           0,
-          this.cameraDirection.x
+          reverse * this.cameraDirection.x
         ).multiplyScalar(movSteps)
       )
     }
@@ -1357,7 +1376,7 @@ export class EngineService {
         } else if (item.userData.move.direction === -1) {
           // wayback is done
           if (item.userData.move.loop) {
-            item.userData.move.direction = item.userData.move.direction * -1
+            item.userData.move.direction *= -1
             item.userData.move.completion = 0
           }
         } else if (item.userData.move.reset) {
@@ -1370,7 +1389,7 @@ export class EngineService {
         } else {
           item.userData.move.waiting = item.userData.move.wait
           // wayback is starting
-          item.userData.move.direction = item.userData.move.direction * -1
+          item.userData.move.direction *= -1
           item.userData.move.completion = 0
         }
       }
@@ -1399,17 +1418,17 @@ export class EngineService {
               this.deltaSinceLastFrame *
               item.userData.rotate.direction
           )
-          if (item.userData.rotate.time) {
-            if (item.userData.rotate.completion >= 1) {
-              if (item.userData.rotate.loop) {
-                item.userData.rotate.completion = 0
-                if (item.userData.rotate.reset) {
-                  item.rotation.copy(item.userData.rotate.orig)
-                } else {
-                  item.userData.rotate.waiting = item.userData.rotate.wait
-                  item.userData.rotate.direction =
-                    item.userData.rotate.direction * -1
-                }
+          if (
+            item.userData.rotate.time &&
+            item.userData.rotate.completion >= 1
+          ) {
+            if (item.userData.rotate.loop) {
+              item.userData.rotate.completion = 0
+              if (item.userData.rotate.reset) {
+                item.rotation.copy(item.userData.rotate.orig)
+              } else {
+                item.userData.rotate.waiting = item.userData.rotate.wait
+                item.userData.rotate.direction *= -1
               }
             }
             item.userData.rotate.completion +=

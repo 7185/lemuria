@@ -302,14 +302,12 @@ export class WorldService {
         const terrainMesh = new Mesh(geometry, terrainMaterials)
         this.terrain.add(terrainMesh)
       }
+      this.engine.addWorldObject(this.terrain)
+      this.terrain.updateMatrixWorld()
+      PlayerCollider.updateTerrainBVH(this.terrain)
     } else {
       this.terrain = null
     }
-    if (this.terrain != null) {
-      this.engine.addWorldObject(this.terrain)
-      this.terrain.updateMatrixWorld()
-    }
-    PlayerCollider.updateTerrainBVH(this.terrain)
   }
 
   public async loadItem(
@@ -385,7 +383,7 @@ export class WorldService {
     this.engine.setChunksDistance(visibility)
   }
 
-  public setWorld(world: any) {
+  public setWorld(world: any, entry: string) {
     this.worldId = world.id
     this.engine.clearObjects()
     this.objSvc.cleanCache()
@@ -472,18 +470,21 @@ export class WorldService {
 
     this.resetChunks()
 
-    const entry = new Vector3(0, 0, 0)
+    const entryPoint = new Vector3(0, 0, 0)
     let entryYaw = 0
-    if (world.entry) {
-      const yawMatch = world.entry.match(/\s([0-9]+)$/)
+    if (!entry && world.entry) {
+      entry = world.entry
+    }
+    if (entry) {
+      const yawMatch = entry.match(/\s([0-9]+)$/)
       entryYaw = yawMatch ? parseInt(yawMatch[1], 10) : entryYaw
-      entry.copy(Utils.stringToPos(world.entry))
+      entryPoint.copy(Utils.stringToPos(entry))
     }
 
     // Load a few chunks on world initialization
-    this.autoUpdateChunks(entry)
+    this.autoUpdateChunks(entryPoint)
 
-    this.engine.teleport(entry, entryYaw)
+    this.engine.teleport(entryPoint, entryYaw)
   }
 
   // Get chunk tile X and Z ids from position

@@ -286,7 +286,7 @@ export class AvatarAnimationPlayer {
       this.currentStepState.total = threeSequence.frames.length
     }
 
-    const rootJointTag = threeSequence.rootJointTag
+    const {rootJointTag} = threeSequence
     const frame = threeSequence.frames[this.currentStepState.current]
 
     if (frame === undefined) {

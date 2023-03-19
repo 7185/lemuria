@@ -57,7 +57,7 @@ export const interpolateThreeFrames = (
     frame.location.ratio = ratio
 
     // Now taking care of quaternions on joints
-    const joints = frame.joints
+    const {joints} = frame
 
     for (const [jointTag, q] of Object.entries(firstJoints)) {
       if (secondJoints[jointTag] === undefined) {
