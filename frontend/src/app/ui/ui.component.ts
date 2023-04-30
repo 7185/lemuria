@@ -1,8 +1,8 @@
-import {EngineComponent} from './../engine/engine.component'
+import {EngineComponent} from '../engine/engine.component'
 import {UiBuilderZoneComponent} from './ui-builder-zone/ui-builder-zone.component'
 import {UiChatZoneComponent} from './ui-chat-zone/ui-chat-zone.component'
 import {UiToolbarComponent} from './ui-toolbar/ui-toolbar.component'
-import {Component} from '@angular/core'
+import {ChangeDetectionStrategy, Component} from '@angular/core'
 import type {OnInit} from '@angular/core'
 
 @Component({
@@ -15,7 +15,8 @@ import type {OnInit} from '@angular/core'
   ],
   selector: 'app-ui',
   styleUrls: ['./ui.component.scss'],
-  templateUrl: './ui.component.html'
+  templateUrl: './ui.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiComponent implements OnInit {
   public constructor() {}

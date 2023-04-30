@@ -1,7 +1,12 @@
 import {CommonModule} from '@angular/common'
 import {InputSystemService, PressedKey} from '../../engine/inputsystem.service'
 import type {OnInit} from '@angular/core'
-import {Component, EventEmitter, Output} from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Output
+} from '@angular/core'
 import {Subject, takeUntil} from 'rxjs'
 import {take, timeout} from 'rxjs'
 
@@ -9,7 +14,8 @@ import {take, timeout} from 'rxjs'
   standalone: true,
   imports: [CommonModule],
   selector: 'app-ui-controls',
-  templateUrl: './ui-controls.component.html'
+  templateUrl: './ui-controls.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiControlsComponent implements OnInit {
   @Output() closeModal = new EventEmitter()

@@ -11,7 +11,7 @@
           World
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
-          <li *ngFor="let w of worldList" role="menuitem" (click)="teleportWorld(w.id)">
+          <li *ngFor="let w of world.worldList" role="menuitem" (click)="teleportWorld(w.name)">
             <button class="dropdown-item">
               <fa-icon [icon]="faGlobe"/> {{ w.name }}
               <span class="badge rounded-pill bg-secondary float-end">{{ w.users }}</span>
@@ -62,10 +62,12 @@
       </div>
     </div>
     <div class="my-2 my-sm-0">
-      <button class="btn btn-secondary ml-1" type="button" disabled>
+      <button class="btn btn-secondary ml-1" type="button"
+              (click)="teleportSvc.teleportBack()" [disabled]="teleportSvc.currentTeleportIndex <= 0">
         <fa-icon [icon]="faArrowLeft" [fixedWidth]="true"/>
       </button>
-      <button class="btn btn-secondary mr-1" type="button" disabled>
+      <button class="btn btn-secondary mr-1" type="button"
+              (click)="teleportSvc.teleportNext()" [disabled]="teleportSvc.currentTeleportIndex >= teleportSvc.teleportHistory.length - 1">
         <fa-icon [icon]="faArrowRight" [fixedWidth]="true"/>
       </button>
       <div class="btn-group mx-1" dropdown [isDisabled]="animations.size === 0">

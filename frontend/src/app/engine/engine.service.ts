@@ -23,9 +23,10 @@ import {
   EdgesGeometry,
   LineSegments,
   LineBasicMaterial,
-  sRGBEncoding
+  SRGBColorSpace
 } from 'three'
 import type {Box3, Material, LOD, Triangle} from 'three'
+import {TeleportService} from './teleport.service'
 import {UserService} from '../user'
 import {ObjectAct, ObjectService} from '../world/object.service'
 import type {AvatarAnimationPlayer} from '../animation'
@@ -146,7 +147,8 @@ export class EngineService {
     private ngZone: NgZone,
     private userSvc: UserService,
     private inputSysSvc: InputSystemService,
-    private objSvc: ObjectService
+    private objSvc: ObjectService,
+    private teleportSvc: TeleportService
   ) {}
 
   public cancel(): void {
@@ -188,7 +190,7 @@ export class EngineService {
     })
     this.renderer.setSize(window.innerWidth, window.innerHeight)
     this.renderer.shadowMap.enabled = false
-    this.renderer.outputEncoding = sRGBEncoding
+    ;(this.renderer as any).outputColorSpace = SRGBColorSpace
 
     this.scene = new Scene()
 
@@ -238,13 +240,13 @@ export class EngineService {
     this.skybox.name = 'skybox'
     this.worldNode.add(this.skybox)
 
-    this.light = new AmbientLight(0x404040)
+    this.light = new AmbientLight(0x606060)
     this.light.position.z = 100
     this.worldNode.add(this.light)
 
     // this.scene.fog = new Fog(0xCCCCCC, 10, 50)
 
-    this.dirLight = new DirectionalLight(0xffffff, 1)
+    this.dirLight = new DirectionalLight(0xffffff, 0.6)
     this.dirLight.name = 'dirlight'
     this.dirLight.position.set(-50, 80, 10)
     this.dirLight.shadow.camera.left = 100
@@ -392,6 +394,10 @@ export class EngineService {
     const p = this.player.position.clone()
     const o = new Vector3().setFromEuler(this.player.rotation)
     return [p, o]
+  }
+
+  public getYaw(): number {
+    return Math.round(this.compass.theta / DEG)
   }
 
   public setGesture(gesture: string) {
@@ -622,7 +628,7 @@ export class EngineService {
     this.avatar.visible = this.activeCamera !== this.camera
   }
 
-  public teleport(pos: Vector3 | string, yaw = 0): void {
+  public setPlayerPos(pos: Vector3 | string, yaw = 0): void {
     if (pos != null) {
       if (typeof pos === 'string') {
         const yawMatch = pos.match(/\s([0-9]+)$/)
@@ -631,8 +637,12 @@ export class EngineService {
       }
       this.player.position.copy(pos)
     }
-    this.player.rotation.y = Utils.radNormalized(yaw * DEG + Math.PI)
+    this.setPlayerYaw(yaw)
     this.updateBoundingBox()
+  }
+
+  public setPlayerYaw(yaw: number) {
+    this.player.rotation.y = Utils.radNormalized(yaw * DEG + Math.PI)
   }
 
   public getLODs(): LOD[] {
@@ -831,7 +841,7 @@ export class EngineService {
         item.userData?.clickable &&
         item.userData.teleportClick != null
       ) {
-        let [newX, newY, newZ] = [0, 0, 0]
+        let [newX, newY, newZ] = [null, null, null]
         const yaw = item.userData.teleportClick?.direction || 0
         if (item.userData.teleportClick.altitude != null) {
           if (
@@ -860,7 +870,15 @@ export class EngineService {
               item.userData.teleportClick.coordinates.y * 10
           }
         }
-        this.teleport(new Vector3(newX, newY, newZ), yaw)
+        this.teleportSvc.teleportSubject.next({
+          world: item.userData.teleportClick.worldName,
+          // Don't send 0 if coordinates are null (world entry point)
+          position:
+            newX == null || newY == null || newZ == null
+              ? null
+              : Utils.posToString(new Vector3(newX, newY, newZ), yaw),
+          isNew: true
+        })
       }
     }
   }
@@ -1348,7 +1366,7 @@ export class EngineService {
         y: Math.round(this.player.position.y * 100) / 100,
         z: Math.round(this.player.position.z * 100) / 100
       },
-      theta: Math.round(this.compass.theta / DEG)
+      theta: this.getYaw()
     })
   }
 

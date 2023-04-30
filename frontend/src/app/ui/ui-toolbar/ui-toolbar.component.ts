@@ -5,9 +5,11 @@ import {UiControlsComponent} from '../ui-controls/ui-controls.component'
 import {UiSettingsComponent} from '../ui-settings/ui-settings.component'
 import {HttpService} from '../../network'
 import {EngineService} from '../../engine/engine.service'
+import {TeleportService} from '../../engine/teleport.service'
 import {WorldService} from '../../world/world.service'
 import {UserService} from '../../user'
 import {
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   ElementRef,
@@ -53,7 +55,8 @@ import {
   ],
   selector: 'app-ui-toolbar',
   templateUrl: './ui-toolbar.component.html',
-  styleUrls: ['./ui-toolbar.component.scss']
+  styleUrls: ['./ui-toolbar.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiToolbarComponent implements OnInit, AfterViewInit {
   @ViewChild('compass', {static: true}) compass: ElementRef
@@ -85,7 +88,6 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public avatarId = 0
   public animations = new Map()
   public userList: User[] = []
-  public worldList = []
   public visibilityList = new Array(11).fill(40).map((n, i) => n + i * 20)
   public visibility = config.world.lod.maxDistance
   public strPos: string
@@ -101,7 +103,8 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     private engine: EngineService,
     public world: WorldService,
     private http: HttpService,
-    private userSvc: UserService
+    private userSvc: UserService,
+    public teleportSvc: TeleportService
   ) {}
 
   public changeVisibility(visibility: number) {
@@ -121,12 +124,12 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.world.avatarSub.next(avatarId)
   }
 
-  public teleportWorld(worldId = 1, entry = null) {
+  public teleportWorld(world: string, entry = null) {
     this.socket.connect()
-
-    this.http.world(worldId).subscribe((w: any) => {
-      this.socket.messages.next({type: 'info', data: w.welcome})
-      this.world.setWorld(w, entry)
+    this.teleportSvc.teleportSubject.next({
+      world,
+      position: entry,
+      isNew: true
     })
   }
 
@@ -164,20 +167,20 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
 
   public join(userId: string) {
     const user = this.userSvc.userList.find((v) => v.id === userId)
-    this.engine.teleport(new Vector3(user.x, user.y, user.z))
+    this.engine.setPlayerPos(new Vector3(user.x, user.y, user.z))
   }
 
   public compassClick(north: boolean) {
-    this.engine.teleport(null, !north && 180)
+    this.engine.setPlayerYaw(!north && 180)
     return false
   }
 
   public ngOnInit(): void {
     this.userSvc.listChanged.subscribe((l) => {
       this.userList = l
-      this.worldList.forEach((w) => (w.users = 0))
+      this.world.worldList.forEach((w) => (w.users = 0))
       for (const u of this.userList) {
-        for (const w of this.worldList) {
+        for (const w of this.world.worldList) {
           if (u.world === w.id) {
             w.users++
           }
@@ -194,7 +197,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       this.userSvc.currentName = u.name
       if (u.id != null) {
         this.http.worlds().subscribe((w: any) => {
-          this.worldList = w
+          this.world.worldList = w
         })
       }
     })
@@ -213,7 +216,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
         )
       )
       .subscribe((o: any) => {
-        this.strPos = Utils.posToString(o.pos)
+        this.strPos = Utils.posToStringSimple(o.pos)
         this.strAlt = Utils.altToString(o.pos)
         this.renderer.setStyle(
           this.compass.nativeElement,

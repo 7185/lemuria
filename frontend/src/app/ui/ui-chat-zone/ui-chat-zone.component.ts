@@ -1,4 +1,4 @@
-import {Component, ViewChild} from '@angular/core'
+import {ChangeDetectionStrategy, Component, ViewChild} from '@angular/core'
 import {CommonModule} from '@angular/common'
 import {FormsModule} from '@angular/forms'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
@@ -23,7 +23,8 @@ import {UserService} from '../../user'
   ],
   selector: 'app-ui-chat-zone',
   templateUrl: './ui-chat-zone.component.html',
-  styleUrls: ['./ui-chat-zone.component.scss']
+  styleUrls: ['./ui-chat-zone.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiChatZoneComponent implements OnInit {
   @ViewChild(VirtualScrollerComponent)

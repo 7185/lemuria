@@ -1,4 +1,4 @@
-import {DbService} from './../db/db.service'
+import {DbService} from '../db/db.service'
 import {Test, TestingModule} from '@nestjs/testing'
 import {WorldService} from './world.service'
 

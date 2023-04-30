@@ -1,4 +1,8 @@
-import {Component} from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component
+} from '@angular/core'
 import type {OnInit} from '@angular/core'
 import {DatePipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
@@ -24,7 +28,8 @@ import {
   imports: [FormsModule, FontAwesomeModule, DatePipe],
   selector: 'app-ui-builder-zone',
   templateUrl: './ui-builder-zone.component.html',
-  styleUrls: ['./ui-builder-zone.component.scss']
+  styleUrls: ['./ui-builder-zone.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiBuilderZoneComponent implements OnInit {
   public faArrowDown = faArrowDown
@@ -43,6 +48,7 @@ export class UiBuilderZoneComponent implements OnInit {
   public selectedObject: any
 
   public constructor(
+    private cdRef: ChangeDetectorRef,
     private engineSvc: EngineService,
     private objSvc: ObjectService
   ) {}
@@ -57,6 +63,7 @@ export class UiBuilderZoneComponent implements OnInit {
   public ngOnInit(): void {
     this.engineSvc.selectedObjectSub.asObservable().subscribe((object) => {
       this.selectedObject = object
+      this.cdRef.detectChanges()
     })
   }
 }

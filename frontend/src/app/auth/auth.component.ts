@@ -1,5 +1,5 @@
 import {CommonModule} from '@angular/common'
-import {Component} from '@angular/core'
+import {ChangeDetectionStrategy, Component} from '@angular/core'
 import type {OnInit} from '@angular/core'
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms'
 import type {FormControl, FormGroup} from '@angular/forms'
@@ -8,7 +8,7 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {finalize} from 'rxjs/operators'
 import {HttpService} from '../network'
 import {SettingsService} from '../settings/settings.service'
-import {LogoComponent} from './../logo/logo.component'
+import {LogoComponent} from '../logo/logo.component'
 import {faCircleNotch, faKey, faUser} from '@fortawesome/free-solid-svg-icons'
 
 @Component({
@@ -21,7 +21,8 @@ import {faCircleNotch, faKey, faUser} from '@fortawesome/free-solid-svg-icons'
   ],
   selector: 'app-auth',
   templateUrl: './auth.component.html',
-  styleUrls: ['./auth.component.scss']
+  styleUrls: ['./auth.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AuthComponent implements OnInit {
   public faCircleNotch = faCircleNotch

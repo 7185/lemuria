@@ -1,4 +1,9 @@
-import {Component, ElementRef, ViewChild} from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  ViewChild
+} from '@angular/core'
 import type {AfterViewInit, OnInit, OnDestroy} from '@angular/core'
 import {EngineService} from './engine.service'
 import {WorldService} from '../world/world.service'
@@ -7,7 +12,8 @@ import {WorldService} from '../world/world.service'
   standalone: true,
   selector: 'app-engine',
   templateUrl: './engine.component.html',
-  styleUrls: ['./engine.component.scss']
+  styleUrls: ['./engine.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('rendererCanvas', {static: true})

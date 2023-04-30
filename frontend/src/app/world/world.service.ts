@@ -5,8 +5,10 @@ import {UserService} from '../user'
 import {SettingsService} from '../settings/settings.service'
 import type {User} from '../user'
 import {EngineService, DEG} from '../engine/engine.service'
-import {PlayerCollider} from './../engine/player-collider'
+import {TeleportService} from '../engine/teleport.service'
+import {PlayerCollider} from '../engine/player-collider'
 import {ObjectService, ObjectAct} from './object.service'
+import {SocketService} from '../network/socket.service'
 import {AnimationService} from '../animation/animation.service'
 import type {AvatarAnimationManager} from '../animation/avatar-animation.manager'
 import {HttpService} from '../network'
@@ -25,7 +27,7 @@ import {
   MeshBasicMaterial,
   Box3,
   BufferAttribute,
-  sRGBEncoding
+  SRGBColorSpace
 } from 'three'
 import type {Object3D} from 'three'
 import {Utils} from '../utils'
@@ -42,6 +44,9 @@ export class WorldService {
   public avatarSub = new Subject<number>()
   public animationMapSub = new Subject<Map<string, string>>()
   public worldId = 0
+  public worldName = 'Nowhere'
+  public worldList = []
+
   private avatar: Group
   private textureLoader = new TextureLoader()
   private terrain: Group
@@ -69,8 +74,46 @@ export class WorldService {
     private objSvc: ObjectService,
     private anmSvc: AnimationService,
     private httpSvc: HttpService,
-    private settings: SettingsService
+    private settings: SettingsService,
+    private socket: SocketService,
+    private teleportSvc: TeleportService
   ) {
+    this.teleportSvc.teleportSubject.subscribe((teleport) => {
+      const {world, position, isNew} = teleport
+
+      if (!world || world.toLowerCase() === this.worldName.toLowerCase()) {
+        this.teleportSvc.teleportFrom(
+          this.worldName,
+          Utils.posToString(this.engine.getPosition()[0], this.engine.getYaw()),
+          isNew
+        )
+        this.teleport(position)
+        return
+      }
+
+      const targetWorld = this.worldList.find(
+        (w) => w.name.toLowerCase() === world.toLowerCase()
+      )
+      if (!targetWorld) {
+        this.socket.messages.next({
+          type: 'err',
+          data: `World ${world} is not available`
+        })
+        return
+      }
+
+      this.httpSvc.world(targetWorld.id).subscribe((w: any) => {
+        this.socket.messages.next({type: 'info', data: w.welcome ?? ''})
+        this.teleportSvc.teleportFrom(
+          this.worldName,
+          Utils.posToString(this.engine.getPosition()[0], this.engine.getYaw()),
+          isNew
+        )
+
+        this.setWorld(w, position)
+      })
+    })
+
     for (let i = -this.chunkLoadRadius; i <= this.chunkLoadRadius; i++) {
       for (let j = -this.chunkLoadRadius; j <= this.chunkLoadRadius; j++) {
         // Only keep chunks within a certain circular radius (if circular loadin is enabled)
@@ -84,7 +127,7 @@ export class WorldService {
     }
 
     // For extra comfort: we can sort each chunk in the layout based on there distance to the center,
-    // this ought to make de client load and display nearest chunks first
+    // this ought to make the client load and display nearest chunks first
     if (this.prioritizeNearestChunks) {
       this.chunkLoadingLayout.sort((c0, c1) => {
         const d0 = c0[0] * c0[0] + c0[1] * c0[1]
@@ -227,7 +270,7 @@ export class WorldService {
           const terrainTexture = this.textureLoader.load(
             `${world.path}/textures/terrain${j}.jpg`
           )
-          terrainTexture.encoding = sRGBEncoding
+          ;(terrainTexture as any).colorSpace = SRGBColorSpace
           terrainTexture.wrapS = RepeatWrapping
           terrainTexture.wrapT = RepeatWrapping
           terrainTexture.rotation = (i * Math.PI) / 2
@@ -381,110 +424,6 @@ export class WorldService {
   setVisibility(visibility: number) {
     this.maxLodDistance = visibility
     this.engine.setChunksDistance(visibility)
-  }
-
-  public setWorld(world: any, entry: string) {
-    this.worldId = world.id
-    this.engine.clearObjects()
-    this.objSvc.cleanCache()
-    this.anmSvc.cleanCache()
-    this.objSvc.path.next(world.path)
-
-    const skyboxGroup = new Group()
-    skyboxGroup.renderOrder = -1
-    const octGeom = new BufferGeometry()
-
-    // 6 vertices to make an octahedron
-    // prettier-ignore
-    const positions = [
-       0.0,  0.0,  1.0, // north vertex (0)
-      -1.0,  0.0,  0.0, // east vertex (1)
-       0.0,  0.0, -1.0, // south vertex (2)
-       1.0,  0.0,  0.0, // west vertex (3)
-       0.0,  1.0,  0.0, // top vertex (4)
-       0.0, -1.0,  0.0  // bottom vertex (5)
-    ]
-
-    const wsc = world.sky_color
-    const colors = wsc.north
-      .concat(wsc.east, wsc.south, wsc.west, wsc.top, wsc.bottom)
-      .map((v: number) => v / 255.0)
-
-    octGeom.setAttribute(
-      'position',
-      new BufferAttribute(new Float32Array(positions), 3)
-    )
-    octGeom.setAttribute(
-      'color',
-      new BufferAttribute(new Float32Array(colors), 3)
-    )
-
-    // 8 triangle faces to make an octahedron
-    // prettier-ignore
-    octGeom.setIndex([
-      4, 0, 1, // top north east face
-      4, 1, 2, // top south east face
-      4, 2, 3, // top south west face
-      4, 3, 0, // top north west face
-      5, 1, 0, // bottom north east face
-      5, 2, 1, // bottom south east face
-      5, 3, 2, // bottom south west face
-      5, 0, 3  // bottom north west face
-    ])
-
-    octGeom.addGroup(0, octGeom.getIndex().count, 0)
-
-    const oct = new Mesh(octGeom, [
-      new MeshBasicMaterial({vertexColors: true, depthWrite: false})
-    ])
-    skyboxGroup.add(oct)
-
-    if (world.skybox) {
-      world.skybox = Utils.modelName(world.skybox)
-      this.objSvc.loadObject(world.skybox, true).subscribe((s) => {
-        const skybox = s.clone()
-        const box = new Box3()
-        box.setFromObject(skybox)
-        const center = box.getCenter(new Vector3())
-        skybox.position.set(0, -center.y, 0)
-        skyboxGroup.add(skybox)
-      })
-    }
-
-    this.engine.setSkybox(skyboxGroup)
-
-    this.objSvc.loadAvatars().subscribe((list) => {
-      this.avatarList = list
-      // Set first avatar on self
-      const savedAvatars = JSON.parse(this.settings.get('avatar'))
-      const avatarMap =
-        savedAvatars != null
-          ? new Map<number, number>(savedAvatars)
-          : new Map<number, number>()
-      this.avatarSub.next(avatarMap.get(this.worldId) || 0)
-      // Trigger list update to create users
-      this.userSvc.listChanged.next(this.userSvc.userList)
-    })
-
-    this.initTerrain(world)
-
-    this.resetChunks()
-
-    const entryPoint = new Vector3(0, 0, 0)
-    let entryYaw = 0
-    if (!entry && world.entry) {
-      entry = world.entry
-    }
-    if (entry) {
-      const yawMatch = entry.match(/\s([0-9]+)$/)
-      entryYaw = yawMatch ? parseInt(yawMatch[1], 10) : entryYaw
-      entryPoint.copy(Utils.stringToPos(entry))
-    }
-
-    // Load a few chunks on world initialization
-    this.autoUpdateChunks(entryPoint)
-
-    this.engine.teleport(entryPoint, entryYaw)
   }
 
   // Get chunk tile X and Z ids from position
@@ -665,6 +604,130 @@ export class WorldService {
     console.log(
       `Warning: Trying to move object ${object.name} to an uninitialized chunk (${chunkX}, ${chunkZ})`
     )
+  }
+
+  /**
+   * Teleport within this world
+   *
+   * @param entry Teleport string
+   */
+  private teleport(entry: string) {
+    const entryPoint = new Vector3(0, 0, 0)
+    let entryYaw = 0
+    if (entry) {
+      const yawMatch = entry.match(/\s([-+]?[0-9]+)$/)
+      entryYaw = yawMatch ? parseInt(yawMatch[1], 10) : entryYaw
+      entryPoint.copy(Utils.stringToPos(entry))
+    }
+
+    // Load a few chunks on world initialization
+    this.autoUpdateChunks(entryPoint)
+    this.engine.setPlayerPos(entryPoint, entryYaw)
+  }
+
+  /**
+   * Teleport to another world
+   *
+   * @param world World object from API
+   * @param entry Teleport string
+   * @returns Nothing
+   */
+  private setWorld(world: any, entry: string | null) {
+    if (!entry && world.entry) {
+      entry = world.entry
+    }
+
+    if (this.worldId === world.id) {
+      this.teleport(entry)
+      return
+    }
+
+    this.worldId = world.id
+    this.worldName = world.name
+    this.engine.clearObjects()
+    this.objSvc.cleanCache()
+    this.anmSvc.cleanCache()
+    this.objSvc.path.next(world.path)
+
+    const skyboxGroup = new Group()
+    skyboxGroup.renderOrder = -1
+    const octGeom = new BufferGeometry()
+
+    // 6 vertices to make an octahedron
+    // prettier-ignore
+    const positions = [
+       0.0,  0.0,  1.0, // north vertex (0)
+      -1.0,  0.0,  0.0, // east vertex (1)
+       0.0,  0.0, -1.0, // south vertex (2)
+       1.0,  0.0,  0.0, // west vertex (3)
+       0.0,  1.0,  0.0, // top vertex (4)
+       0.0, -1.0,  0.0  // bottom vertex (5)
+    ]
+
+    const wsc = world.sky_color
+    const colors = wsc.north
+      .concat(wsc.east, wsc.south, wsc.west, wsc.top, wsc.bottom)
+      .map((v: number) => v / 255.0)
+
+    octGeom.setAttribute(
+      'position',
+      new BufferAttribute(new Float32Array(positions), 3)
+    )
+    octGeom.setAttribute(
+      'color',
+      new BufferAttribute(new Float32Array(colors), 3)
+    )
+
+    // 8 triangle faces to make an octahedron
+    // prettier-ignore
+    octGeom.setIndex([
+      4, 0, 1, // top north east face
+      4, 1, 2, // top south east face
+      4, 2, 3, // top south west face
+      4, 3, 0, // top north west face
+      5, 1, 0, // bottom north east face
+      5, 2, 1, // bottom south east face
+      5, 3, 2, // bottom south west face
+      5, 0, 3  // bottom north west face
+    ])
+
+    octGeom.addGroup(0, octGeom.getIndex().count, 0)
+
+    const oct = new Mesh(octGeom, [
+      new MeshBasicMaterial({vertexColors: true, depthWrite: false})
+    ])
+    skyboxGroup.add(oct)
+
+    if (world.skybox) {
+      world.skybox = Utils.modelName(world.skybox)
+      this.objSvc.loadObject(world.skybox, true).subscribe((s) => {
+        const skybox = s.clone()
+        const box = new Box3()
+        box.setFromObject(skybox)
+        const center = box.getCenter(new Vector3())
+        skybox.position.set(0, -center.y, 0)
+        skyboxGroup.add(skybox)
+      })
+    }
+
+    this.engine.setSkybox(skyboxGroup)
+
+    this.objSvc.loadAvatars().subscribe((list) => {
+      this.avatarList = list
+      // Set first avatar on self
+      const savedAvatars = JSON.parse(this.settings.get('avatar'))
+      const avatarMap =
+        savedAvatars != null
+          ? new Map<number, number>(savedAvatars)
+          : new Map<number, number>()
+      this.avatarSub.next(avatarMap.get(this.worldId) || 0)
+      // Trigger list update to create users
+      this.userSvc.listChanged.next(this.userSvc.userList)
+    })
+
+    this.initTerrain(world)
+    this.resetChunks()
+    this.teleport(entry)
   }
 
   private addUser(user: User) {

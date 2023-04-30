@@ -12,7 +12,7 @@ import {
   MeshBasicMaterial,
   CanvasTexture,
   TextureLoader,
-  sRGBEncoding,
+  SRGBColorSpace,
   Color
 } from 'three'
 import type {MeshPhongMaterial, Object3D} from 'three'
@@ -81,7 +81,7 @@ export class ObjectService {
       '.zip',
       fflate,
       false,
-      sRGBEncoding
+      SRGBColorSpace
     )
     this.rwxPropLoader
       .setRWXMaterialManager(this.rwxMaterialManager)
@@ -91,7 +91,7 @@ export class ObjectService {
       .setFflate(fflate)
       .setFlatten(true)
       .setUseBasicMaterial(true)
-      .setTextureEncoding(sRGBEncoding)
+      .setTextureColorSpace(SRGBColorSpace)
     this.path.subscribe((url) => {
       this.rwxMaterialManager.folder = `${url}/textures`
       this.rwxPropLoader
@@ -181,7 +181,10 @@ export class ObjectService {
       for (const cmd of result.activate) {
         item.userData.clickable = true
         if (cmd.commandType === 'teleport') {
-          item.userData.teleportClick = cmd.coordinates[0]
+          item.userData.teleportClick = {}
+          Object.assign(item.userData.teleportClick, cmd.coordinates[0])
+          item.userData.teleportClick.worldName =
+            cmd.worldName != null ? cmd.worldName[0] : null
         }
       }
     }
@@ -218,7 +221,7 @@ export class ObjectService {
       ? `${config.url.imgProxy}${url}`
       : `${this.path.value}/textures/${url}`
     this.pictureLoader.load(url, (image) => {
-      image.encoding = sRGBEncoding
+      ;(image as any).colorSpace = SRGBColorSpace
       item.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           const newMaterials = []
@@ -362,7 +365,7 @@ export class ObjectService {
                 bcolor
               )
             )
-            newMaterials[i].map.encoding = sRGBEncoding
+            newMaterials[i].map.colorSpace = SRGBColorSpace
           }
         }
         child.material = newMaterials
