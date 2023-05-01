@@ -1,0 +1,32 @@
+<div class="modal-header">
+  <h4 class="modal-title pull-left">
+    <ng-container *ngIf="type === 0; else remember_title">Teleport to</ng-container>
+    <ng-template #remember_title>Remember</ng-template>
+  </h4>
+  <button type="button" class="btn-close close pull-right" aria-label="Close" (click)="close()">
+    <span aria-hidden="true" class="visually-hidden">&times;</span>
+  </button>
+</div>
+<div class="modal-body">
+  <div *ngIf="type === 0" class="mb-3 row">
+    <label for="world" class="col col-form-label">World</label>
+    <div class="col">
+      <input id="world" class="form-control" [(ngModel)]="worldName">
+    </div>
+  </div>
+  <div *ngIf="type === 0" class="mb-3 row">
+    <label for="coordinates" class="col col-form-label">Coordinates</label>
+    <div class="col">
+      <input id="coordinates" class="form-control" [(ngModel)]="coordinates" placeholder="40N 50W">
+    </div>
+  </div>
+  <div *ngIf="type === 1" class="mb-3 row">
+    <label for="name" class="col col-form-label">Name</label>
+    <div class="col">
+      <input id="name" class="form-control" [(ngModel)]="name">
+    </div>
+  </div>
+  <button *ngIf="type === 0" class="btn btn-primary float-end mb-3" (click)="go()">Go</button>
+  <button *ngIf="type === 1" class="btn btn-success float-start mb-3" (click)="makeHome()">Make this my home</button>
+  <button *ngIf="type === 1" class="btn btn-primary float-end mb-3" (click)="save()">Save</button>
+</div>

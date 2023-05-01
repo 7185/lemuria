@@ -3,8 +3,10 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {BsDropdownModule} from 'ngx-bootstrap/dropdown'
 import {UiControlsComponent} from '../ui-controls/ui-controls.component'
 import {UiSettingsComponent} from '../ui-settings/ui-settings.component'
+import {UiTeleportComponent} from '../ui-teleport/ui-teleport.component'
 import {HttpService} from '../../network'
 import {EngineService} from '../../engine/engine.service'
+import {SettingsService} from '../../settings/settings.service'
 import {TeleportService} from '../../engine/teleport.service'
 import {WorldService} from '../../world/world.service'
 import {UserService} from '../../user'
@@ -31,12 +33,15 @@ import {
   faArrowRight,
   faBolt,
   faCheck,
+  faCircleUser,
   faCog,
   faEye,
   faGlobe,
   faHand,
+  faHouse,
   faKeyboard,
   faLocationArrow,
+  faMountainSun,
   faPerson,
   faRightFromBracket,
   faUser,
@@ -51,7 +56,8 @@ import {
     BsDropdownModule,
     FontAwesomeModule,
     UiControlsComponent,
-    UiSettingsComponent
+    UiSettingsComponent,
+    UiTeleportComponent
   ],
   selector: 'app-ui-toolbar',
   templateUrl: './ui-toolbar.component.html',
@@ -62,17 +68,21 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   @ViewChild('compass', {static: true}) compass: ElementRef
   @ViewChild('settingsModal') settingsModalTpl: TemplateRef<any>
   @ViewChild('controlsModal') controlsModalTpl: TemplateRef<any>
+  @ViewChild('teleportModal') teleportModalTpl: TemplateRef<any>
 
   public faArrowLeft = faArrowLeft
   public faArrowRight = faArrowRight
   public faBolt = faBolt
   public faCheck = faCheck
+  public faCircleUser = faCircleUser
   public faCog = faCog
   public faEye = faEye
   public faGlobe = faGlobe
   public faHand = faHand
+  public faHouse = faHouse
   public faKeyboard = faKeyboard
   public faLocationArrow = faLocationArrow
+  public faMountainSun = faMountainSun
   public faRightFromBracket = faRightFromBracket
   public faPerson = faPerson
   public faUser = faUser
@@ -81,9 +91,12 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
 
   public settingsModal: BsModalRef
   public controlsModal: BsModalRef
+  public teleportModal: BsModalRef
   public debug = config.debug
   public cameraType = 0
   public name = 'Anonymous'
+  public home = {world: null, position: null, isNew: true}
+  public teleports = []
   public userId: string
   public avatarId = 0
   public animations = new Map()
@@ -94,6 +107,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public strAlt: string
   public strFps = '0 FPS'
   public strMem = '0 Geom. 0 Text.'
+  public teleportType = 0
 
   public constructor(
     private renderer: Renderer2,
@@ -104,7 +118,8 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     public world: WorldService,
     private http: HttpService,
     private userSvc: UserService,
-    public teleportSvc: TeleportService
+    public teleportSvc: TeleportService,
+    private settings: SettingsService
   ) {}
 
   public changeVisibility(visibility: number) {
@@ -125,7 +140,6 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public teleportWorld(world: string, entry = null) {
-    this.socket.connect()
     this.teleportSvc.teleportSubject.next({
       world,
       position: entry,
@@ -160,6 +174,20 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.controlsModal.hide()
   }
 
+  public openTeleport(type = 0) {
+    if (type === 1 && !this.socket.connected) {
+      return
+    }
+    this.teleportType = type
+    this.teleportModal = this.modalSvc.show(this.teleportModalTpl, {
+      backdrop: false
+    })
+  }
+
+  public closeTeleport() {
+    this.teleportModal.hide()
+  }
+
   public toggleCamera(): void {
     this.cameraType = (this.cameraType + 1) % 3
     this.engine.toggleCamera()
@@ -186,6 +214,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
           }
         }
       }
+      this.cdRef.detectChanges()
     })
     this.world.avatarSub.subscribe((avatarId) => (this.avatarId = avatarId))
     this.world.animationMapSub.subscribe(
@@ -198,8 +227,29 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       if (u.id != null) {
         this.http.worlds().subscribe((w: any) => {
           this.world.worldList = w
+          const home = JSON.parse(this.settings.get('home'))
+          this.home = {
+            world: home?.world,
+            position: home?.position,
+            isNew: true
+          }
+          if (this.home.world || this.home.position) {
+            this.teleportSvc.teleportSubject.next(this.home)
+          }
+          this.cdRef.detectChanges()
         })
       }
+      this.cdRef.detectChanges()
+    })
+    this.settings.updated.subscribe(() => {
+      const home = JSON.parse(this.settings.get('home'))
+      this.home = {
+        world: home?.world,
+        position: home?.position,
+        isNew: true
+      }
+      this.teleports = JSON.parse(this.settings.get('teleports')) || []
+      this.cdRef.detectChanges()
     })
   }
 

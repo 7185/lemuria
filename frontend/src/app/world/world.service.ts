@@ -44,9 +44,9 @@ export class WorldService {
   public avatarSub = new Subject<number>()
   public animationMapSub = new Subject<Map<string, string>>()
   public worldId = 0
-  public worldName = 'Nowhere'
   public worldList = []
 
+  private worldName = 'Nowhere'
   private avatar: Group
   private textureLoader = new TextureLoader()
   private terrain: Group
@@ -79,14 +79,14 @@ export class WorldService {
     private teleportSvc: TeleportService
   ) {
     this.teleportSvc.teleportSubject.subscribe((teleport) => {
+      // Connect to the socket first
+      this.socket.connect()
+
       const {world, position, isNew} = teleport
+      const currentPos = this.getPosition().position
 
       if (!world || world.toLowerCase() === this.worldName.toLowerCase()) {
-        this.teleportSvc.teleportFrom(
-          this.worldName,
-          Utils.posToString(this.engine.getPosition()[0], this.engine.getYaw()),
-          isNew
-        )
+        this.teleportSvc.teleportFrom(this.worldName, currentPos, isNew)
         this.teleport(position)
         return
       }
@@ -104,11 +104,7 @@ export class WorldService {
 
       this.httpSvc.world(targetWorld.id).subscribe((w: any) => {
         this.socket.messages.next({type: 'info', data: w.welcome ?? ''})
-        this.teleportSvc.teleportFrom(
-          this.worldName,
-          Utils.posToString(this.engine.getPosition()[0], this.engine.getYaw()),
-          isNew
-        )
+        this.teleportSvc.teleportFrom(this.worldName, currentPos, isNew)
 
         this.setWorld(w, position)
       })
@@ -172,7 +168,7 @@ export class WorldService {
     })
   }
 
-  initWorld() {
+  public initWorld() {
     this.destroyWorld()
 
     this.avatar = new Group()
@@ -251,12 +247,27 @@ export class WorldService {
     this.avatarListener?.unsubscribe()
   }
 
-  public resetChunks() {
+  public setVisibility(visibility: number) {
+    this.maxLodDistance = visibility
+    this.engine.setChunksDistance(visibility)
+  }
+
+  public getPosition() {
+    return {
+      world: this.worldName,
+      position: Utils.posToString(
+        this.engine.getPosition()[0],
+        this.engine.getYaw()
+      )
+    }
+  }
+
+  private resetChunks() {
     this.previousLocalUserPos = null
     this.chunkMap = new Map<number, Set<number>>()
   }
 
-  public initTerrain(world: any) {
+  private initTerrain(world: any) {
     if (this.terrain != null) {
       this.engine.removeWorldObject(this.terrain)
     }
@@ -353,7 +364,7 @@ export class WorldService {
     }
   }
 
-  public async loadItem(
+  private async loadItem(
     item: string,
     pos: Vector3,
     rot: Vector3,
@@ -393,7 +404,7 @@ export class WorldService {
     return g
   }
 
-  setAvatar(
+  private setAvatar(
     name: string,
     animationMgr: Promise<AvatarAnimationManager>,
     group: Group = this.avatar
@@ -421,13 +432,8 @@ export class WorldService {
     })
   }
 
-  setVisibility(visibility: number) {
-    this.maxLodDistance = visibility
-    this.engine.setChunksDistance(visibility)
-  }
-
   // Get chunk tile X and Z ids from position
-  public getChunkTile(pos: Vector3) {
+  private getChunkTile(pos: Vector3) {
     const tileX = Math.floor(
       (Math.floor(pos.x * 100) + this.chunkWidth / 2) / this.chunkWidth
     )
@@ -439,7 +445,7 @@ export class WorldService {
   }
 
   // Get chunk position from tile X and Z ids
-  public getChunkCenter(tileX: number, tileZ: number) {
+  private getChunkCenter(tileX: number, tileZ: number) {
     const xPos = (tileX * this.chunkWidth) / 100.0
     const zPos = (tileZ * this.chunkDepth) / 100.0
 
@@ -448,7 +454,7 @@ export class WorldService {
 
   // Return true if, given the provided chunk indices, this target chunk is different from the current one,
   // false otherwise
-  public hasChunkChanged(chunkX: number, chunkZ: number) {
+  private hasChunkChanged(chunkX: number, chunkZ: number) {
     if (this.previousLocalUserPos !== null) {
       const [previousChunkX, previousChunkZ] = this.getChunkTile(
         this.previousLocalUserPos
@@ -462,7 +468,7 @@ export class WorldService {
   }
 
   // this method is method to be called on each frame to update the state of chunks if needed
-  public autoUpdateChunks(pos: Vector3) {
+  private autoUpdateChunks(pos: Vector3) {
     const [chunkX, chunkZ] = this.getChunkTile(pos)
     this.engine.setChunkTile(chunkX, chunkZ)
 
@@ -668,7 +674,12 @@ export class WorldService {
     const colors = wsc.north
       .concat(wsc.east, wsc.south, wsc.west, wsc.top, wsc.bottom)
       .map((v: number) => v / 255.0)
-
+      // Vertex colors should be in linear space
+      .map((c: number) =>
+        c < 0.04045
+          ? c * 0.0773993808
+          : Math.pow(c * 0.9478672986 + 0.0521327014, 2.4)
+      )
     octGeom.setAttribute(
       'position',
       new BufferAttribute(new Float32Array(positions), 3)
@@ -732,9 +743,6 @@ export class WorldService {
 
   private addUser(user: User) {
     if (user.name !== this.userSvc.currentName) {
-      const avatar = Utils.modelName(
-        this.avatarList[user.avatar].geometry || 'michel'
-      )
       const group = new Group()
       group.name = user.id
       group.position.set(user.x, user.y, user.z)
@@ -743,7 +751,7 @@ export class WorldService {
       this.engine.createTextLabel(group)
       const avatarEntry = this.avatarList[user.avatar]
       this.setAvatar(
-        avatar,
+        this.avatarList[user.avatar].geometry || 'michel',
         this.anmSvc.getAvatarAnimationManager(
           avatarEntry.name,
           avatarEntry.implicit,

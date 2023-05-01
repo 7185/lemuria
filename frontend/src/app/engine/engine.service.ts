@@ -240,13 +240,13 @@ export class EngineService {
     this.skybox.name = 'skybox'
     this.worldNode.add(this.skybox)
 
-    this.light = new AmbientLight(0x606060)
+    this.light = new AmbientLight(0xcccccc)
     this.light.position.z = 100
     this.worldNode.add(this.light)
 
     // this.scene.fog = new Fog(0xCCCCCC, 10, 50)
 
-    this.dirLight = new DirectionalLight(0xffffff, 0.6)
+    this.dirLight = new DirectionalLight(0xffffff, 1)
     this.dirLight.name = 'dirlight'
     this.dirLight.position.set(-50, 80, 10)
     this.dirLight.shadow.camera.left = 100

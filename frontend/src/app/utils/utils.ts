@@ -31,13 +31,13 @@ export class Utils {
 
   static stringToPos(pos: string): Vector3 {
     const r = new Vector3()
-    const [, zNum, , zHemi, xNum, , xHemi, yNum] =
-      /([+-]?([0-9]*[.])?[0-9]+)(N|S)\s([+-]?([0-9]*[.])?[0-9]+)(W|E)\s*([+-]?([0-9]*[.])?[0-9]+)a?/i.exec(
+    const [, zNum, , zHemi, xNum, , xHemi, , yNum] =
+      /([+-]?([0-9]*[.])?[0-9]+)(N|S)\s([+-]?([0-9]*[.])?[0-9]+)(W|E)(\s([+-]?([0-9]*[.])?[0-9]+)a)?/i.exec(
         pos
       ) || []
     if (zNum && xNum) {
       r.z = Number.parseFloat(zNum) * (zHemi === 'N' ? 10 : -10)
-      r.y = Number.parseFloat(yNum) * 10
+      r.y = (Number.parseFloat(yNum) || 0) * 10
       r.x = Number.parseFloat(xNum) * (xHemi === 'W' ? 10 : -10)
     }
     return r

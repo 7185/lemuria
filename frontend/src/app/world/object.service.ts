@@ -23,6 +23,7 @@ import RWXLoader, {
 } from 'three-rwx-loader'
 import * as fflate from 'fflate'
 import {config} from '../app.config'
+import {Utils} from '../utils'
 
 // can't be const (angular#25963)
 export enum ObjectAct {
@@ -419,6 +420,7 @@ export class ObjectService {
   }
 
   loadObject(name: string, basic = false): Observable<any> {
+    name = Utils.modelName(name)
     const object = this.objects.get(name)
     if (object !== undefined) {
       return object
@@ -440,6 +442,7 @@ export class ObjectService {
   }
 
   loadAvatar(name: string, basic = false): Observable<any> {
+    name = Utils.modelName(name)
     const avatar = this.avatars.get(name)
     if (avatar !== undefined) {
       return avatar
