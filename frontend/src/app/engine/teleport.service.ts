@@ -1,5 +1,4 @@
-import {Injectable} from '@angular/core'
-import {Subject} from 'rxjs'
+import {Injectable, signal} from '@angular/core'
 
 @Injectable({
   providedIn: 'root'
@@ -7,14 +6,16 @@ import {Subject} from 'rxjs'
 export class TeleportService {
   public teleportHistory = []
   public currentTeleportIndex = 0
-  public teleportSubject = new Subject<{
+  public teleport = signal<{
     world: string | null
     position: string | null
     isNew: boolean | null
-  }>()
+  }>({
+    world: 'Nowhere',
+    position: '0N 0W',
+    isNew: false
+  })
   private lastTeleportIndex = -1
-
-  constructor() {}
 
   teleportFrom(world = null, position = null, isNew = false) {
     if (world?.toLowerCase() === 'nowhere') {
@@ -36,7 +37,7 @@ export class TeleportService {
     if (this.currentTeleportIndex > 0) {
       this.lastTeleportIndex = this.currentTeleportIndex
       this.currentTeleportIndex--
-      this.teleportSubject.next(this.teleportHistory[this.currentTeleportIndex])
+      this.teleport.set(this.teleportHistory[this.currentTeleportIndex])
     }
   }
 
@@ -44,7 +45,7 @@ export class TeleportService {
     if (this.currentTeleportIndex < this.teleportHistory.length - 1) {
       this.lastTeleportIndex = this.currentTeleportIndex
       this.currentTeleportIndex++
-      this.teleportSubject.next(this.teleportHistory[this.currentTeleportIndex])
+      this.teleport.set(this.teleportHistory[this.currentTeleportIndex])
     }
   }
 }

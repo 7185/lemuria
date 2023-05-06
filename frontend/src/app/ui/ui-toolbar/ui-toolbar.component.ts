@@ -16,6 +16,7 @@ import {
   Component,
   ElementRef,
   Renderer2,
+  signal,
   TemplateRef,
   ViewChild
 } from '@angular/core'
@@ -96,7 +97,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public cameraType = 0
   public name = 'Anonymous'
   public home = {world: null, position: null, isNew: true}
-  public teleports = []
+  public teleports = signal([])
   public userId: string
   public avatarId = 0
   public animations = new Map()
@@ -140,7 +141,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public teleportWorld(world: string, entry = null) {
-    this.teleportSvc.teleportSubject.next({
+    this.teleportSvc.teleport.set({
       world,
       position: entry,
       isNew: true
@@ -234,7 +235,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
             isNew: true
           }
           if (this.home.world || this.home.position) {
-            this.teleportSvc.teleportSubject.next(this.home)
+            this.teleportSvc.teleport.set(this.home)
           }
           this.cdRef.detectChanges()
         })
@@ -248,7 +249,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
         position: home?.position,
         isNew: true
       }
-      this.teleports = JSON.parse(this.settings.get('teleports')) || []
+      this.teleports.set(JSON.parse(this.settings.get('teleports')) || [])
       this.cdRef.detectChanges()
     })
   }

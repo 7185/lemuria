@@ -3,7 +3,6 @@ import {UiBuilderZoneComponent} from './ui-builder-zone/ui-builder-zone.componen
 import {UiChatZoneComponent} from './ui-chat-zone/ui-chat-zone.component'
 import {UiToolbarComponent} from './ui-toolbar/ui-toolbar.component'
 import {ChangeDetectionStrategy, Component} from '@angular/core'
-import type {OnInit} from '@angular/core'
 
 @Component({
   standalone: true,
@@ -18,8 +17,4 @@ import type {OnInit} from '@angular/core'
   templateUrl: './ui.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UiComponent implements OnInit {
-  public constructor() {}
-
-  public ngOnInit(): void {}
-}
+export class UiComponent {}

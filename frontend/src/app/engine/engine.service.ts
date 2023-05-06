@@ -1,5 +1,5 @@
 import {BehaviorSubject, fromEvent, Subject, timer} from 'rxjs'
-import {Injectable, NgZone} from '@angular/core'
+import {Injectable, NgZone, signal} from '@angular/core'
 import type {ElementRef} from '@angular/core'
 import {
   AmbientLight,
@@ -23,7 +23,8 @@ import {
   EdgesGeometry,
   LineSegments,
   LineBasicMaterial,
-  SRGBColorSpace
+  SRGBColorSpace,
+  Color
 } from 'three'
 import type {Box3, Material, LOD, Triangle} from 'three'
 import {TeleportService} from './teleport.service'
@@ -65,9 +66,9 @@ const nearestChunkPattern = [
 export class EngineService {
   public compassSub: Subject<any> = new Subject()
   public fpsSub = new BehaviorSubject<string>('0')
-  public maxFps = new BehaviorSubject<number>(60)
+  public maxFps = signal(60)
   public selectedObject: Group
-  public selectedObjectSub = new BehaviorSubject<any>({})
+  public selectedObjectSignal = signal({})
   private chunkMap = new Map<number, LOD>()
   private compass = new Spherical()
   private canvas: HTMLCanvasElement
@@ -83,6 +84,7 @@ export class EngineService {
   private scene: Scene
   private light: AmbientLight
   private dirLight: DirectionalLight
+  private dirLightTarget: Object3D
   private avatar: Group
   private skybox: Group
   private buildMode = false
@@ -190,7 +192,7 @@ export class EngineService {
     })
     this.renderer.setSize(window.innerWidth, window.innerHeight)
     this.renderer.shadowMap.enabled = false
-    ;(this.renderer as any).outputColorSpace = SRGBColorSpace
+    this.renderer.outputColorSpace = SRGBColorSpace
 
     this.scene = new Scene()
 
@@ -240,22 +242,24 @@ export class EngineService {
     this.skybox.name = 'skybox'
     this.worldNode.add(this.skybox)
 
-    this.light = new AmbientLight(0xcccccc)
+    this.light = new AmbientLight(0xffffff, 0.8)
     this.light.position.z = 100
     this.worldNode.add(this.light)
 
     // this.scene.fog = new Fog(0xCCCCCC, 10, 50)
 
-    this.dirLight = new DirectionalLight(0xffffff, 1)
+    this.dirLightTarget = new Object3D()
+    this.worldNode.add(this.dirLightTarget)
+
+    this.dirLight = new DirectionalLight(0xffffff, 0.5)
     this.dirLight.name = 'dirlight'
-    this.dirLight.position.set(-50, 80, 10)
     this.dirLight.shadow.camera.left = 100
     this.dirLight.shadow.camera.right = -100
     this.dirLight.shadow.camera.top = 100
     this.dirLight.shadow.camera.bottom = -100
     this.dirLight.shadow.mapSize.width = 2048
     this.dirLight.shadow.mapSize.height = 2048
-    this.dirLight.target = this.camera
+    this.dirLight.target = this.dirLightTarget
     this.worldNode.add(this.dirLight)
 
     this.scene.add(this.worldNode)
@@ -391,9 +395,14 @@ export class EngineService {
   }
 
   public getPosition(): [Vector3, Vector3] {
-    const p = this.player.position.clone()
-    const o = new Vector3().setFromEuler(this.player.rotation)
-    return [p, o]
+    if (this.player == null) {
+      return [new Vector3(), new Vector3()]
+    } else {
+      return [
+        this.player.position.clone(),
+        new Vector3().setFromEuler(this.player.rotation)
+      ]
+    }
   }
 
   public getYaw(): number {
@@ -410,6 +419,18 @@ export class EngineService {
 
   public getState(): string {
     return this.userState
+  }
+
+  public setAmbLightColor(r = 255, g = 255, b = 255) {
+    this.light.color = new Color(r / 255, g / 255, b / 255)
+  }
+
+  public setDirLightColor(r = 255, g = 255, b = 255) {
+    this.dirLight.color = new Color(r / 255, g / 255, b / 255)
+  }
+
+  public setDirLightTarget(x = -0.8, y = -0.5, z = -0.2) {
+    this.dirLightTarget.position.set(x * 100, y * 100, z * 100)
   }
 
   public attachCam(group: Group) {
@@ -629,14 +650,15 @@ export class EngineService {
   }
 
   public setPlayerPos(pos: Vector3 | string, yaw = 0): void {
-    if (pos != null) {
-      if (typeof pos === 'string') {
-        const yawMatch = pos.match(/\s([0-9]+)$/)
-        yaw = yawMatch ? parseInt(yawMatch[1], 10) : 0
-        pos = Utils.stringToPos(pos)
-      }
-      this.player.position.copy(pos)
+    if (this.player == null || pos == null) {
+      return
     }
+    if (typeof pos === 'string') {
+      const yawMatch = pos.match(/\s([0-9]+)$/)
+      yaw = yawMatch ? parseInt(yawMatch[1], 10) : 0
+      pos = Utils.stringToPos(pos)
+    }
+    this.player.position.copy(pos)
     this.setPlayerYaw(yaw)
     this.updateBoundingBox()
   }
@@ -727,12 +749,12 @@ export class EngineService {
 
     this.deltaFps += this.clock.getDelta()
 
-    if (this.deltaFps <= 1 / this.maxFps.value) {
+    if (this.deltaFps <= 1 / this.maxFps()) {
       return
     }
     this.fpsSub.next((1 / this.deltaFps).toFixed())
     this.deltaSinceLastFrame = this.deltaFps
-    this.deltaFps = (this.deltaFps % 1) / this.maxFps.value
+    this.deltaFps = (this.deltaFps % 1) / this.maxFps()
     this.renderer.render(this.scene, this.activeCamera)
 
     if (this.animationElapsed > 0.1) {
@@ -760,6 +782,10 @@ export class EngineService {
     const height = window.innerHeight
     this.camera.aspect = width / height
     this.camera.updateProjectionMatrix()
+    this.thirdCamera.aspect = width / height
+    this.thirdCamera.updateProjectionMatrix()
+    this.thirdFrontCamera.aspect = width / height
+    this.thirdFrontCamera.updateProjectionMatrix()
     this.renderer.setSize(width, height)
   }
 
@@ -767,7 +793,7 @@ export class EngineService {
     PlayerCollider.updateObjectBVH(this.selectedObject)
     this.buildMode = false
     this.selectedObject = null
-    this.selectedObjectSub.next({})
+    this.selectedObjectSignal.set({})
     this.selectionBox.geometry.dispose()
     ;(this.selectionBox.material as Material).dispose()
     this.axesHelper.dispose()
@@ -783,7 +809,7 @@ export class EngineService {
     }
     this.buildMode = true
     this.selectedObject = item
-    this.selectedObjectSub.next({
+    this.selectedObjectSignal.set({
       name: item.name,
       desc: item.userData.desc,
       act: item.userData.act,
@@ -870,7 +896,7 @@ export class EngineService {
               item.userData.teleportClick.coordinates.y * 10
           }
         }
-        this.teleportSvc.teleportSubject.next({
+        this.teleportSvc.teleport.set({
           world: item.userData.teleportClick.worldName,
           // Don't send 0 if coordinates are null (world entry point)
           position:

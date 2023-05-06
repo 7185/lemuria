@@ -7,7 +7,6 @@ import {
 } from '@angular/core'
 import {NgIf} from '@angular/common'
 import {FormsModule} from '@angular/forms'
-import type {OnInit} from '@angular/core'
 import {TeleportService} from '../../engine/teleport.service'
 import {SettingsService} from '../../settings/settings.service'
 import {WorldService} from '../../world/world.service'
@@ -19,7 +18,7 @@ import {WorldService} from '../../world/world.service'
   templateUrl: './ui-teleport.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UiTeleportComponent implements OnInit {
+export class UiTeleportComponent {
   @Input() type = 0
   @Output() closeModal = new EventEmitter()
 
@@ -38,7 +37,7 @@ export class UiTeleportComponent implements OnInit {
   }
 
   go() {
-    this.teleportSvc.teleportSubject.next({
+    this.teleportSvc.teleport.set({
       world: this.worldName,
       position: this.coordinates,
       isNew: true
@@ -57,6 +56,4 @@ export class UiTeleportComponent implements OnInit {
     this.settings.set('teleports', JSON.stringify(teleportList))
     this.close()
   }
-
-  ngOnInit() {}
 }

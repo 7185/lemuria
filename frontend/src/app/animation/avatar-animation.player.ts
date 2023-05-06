@@ -60,9 +60,9 @@ export class AvatarAnimationPlayer {
 
   public animate(
     deltaSecond: number,
-    state: string = 'idle',
+    state = 'idle',
     gesture: string = null,
-    velocity: number = 0
+    velocity = 0
   ): boolean {
     // Choose which state to move in based on the velocity
 
@@ -174,8 +174,8 @@ export class AvatarAnimationPlayer {
 
   public reset() {
     // Reset the state of the avatar
-    for (const entry of Object.entries(this.avatarView)) {
-      ;(entry[1] as Group).setRotationFromQuaternion(new Quaternion())
+    for (const entry of Object.entries<Group>(this.avatarView)) {
+      entry[1].setRotationFromQuaternion(new Quaternion())
     }
 
     this.avatarView['1']?.position.set(0, 0, 0)
@@ -212,7 +212,7 @@ export class AvatarAnimationPlayer {
   private stepImplicit(
     animationList: AnimationEntry[],
     deltaSecond: number,
-    velocity: number = 1
+    velocity = 1
   ) {
     // Iterate over each proposed animation
     const [threeSequence, velocityMultiplier] =
@@ -237,10 +237,7 @@ export class AvatarAnimationPlayer {
     this.reset()
   }
 
-  private stepExplicit(
-    animationName: string,
-    frameOffset: number = 0
-  ): boolean {
+  private stepExplicit(animationName: string, frameOffset = 0): boolean {
     return this.step(
       this.avatarAnimationManager.explicitSequences.get(animationName),
       frameOffset,

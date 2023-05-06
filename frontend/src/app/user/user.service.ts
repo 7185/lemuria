@@ -49,7 +49,7 @@ export class UserService {
   setPosition(
     userId: string,
     postion: [THREE.Vector3, THREE.Vector3],
-    state: string = 'idle',
+    state = 'idle',
     gesture: string = null
   ) {
     const u = this.userList.find((user) => user.id === userId)

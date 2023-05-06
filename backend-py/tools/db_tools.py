@@ -10,10 +10,20 @@ from sqlalchemy.schema import CreateTable
 engine = Database('sqlite:///../app.db')
 metadata = MetaData()
 
+# atdump v1
 world_attr = {
     0: 'name',
     3: 'path',
     25: 'welcome',
+    41: 'light_dir_x',
+    42: 'light_dir_y',
+    43: 'light_dir_z',
+    44: 'dir_light_r',
+    45: 'dir_light_g',
+    46: 'dir_light_b',
+    47: 'amb_light_r',
+    48: 'amb_light_g',
+    49: 'amb_light_b',
     61: 'skybox',
     64: 'keywords',
     65: 'enable_terrain',

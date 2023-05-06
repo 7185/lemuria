@@ -2,10 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   EventEmitter,
-  Output
+  Output,
+  effect
 } from '@angular/core'
 import {FormsModule} from '@angular/forms'
-import type {OnInit} from '@angular/core'
 import {EngineService} from '../../engine/engine.service'
 
 @Component({
@@ -15,25 +15,23 @@ import {EngineService} from '../../engine/engine.service'
   templateUrl: './ui-settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UiSettingsComponent implements OnInit {
+export class UiSettingsComponent {
   @Output() closeModal = new EventEmitter()
 
   public maxFps: number
 
-  constructor(private engineSvc: EngineService) {}
+  constructor(private engineSvc: EngineService) {
+    effect(() => {
+      this.maxFps = this.engineSvc.maxFps()
+    })
+  }
 
   close() {
     this.closeModal.emit()
   }
 
   save() {
-    this.engineSvc.maxFps.next(this.maxFps)
+    this.engineSvc.maxFps.set(this.maxFps)
     this.close()
-  }
-
-  ngOnInit() {
-    this.engineSvc.maxFps.subscribe((fps) => {
-      this.maxFps = fps
-    })
   }
 }

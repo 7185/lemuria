@@ -11,9 +11,8 @@ import {catchError, tap, map} from 'rxjs/operators'
 @Injectable({providedIn: 'root'})
 export class HttpService extends HttpClient {
   private baseUrl = config.url.server
-  private currentUser = new User()
   private userLogged: BehaviorSubject<User> = new BehaviorSubject<User>(
-    this.currentUser
+    new User()
   )
   private mExpiration: number
 
@@ -41,7 +40,6 @@ export class HttpService extends HttpClient {
   }
 
   setLogged(logged: User): void {
-    this.currentUser = logged
     this.userLogged.next(logged)
   }
 

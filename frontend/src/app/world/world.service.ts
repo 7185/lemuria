@@ -12,7 +12,7 @@ import {SocketService} from '../network/socket.service'
 import {AnimationService} from '../animation/animation.service'
 import type {AvatarAnimationManager} from '../animation/avatar-animation.manager'
 import {HttpService} from '../network'
-import {Injectable} from '@angular/core'
+import {Injectable, effect} from '@angular/core'
 import {config} from '../app.config'
 import {
   Euler,
@@ -78,11 +78,11 @@ export class WorldService {
     private socket: SocketService,
     private teleportSvc: TeleportService
   ) {
-    this.teleportSvc.teleportSubject.subscribe((teleport) => {
+    effect(() => {
       // Connect to the socket first
       this.socket.connect()
 
-      const {world, position, isNew} = teleport
+      const {world, position, isNew} = this.teleportSvc.teleport()
       const currentPos = this.getPosition().position
 
       if (!world || world.toLowerCase() === this.worldName.toLowerCase()) {
@@ -281,7 +281,7 @@ export class WorldService {
           const terrainTexture = this.textureLoader.load(
             `${world.path}/textures/terrain${j}.jpg`
           )
-          ;(terrainTexture as any).colorSpace = SRGBColorSpace
+          terrainTexture.colorSpace = SRGBColorSpace
           terrainTexture.wrapS = RepeatWrapping
           terrainTexture.wrapT = RepeatWrapping
           terrainTexture.rotation = (i * Math.PI) / 2
@@ -501,7 +501,7 @@ export class WorldService {
   private loadChunk(x: number, z: number): Observable<LOD> {
     // If the chunk was already loaded: we skip it
     if (this.chunkMap.get(x)?.has(z)) {
-      return new Observable<any>((subscriber) => {
+      return new Observable<LOD>((subscriber) => {
         subscriber.complete()
       })
     }
@@ -653,7 +653,7 @@ export class WorldService {
     this.engine.clearObjects()
     this.objSvc.cleanCache()
     this.anmSvc.cleanCache()
-    this.objSvc.path.next(world.path)
+    this.objSvc.path.set(world.path)
 
     const skyboxGroup = new Group()
     skyboxGroup.renderOrder = -1
@@ -722,6 +722,21 @@ export class WorldService {
     }
 
     this.engine.setSkybox(skyboxGroup)
+    this.engine.setAmbLightColor(
+      world.amb_light_r,
+      world.amb_light_g,
+      world.amb_light_b
+    )
+    this.engine.setDirLightColor(
+      world.dir_light_r,
+      world.dir_light_g,
+      world.dir_light_b
+    )
+    this.engine.setDirLightTarget(
+      world.light_dir_x,
+      world.light_dir_y,
+      world.light_dir_z
+    )
 
     this.objSvc.loadAvatars().subscribe((list) => {
       this.avatarList = list

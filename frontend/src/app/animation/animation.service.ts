@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core'
+import {Injectable, effect} from '@angular/core'
 import parseSequence, {FileType, getJointTag} from 'aw-sequence-parser'
 import {EngineService} from '../engine/engine.service'
 import {ObjectService} from '../world/object.service'
@@ -84,8 +84,8 @@ export class AnimationService {
   private frameRate = 60
 
   constructor(private engine: EngineService, private objSvc: ObjectService) {
-    engine.maxFps.subscribe((fps) => {
-      this.setFrameRate(fps)
+    effect(() => {
+      this.setFrameRate(engine.maxFps())
     })
   }
 
@@ -167,7 +167,7 @@ export class AnimationService {
       try {
         const seq = await this.loadSequence(
           filename,
-          `${this.objSvc.path.value}/seqs/${filename}${extension}`
+          `${this.objSvc.path()}/seqs/${filename}${extension}`
         )
         implicitSequences.set(key, seq)
       } catch (e) {
@@ -179,7 +179,7 @@ export class AnimationService {
       try {
         const seq = await this.loadSequence(
           filename,
-          `${this.objSvc.path.value}/seqs/${filename}${extension}`
+          `${this.objSvc.path()}/seqs/${filename}${extension}`
         )
         explicitSequences.set(key, seq)
       } catch (e) {
@@ -196,7 +196,7 @@ export class AnimationService {
 
   private toThreeAndInterpolate(
     sequence: any,
-    targetFrameRate: number = 30
+    targetFrameRate = 30
   ): ThreeSequence {
     return this.interpolate(
       this.maybeUpscale(this.toThree(sequence), targetFrameRate)

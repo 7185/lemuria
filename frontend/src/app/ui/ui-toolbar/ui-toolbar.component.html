@@ -77,9 +77,9 @@
               <fa-icon [icon]="faBolt"/> Remember...
             </button>
           </li>
-          <li *ngIf="teleports.length" class="divider dropdown-divider"></li>
-          <li *ngFor="let t of teleports" role="menuitem"
-              (click)="teleportSvc.teleportSubject.next({world: t.world, position: t.position, isNew: true})">
+          <li *ngIf="teleports().length" class="divider dropdown-divider"></li>
+          <li *ngFor="let t of teleports()" role="menuitem"
+              (click)="teleportSvc.teleport.set({world: t.world, position: t.position, isNew: true})">
             <button class="dropdown-item">
               <fa-icon [icon]="faBolt"/> {{t.name}}
             </button>
@@ -87,7 +87,7 @@
         </ul>
       </div>
       <button class="btn btn-dark text-teal mx-1" type="button" title="Home"
-              (click)="teleportSvc.teleportSubject.next(home)" [disabled]="!home.world && !home.position">
+              (click)="teleportSvc.teleport.set(home)" [disabled]="!home.world && !home.position">
         <fa-icon [icon]="faHouse" [fixedWidth]="true"/>
       </button>
       <button class="btn btn-dark text-cyan ml-1" type="button" title="Teleport Back"

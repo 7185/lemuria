@@ -7,7 +7,7 @@ import {faComments} from '@fortawesome/free-solid-svg-icons'
 import {
   VirtualScrollerModule,
   VirtualScrollerComponent
-} from '@floogulinc/ngx-virtual-scroller'
+} from '@iharbeck/ngx-virtual-scroller'
 import type {OnInit} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import {UserService} from '../../user'

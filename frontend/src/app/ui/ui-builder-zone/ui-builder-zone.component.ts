@@ -1,9 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component
-} from '@angular/core'
-import type {OnInit} from '@angular/core'
+import {ChangeDetectionStrategy, Component} from '@angular/core'
+import type {WritableSignal} from '@angular/core'
 import {DatePipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
@@ -31,7 +27,7 @@ import {
   styleUrls: ['./ui-builder-zone.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UiBuilderZoneComponent implements OnInit {
+export class UiBuilderZoneComponent {
   public faArrowDown = faArrowDown
   public faArrowLeft = faArrowLeft
   public faArrowRight = faArrowRight
@@ -45,25 +41,24 @@ export class UiBuilderZoneComponent implements OnInit {
   public faTrashCan = faTrashCan
 
   public objectAct = ObjectAct
-  public selectedObject: any
+  public selectedObject: WritableSignal<{
+    name?: string
+    desc?: string
+    act?: string
+    date?: number
+  }>
 
   public constructor(
-    private cdRef: ChangeDetectorRef,
     private engineSvc: EngineService,
     private objSvc: ObjectService
-  ) {}
+  ) {
+    this.selectedObject = this.engineSvc.selectedObjectSignal
+  }
 
   trigger(event: MouseEvent, action: number) {
     if (event.button === 0) {
       this.objSvc.objectAction.next(action)
     }
     event.preventDefault()
-  }
-
-  public ngOnInit(): void {
-    this.engineSvc.selectedObjectSub.asObservable().subscribe((object) => {
-      this.selectedObject = object
-      this.cdRef.detectChanges()
-    })
   }
 }

@@ -11,7 +11,7 @@
     </p>
   </virtual-scroller>
   <div class="input-group">
-    <button class="btn btn-outline-secondary" type="button" (click)="activeChat()" [class.active]="chatActive">
+    <button class="btn btn-outline-dark" type="button" (click)="activeChat()" [class.active]="chatActive">
       <fa-icon [icon]="faComments"/>
     </button>
     <input class="form-control mr-sm-2" [(ngModel)]="message" (keydown.enter)="send()" type="text" 

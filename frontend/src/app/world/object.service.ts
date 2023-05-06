@@ -1,6 +1,6 @@
-import {forkJoin, of, BehaviorSubject, Observable, Subject} from 'rxjs'
+import {forkJoin, of, Observable, Subject} from 'rxjs'
 import {catchError, map} from 'rxjs/operators'
-import {Injectable} from '@angular/core'
+import {computed, effect, Injectable, signal} from '@angular/core'
 import {HttpService} from '../network'
 import {AWActionParser} from 'aw-action-parser'
 import {
@@ -50,7 +50,9 @@ export enum ObjectAct {
 @Injectable({providedIn: 'root'})
 export class ObjectService {
   public objectAction = new Subject<ObjectAct>()
-  public path = new BehaviorSubject('http://localhost')
+  public path = signal('')
+  private rwxPath = computed(() => `${this.path()}/rwx`)
+  private resPath = computed(() => `${this.path()}/textures`)
   private unknown: Group
   private rwxPropLoader = new RWXLoader(new LoadingManager())
   private rwxAvatarLoader = new RWXLoader(new LoadingManager())
@@ -77,7 +79,7 @@ export class ObjectService {
     )
     this.unknown.userData.isError = true
     this.rwxMaterialManager = new RWXMaterialManager(
-      this.path.value,
+      this.path(),
       '.jpg',
       '.zip',
       fflate,
@@ -93,20 +95,19 @@ export class ObjectService {
       .setFlatten(true)
       .setUseBasicMaterial(true)
       .setTextureColorSpace(SRGBColorSpace)
-    this.path.subscribe((url) => {
-      this.rwxMaterialManager.folder = `${url}/textures`
-      this.rwxPropLoader
-        .setPath(`${url}/rwx`)
-        .setResourcePath(`${url}/textures`)
+
+    effect(() => {
+      this.rwxMaterialManager.folder = this.resPath()
+      this.basicLoader.setPath(this.rwxPath()).setResourcePath(this.resPath())
+      this.rwxPropLoader.setPath(this.rwxPath()).setResourcePath(this.resPath())
       this.rwxAvatarLoader
-        .setPath(`${url}/rwx`)
-        .setResourcePath(`${url}/textures`)
-      this.basicLoader.setPath(`${url}/rwx`).setResourcePath(`${url}/textures`)
+        .setPath(this.rwxPath())
+        .setResourcePath(this.resPath())
     })
   }
 
   loadAvatars() {
-    return this.http.avatars(this.path.value)
+    return this.http.avatars(this.path())
   }
 
   public execActions(item: Group) {
@@ -220,9 +221,9 @@ export class ObjectService {
   makePicture(item: Group, url: string) {
     url = url.match(this.remoteUrl)
       ? `${config.url.imgProxy}${url}`
-      : `${this.path.value}/textures/${url}`
+      : `${this.resPath()}/${url}`
     this.pictureLoader.load(url, (image) => {
-      ;(image as any).colorSpace = SRGBColorSpace
+      image.colorSpace = SRGBColorSpace
       item.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           const newMaterials = []
@@ -425,7 +426,11 @@ export class ObjectService {
     if (object !== undefined) {
       return object
     }
-    const loader = basic ? this.basicLoader : this.rwxPropLoader
+    const loader: RWXLoader = basic ? this.basicLoader : this.rwxPropLoader
+    if (loader.path !== this.rwxPath()) {
+      // Dirty fix for skybox loading too fast
+      loader.setPath(this.rwxPath()).setResourcePath(this.resPath())
+    }
     const observable = new Observable((observer) => {
       loader.load(
         name,

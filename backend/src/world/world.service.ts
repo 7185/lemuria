@@ -89,7 +89,7 @@ export class WorldService {
         continue
       }
       const coords = [parseInt(s[0]), parseInt(s[1])]
-      const node: any = {
+      const node: object = {
         node: [parseInt(s[2]), parseInt(s[3])],
         node_size: parseInt(s[4]),
         textures: s
@@ -108,8 +108,8 @@ export class WorldService {
     return elev
   }
 
-  static async buildElev(name: string): Promise<any> {
-    const d: any = {}
+  static async buildElev(name: string): Promise<object> {
+    const d: object = {}
     const elev = await WorldService.parseElevDump(name)
     for (const [coordsStr, nodes] of Object.entries(elev)) {
       const coords = coordsStr.split(',').map((x) => parseInt(x))

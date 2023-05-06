@@ -1,4 +1,4 @@
-import {enableProdMode, importProvidersFrom} from '@angular/core'
+import {importProvidersFrom} from '@angular/core'
 import {APP_BASE_HREF} from '@angular/common'
 import {
   provideHttpClient,
@@ -12,11 +12,6 @@ import {BsModalService} from 'ngx-bootstrap/modal'
 import {APP_ROUTES} from './app/app-routing'
 import {AppComponent} from './app/app.component'
 import {JwtInterceptor} from './app/network'
-import {environment} from './environments/environment'
-
-if (environment.production) {
-  enableProdMode()
-}
 
 bootstrapApplication(AppComponent, {
   providers: [
