@@ -138,7 +138,16 @@ export class HttpService extends HttpClient {
     maxZ: number
   ) {
     // Craft params for props GET request
-    const opts: any = {
+    const opts: {
+      params: {
+        min_x?: number
+        max_x?: number
+        min_y?: number
+        max_y?: number
+        min_z?: number
+        max_z?: number
+      }
+    } = {
       params: {}
     }
 

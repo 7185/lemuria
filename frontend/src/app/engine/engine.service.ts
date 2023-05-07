@@ -5,6 +5,7 @@ import {
   AmbientLight,
   Cache,
   Clock,
+  Fog,
   PerspectiveCamera,
   Raycaster,
   Scene,
@@ -246,8 +247,6 @@ export class EngineService {
     this.light.position.z = 100
     this.worldNode.add(this.light)
 
-    // this.scene.fog = new Fog(0xCCCCCC, 10, 50)
-
     this.dirLightTarget = new Object3D()
     this.worldNode.add(this.dirLightTarget)
 
@@ -421,16 +420,40 @@ export class EngineService {
     return this.userState
   }
 
-  public setAmbLightColor(r = 255, g = 255, b = 255) {
-    this.light.color = new Color(r / 255, g / 255, b / 255)
+  public setFog(color = 0x00007f, near = 0, far = 120, enabled = false) {
+    if (enabled) {
+      this.scene.fog = new Fog(color, near, far)
+    } else {
+      this.scene.fog = null
+    }
   }
 
-  public setDirLightColor(r = 255, g = 255, b = 255) {
-    this.dirLight.color = new Color(r / 255, g / 255, b / 255)
+  public getFog() {
+    return this.scene.fog
   }
 
-  public setDirLightTarget(x = -0.8, y = -0.5, z = -0.2) {
-    this.dirLightTarget.position.set(x * 100, y * 100, z * 100)
+  public getAmbLightColor(): number {
+    return this.light.color.getHex()
+  }
+
+  public getDirLightColor(): number {
+    return this.dirLight.color.getHex()
+  }
+
+  public setAmbLightColor(color: number) {
+    this.light.color = new Color(color)
+  }
+
+  public setDirLightColor(color: number) {
+    this.dirLight.color = new Color(color)
+  }
+
+  public getDirLightTarget(): number[] {
+    return this.dirLightTarget.position.toArray()
+  }
+
+  public setDirLightTarget(x = -80, y = -50, z = -20) {
+    this.dirLightTarget.position.set(x, y, z)
   }
 
   public attachCam(group: Group) {
@@ -481,6 +504,9 @@ export class EngineService {
   }
 
   public setSkybox(skybox: Group) {
+    if (!this.skybox) {
+      return
+    }
     this.skybox.clear()
     this.skybox.add(skybox)
   }
@@ -780,11 +806,13 @@ export class EngineService {
     }
     const width = window.innerWidth
     const height = window.innerHeight
-    this.camera.aspect = width / height
+
+    this.camera.aspect =
+      this.thirdCamera.aspect =
+      this.thirdFrontCamera.aspect =
+        width / height
     this.camera.updateProjectionMatrix()
-    this.thirdCamera.aspect = width / height
     this.thirdCamera.updateProjectionMatrix()
-    this.thirdFrontCamera.aspect = width / height
     this.thirdFrontCamera.updateProjectionMatrix()
     this.renderer.setSize(width, height)
   }
@@ -1057,9 +1085,7 @@ export class EngineService {
   ): boolean {
     let keepGoing = true
     const newPosition = oldPosition.clone().add(delta)
-    const terrain = this.worldNode.children.find(
-      (o) => o.name === 'terrain'
-    ) as any
+    const terrain = this.worldNode.getObjectByName('terrain')
 
     this.playerCollider.copyPos(newPosition)
 
@@ -1486,9 +1512,9 @@ export class EngineService {
 
   private moveUsers() {
     this.userSvc.userList
-      .filter((u) => this.usersNode.children.find((o) => o.name === u.id))
+      .filter((u) => this.usersNode.getObjectByName(u.id))
       .forEach((u) => {
-        const user = this.usersNode.children.find((o) => o.name === u.id)
+        const user = this.usersNode.getObjectByName(u.id)
         u.completion = Math.min(
           1,
           u.completion + this.deltaSinceLastFrame / 0.2

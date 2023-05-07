@@ -6,12 +6,12 @@
       {{strMem}}
     </div>
     <div class="nav navbar-nav">
-      <div class="btn-group" dropdown [isDisabled]="world.worldList.length === 0">
+      <div class="btn-group me-1" dropdown [isDisabled]="worldSvc.worldList.length === 0">
         <div dropdownToggle type="button" class="btn btn-dark text-green" title="Worlds">
           <fa-icon [icon]="faGlobe" [fixedWidth]="true"/>
         </div>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
-          <li *ngFor="let w of world.worldList" role="menuitem" (click)="teleportWorld(w.name)">
+          <li *ngFor="let w of worldSvc.worldList" role="menuitem" (click)="teleportWorld(w.name)">
             <button class="dropdown-item">
               <fa-icon [icon]="faGlobe"/> {{ w.name }}
               <span class="badge rounded-pill bg-secondary float-end">{{ w.users }}</span>
@@ -19,7 +19,7 @@
           </li>
         </ul>
       </div>
-      <div class="btn-group" dropdown>
+      <div class="btn-group me-1" dropdown>
         <div dropdownToggle type="button" class="btn btn-dark text-gray" title="Options">
           <fa-icon [icon]="faCog" [fixedWidth]="true"/>
         </div>
@@ -34,21 +34,26 @@
               <fa-icon [icon]="faKeyboard"/> Controls...
             </button>
           </li>
+          <li role="menuitem" (click)="openWorldAttribs()">
+            <button class="dropdown-item">
+              <fa-icon [icon]="faGlobe"/> World features...
+            </button>
+          </li>
         </ul>
       </div>
-      <div class="btn-group" dropdown [isDisabled]="!socket.connected">
+      <div class="btn-group me-1" dropdown [isDisabled]="!socket.connected">
         <button dropdownToggle class="btn btn-dark text-orange" title="Avatar" [disabled]="!socket.connected">
           <fa-icon [icon]="faCircleUser" [fixedWidth]="true"/>
         </button>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
-          <li role="menuitem" *ngFor="let a of world.avatarList; let index = index" (click)="changeAvatar(index)">
+          <li role="menuitem" *ngFor="let a of worldSvc.avatarList; let index = index" (click)="changeAvatar(index)">
             <button class="dropdown-item">
               <fa-icon [class.invisible]="index !== avatarId" [icon]="faCheck"/> {{ a.name }}
             </button>
           </li>
         </ul>
       </div>
-      <div class="btn-group" dropdown [isDisabled]="!socket.connected">
+      <div class="btn-group me-1" dropdown [isDisabled]="!socket.connected">
         <button dropdownToggle class="btn btn-dark text-blue" title="Visibility" [disabled]="!socket.connected">
           <fa-icon [icon]="faMountainSun" [fixedWidth]="true"/>
         </button>
@@ -60,9 +65,14 @@
           </li>
         </ul>
       </div>
+      <button [ngSwitch]="cameraType" class="btn btn-dark text-indigo me-1" title="Toggle camera" (click)="toggleCamera()" type="button">
+        <fa-icon *ngSwitchCase="0" [icon]="faEye" [fixedWidth]="true"/>
+        <fa-icon *ngSwitchCase="1" [icon]="faVideo" [fixedWidth]="true"/>
+        <fa-icon *ngSwitchCase="2" [icon]="faPerson" [fixedWidth]="true"/>
+      </button>
     </div>
     <div class="my-2 my-sm-0">
-      <div class="btn-group" dropdown>
+      <div class="btn-group me-1" dropdown>
         <button dropdownToggle class="btn btn-dark text-yellow" title="Teleport">
           <fa-icon [icon]="faBolt" [fixedWidth]="true"/>
         </button>
@@ -86,33 +96,28 @@
           </li>
         </ul>
       </div>
-      <button class="btn btn-dark text-teal mx-1" type="button" title="Home"
+      <button class="btn btn-dark text-teal me-1" type="button" title="Home"
               (click)="teleportSvc.teleport.set(home)" [disabled]="!home.world && !home.position">
         <fa-icon [icon]="faHouse" [fixedWidth]="true"/>
       </button>
-      <button class="btn btn-dark text-cyan ml-1" type="button" title="Teleport Back"
+      <button class="btn btn-dark text-cyan" type="button" title="Teleport Back"
               (click)="teleportSvc.teleportBack()" [disabled]="teleportSvc.currentTeleportIndex <= 0">
         <fa-icon [icon]="faArrowLeft" [fixedWidth]="true"/>
       </button>
-      <button class="btn btn-dark text-cyan mr-1" type="button" title="Teleport Forward"
+      <button class="btn btn-dark text-cyan me-1" type="button" title="Teleport Forward"
               (click)="teleportSvc.teleportNext()" [disabled]="teleportSvc.currentTeleportIndex >= teleportSvc.teleportHistory.length - 1">
         <fa-icon [icon]="faArrowRight" [fixedWidth]="true"/>
       </button>
-      <div class="btn-group mx-1" dropdown [isDisabled]="animations.size === 0">
-        <button dropdownToggle class="btn btn-dark text-pink" title="Animations" [disabled]="animations.size === 0">
-          <fa-icon [icon]="faHand" [fixedWidth]="true"/>
+      <div class="btn-group" dropdown [isDisabled]="worldSvc.gestures().size === 0">
+        <button dropdownToggle class="btn btn-dark text-pink" title="Gestures" [disabled]="worldSvc.gestures().size === 0">
+          <fa-icon [icon]="faHand" [fixedWidth]="true" transform="rotate-30"/>
         </button>
         <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
-          <li *ngFor="let a of animations | keyvalue" role="menuitem" class="dropdown-item" (click)="setAnimation(a.key)">
+          <li *ngFor="let a of worldSvc.gestures() | keyvalue" role="menuitem" class="dropdown-item" (click)="setAnimation(a.key)">
             {{a.key}}
           </li>
         </ul>
       </div>
-      <button [ngSwitch]="cameraType" class="btn btn-dark text-indigo mx-1" title="Toggle camera" (click)="toggleCamera()" type="button">
-        <fa-icon *ngSwitchCase="0" [icon]="faEye" [fixedWidth]="true"/>
-        <fa-icon *ngSwitchCase="1" [icon]="faVideo" [fixedWidth]="true"/>
-        <fa-icon *ngSwitchCase="2" [icon]="faPerson" [fixedWidth]="true"/>
-      </button>
     </div>
     <div class="text-center text-light lh-1">
       {{strPos}}<br />
@@ -139,13 +144,13 @@
           <li *ngFor="let u of userList" role="menuitem" class="dropdown-item">
             <fa-icon [icon]="faUser"/>
             {{u.name}}
-            <button *ngIf="u.id !== userId && u.world === world.worldId" class="btn btn-sm btn-warning" (click)="join(u.id)" type="button" title="Join user">
+            <button *ngIf="u.id !== userId && u.world === worldSvc.worldId" class="btn btn-sm btn-warning" (click)="join(u.id)" type="button" title="Join user">
               <fa-icon [icon]="faBolt"/>
             </button>
           </li>
         </ul>
       </div>
-      <div class="btn-group" dropdown>
+      <div class="btn-group ms-1" dropdown>
         <button dropdownToggle class="btn btn-dark text-red" title="Leave">
           <fa-icon [icon]="faRightFromBracket" [fixedWidth]="true"/>
         </button>
@@ -170,4 +175,7 @@
 </ng-template>
 <ng-template #teleportModal>
   <app-ui-teleport [type]="teleportType" (closeModal)="closeTeleport()"/>
+</ng-template>
+<ng-template #worldAttribsModal>
+  <app-ui-world-attribs (closeModal)="closeWorldAttribs()"/>
 </ng-template>

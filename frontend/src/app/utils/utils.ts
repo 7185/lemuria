@@ -11,7 +11,7 @@ export class Utils {
 
   /**
    * Converts position to string
-   *
+   * 
    * @param pos Position
    * @param yaw Yaw in degrees
    * @returns Position string with optional yaw
@@ -60,6 +60,48 @@ export class Utils {
       value += 2 * Math.PI
     }
     return value
+  }
+
+  /**
+   * Converts RGB values to an hex color number
+   * 
+   * @param red Red value
+   * @param green Green value
+   * @param blue Blue value
+   * @returns Hex color value
+   */
+  static rgbToHex(red: number, green: number, blue: number): number {
+    return blue | (green << 8) | (red << 16)
+  }
+
+  /**
+   * Converts an hex color to RGB values
+   * 
+   * @param hex Color number
+   * @returns RGB values array
+   */
+  static hexToRgb(hex: number): number[] {
+    return [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255]
+  }
+
+  /**
+   * Converts a color string to an hex color
+   * 
+   * @param color Color string
+   * @returns Hex color value
+   */
+  static colorStrToHex(color: string): number {
+    return parseInt(color.substring(1), 16)
+  }
+
+  /**
+   * Converts an hex color to string
+   * 
+   * @param color Hex color
+   * @returns Color string
+   */
+  static colorHexToStr(color: number): string {
+    return '#' + `00000${color.toString(16)}`.slice(-6)
   }
 
   static shortestAngle(oldValue: number, newValue: number): number {

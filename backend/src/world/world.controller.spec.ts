@@ -113,7 +113,14 @@ describe('WorldController', () => {
           bottom: [0, 0, 0]
         },
         skybox: undefined,
-        terrain: false
+        terrain: false,
+        light_dir: [-0.8, -0.5, -0.2],
+        fog: false,
+        fog_color: [0, 0, 127],
+        fog_max: 120,
+        fog_min: 0,
+        amblight_color: [255, 255, 255],
+        dirlight_color: [255, 255, 255]
       })
     })
   })

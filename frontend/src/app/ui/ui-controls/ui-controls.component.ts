@@ -3,6 +3,7 @@ import {InputSystemService, PressedKey} from '../../engine/inputsystem.service'
 import type {OnInit} from '@angular/core'
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   EventEmitter,
   Output
@@ -44,7 +45,10 @@ export class UiControlsComponent implements OnInit {
   private cancel: Subject<boolean>
   private oldKey: string
 
-  constructor(private input: InputSystemService) {}
+  constructor(
+    private input: InputSystemService,
+    private cdRef: ChangeDetectorRef
+  ) {}
 
   setKey(key: number, pos: number) {
     if (this.cancel != null) {
@@ -69,6 +73,7 @@ export class UiControlsComponent implements OnInit {
             this.cancel.complete()
             this.cancel = null
           }
+          this.cdRef.detectChanges()
         },
         error: () => {
           this.controlsKeymap[key][pos] = this.oldKey
@@ -77,6 +82,7 @@ export class UiControlsComponent implements OnInit {
             this.cancel.complete()
             this.cancel = null
           }
+          this.cdRef.detectChanges()
         }
       })
   }

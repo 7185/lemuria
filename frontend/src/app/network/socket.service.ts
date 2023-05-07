@@ -8,12 +8,21 @@ import type {WebSocketSubject} from 'rxjs/webSocket'
 import {Vector3} from 'three'
 import {config} from '../app.config'
 
+interface Message {
+  type: string
+  user?: string
+  data?: any
+}
+
 @Injectable({providedIn: 'root'})
 export class SocketService {
-  public messages: Subject<any> = new Subject()
+  public messages: Subject<Message> = new Subject()
   public connected = false
 
-  private socket: WebSocketSubject<any> = webSocket({url: config.url.websocket})
+  private connecting = false
+  private socket: WebSocketSubject<unknown> = webSocket({
+    url: config.url.websocket
+  })
   private posTimer: Subscription
   private lastSentPos = [new Vector3(), new Vector3()]
   private lastSentGesture: string = null
@@ -21,12 +30,14 @@ export class SocketService {
   constructor(private engineSvc: EngineService, private userSvc: UserService) {}
 
   connect() {
-    if (this.connected) {
+    if (this.connected || this.connecting) {
       return
     }
+    this.connecting = true
     this.socket.subscribe({
-      next: (msg) => {
+      next: (msg: Message) => {
         this.connected = true
+        this.connecting = false
         this.handleMessage(msg)
       },
       error: () => {
@@ -67,7 +78,7 @@ export class SocketService {
     })
   }
 
-  handleMessage(msg: any) {
+  handleMessage(msg: Message) {
     if (msg.type === 'list') {
       this.userSvc.refreshList(msg.data)
     } else if (msg.type === 'pos') {
@@ -84,16 +95,17 @@ export class SocketService {
     }
   }
 
-  sendMessage(msg: any) {
+  sendMessage(msg: Message) {
     if (this.connected) {
       this.socket.next(msg)
     }
   }
 
   disconnect() {
+    this.connected = false
+    this.connecting = false
     this.userSvc.clearList()
     this.posTimer.unsubscribe()
-    this.connected = false
   }
 
   close() {

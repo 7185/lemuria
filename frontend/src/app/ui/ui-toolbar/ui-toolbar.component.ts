@@ -4,6 +4,7 @@ import {BsDropdownModule} from 'ngx-bootstrap/dropdown'
 import {UiControlsComponent} from '../ui-controls/ui-controls.component'
 import {UiSettingsComponent} from '../ui-settings/ui-settings.component'
 import {UiTeleportComponent} from '../ui-teleport/ui-teleport.component'
+import {UiWorldAttribsComponent} from '../ui-world-attribs/ui-world-attribs.component'
 import {HttpService} from '../../network'
 import {EngineService} from '../../engine/engine.service'
 import {SettingsService} from '../../settings/settings.service'
@@ -58,7 +59,8 @@ import {
     FontAwesomeModule,
     UiControlsComponent,
     UiSettingsComponent,
-    UiTeleportComponent
+    UiTeleportComponent,
+    UiWorldAttribsComponent
   ],
   selector: 'app-ui-toolbar',
   templateUrl: './ui-toolbar.component.html',
@@ -67,9 +69,10 @@ import {
 })
 export class UiToolbarComponent implements OnInit, AfterViewInit {
   @ViewChild('compass', {static: true}) compass: ElementRef
-  @ViewChild('settingsModal') settingsModalTpl: TemplateRef<any>
-  @ViewChild('controlsModal') controlsModalTpl: TemplateRef<any>
-  @ViewChild('teleportModal') teleportModalTpl: TemplateRef<any>
+  @ViewChild('settingsModal') settingsModalTpl: TemplateRef<unknown>
+  @ViewChild('controlsModal') controlsModalTpl: TemplateRef<unknown>
+  @ViewChild('teleportModal') teleportModalTpl: TemplateRef<unknown>
+  @ViewChild('worldAttribsModal') worldAttribsModalTpl: TemplateRef<unknown>
 
   public faArrowLeft = faArrowLeft
   public faArrowRight = faArrowRight
@@ -93,6 +96,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public settingsModal: BsModalRef
   public controlsModal: BsModalRef
   public teleportModal: BsModalRef
+  public worldAttribsModal: BsModalRef
   public debug = config.debug
   public cameraType = 0
   public name = 'Anonymous'
@@ -100,7 +104,6 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public teleports = signal([])
   public userId: string
   public avatarId = 0
-  public animations = new Map()
   public userList: User[] = []
   public visibilityList = new Array(11).fill(40).map((n, i) => n + i * 20)
   public visibility = config.world.lod.maxDistance
@@ -115,8 +118,8 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     private cdRef: ChangeDetectorRef,
     private modalSvc: BsModalService,
     public socket: SocketService,
-    private engine: EngineService,
-    public world: WorldService,
+    private engineSvc: EngineService,
+    public worldSvc: WorldService,
     private http: HttpService,
     private userSvc: UserService,
     public teleportSvc: TeleportService,
@@ -125,19 +128,19 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
 
   public changeVisibility(visibility: number) {
     this.visibility = visibility
-    this.world.setVisibility(visibility)
+    this.worldSvc.setVisibility(visibility)
   }
 
   public setAnimation(animation: string) {
-    this.engine.setGesture(animation)
+    this.engineSvc.setGesture(animation)
   }
 
   public changeAvatar(avatarId: number) {
-    if (avatarId >= this.world.avatarList.length) {
+    if (avatarId >= this.worldSvc.avatarList.length) {
       avatarId = 0
     }
     this.socket.sendMessage({type: 'avatar', data: avatarId})
-    this.world.avatarSub.next(avatarId)
+    this.worldSvc.avatarSub.next(avatarId)
   }
 
   public teleportWorld(world: string, entry = null) {
@@ -189,27 +192,38 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.teleportModal.hide()
   }
 
+  public openWorldAttribs() {
+    this.worldAttribsModal = this.modalSvc.show(this.worldAttribsModalTpl, {
+      backdrop: false,
+      class: 'modal-lg'
+    })
+  }
+
+  public closeWorldAttribs() {
+    this.worldAttribsModal.hide()
+  }
+
   public toggleCamera(): void {
     this.cameraType = (this.cameraType + 1) % 3
-    this.engine.toggleCamera()
+    this.engineSvc.toggleCamera()
   }
 
   public join(userId: string) {
     const user = this.userSvc.userList.find((v) => v.id === userId)
-    this.engine.setPlayerPos(new Vector3(user.x, user.y, user.z))
+    this.engineSvc.setPlayerPos(new Vector3(user.x, user.y, user.z))
   }
 
   public compassClick(north: boolean) {
-    this.engine.setPlayerYaw(!north && 180)
+    this.engineSvc.setPlayerYaw(!north && 180)
     return false
   }
 
   public ngOnInit(): void {
     this.userSvc.listChanged.subscribe((l) => {
       this.userList = l
-      this.world.worldList.forEach((w) => (w.users = 0))
+      this.worldSvc.worldList.forEach((w) => (w.users = 0))
       for (const u of this.userList) {
-        for (const w of this.world.worldList) {
+        for (const w of this.worldSvc.worldList) {
           if (u.world === w.id) {
             w.users++
           }
@@ -217,17 +231,14 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       }
       this.cdRef.detectChanges()
     })
-    this.world.avatarSub.subscribe((avatarId) => (this.avatarId = avatarId))
-    this.world.animationMapSub.subscribe(
-      (animations) => (this.animations = animations)
-    )
+    this.worldSvc.avatarSub.subscribe((avatarId) => (this.avatarId = avatarId))
     this.http.getLogged().subscribe((u: any) => {
       this.userId = u.id
       this.name = u.name
       this.userSvc.currentName = u.name
       if (u.id != null) {
         this.http.worlds().subscribe((w: any) => {
-          this.world.worldList = w
+          this.worldSvc.worldList = w
           const home = JSON.parse(this.settings.get('home'))
           this.home = {
             world: home?.world,
@@ -255,7 +266,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public ngAfterViewInit(): void {
-    this.engine.compassSub
+    this.engineSvc.compassSub
       .pipe(
         throttleTime(100),
         distinctUntilChanged(
@@ -278,8 +289,8 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       })
 
     if (this.debug) {
-      this.engine.fpsSub.pipe(throttleTime(1000)).subscribe((fps) => {
-        const memInfo = this.engine.getMemInfo()
+      this.engineSvc.fpsSub.pipe(throttleTime(1000)).subscribe((fps) => {
+        const memInfo = this.engineSvc.getMemInfo()
         this.strFps = `${fps} FPS`
         this.strMem = `${memInfo.geometries} Geom. ${memInfo.textures} Text.`
       })

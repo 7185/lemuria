@@ -1,0 +1,105 @@
+<div class="modal-header">
+  <h4 class="modal-title pull-left">World features</h4>
+  <button type="button" class="btn-close close pull-right" aria-label="Close" (click)="close()">
+    <span aria-hidden="true" class="visually-hidden">&times;</span>
+  </button>
+</div>
+<div class="modal-body">
+  <tabset type="pills">
+    <tab heading="Lighting">
+      <div class="mb-2 row">
+        <label for="fog" class="col col-form-label form-check-label">
+          Enable Fog
+        </label>
+        <div class="col col-2">
+          <div class="form-check">
+          <input class="form-check-input" type="checkbox" [ngModel]="fog()" (ngModelChange)="fog.set($event)" id="fog">
+        </div>
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="fogColor" class="col col-form-label">Fog Color</label>
+        <div class="col col-2">
+          <input id="fogColor" class="form-control" type="color" [ngModel]="fogColor()" (ngModelChange)="fogColor.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="fogMin" class="col col-form-label">Fog Min</label>
+        <div class="col col-3">
+          <input id="fogMin" class="form-control" type="number" [ngModel]="fogMin()" (ngModelChange)="fogMin.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="fogMax" class="col col-form-label">Fog distance</label>
+        <div class="col col-3">
+          <input id="fogMax" class="form-control" type="number" [ngModel]="fogMax()" (ngModelChange)="fogMax.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="ambLight" class="col col-form-label">Ambient Light</label>
+        <div class="col col-2">
+          <input id="ambLight" class="form-control" type="color" [ngModel]="ambLight()" (ngModelChange)="ambLight.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="dirLight" class="col col-form-label">Directional Light</label>
+        <div class="col col-2">
+          <input id="dirLight" class="form-control" type="color" [ngModel]="dirLight()" (ngModelChange)="dirLight.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="lightDirX" class="col col-form-label">Light Direction</label>
+          <input id="lightDirX" class="form-control col mx-2" type="number" min="-1000" max="1000"
+                 [ngModel]="lightDirX()" (ngModelChange)="lightDirX.set($event)">
+          <input id="lightDirX" class="form-control col mx-2" type="number" min="-1000" max="1000"
+                 [ngModel]="lightDirY()" (ngModelChange)="lightDirY.set($event)">
+          <input id="lightDirX" class="form-control col mx-2" type="number" min="-1000" max="1000"
+                 [ngModel]="lightDirZ()" (ngModelChange)="lightDirZ.set($event)">
+      </div>
+    </tab>
+    <tab heading="Sky">
+      <div class="mb-2 row">
+        <label for="skybox" class="col col-form-label">Skybox</label>
+        <div class="col">
+          <input id="skybox" class="form-control" type="text" [ngModel]="worldSvc.skybox()" (ngModelChange)="worldSvc.skybox.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="skyTop" class="col col-form-label">Top</label>
+        <div class="col col-2">
+          <input id="skyTop" class="form-control" type="color" [ngModel]="worldSvc.skyTop()" (ngModelChange)="worldSvc.skyTop.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="skyNorth" class="col col-form-label">North</label>
+        <div class="col col-2">
+          <input id="skyNorth" class="form-control" type="color" [ngModel]="worldSvc.skyNorth()" (ngModelChange)="worldSvc.skyNorth.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="skyEast" class="col col-form-label">East</label>
+        <div class="col col-2">
+          <input id="skyEast" class="form-control" type="color" [ngModel]="worldSvc.skyEast()" (ngModelChange)="worldSvc.skyEast.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="skySouth" class="col col-form-label">South</label>
+        <div class="col col-2">
+          <input id="skySouth" class="form-control" type="color" [ngModel]="worldSvc.skySouth()" (ngModelChange)="worldSvc.skySouth.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="skyWest" class="col col-form-label">West</label>
+        <div class="col col-2">
+          <input id="skyWest" class="form-control" type="color" [ngModel]="worldSvc.skyWest()" (ngModelChange)="worldSvc.skyWest.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="skyBottom" class="col col-form-label">Bottom</label>
+        <div class="col col-2">
+          <input id="skyBottom" class="form-control" type="color" [ngModel]="worldSvc.skyBottom()" (ngModelChange)="worldSvc.skyBottom.set($event)">
+        </div>
+      </div>
+    </tab>
+  </tabset>
+</div>

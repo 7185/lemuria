@@ -44,7 +44,14 @@ export class WorldController {
       skybox: world.skybox,
       entry: world.entry,
       terrain: world.terrain,
-      elev: world.elev
+      elev: world.elev,
+      amblight_color: world.amblight_color,
+      dirlight_color: world.dirlight_color,
+      light_dir: world.light_dir,
+      fog: world.fog,
+      fog_color: world.fog_color,
+      fog_min: world.fog_min,
+      fog_max: world.fog_max
     })
   }
 

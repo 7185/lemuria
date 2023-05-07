@@ -14,6 +14,9 @@ metadata = MetaData()
 world_attr = {
     0: 'name',
     3: 'path',
+    11: 'fog_color_r',
+    12: 'fog_color_g',
+    13: 'fog_color_b',
     25: 'welcome',
     41: 'light_dir_x',
     42: 'light_dir_y',
@@ -24,6 +27,9 @@ world_attr = {
     47: 'amb_light_r',
     48: 'amb_light_g',
     49: 'amb_light_b',
+    51: 'enable_fog',
+    52: 'fog_min',
+    53: 'fog_max',
     61: 'skybox',
     64: 'keywords',
     65: 'enable_terrain',
@@ -116,6 +122,32 @@ async def init_db():
     await engine.disconnect()
 
 
+async def parse_atdump(attr_file):
+    attr_dict = {}
+
+    async for entry in attr_dump(attr_file):
+        attr_key = world_attr.get(entry[0])
+        if attr_key is not None:
+            if attr_key.startswith('sky_color'):
+                attr_dict.setdefault('sky_color', {}).setdefault(attr_key.split('_')[2], [0, 0, 0])['rgb'.index(attr_key.split('_')[3])] = int(entry[1])
+            elif attr_key == 'enable_terrain':
+                attr_dict[attr_key] = entry[1] == 'Y'
+            elif attr_key == 'enable_fog':
+                attr_dict[attr_key] = entry[1] == 'Y'
+            elif attr_key.endswith('_min') or attr_key.endswith('_max'):
+                attr_dict[attr_key] = int(entry[1])
+            elif attr_key.startswith('dir_light'):
+                attr_dict.setdefault('dirlight_color', [0, 0, 0])['rgb'.index(attr_key.split('_')[2])] = int(entry[1])
+            elif attr_key.startswith('amb_light'):
+                attr_dict.setdefault('amblight_color', [0, 0, 0])['rgb'.index(attr_key.split('_')[2])] = int(entry[1])
+            elif attr_key.startswith('light_dir'):
+                attr_dict.setdefault('light_dir', [0, 0, 0])['xyz'.index(attr_key.split('_')[2])] = float(entry[1])
+            elif attr_key.startswith('fog_color_'):
+                attr_dict.setdefault('fog_color', [0, 0, 0])['rgb'.index(attr_key.split('_')[2])] = int(entry[1])
+            else:
+                attr_dict[attr_key] = entry[1]
+    return attr_dict
+
 async def import_world(attr_file, prop_file):
     await engine.connect()
     data = await engine.fetch_one("select id from user where lower(name) = 'admin'")
@@ -123,21 +155,7 @@ async def import_world(attr_file, prop_file):
         print("Create admin user first")
         return
     admin_id = data[0]
-    attr_dict = {}
-    async for entry in attr_dump(attr_file):
-        if entry[0] in world_attr:
-            if world_attr[entry[0]].startswith('sky_color'):
-                if 'sky_color' not in attr_dict:
-                    attr_dict['sky_color'] = {}
-                split = world_attr[entry[0]].split('_')
-                if (split[2] not in attr_dict['sky_color']):
-                    attr_dict['sky_color'][split[2]] = [0, 0, 0]
-                attr_dict['sky_color'][split[2]]['rgb'.index(split[3])] = int(entry[1])
-            elif world_attr[entry[0]] in ['enable_terrain']:
-                attr_dict[world_attr[entry[0]]] = entry[1] == 'Y'
-            else:
-                attr_dict[world_attr[entry[0]]] = entry[1]
-        
+    attr_dict = await parse_atdump(attr_file)
 
     w_query = f"select id from world where lower(name) = '{attr_dict['name'].lower()}'"
     data = await engine.fetch_one(w_query)

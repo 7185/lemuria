@@ -18,6 +18,10 @@ export class WorldService {
       attr.terrain = attr.enable_terrain
       delete attr.enable_terrain
     }
+    if (attr.enable_fog != null) {
+      attr.fog = attr.enable_fog
+      delete attr.enable_fog
+    }
 
     return new World({
       id: world.id,

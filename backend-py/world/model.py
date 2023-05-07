@@ -16,6 +16,13 @@ class World:
         self._skybox = None
         self._sky_color = {"top": [0, 0, 0], "north": [0, 0, 0], "east": [0, 0, 0],
                            "south": [0, 0, 0], "west": [0, 0, 0], "bottom": [0, 0, 0]}
+        self._amblight_color = [255, 255, 255]
+        self._dirlight_color = [255, 255, 255]
+        self._light_dir = [-.8, -.5, -.2]
+        self._fog = False
+        self._fog_color = [0, 0, 127]
+        self._fog_min = 0
+        self._fog_max = 120
         self._entry = '0N 0W'
         self._objects = None
         self._terrain = False
@@ -36,17 +43,17 @@ class World:
             self._welcome = world_data['welcome']
             self._path = world_data['path']
 
-            if 'sky_color' in world_data:
-                self._sky_color = world_data['sky_color']
-
-            if 'skybox' in world_data:
-                self._skybox = world_data['skybox']
-
-            if 'entry' in world_data:
-                self._entry = world_data['entry'] or '0N 0W'
-
-            if 'enable_terrain' in world_data:
-                self._terrain = world_data['enable_terrain']
+            self._sky_color = world_data.get('sky_color', self._sky_color)
+            self._skybox = world_data.get('skybox', self._skybox)
+            self._entry = world_data.get('entry', '0N 0W')
+            self._terrain = world_data.get('enable_terrain', self._terrain)
+            self._fog = world_data.get('enable_fog', self._fog)
+            self._fog_color = world_data.get('fog_color', self._fog_color)
+            self._fog_min = world_data.get('fog_min', self._fog_min)
+            self._fog_max = world_data.get('fog_max', self._fog_max)
+            self._amblight_color = world_data.get('amblight_color', self._amblight_color)
+            self._dirlight_color = world_data.get('dirlight_color', self._dirlight_color)
+            self._light_dir = world_data.get('light_dir', self._light_dir)
 
             with contextlib.suppress(FileNotFoundError):
                 self._elev = await self.build_elev()
@@ -70,7 +77,14 @@ class World:
             'skybox': self._skybox,
             'entry': self._entry,
             'terrain': self._terrain,
-            'elev': self._elev
+            'elev': self._elev,
+            'amblight_color': self._amblight_color,
+            'dirlight_color': self._dirlight_color,
+            'light_dir': self._light_dir,
+            'fog': self._fog,
+            'fog_color': self._fog_color,
+            'fog_min': self._fog_min,
+            'fog_max': self._fog_max
         }
 
     # Having a 'None' value on one of those coordinate criterias means no bound will be applied when querying all objects
