@@ -86,6 +86,7 @@ export class EngineService {
   private light: AmbientLight
   private dirLight: DirectionalLight
   private dirLightTarget: Object3D
+  private fog: Fog
   private avatar: Group
   private skybox: Group
   private buildMode = false
@@ -261,6 +262,9 @@ export class EngineService {
     this.dirLight.target = this.dirLightTarget
     this.worldNode.add(this.dirLight)
 
+    this.fog = new Fog(0)
+    this.scene.fog = this.fog
+
     this.scene.add(this.worldNode)
     this.scene.add(this.usersNode)
     this.scene.add(this.objectsNode)
@@ -422,14 +426,17 @@ export class EngineService {
 
   public setFog(color = 0x00007f, near = 0, far = 120, enabled = false) {
     if (enabled) {
-      this.scene.fog = new Fog(color, near, far)
+      this.fog.color = new Color(color)
+      this.fog.near = near
+      this.fog.far = far
     } else {
-      this.scene.fog = null
+      this.fog.near = 0
+      this.fog.far = 10000
     }
   }
 
   public getFog() {
-    return this.scene.fog
+    return this.fog
   }
 
   public getAmbLightColor(): number {

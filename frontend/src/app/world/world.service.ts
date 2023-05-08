@@ -262,7 +262,7 @@ export class WorldService {
           avatarEntry.explicit
         )
       this.setAvatar(avatarEntry.geometry, animationManager)
-      const savedAvatars = JSON.parse(this.settings.get('avatar'))
+      const savedAvatars = this.settings.get('avatar')
       const avatarMap =
         savedAvatars != null
           ? new Map<number, number>(savedAvatars)
@@ -270,7 +270,7 @@ export class WorldService {
       avatarMap.set(this.worldId, avatarId)
       this.settings.set(
         'avatar',
-        JSON.stringify(Array.from(avatarMap.entries()))
+        Array.from(avatarMap.entries())
       )
     })
   }
@@ -824,7 +824,7 @@ export class WorldService {
     this.objSvc.loadAvatars().subscribe((list) => {
       this.avatarList = list
       // Set first avatar on self
-      const savedAvatars = JSON.parse(this.settings.get('avatar'))
+      const savedAvatars = this.settings.get('avatar')
       const avatarMap =
         savedAvatars != null
           ? new Map<number, number>(savedAvatars)

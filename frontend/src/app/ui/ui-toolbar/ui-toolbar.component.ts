@@ -239,7 +239,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       if (u.id != null) {
         this.http.worlds().subscribe((w: any) => {
           this.worldSvc.worldList = w
-          const home = JSON.parse(this.settings.get('home'))
+          const home = this.settings.get('home')
           this.home = {
             world: home?.world,
             position: home?.position,
@@ -254,13 +254,13 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       this.cdRef.detectChanges()
     })
     this.settings.updated.subscribe(() => {
-      const home = JSON.parse(this.settings.get('home'))
+      const home = this.settings.get('home')
       this.home = {
         world: home?.world,
         position: home?.position,
         isNew: true
       }
-      this.teleports.set(JSON.parse(this.settings.get('teleports')) || [])
+      this.teleports.set(this.settings.get('teleports') || [])
       this.cdRef.detectChanges()
     })
   }

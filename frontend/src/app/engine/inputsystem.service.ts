@@ -82,7 +82,7 @@ export class InputSystemService {
   private keyMap: Map<string, PressedKey>
 
   constructor(private settings: SettingsService) {
-    const savedKeyMap = JSON.parse(this.settings.get('keymap'))
+    const savedKeyMap = this.settings.get('keymap')
     this.keyMap =
       savedKeyMap != null ? new Map(savedKeyMap) : new Map(this.defaultKeymap)
   }
@@ -118,9 +118,6 @@ export class InputSystemService {
   }
 
   private saveKeyMap() {
-    this.settings.set(
-      'keymap',
-      JSON.stringify(Array.from(this.keyMap.entries()))
-    )
+    this.settings.set('keymap', Array.from(this.keyMap.entries()))
   }
 }

@@ -5,13 +5,13 @@ import {BehaviorSubject} from 'rxjs'
 export class SettingsService {
   public updated = new BehaviorSubject(true)
 
-  set(key: string, value: string): void {
-    window.localStorage.setItem(key, value)
+  set(key: string, value: any): void {
+    window.localStorage.setItem(key, JSON.stringify(value))
     this.updated.next(true)
   }
 
-  get(key: string): string {
-    return window.localStorage.getItem(key)
+  get(key: string): any {
+    return JSON.parse(window.localStorage.getItem(key))
   }
 
   clear() {

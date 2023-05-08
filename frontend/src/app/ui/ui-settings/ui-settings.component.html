@@ -11,5 +11,15 @@
       <input id="maxFps" class="form-control" minlength="1" pattern="[0-9]*" [(ngModel)]="maxFps">
     </div>
   </div>
+  <div class="mb-3 row">
+    <label for="showLights" class="col col-form-label form-check-label">
+      Show lights (slow!)
+    </label>
+    <div class="col">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" [(ngModel)]="this.showLights" id="showLights">
+      </div>
+    </div>
+  </div>
   <button class="btn btn-primary float-end mb-3" (click)="save()">Save</button>
 </div>

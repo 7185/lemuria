@@ -46,14 +46,14 @@ export class UiTeleportComponent {
   }
 
   makeHome() {
-    this.settings.set('home', JSON.stringify(this.world.getPosition()))
+    this.settings.set('home', this.world.getPosition())
     this.close()
   }
 
   save() {
-    const teleportList = JSON.parse(this.settings.get('teleports')) || []
+    const teleportList = this.settings.get('teleports') || []
     teleportList.push({name: this.name, ...this.world.getPosition()})
-    this.settings.set('teleports', JSON.stringify(teleportList))
+    this.settings.set('teleports', teleportList)
     this.close()
   }
 }

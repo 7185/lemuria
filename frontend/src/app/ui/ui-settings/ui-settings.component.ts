@@ -7,6 +7,7 @@ import {
 } from '@angular/core'
 import {FormsModule} from '@angular/forms'
 import {EngineService} from '../../engine/engine.service'
+import {SettingsService} from '../../settings/settings.service'
 
 @Component({
   standalone: true,
@@ -19,8 +20,13 @@ export class UiSettingsComponent {
   @Output() closeModal = new EventEmitter()
 
   public maxFps: number
+  public showLights: boolean
 
-  constructor(private engineSvc: EngineService) {
+  constructor(
+    private engineSvc: EngineService,
+    private settings: SettingsService
+  ) {
+    this.showLights = this.settings.get('show_lights') || false
     effect(() => {
       this.maxFps = this.engineSvc.maxFps()
     })
@@ -31,6 +37,7 @@ export class UiSettingsComponent {
   }
 
   save() {
+    this.settings.set('show_lights', this.showLights)
     this.engineSvc.maxFps.set(this.maxFps)
     this.close()
   }

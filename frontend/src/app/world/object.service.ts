@@ -2,6 +2,7 @@ import {forkJoin, of, Observable, Subject} from 'rxjs'
 import {catchError, map} from 'rxjs/operators'
 import {computed, effect, Injectable, signal} from '@angular/core'
 import {HttpService} from '../network'
+import {SettingsService} from '../settings/settings.service'
 import {AWActionParser} from 'aw-action-parser'
 import {
   Group,
@@ -13,7 +14,8 @@ import {
   CanvasTexture,
   TextureLoader,
   SRGBColorSpace,
-  Color
+  Color,
+  PointLight
 } from 'three'
 import type {MeshPhongMaterial, Object3D} from 'three'
 import RWXLoader, {
@@ -65,7 +67,7 @@ export class ObjectService {
   private pictureLoader = new TextureLoader()
   private remoteUrl = /.+\..+\/.+/g
 
-  constructor(private http: HttpService) {
+  constructor(private http: HttpService, private settings: SettingsService) {
     const unknownGeometry = new BufferGeometry()
     const positions = [-0.2, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.2, 0.0]
     unknownGeometry.setAttribute(
@@ -124,6 +126,18 @@ export class ObjectService {
       for (const cmd of result.create) {
         if (cmd.commandType === 'solid') {
           item.userData.notSolid = !cmd.value
+        }
+        if (cmd.commandType === 'light') {
+          item.userData.light = {
+            color: cmd?.color
+              ? Utils.rgbToHex(cmd.color.r, cmd.color.g, cmd.color.b)
+              : 0xffffff,
+            brightness: cmd?.brightness,
+            radius: cmd?.radius
+          }
+          if (this.settings.get('show_lights') || false) {
+            this.applyLight(item)
+          }
         }
         if (cmd.commandType === 'visible') {
           item.visible = cmd.value
@@ -219,6 +233,17 @@ export class ObjectService {
     }
   }
 
+  applyLight(item: Group) {
+    const light = new PointLight(
+      item.userData.light.color,
+      item.userData.light.brightness || 0.5,
+      item.userData.light.radius || 10
+    )
+    light.shadow = null
+    light.castShadow = false
+    item.add(light)
+  }
+
   makePicture(item: Group, url: string) {
     url = url.match(this.remoteUrl)
       ? `${config.url.imgProxy}${url}`
@@ -289,7 +314,7 @@ export class ObjectService {
     item: Group,
     textureName: string = null,
     maskName: string = null,
-    color: any = null
+    color: {r: number; g: number; b: number} = null
   ): Observable<any> {
     const promises: Observable<any>[] = []
     item.traverse((child: Object3D) => {
