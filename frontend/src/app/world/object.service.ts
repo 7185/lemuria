@@ -24,6 +24,7 @@ import RWXLoader, {
 import * as fflate from 'fflate'
 import {config} from '../app.config'
 import {Utils} from '../utils'
+import {TextCanvas} from '../utils/text-canvas'
 
 // can't be const (angular#25963)
 export enum ObjectAct {
@@ -243,98 +244,6 @@ export class ObjectService {
     })
   }
 
-  textCanvas(
-    text: string,
-    ratio = 1,
-    color: {r: number; g: number; b: number},
-    bcolor: {r: number; g: number; b: number}
-  ) {
-    const canvas = document.createElement('canvas')
-    canvas.width = ratio > 1 ? 256 : 256 * ratio
-    canvas.height = ratio > 1 ? 256 / ratio : 256
-    const ctx = canvas.getContext('2d')
-    ctx.fillStyle = `rgb(${bcolor.r},${bcolor.g},${bcolor.b})`
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-
-    const fontSizes = [120, 50, 40, 30, 20, 10, 5]
-    let fontIndex = 0
-
-    const words = text.split(/([ \n])/)
-    let lines = ['']
-    const maxWidth = canvas.width * 0.95
-    const maxHeight = (canvas.height * 0.95) / ratio
-
-    ctx.font = `${fontSizes[fontIndex]}px Arial`
-
-    // TODO: use a proper way to get line height from font size
-    const fontSizeToHeightRatio = 1
-    let lineHeight = fontSizes[fontIndex] * fontSizeToHeightRatio
-
-    let curWordIndex = 0
-
-    let tentativeWord: string
-    let tentativeLine: string
-
-    while (curWordIndex < words.length) {
-      const curLine = lines.length - 1
-
-      if (words[curWordIndex] === '\n') {
-        tentativeWord = ''
-      } else {
-        tentativeWord = words[curWordIndex]
-      }
-
-      if (lines[curLine].length > 0) {
-        tentativeLine = lines[curLine] + tentativeWord
-      } else {
-        tentativeLine = tentativeWord
-      }
-
-      if (
-        words[curWordIndex] !== '\n' &&
-        ctx.measureText(tentativeLine).width <= maxWidth
-      ) {
-        // TODO: use actualBoundingBoxLeft and actualBoundingBoxRight instead of .width
-        // Adding word to end of line
-        lines[curLine] = tentativeLine
-        curWordIndex += 1
-      } else if (
-        ctx.measureText(tentativeWord).width <= maxWidth &&
-        lineHeight * (curLine + 1) <= maxHeight
-      ) {
-        // Adding word as a new line
-        lines.push(tentativeWord)
-        curWordIndex += 1
-      } else if (fontIndex < fontSizes.length - 1) {
-        // Retry all with smaller font size
-        fontIndex += 1
-        ctx.font = `${fontSizes[fontIndex]}px Arial`
-        lineHeight = fontSizes[fontIndex] * fontSizeToHeightRatio
-        lines = ['']
-        curWordIndex = 0
-      } else {
-        // Min font size reached, add word as new line anyway
-        lines.push(tentativeWord)
-        curWordIndex += 1
-      }
-    }
-
-    lines.forEach((line: string, i: number) => {
-      ctx.fillText(
-        line,
-        canvas.width / 2,
-        canvas.height / 2 +
-          i * lineHeight -
-          ((lines.length - 1) * lineHeight) / 2
-      )
-    })
-
-    return canvas
-  }
-
   makeSign(
     item: Group,
     text: string,
@@ -360,7 +269,7 @@ export class ObjectService {
             newMaterials[i] = child.material[i].clone()
             newMaterials[i].color = new Color(1, 1, 1)
             newMaterials[i].map = new CanvasTexture(
-              this.textCanvas(
+              TextCanvas.textCanvas(
                 text,
                 newMaterials[i].userData.ratio,
                 color,

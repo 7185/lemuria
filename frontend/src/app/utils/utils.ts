@@ -11,7 +11,7 @@ export class Utils {
 
   /**
    * Converts position to string
-   * 
+   *
    * @param pos Position
    * @param yaw Yaw in degrees
    * @returns Position string with optional yaw
@@ -64,7 +64,7 @@ export class Utils {
 
   /**
    * Converts RGB values to an hex color number
-   * 
+   *
    * @param red Red value
    * @param green Green value
    * @param blue Blue value
@@ -76,7 +76,7 @@ export class Utils {
 
   /**
    * Converts an hex color to RGB values
-   * 
+   *
    * @param hex Color number
    * @returns RGB values array
    */
@@ -86,7 +86,7 @@ export class Utils {
 
   /**
    * Converts a color string to an hex color
-   * 
+   *
    * @param color Color string
    * @returns Hex color value
    */
@@ -96,7 +96,7 @@ export class Utils {
 
   /**
    * Converts an hex color to string
-   * 
+   *
    * @param color Hex color
    * @returns Color string
    */
