@@ -14,8 +14,7 @@ import {
   CanvasTexture,
   TextureLoader,
   SRGBColorSpace,
-  Color,
-  PointLight
+  Color
 } from 'three'
 import type {MeshPhongMaterial, Object3D} from 'three'
 import RWXLoader, {
@@ -135,9 +134,6 @@ export class ObjectService {
             brightness: cmd?.brightness,
             radius: cmd?.radius
           }
-          if (this.settings.get('show_lights') || false) {
-            this.applyLight(item)
-          }
         }
         if (cmd.commandType === 'visible') {
           item.visible = cmd.value
@@ -231,17 +227,6 @@ export class ObjectService {
         }
       }
     }
-  }
-
-  applyLight(item: Group) {
-    const light = new PointLight(
-      item.userData.light.color,
-      item.userData.light.brightness || 0.5,
-      item.userData.light.radius || 10
-    )
-    light.shadow = null
-    light.castShadow = false
-    item.add(light)
   }
 
   makePicture(item: Group, url: string) {

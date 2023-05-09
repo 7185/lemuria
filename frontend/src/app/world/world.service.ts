@@ -268,10 +268,7 @@ export class WorldService {
           ? new Map<number, number>(savedAvatars)
           : new Map<number, number>()
       avatarMap.set(this.worldId, avatarId)
-      this.settings.set(
-        'avatar',
-        Array.from(avatarMap.entries())
-      )
+      this.settings.set('avatar', Array.from(avatarMap.entries()))
     })
   }
 

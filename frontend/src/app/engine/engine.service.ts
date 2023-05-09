@@ -1,5 +1,5 @@
 import {BehaviorSubject, fromEvent, Subject, timer} from 'rxjs'
-import {Injectable, NgZone, signal} from '@angular/core'
+import {effect, Injectable, NgZone, signal} from '@angular/core'
 import type {ElementRef} from '@angular/core'
 import {
   AmbientLight,
@@ -25,7 +25,8 @@ import {
   LineSegments,
   LineBasicMaterial,
   SRGBColorSpace,
-  Color
+  Color,
+  PointLight
 } from 'three'
 import type {Box3, Material, LOD, Triangle} from 'three'
 import {TeleportService} from './teleport.service'
@@ -68,6 +69,7 @@ export class EngineService {
   public compassSub: Subject<any> = new Subject()
   public fpsSub = new BehaviorSubject<string>('0')
   public maxFps = signal(60)
+  public maxLights = signal(6)
   public selectedObject: Group
   public selectedObjectSignal = signal({})
   private chunkMap = new Map<number, LOD>()
@@ -119,6 +121,8 @@ export class EngineService {
   private objectsNode = new Group()
   private sprites: Set<Group> = new Set()
   private animatedObjects: Set<Group> = new Set()
+  private litObjects: Set<Group> = new Set()
+  private pointLights: PointLight[] = []
 
   private mouseIdle = 0
   private labelDesc: HTMLDivElement
@@ -153,7 +157,11 @@ export class EngineService {
     private inputSysSvc: InputSystemService,
     private objSvc: ObjectService,
     private teleportSvc: TeleportService
-  ) {}
+  ) {
+    effect(() => {
+      this.refreshLights(this.maxLights())
+    })
+  }
 
   public cancel(): void {
     if (this.frameId != null) {
@@ -261,6 +269,8 @@ export class EngineService {
     this.dirLight.shadow.mapSize.height = 2048
     this.dirLight.target = this.dirLightTarget
     this.worldNode.add(this.dirLight)
+
+    this.refreshLights(this.maxLights())
 
     this.fog = new Fog(0)
     this.scene.fog = this.fog
@@ -558,6 +568,27 @@ export class EngineService {
     PlayerCollider.updateChunkBVH(chunk)
   }
 
+  public removeLight(light: PointLight) {
+    light.dispose()
+    if (light.parent) {
+      light.parent.remove(light)
+    }
+  }
+
+  public refreshLights(length: number) {
+    if (this.scene == null) {
+      return
+    }
+    this.pointLights.forEach((light: PointLight) => {
+      this.removeLight(light)
+      light.dispose()
+    })
+    this.pointLights = Array.from({length}, () => new PointLight(0, 0))
+    for (const l of this.pointLights) {
+      this.scene.add(l)
+    }
+  }
+
   public removeWorldObject(group: Group) {
     if (group) {
       this.disposeMaterial(group)
@@ -758,6 +789,9 @@ export class EngineService {
     if (group.userData.rotate != null || group.userData.move != null) {
       this.animatedObjects.add(group)
     }
+    if (group.userData.light != null) {
+      this.litObjects.add(group)
+    }
   }
 
   private updateLODs() {
@@ -800,6 +834,7 @@ export class EngineService {
     if (!this.buildMode) {
       this.moveCamera()
       this.animateItems()
+      this.updatePointLights()
     }
 
     this.updateLODs()
@@ -1292,6 +1327,40 @@ export class EngineService {
     }
 
     this.localUserPosSub.next(this.player.position)
+  }
+
+  private updatePointLights() {
+    const seen = []
+    for (const obj of this.litObjects) {
+      const objPos = obj.position.clone().add(obj.parent.parent.position)
+      seen.push({
+        dist: this.player.position.distanceTo(objPos),
+        obj: obj,
+        pos: objPos
+      })
+    }
+
+    const toLit = seen
+      .sort((a, b) => (a.dist > b.dist ? 1 : -1))
+      .slice(0, this.pointLights.length)
+
+    this.pointLights.forEach((light, index) => {
+      light.position.set(0, 0, 0)
+      light.intensity = 0
+      light.distance = 0.01
+      light.color = new Color(0xffffff)
+      light.castShadow = false
+      if (toLit[index]?.obj != null) {
+        light.position.set(
+          toLit[index].pos.x,
+          toLit[index].pos.y,
+          toLit[index].pos.z
+        )
+        light.color = new Color(toLit[index].obj.userData.light.color)
+        light.intensity = toLit[index].obj.userData.light.brightness || 0.5
+        light.distance = toLit[index].obj.userData.light.radius || 10
+      }
+    })
   }
 
   private moveCamera() {
