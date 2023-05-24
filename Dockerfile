@@ -16,6 +16,7 @@ RUN python -m venv /venv
 ENV PATH=/venv/bin:${PATH}
 COPY backend-py/requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
+RUN prisma generate --schema ../backend/prisma/schema.prisma --generator client-py
 COPY backend-py /app/
 COPY --from=frontend /static /app/static
 VOLUME ["/app/app.db", "/app/dumps"]
@@ -29,7 +30,7 @@ CMD ["node", "dist/main"]
 COPY backend/package.json backend/package-lock.json /app/
 RUN npm ci
 COPY backend /app/
-RUN npx prisma generate && npm run build
+RUN npx prisma generate --generator client && npm run build
 COPY --from=frontend --chown=nobody:nobody /static /app/static
 VOLUME ["/app/app.db", "/app/dumps"]
 USER nobody

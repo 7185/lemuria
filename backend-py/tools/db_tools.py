@@ -3,12 +3,7 @@
 
 import json
 import aiofiles
-from databases import Database
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, Text
-from sqlalchemy.schema import CreateTable
-
-engine = Database('sqlite:///../app.db')
-metadata = MetaData()
+from db import db, db_required
 
 # atdump v1
 world_attr = {
@@ -54,37 +49,6 @@ world_attr = {
     87: 'sky_color_bottom_b'
 }
 
-user = Table(
-    'user', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('name', Text),
-    Column('password', Text),
-    Column('email', Text)
-)
-world = Table(
-    'world', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('name', Text),
-    Column('data', Text),
-)
-
-prop = Table(
-    'prop', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('wid', Integer),
-    Column('uid', Integer),
-    Column('date', Integer),
-    Column('name', Text),
-    Column('x', Integer),
-    Column('y', Integer),
-    Column('z', Integer),
-    Column('pi', Integer),
-    Column('ya', Integer),
-    Column('ro', Integer),
-    Column('desc', Text),
-    Column('act', Text)
-)
-
 
 async def attr_dump(file):
     async with aiofiles.open(file, 'r', encoding='windows-1252') as f:
@@ -113,15 +77,6 @@ async def prop_dump(file):
                    data[obj_len + desc_len:obj_len + desc_len + act_len] or None]
 
 
-async def init_db():
-    await engine.connect()
-    await engine.execute(CreateTable(user))
-    await engine.execute(CreateTable(world))
-    await engine.execute(CreateTable(prop))
-    await engine.execute(user.insert().values(name='admin', password='', email=''))
-    await engine.disconnect()
-
-
 async def parse_atdump(attr_file):
     attr_dict = {}
 
@@ -148,33 +103,45 @@ async def parse_atdump(attr_file):
                 attr_dict[attr_key] = entry[1]
     return attr_dict
 
+@db_required
 async def import_world(attr_file, prop_file):
-    await engine.connect()
-    data = await engine.fetch_one("select id from user where lower(name) = 'admin'")
-    if data is None:
-        print("Create admin user first")
-        return
-    admin_id = data[0]
+    admin = await db.user.find_first(
+        where={
+            'name': 'admin'
+        }
+    )
+    if admin is None:
+        admin = await db.user.create({'name': 'admin', 'password': '', 'email': ''})
     attr_dict = await parse_atdump(attr_file)
 
-    w_query = f"select id from world where lower(name) = '{attr_dict['name'].lower()}'"
-    data = await engine.fetch_one(w_query)
-    if data is None:
-        await engine.execute(world.insert().values(name=attr_dict['name'],
-                                                   data=json.dumps(attr_dict)))
-        data = await engine.fetch_one(w_query)
-    else:
-        world_id = data[0]
-        await engine.execute(world.update().values(name=attr_dict['name'],
-                                                   data=json.dumps(attr_dict)).where(world.c.id==world_id))
-    world_id = data[0]
-    await engine.execute(prop.delete().where(prop.c.wid==world_id))
-    await engine.disconnect()
+    world = await db.query_raw(
+        f"SELECT * FROM world WHERE LOWER(name) = '{attr_dict['name'].lower()}'"
+    )
 
-    # For some reason, we need a new connection to handle the transaction properly
-    async with engine.connection() as connection:
-        async with connection.transaction():
-            async for o in prop_dump(prop_file):
-                await engine.execute(prop.insert().values(wid=world_id, uid=admin_id, date=o[0], name=o[1],
-                                                          x=o[2], y=o[3], z=o[4], pi=o[5], ya=o[6], ro=o[7],
-                                                          desc=o[8], act=o[9]))
+    if not world:
+        world = await db.world.create({'name': attr_dict['name'],
+                                       'data': json.dumps(attr_dict)})
+    else:
+        world = await db.world.find_first(where= {'id': world[0]['id']})
+        await db.world.update(
+            where={
+                'id': world.id
+            },
+            data={
+                'name': attr_dict['name'],
+                'data': json.dumps(attr_dict)
+            }
+        )
+    await db.prop.delete_many(where={
+         'wid': world.id
+    })
+
+    await db.query_raw('BEGIN TRANSACTION')
+
+    async for o in prop_dump(prop_file):
+        await db.query_raw(
+            'INSERT INTO prop (wid, uid, date, name, x, y, z, pi, ya, ro, desc, act) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            world.id, admin.id, o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[8], o[9]
+        )
+
+    await db.query_raw('COMMIT')

@@ -41,21 +41,32 @@ There are two different implementations for the backend server.
 ```bash
 $ cd backend
 $ npm ci
+$ npx prisma generate --generator client
 ```
 
 #### Python backend
 ```bash
-$ pip3 install --user -r backend-py/requirements.txt
+$ cd backend-py
+$ pip3 install --user -r requirements.txt
+$ prisma generate --schema ../backend/prisma/schema.prisma --generator client-py
 ```
 ### Create an empty database and import the dump files
 
-Go into `backend-py/tools`, then run the following:
-
+#### Node backend
 ```bash
-$ python import_lemuria.py
+$ cd backend
+$ npx prisma db push --skip-generate
+```
+There is no node script to import worlds yet, so you can use the python one instead.
+
+#### Python backend
+```bash
+$ cd backend-py
+$ prisma db push --schema ../backend/prisma/schema.prisma
+$ python tools/import_lemuria.py
 ```
 
-This will create and init the database `backend-py/app.db` using the data in `backend-py/dumps/atlemuria.txt` and `backend-py/dumps/proplemuria.txt`.
+This will create and init the database `backend/app.db` using the data in `dumps/atlemuria.txt` and `dumps/proplemuria.txt`.
 
 You will also need the `village2` resource path to be served, to do so you can go to `backend-py`
 and create a symlink by running the following (but set the path correctly first):
@@ -79,6 +90,7 @@ $ npm run start
 Go to `backend-py` and run the following:
 
 ```bash
+$ prisma generate --schema ../backend/prisma/schema.prisma --generator client-py
 $ python3 app.py
 ```
 

@@ -4,6 +4,7 @@
 import aiofiles
 import contextlib
 from quart import json, current_app
+from db import db, db_required
 from user.model import authorized_users, broadcast_userlist
 
 class World:
@@ -28,18 +29,19 @@ class World:
         self._terrain = False
         self._elev = None
 
+    @db_required
     async def _resolve(self):
         if self._resolved:
             return
 
-        conn = current_app.engine
-        await conn.connect()
-
-        data = await conn.fetch_one(f"select * from world where id = {self.world_id}")
-
-        if data[2] is not None:
-            world_data = json.loads(data[2])
-            self._name = data[1]
+        world = await db.world.find_first(
+            where={
+                'id': self.world_id
+            }
+        )
+        if world.data is not None:
+            world_data = json.loads(world.data)
+            self._name = world.name
             self._welcome = world_data['welcome']
             self._path = world_data['path']
 
@@ -60,7 +62,6 @@ class World:
 
             self._resolved = True
 
-        await conn.disconnect()
 
     @property
     async def name(self):
@@ -87,49 +88,52 @@ class World:
             'fog_max': self._fog_max
         }
 
-    # Having a 'None' value on one of those coordinate criterias means no bound will be applied when querying all objects
+    @db_required
     async def props(self, min_x = None, max_x = None, min_y = None, max_y = None, min_z = None, max_z = None):
-        conn = current_app.engine
-        await conn.connect()
+        # Having a 'None' value on one of those coordinate criterias means no bound will be applied when querying all objects
 
-        # Build the base query
-        query = f"SELECT * FROM prop WHERE wid = {self.world_id}"
 
         # Build the WHERE clause
         where_clauses = [
-            f"x >= {min_x}" if min_x is not None else None,
-            f"x < {max_x}" if max_x is not None else None,
-            f"y >= {min_y}" if min_y is not None else None,
-            f"y < {max_y}" if max_y is not None else None,
-            f"z >= {min_z}" if min_z is not None else None,
-            f"z < {max_z}" if max_z is not None else None
+            {'x': {'gte': min_x}} if min_x is not None else None,
+            {'x': {'lt': max_x}} if max_x is not None else None,
+            {'y': {'gte': min_y}} if min_y is not None else None,
+            {'y': {'lt': max_y}} if max_y is not None else None,
+            {'z': {'gte': min_z}} if min_z is not None else None,
+            {'z': {'lt': max_z}} if max_z is not None else None
         ]
 
-        # Remove None values from the list of where clauses and add the WHERE clause to the query if necessary
-        if where_clauses := [clause for clause in where_clauses if clause is not None]:
-            query += " AND " + " AND ".join(where_clauses)
-
-        props = [list(prop)[3:13] for prop in await conn.fetch_all(query)]
-
-        await conn.disconnect()
+        props = [
+            [prop.date, prop.name, prop.x, prop.y, prop.z, prop.pi, prop.ya, prop.ro, prop.desc, prop.act]
+            for prop in await db.prop.find_many(
+                where={
+                    'AND': [
+                        {'wid': self.world_id},
+                        {
+                            'AND': [
+                                clause
+                                for clause in where_clauses
+                                if clause is not None
+                            ]
+                        },
+                    ]
+                }
+            )
+        ]
 
         return {'entries': props}
 
     @classmethod
+    @db_required
     async def get_list(cls):
-        conn = current_app.engine
-        await conn.connect()
-
-        world_list = [
+        return [
             {
-                'id': world[0],
-                'name': world[1],
+                'id': world.id,
+                'name': world.name,
                 'users': len([u for u in authorized_users if u.connected and u.world == world[0]])
             }
-            for world in await conn.fetch_all("select id, name from world")
+            for world in await db.world.find_many()
         ]
-        await conn.disconnect()
-        return world_list
 
     async def parse_elev_dump(self):
         elev = {}

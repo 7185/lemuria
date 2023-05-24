@@ -22,6 +22,7 @@ jobs:
         cache: 'npm'
         cache-dependency-path: backend/package-lock.json
     - run: npm ci
+    - run: npx prisma generate --generator client
     - run: npm run lint
     - run: npm run test
     - run: npm run build

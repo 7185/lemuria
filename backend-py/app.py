@@ -5,7 +5,6 @@ import asyncio
 import toml
 from quart import Quart, render_template, websocket, request, jsonify
 from quart_jwt_extended import JWTManager, jwt_required, decode_token
-from databases import Database
 from user.api import api_auth
 from world.api import api_world
 from user.model import User, authorized_users
@@ -23,8 +22,6 @@ app.template_folder = config['STATIC_PATH']
 app.secret_key = config['SECRET_KEY']
 
 jwt = JWTManager(app)
-
-app.engine = Database(f"sqlite:///{app.config['DB_FILE']}")
 
 @app.route('/')
 async def index():
