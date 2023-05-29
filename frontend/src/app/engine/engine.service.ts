@@ -554,6 +554,9 @@ export class EngineService {
     if (group.userData.rotate != null || group.userData.move != null) {
       this.animatedObjects.delete(group)
     }
+    if (group.userData.light != null) {
+      this.litObjects.delete(group)
+    }
     this.disposeMaterial(group)
     group.traverse((child: Object3D) => {
       if (child instanceof Mesh) {

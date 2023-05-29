@@ -130,7 +130,7 @@ class World:
             {
                 'id': world.id,
                 'name': world.name,
-                'users': len([u for u in authorized_users if u.connected and u.world == world[0]])
+                'users': len([u for u in authorized_users if u.connected and u.world == world.id])
             }
             for world in await db.world.find_many()
         ]

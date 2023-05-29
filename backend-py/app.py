@@ -3,7 +3,7 @@
 
 import asyncio
 import toml
-from quart import Quart, render_template, websocket, request, jsonify
+from quart import Quart, render_template, websocket, request, jsonify, send_from_directory
 from quart_jwt_extended import JWTManager, jwt_required, decode_token
 from user.api import api_auth
 from world.api import api_world
@@ -27,6 +27,11 @@ jwt = JWTManager(app)
 async def index():
     """Default route"""
     return await render_template("index.html")
+
+@app.route('/<path:path>')
+async def static_path(path):
+    """Static files"""
+    return await send_from_directory('static', path)
 
 @app.websocket('/api/v1/ws')
 async def wsocket():
