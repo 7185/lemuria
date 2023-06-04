@@ -5,4 +5,4 @@
 import asyncio
 from db_tools import import_world
 
-asyncio.run(import_world('../dumps/atlemuria.txt', '../dumps/proplemuria.txt'))
+asyncio.run(import_world('lemuria'))

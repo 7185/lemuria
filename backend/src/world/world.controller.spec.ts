@@ -25,6 +25,9 @@ describe('WorldController', () => {
       prop: {
         findMany: () =>
           Promise.resolve([[0, 'tracteur1', 0, 0, 0, 0, 0, 0, null, null]])
+      },
+      elev: {
+        findMany: () => Promise.resolve([])
       }
     }
     const mockUser = {
@@ -103,7 +106,6 @@ describe('WorldController', () => {
         name: 'Lemuria',
         welcome: 'Bienvenue sur Lemuria',
         elev: expect.any(Object),
-        path: undefined,
         sky_color: {
           top: [0, 0, 0],
           north: [0, 0, 0],
@@ -112,7 +114,6 @@ describe('WorldController', () => {
           west: [0, 0, 0],
           bottom: [0, 0, 0]
         },
-        skybox: undefined,
         terrain: false,
         light_dir: [-0.8, -0.5, -0.2],
         fog: false,
@@ -120,7 +121,10 @@ describe('WorldController', () => {
         fog_max: 120,
         fog_min: 0,
         amblight_color: [255, 255, 255],
-        dirlight_color: [255, 255, 255]
+        dirlight_color: [255, 255, 255],
+        terrain_ambient: 0.2,
+        terrain_diffuse: 1,
+        terrain_offset: 0
       })
     })
   })

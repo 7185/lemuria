@@ -35,24 +35,7 @@ export class WorldController {
     }
     const world = await this.worldService.getWorld(parseInt(id))
     user.world = parseInt(id)
-    return res.status(200).send({
-      id: world.id,
-      name: world.name,
-      welcome: world.welcome,
-      path: world.path,
-      sky_color: world.sky_color,
-      skybox: world.skybox,
-      entry: world.entry,
-      terrain: world.terrain,
-      elev: world.elev,
-      amblight_color: world.amblight_color,
-      dirlight_color: world.dirlight_color,
-      light_dir: world.light_dir,
-      fog: world.fog,
-      fog_color: world.fog_color,
-      fog_min: world.fog_min,
-      fog_max: world.fog_max
-    })
+    return res.status(200).send(Object.fromEntries(Object.entries(world)))
   }
 
   @Get(':id/props')

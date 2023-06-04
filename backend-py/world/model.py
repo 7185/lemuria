@@ -27,6 +27,9 @@ class World:
         self._entry = '0N 0W'
         self._objects = None
         self._terrain = False
+        self._terrain_offset = 0
+        self._terrain_ambient = 0.2
+        self._terrain_diffuse = 1
         self._elev = None
 
     @db_required
@@ -49,6 +52,9 @@ class World:
             self._skybox = world_data.get('skybox', self._skybox)
             self._entry = world_data.get('entry', '0N 0W')
             self._terrain = world_data.get('enable_terrain', self._terrain)
+            self._terrain_offset = world_data.get('terrain_offset', self._terrain_offset)
+            self._terrain_ambient = world_data.get('terrain_ambient', self._terrain_ambient)
+            self._terrain_diffuse = world_data.get('terrain_diffuse', self._terrain_diffuse)
             self._fog = world_data.get('enable_fog', self._fog)
             self._fog_color = world_data.get('fog_color', self._fog_color)
             self._fog_min = world_data.get('fog_min', self._fog_min)
@@ -58,7 +64,7 @@ class World:
             self._light_dir = world_data.get('light_dir', self._light_dir)
 
             with contextlib.suppress(FileNotFoundError):
-                self._elev = await self.build_elev()
+                self._elev = await self.get_elev()
 
             self._resolved = True
 
@@ -78,6 +84,9 @@ class World:
             'skybox': self._skybox,
             'entry': self._entry,
             'terrain': self._terrain,
+            'terrain_offset': self._terrain_offset,
+            'terrain_ambient': self._terrain_ambient,
+            'terrain_diffuse': self._terrain_diffuse,
             'elev': self._elev,
             'amblight_color': self._amblight_color,
             'dirlight_color': self._dirlight_color,
@@ -91,7 +100,6 @@ class World:
     @db_required
     async def props(self, min_x = None, max_x = None, min_y = None, max_y = None, min_z = None, max_z = None):
         # Having a 'None' value on one of those coordinate criterias means no bound will be applied when querying all objects
-
 
         # Build the WHERE clause
         where_clauses = [
@@ -135,45 +143,23 @@ class World:
             for world in await db.world.find_many()
         ]
 
-    async def parse_elev_dump(self):
-        elev = {}
-        async with aiofiles.open(f"dumps/elev{self._name.lower()}.txt", 'r', encoding='ISO-8859-1') as f:
-            async for line in f:
-                parts = line.strip().split(' ')
-                if parts[0] == 'elevdump':
-                    continue
-                coords = (int(parts[0]), int(parts[1]))
-                if coords not in elev:
-                    elev[coords] = []
-                elev[coords].append({
-                    'node': (int(parts[2]), int(parts[3])),
-                    'node_size': int(parts[4]),
-                    'textures': [int(x) for x in parts[7:7 + int(parts[5])]],
-                    'elevs': [int(x) for x in parts[7 + int(parts[5]):7 + int(parts[5]) + int(parts[6])]]
-                })
-        return elev
-
-    async def build_elev(self):
-        elev_data = await self.parse_elev_dump()
-        elev_pages = {}
-        for coords, nodes in elev_data.items():
-            x_page = 128 * coords[0]
-            z_page = 128 * coords[1]
-            if f"{x_page}_{z_page}" not in elev_pages:
-                elev_pages[f"{x_page}_{z_page}"] = {}
-            for node in nodes:
-                if len(node['textures']) == 1:
-                    node['textures'] = 64 * node['textures']
-                # ignore big nodes and nodes with few elevs for now
-                if len(node['elevs']) > 1:
-                    size = node['node_size'] * 2
-                    x_node, z_node = node['node']
-                    for i in range(size):
-                        row = i * 128
-                        for j in range(size):
-                            idx = size * i + j
-                            if node['elevs'][idx] != 0:
-                                elev_pages[f"{x_page}_{z_page}"][row + j + x_node + z_node * 128] = (
-                                    node['elevs'][idx], node['textures'][idx]
-                                )
-        return elev_pages
+    @db_required
+    async def get_elev(self):
+        data = {}
+        for elev in await db.elev.find_many(where= {'wid': self.world_id}):
+            page = f"{128 * elev.page_x}_{128 * elev.page_z}" 
+            data.setdefault(page, {})
+            width = elev.radius * 2
+            textures = [int(n) for n in elev.textures.split(' ')] 
+            heights = [int(n) for n in elev.heights.split(' ')]
+            for i in range(width):
+                row = i * 128
+                for j in range(width):
+                    index = width * i + j
+                    texture = textures[index] if index < len(textures) else textures[0]
+                    height = heights[index] if index < len(heights) else heights[0]
+                    if texture == height == 0:
+                        continue
+                    cell = row + j + elev.node_x + elev.node_z * 128
+                    data[page][cell] = [texture, height]
+        return data

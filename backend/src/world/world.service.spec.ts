@@ -16,11 +16,4 @@ describe('WorldService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined()
   })
-
-  describe('parseElevDump', () => {
-    it('should return empty elev', async () => {
-      const elev = await WorldService.parseElevDump('dummy')
-      expect(elev).toStrictEqual({})
-    })
-  })
 })

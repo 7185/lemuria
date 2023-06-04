@@ -46,7 +46,18 @@ world_attr = {
     84: 'sky_color_west_b',
     85: 'sky_color_bottom_r',
     86: 'sky_color_bottom_g',
-    87: 'sky_color_bottom_b'
+    87: 'sky_color_bottom_b',
+    111: 'water_texture_top',
+    112: 'water_opacity',
+    113: 'water_color_r',
+    114: 'water_color_g',
+    115: 'water_color_b',
+    116: 'water_offset',
+    120: 'water_texture_bottom',
+    123: 'enable_water',
+    130: 'terrain_ambient',
+    131: 'terrain_diffuse',
+    141: 'terrain_offset'
 }
 
 
@@ -59,6 +70,18 @@ async def attr_dump(file):
             yield (int(s[0]), s[1].strip())
 
 
+async def elev_dump(file):
+    async with aiofiles.open(file, 'r', encoding='windows-1252') as f:
+        async for l in f:
+            s = l.split()
+            if s[0] == 'elevdump':
+                continue
+            yield [
+                int(s[0]), int(s[1]), int(s[2]), int(s[3]), int(s[4]),
+                list(map(int, s[7:7+int(s[5])])), list(map(int, s[7+int(s[5]):]))
+            ]
+
+
 async def prop_dump(file):
     async with aiofiles.open(file, 'r', encoding='windows-1252') as f:
         async for l in f:
@@ -68,7 +91,6 @@ async def prop_dump(file):
                 continue
             data = s[11]
             obj_len = int(s[8])
-            # uncomment for reconstructed dumps
             desc_len = int(s[9]) - data[obj_len:obj_len + int(s[9])].count('\n')
             act_len = int(s[10]) + data.count('\n') - 1
             yield [int(s[1]), data[:obj_len], int(s[2]), int(s[3]), int(s[4]),
@@ -85,9 +107,7 @@ async def parse_atdump(attr_file):
         if attr_key is not None:
             if attr_key.startswith('sky_color'):
                 attr_dict.setdefault('sky_color', {}).setdefault(attr_key.split('_')[2], [0, 0, 0])['rgb'.index(attr_key.split('_')[3])] = int(entry[1])
-            elif attr_key == 'enable_terrain':
-                attr_dict[attr_key] = entry[1] == 'Y'
-            elif attr_key == 'enable_fog':
+            elif attr_key.startswith('enable'):
                 attr_dict[attr_key] = entry[1] == 'Y'
             elif attr_key.endswith('_min') or attr_key.endswith('_max'):
                 attr_dict[attr_key] = int(entry[1])
@@ -99,12 +119,14 @@ async def parse_atdump(attr_file):
                 attr_dict.setdefault('light_dir', [0, 0, 0])['xyz'.index(attr_key.split('_')[2])] = float(entry[1])
             elif attr_key.startswith('fog_color_'):
                 attr_dict.setdefault('fog_color', [0, 0, 0])['rgb'.index(attr_key.split('_')[2])] = int(entry[1])
+            elif attr_key.startswith('water_color_'):
+                attr_dict.setdefault('water_color', [0, 0, 0])['rgb'.index(attr_key.split('_')[2])] = int(entry[1])
             else:
                 attr_dict[attr_key] = entry[1]
     return attr_dict
 
 @db_required
-async def import_world(attr_file, prop_file):
+async def import_world(world_name, path='../dumps'):
     admin = await db.user.find_first(
         where={
             'name': 'admin'
@@ -112,7 +134,7 @@ async def import_world(attr_file, prop_file):
     )
     if admin is None:
         admin = await db.user.create({'name': 'admin', 'password': '', 'email': ''})
-    attr_dict = await parse_atdump(attr_file)
+    attr_dict = await parse_atdump(f'{path}/at{world_name}.txt')
 
     world = await db.query_raw(
         f"SELECT * FROM world WHERE LOWER(name) = '{attr_dict['name'].lower()}'"
@@ -133,12 +155,22 @@ async def import_world(attr_file, prop_file):
             }
         )
     await db.prop.delete_many(where={
-         'wid': world.id
+        'wid': world.id
+    })
+
+    await db.elev.delete_many(where={
+        'wid': world.id
     })
 
     await db.query_raw('BEGIN TRANSACTION')
 
-    async for o in prop_dump(prop_file):
+    async for e in elev_dump(f'{path}/elev{world_name}.txt'):
+        await db.query_raw(
+            'INSERT INTO elev (wid, page_x, page_z, node_x, node_z, radius, textures, heights) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            world.id, e[0], e[1], e[2], e[3], e[4], ' '.join(str(n) for n in e[5]), ' '.join(str(n) for n in e[6])
+        )
+
+    async for o in prop_dump(f'{path}/prop{world_name}.txt'):
         await db.query_raw(
             'INSERT INTO prop (wid, uid, date, name, x, y, z, pi, ya, ro, desc, act) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             world.id, admin.id, o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[8], o[9]

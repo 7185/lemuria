@@ -3,7 +3,7 @@ generator client {
 }
 
 generator client-py {
-  provider = "prisma-client-py"
+  provider             = "prisma-client-py"
   recursive_type_depth = 5
 }
 
@@ -13,30 +13,53 @@ datasource db {
 }
 
 model prop {
-  id   Int     @id @default(autoincrement())
-  wid  Int?
-  uid  Int?
-  date Int?
-  name String?
-  x    Int?
-  y    Int?
-  z    Int?
-  pi   Int?
-  ya   Int?
-  ro   Int?
-  desc String?
-  act  String?
+  id    Int     @id @default(autoincrement())
+  wid   Int
+  uid   Int
+  date  Int
+  name  String
+  x     Int
+  y     Int
+  z     Int
+  pi    Int
+  ya    Int
+  ro    Int
+  desc  String?
+  act   String?
+  world world   @relation(fields: [wid], references: [id])
+  user  user    @relation(fields: [uid], references: [id])
+
+  @@index([x])
+  @@index([z])
 }
 
 model user {
   id       Int     @id @default(autoincrement())
-  name     String?
-  password String?
+  name     String
+  password String
   email    String?
+  enabled  Boolean @default(true)
+  prop     prop[]
 }
 
 model world {
   id   Int     @id @default(autoincrement())
-  name String?
+  name String
   data String?
+  prop prop[]
+  elev elev[]
+}
+
+model elev {
+  wid      Int
+  page_x   Int
+  page_z   Int
+  node_x   Int
+  node_z   Int
+  radius   Int
+  textures String?
+  heights  String?
+  world    world   @relation(fields: [wid], references: [id])
+
+  @@id([wid, page_x, page_z, node_x, node_z])
 }

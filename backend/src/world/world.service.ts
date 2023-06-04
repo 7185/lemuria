@@ -27,7 +27,7 @@ export class WorldService {
       id: world.id,
       name: world.name,
       ...attr,
-      elev: await WorldService.buildElev(world.name)
+      elev: await this.getElev(world.id)
     })
   }
 
@@ -78,70 +78,36 @@ export class WorldService {
     })
   }
 
-  static async parseElevDump(name: string): Promise<{[index: string]: any[]}> {
-    const elev: {[index: string]: any[]} = {}
-    let file: string
-    try {
-      file = await fs.readFile(`dumps/elev${name.toLowerCase()}.txt`, 'latin1')
-    } catch {
-      return elev
-    }
-    const lines = file.trim().split('\n')
-    for await (const line of lines) {
-      const s = line.trim().split(' ')
-      if (s[0] === 'elevdump') {
-        continue
-      }
-      const coords = [parseInt(s[0]), parseInt(s[1])]
-      const node: object = {
-        node: [parseInt(s[2]), parseInt(s[3])],
-        node_size: parseInt(s[4]),
-        textures: s
-          .slice(7, 7 + parseInt(s[5]))
-          .map((x: string) => parseInt(x)),
-        elevs: s
-          .slice(7 + parseInt(s[5]), 7 + parseInt(s[5]) + parseInt(s[6]))
-          .map((x: string) => parseInt(x))
-      }
-      const key = coords.toString()
-      if (!elev[key]) {
-        elev[key] = []
-      }
-      elev[key].push(node)
-    }
-    return elev
-  }
-
-  static async buildElev(name: string): Promise<object> {
+  async getElev(wid: number) {
     const d: object = {}
-    const elev = await WorldService.parseElevDump(name)
-    for (const [coordsStr, nodes] of Object.entries(elev)) {
-      const coords = coordsStr.split(',').map((x) => parseInt(x))
-      const xPage = 128 * coords[0]
-      const zPage = 128 * coords[1]
-      for (const n of nodes as Array<any>) {
-        if (n.textures.length === 1) {
-          n.textures = Array(64).fill(n.textures[0])
-        }
-        if (n.node_size === 4 && n.elevs.length > 1) {
-          const size = n.node_size * 2
-          const [xNode, zNode] = n.node
-          for (let i = 0; i < size; i++) {
-            const row = i * 128
-            for (let j = 0; j < size; j++) {
-              const elevIndex = size * i + j
-              if (n.elevs[elevIndex] !== 0) {
-                const key = row + j + xNode + zNode * 128
-                if (!d[`${xPage}_${zPage}`]) {
-                  d[`${xPage}_${zPage}`] = {}
-                }
-                d[`${xPage}_${zPage}`][key] = [
-                  n.elevs[elevIndex],
-                  n.textures[elevIndex]
-                ]
-              }
-            }
+    for (const elev of await this.db.elev.findMany({
+      select: {
+        page_x: true,
+        page_z: true,
+        node_x: true,
+        node_z: true,
+        radius: true,
+        textures: true,
+        heights: true
+      },
+      where: {wid}
+    })) {
+      const page = `${128 * elev.page_x}_${128 * elev.page_z}`
+      page in d || (d[page] = {})
+      const width = elev.radius * 2
+      const textures = elev.textures.split(' ').map((n: string) => parseInt(n))
+      const heights = elev.heights.split(' ').map((n: string) => parseInt(n))
+      for (let i = 0; i < width; i++) {
+        const row = i * 128
+        for (let j = 0; j < width; j++) {
+          const idx = width * i + j
+          const texture = idx < textures.length ? textures[idx] : textures[0]
+          const height = idx < heights.length ? heights[idx] : heights[0]
+          if (texture === 0 && height === 0) {
+            continue
           }
+          const cell = row + j + elev.node_x + elev.node_z * 128
+          d[page][cell] = [texture, height]
         }
       }
     }

@@ -403,7 +403,9 @@ export class WorldService {
           terrainTexture.wrapT = RepeatWrapping
           terrainTexture.rotation = (i * Math.PI) / 2
           terrainTexture.repeat.set(128, 128)
-          terrainMaterials.push(new MeshPhongMaterial({map: terrainTexture}))
+          terrainMaterials.push(
+            new MeshPhongMaterial({map: terrainTexture, shininess: 0})
+          )
         }
       }
 
@@ -419,9 +421,9 @@ export class WorldService {
           for (let i = 0, j = 0; i < positions.length; i++, j += 3) {
             if (i % 128 !== 0) {
               if (d[1][i] != null) {
-                positions[j + 1 + gap * 3] = d[1][i][0] / 100
+                positions[j - 2 + gap * 3] = d[1][i][1] / 100
               } else {
-                positions[j + 1 + gap * 3] = 0
+                positions[j - 2 + gap * 3] = 0
               }
             } else {
               // skip edge
@@ -434,14 +436,14 @@ export class WorldService {
           let currTexture = 0
           for (let k = 0; k < 128 * 128; k++) {
             if (d[1][k] != null) {
-              if (d[1][k][1] !== currTexture) {
+              if (d[1][k][0] !== currTexture) {
                 geometry.addGroup(
                   changeTexture,
                   k * 6 - changeTexture,
                   currTexture
                 )
                 changeTexture = k * 6
-                currTexture = d[1][k][1]
+                currTexture = d[1][k][0]
               }
             } else if (currTexture !== 0) {
               geometry.addGroup(
@@ -462,8 +464,7 @@ export class WorldService {
 
           const terrainMesh = new Mesh(geometry, terrainMaterials)
           const pos = d[0].split('_').map((p) => parseInt(p, 10))
-          // move terrain by 1E (-10x)
-          terrainMesh.position.set(pos[0] * 10 - 10, 0, pos[1] * 10)
+          terrainMesh.position.set(pos[0] * 10, 0, pos[1] * 10)
           this.terrain.add(terrainMesh)
         }
       } else {
@@ -472,6 +473,9 @@ export class WorldService {
         geometry.addGroup(0, geometry.getIndex().count, 0)
         const terrainMesh = new Mesh(geometry, terrainMaterials)
         this.terrain.add(terrainMesh)
+      }
+      if (world.terrain_offset != null) {
+        this.terrain.position.setY(world.terrain_offset)
       }
       this.engineSvc.addWorldObject(this.terrain)
       this.terrain.updateMatrixWorld()

@@ -3,3 +3,4 @@ atdump version 1
 3 http://localhost:8181/village2
 25 Bienvenue sur Lemuria
 61 skybox2
+65 Y
