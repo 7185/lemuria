@@ -1,7 +1,6 @@
 import {Injectable} from '@nestjs/common'
 import {DbService} from '../db/db.service'
 import {World} from './world'
-import * as fs from 'fs/promises'
 
 @Injectable()
 export class WorldService {

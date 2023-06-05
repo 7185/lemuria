@@ -410,7 +410,7 @@ export class WorldService {
       }
 
       if (world.elev != null) {
-        for (const d of Object.entries(world.elev)) {
+        for (const [page, elevData] of Object.entries(world.elev)) {
           const geometry = new PlaneGeometry(1280, 1280, 128, 128)
           geometry.rotateX(-Math.PI / 2)
 
@@ -420,11 +420,7 @@ export class WorldService {
           let gap = 0
           for (let i = 0, j = 0; i < positions.length; i++, j += 3) {
             if (i % 128 !== 0) {
-              if (d[1][i] != null) {
-                positions[j - 2 + gap * 3] = d[1][i][1] / 100
-              } else {
-                positions[j - 2 + gap * 3] = 0
-              }
+              positions[j - 2 + gap * 3] = elevData[i]?.[1] / 100 || 0
             } else {
               // skip edge
               gap++
@@ -432,18 +428,26 @@ export class WorldService {
           }
           geometry.setAttribute('position', new BufferAttribute(positions, 3))
 
+          const indices = new Uint16Array(
+            (geometry.getIndex() as BufferAttribute).array
+          )
           let changeTexture = 0
           let currTexture = 0
           for (let k = 0; k < 128 * 128; k++) {
-            if (d[1][k] != null) {
-              if (d[1][k][0] !== currTexture) {
+            if (elevData[k] != null) {
+              if (elevData[k][0] === 254) {
+                // Empty cell
+                indices.fill(0, k * 6, k * 6 + 6)
+                continue
+              }
+              if (elevData[k][0] !== currTexture) {
                 geometry.addGroup(
                   changeTexture,
                   k * 6 - changeTexture,
                   currTexture
                 )
                 changeTexture = k * 6
-                currTexture = d[1][k][0]
+                currTexture = elevData[k][0]
               }
             } else if (currTexture !== 0) {
               geometry.addGroup(
@@ -456,6 +460,7 @@ export class WorldService {
             }
           }
 
+          geometry.setIndex(new BufferAttribute(indices, 1))
           geometry.addGroup(
             changeTexture,
             geometry.getIndex().count,
@@ -463,7 +468,7 @@ export class WorldService {
           )
 
           const terrainMesh = new Mesh(geometry, terrainMaterials)
-          const pos = d[0].split('_').map((p) => parseInt(p, 10))
+          const pos = page.split('_').map((p) => parseInt(p, 10))
           terrainMesh.position.set(pos[0] * 10, 0, pos[1] * 10)
           this.terrain.add(terrainMesh)
         }
