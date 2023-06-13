@@ -26,7 +26,9 @@ import {
   LineBasicMaterial,
   SRGBColorSpace,
   Color,
-  PointLight
+  PointLight,
+  Line,
+  BufferGeometry
 } from 'three'
 import type {Box3, Material, LOD, Triangle} from 'three'
 import {TeleportService} from './teleport.service'
@@ -72,6 +74,7 @@ export class EngineService {
   public maxLights = signal(6)
   public selectedObject: Group
   public selectedObjectSignal = signal({})
+  public selectedCellSignal = signal({})
   private chunkMap = new Map<number, LOD>()
   private compass = new Spherical()
   private canvas: HTMLCanvasElement
@@ -111,6 +114,7 @@ export class EngineService {
   private selectionGroup: Group
   private selectionBox: LineSegments
   private axesHelper: AxesHelper
+  private selectionCell: Group
 
   private mouse = new Vector2()
   private raycaster = new Raycaster()
@@ -620,8 +624,8 @@ export class EngineService {
     this.usersNode.remove(group)
   }
 
-  public users() {
-    return this.usersNode.children
+  public users(): Group[] {
+    return this.usersNode.children as Group[]
   }
 
   public getMemInfo() {
@@ -682,7 +686,7 @@ export class EngineService {
       timer(0, 100).subscribe(() => {
         this.mouseIdle++
         document.body.style.cursor = 'default'
-        const item = this.pointedItem()
+        const item = this.pointedItem().obj
         if (item != null && item.userData?.clickable === true) {
           document.body.style.cursor = 'pointer'
         }
@@ -877,6 +881,9 @@ export class EngineService {
   }
 
   private select(item: Group) {
+    if (this.selectionCell != null) {
+      this.deselectCell()
+    }
     if (this.selectionBox != null) {
       this.deselect()
     }
@@ -910,31 +917,105 @@ export class EngineService {
     this.scene.add(this.selectionGroup)
   }
 
+  private selectCell(terrainPage: Object3D, faceIndex: number) {
+    if (this.selectionBox != null) {
+      this.deselect()
+    }
+    if (this.selectionCell != null) {
+      this.deselectCell()
+    }
+
+    this.selectionCell = new Group()
+
+    const {position} = (terrainPage as Mesh).geometry.attributes
+    const localPos = (terrainPage as Mesh).getWorldPosition(new Vector3())
+    const seIndex = faceIndex % 2 === 0 ? faceIndex : faceIndex - 1
+    const nwIndex = faceIndex % 2 !== 0 ? faceIndex : faceIndex + 1
+    const index = (terrainPage as Mesh).geometry.getIndex()
+
+    const cellSE = localPos
+      .clone()
+      .add(new Vector3().fromBufferAttribute(position, index.getX(seIndex * 3)))
+    const cellNE = localPos
+      .clone()
+      .add(new Vector3().fromBufferAttribute(position, index.getY(seIndex * 3)))
+    const cellSW = localPos
+      .clone()
+      .add(new Vector3().fromBufferAttribute(position, index.getZ(seIndex * 3)))
+    const cellNW = localPos
+      .clone()
+      .add(new Vector3().fromBufferAttribute(position, index.getY(nwIndex * 3)))
+
+    const squareGeom = new BufferGeometry().setFromPoints([
+      new Vector3(-0.5, 0, -0.5).add(cellSE),
+      new Vector3(-0.5, 0, 0.5).add(cellSE),
+      new Vector3(0.5, 0, 0.5).add(cellSE),
+      new Vector3(0.5, 0, -0.5).add(cellSE),
+      new Vector3(-0.5, 0, -0.5).add(cellSE)
+    ])
+    const square = new Line(
+      squareGeom,
+      new LineBasicMaterial({color: 0xffff00, depthTest: false})
+    )
+    this.selectionCell.add(square)
+
+    const cellGeom = new BufferGeometry().setFromPoints([
+      cellSE,
+      cellNE,
+      cellNW,
+      cellSW,
+      cellSE
+    ])
+    const cell = new Line(
+      cellGeom,
+      new LineBasicMaterial({color: 0xff0000, depthTest: false})
+    )
+    this.selectionCell.add(cell)
+    this.scene.add(this.selectionCell)
+    this.selectedCellSignal.set({height: cellSE.y})
+  }
+
+  private deselectCell() {
+    for (const line of this.selectionCell.children as Line[]) {
+      line.geometry.dispose()
+      ;(line.material as Material).dispose()
+    }
+    this.scene.remove(this.selectionCell)
+    this.selectionCell = null
+    this.selectedCellSignal.set({})
+  }
+
   private pointedItem() {
     this.raycaster.setFromCamera(this.mouse, this.activeCamera)
+    const terrain = this.worldNode.getObjectByName('terrain')
     const intersects = this.raycaster.intersectObjects(
-      this.objectsNode.children,
+      this.objectsNode.children.concat(terrain != null ? terrain : []),
       true
     )
-    let item = null
     for (const i of intersects) {
       let obj = i.object
-      while (!obj.parent.userData.world?.chunk) {
+      while (obj.parent !== terrain && !obj.parent.userData.world?.chunk) {
         obj = obj.parent
       }
       if (obj.name.endsWith('.rwx')) {
-        item = obj
-        break
+        return {obj: obj as Group, faceIndex: i.faceIndex}
+      }
+      if (obj.parent === terrain) {
+        // Terrain page
+        return {obj: obj as Group, faceIndex: i.faceIndex}
       }
     }
-    return item
+    return {obj: null, faceIndex: 0}
   }
 
   private leftClick(_: MouseEvent) {
+    if (this.selectionCell != null) {
+      this.deselectCell()
+    }
     if (this.selectionBox != null) {
       this.deselect()
     } else {
-      const item = this.pointedItem()
+      const item = this.pointedItem().obj
       if (
         item != null &&
         item.userData?.clickable &&
@@ -984,9 +1065,14 @@ export class EngineService {
 
   private rightClick(event: MouseEvent) {
     event.preventDefault()
-    const item = this.pointedItem()
-    if (item != null) {
-      this.select(item as Group)
+    const {obj, faceIndex} = this.pointedItem()
+    if (obj == null) {
+      return
+    }
+    if (obj.parent != null && obj.parent.name === 'terrain') {
+      this.selectCell(obj, faceIndex)
+    } else {
+      this.select(obj)
     }
   }
 

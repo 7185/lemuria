@@ -15,7 +15,7 @@ export class PlayerCollider {
   private rays: Ray[]
   private currentPos: Vector3
 
-  public constructor(boxHeight: number, pos = new Vector3(0, 0, 0)) {
+  public constructor(boxHeight: number, pos = new Vector3()) {
     // We need to ensure the total collider height doesn't go too low
     this.boxHeight = Math.max(boxHeight, playerClimbHeight + 0.1)
 

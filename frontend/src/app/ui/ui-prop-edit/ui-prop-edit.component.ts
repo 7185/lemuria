@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, Component} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import {DatePipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
+import {NgxDraggableDomModule} from 'ngx-draggable-dom'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {ObjectService, ObjectAct} from '../../world/object.service'
 import {EngineService} from '../../engine/engine.service'
@@ -21,13 +22,13 @@ import {
 
 @Component({
   standalone: true,
-  imports: [FormsModule, FontAwesomeModule, DatePipe],
-  selector: 'app-ui-builder-zone',
-  templateUrl: './ui-builder-zone.component.html',
-  styleUrls: ['./ui-builder-zone.component.scss'],
+  imports: [FormsModule, FontAwesomeModule, NgxDraggableDomModule, DatePipe],
+  selector: 'app-ui-prop-edit',
+  templateUrl: './ui-prop-edit.component.html',
+  styleUrls: ['./ui-prop-edit.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UiBuilderZoneComponent {
+export class UiPropEditComponent {
   public faArrowDown = faArrowDown
   public faArrowLeft = faArrowLeft
   public faArrowRight = faArrowRight

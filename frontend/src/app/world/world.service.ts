@@ -5,6 +5,7 @@ import {UserService} from '../user'
 import {SettingsService} from '../settings/settings.service'
 import type {User} from '../user'
 import {EngineService, DEG} from '../engine/engine.service'
+import {TerrainService} from './terrain.service'
 import {TeleportService} from '../engine/teleport.service'
 import {PlayerCollider} from '../engine/player-collider'
 import {ObjectService, ObjectAct} from './object.service'
@@ -20,16 +21,11 @@ import {
   Mesh,
   Group,
   Vector3,
-  PlaneGeometry,
-  TextureLoader,
-  RepeatWrapping,
   LOD,
   BufferGeometry,
   MeshBasicMaterial,
-  MeshPhongMaterial,
   Box3,
-  BufferAttribute,
-  SRGBColorSpace
+  BufferAttribute
 } from 'three'
 import type {Object3D} from 'three'
 import {Utils} from '../utils'
@@ -57,8 +53,6 @@ export class WorldService {
 
   private worldName = 'Nowhere'
   private avatar: Group
-  private textureLoader = new TextureLoader()
-  private terrain: Group
   private previousLocalUserPos = null
 
   private propBatchSize: number = config.world.propBatchSize
@@ -79,6 +73,7 @@ export class WorldService {
 
   constructor(
     private engineSvc: EngineService,
+    private terrainSvc: TerrainService,
     private userSvc: UserService,
     private objSvc: ObjectService,
     private anmSvc: AnimationService,
@@ -221,7 +216,7 @@ export class WorldService {
               .map((u) => u.id)
               .indexOf(user.name) === -1
           ) {
-            this.engineSvc.removeUser(user as Group)
+            this.engineSvc.removeUser(user)
           }
         }
         for (const u of userList) {
@@ -382,112 +377,6 @@ export class WorldService {
   private resetChunks() {
     this.previousLocalUserPos = null
     this.chunkMap = new Map<number, Set<number>>()
-  }
-
-  private initTerrain(world: any) {
-    if (this.terrain != null) {
-      this.engineSvc.removeWorldObject(this.terrain)
-    }
-    if (world.terrain) {
-      this.terrain = new Group()
-      this.terrain.name = 'terrain'
-      const terrainMaterials = []
-
-      for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 64; j++) {
-          const terrainTexture = this.textureLoader.load(
-            `${world.path}/textures/terrain${j}.jpg`
-          )
-          terrainTexture.colorSpace = SRGBColorSpace
-          terrainTexture.wrapS = RepeatWrapping
-          terrainTexture.wrapT = RepeatWrapping
-          terrainTexture.rotation = (i * Math.PI) / 2
-          terrainTexture.repeat.set(128, 128)
-          terrainMaterials.push(
-            new MeshPhongMaterial({map: terrainTexture, shininess: 0})
-          )
-        }
-      }
-
-      if (world.elev != null) {
-        for (const [page, elevData] of Object.entries(world.elev)) {
-          const geometry = new PlaneGeometry(1280, 1280, 128, 128)
-          geometry.rotateX(-Math.PI / 2)
-
-          const positions = new Float32Array(
-            (geometry.getAttribute('position') as BufferAttribute).array
-          )
-          let gap = 0
-          for (let i = 0, j = 0; i < positions.length; i++, j += 3) {
-            if (i % 128 !== 0) {
-              positions[j - 2 + gap * 3] = elevData[i]?.[1] / 100 || 0
-            } else {
-              // skip edge
-              gap++
-            }
-          }
-          geometry.setAttribute('position', new BufferAttribute(positions, 3))
-
-          const indices = new Uint16Array(
-            (geometry.getIndex() as BufferAttribute).array
-          )
-          let changeTexture = 0
-          let currTexture = 0
-          for (let k = 0; k < 128 * 128; k++) {
-            if (elevData[k] != null) {
-              if (elevData[k][0] === 254) {
-                // Empty cell
-                indices.fill(0, k * 6, k * 6 + 6)
-                continue
-              }
-              if (elevData[k][0] !== currTexture) {
-                geometry.addGroup(
-                  changeTexture,
-                  k * 6 - changeTexture,
-                  currTexture
-                )
-                changeTexture = k * 6
-                currTexture = elevData[k][0]
-              }
-            } else if (currTexture !== 0) {
-              geometry.addGroup(
-                changeTexture,
-                k * 6 - changeTexture,
-                currTexture
-              )
-              changeTexture = k * 6
-              currTexture = 0
-            }
-          }
-
-          geometry.setIndex(new BufferAttribute(indices, 1))
-          geometry.addGroup(
-            changeTexture,
-            geometry.getIndex().count,
-            currTexture
-          )
-
-          const terrainMesh = new Mesh(geometry, terrainMaterials)
-          const pos = page.split('_').map((p) => parseInt(p, 10))
-          terrainMesh.position.set(pos[0] * 10, 0, pos[1] * 10)
-          this.terrain.add(terrainMesh)
-        }
-      } else {
-        const geometry = new PlaneGeometry(1280, 1280, 128, 128)
-        geometry.rotateX(-Math.PI / 2)
-        geometry.addGroup(0, geometry.getIndex().count, 0)
-        const terrainMesh = new Mesh(geometry, terrainMaterials)
-        this.terrain.add(terrainMesh)
-      }
-      if (world.terrain_offset != null) {
-        this.terrain.position.setY(world.terrain_offset)
-      }
-      this.engineSvc.addWorldObject(this.terrain)
-      this.terrain.updateMatrixWorld()
-      PlayerCollider.updateTerrainBVH(this.terrain)
-    } else {
-      this.terrain = null
-    }
   }
 
   private async loadItem(
@@ -744,7 +633,7 @@ export class WorldService {
    * @param entry Teleport string
    */
   private teleport(entry: string) {
-    const entryPoint = new Vector3(0, 0, 0)
+    const entryPoint = new Vector3()
     let entryYaw = 0
     if (entry) {
       const yawMatch = entry.match(/\s([-+]?[0-9]+)$/)
@@ -840,7 +729,7 @@ export class WorldService {
       this.userSvc.listChanged.next(this.userSvc.userList)
     })
 
-    this.initTerrain(world)
+    this.terrainSvc.setTerrain(world)
     this.resetChunks()
     this.teleport(entry)
   }

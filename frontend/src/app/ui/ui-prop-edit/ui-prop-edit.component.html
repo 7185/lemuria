@@ -1,0 +1,108 @@
+<div id="build-zone" [ngxDraggableDom]="true" [handle]="handle" [class.d-none]="selectedObject().name === undefined">
+  <hr #handle/>
+  <table class="table table-sm small">
+    <thead>
+    </thead>
+    <tbody>
+      <tr class="buttons">
+        <td>
+          <button class="btn btn-sm btn-dark text-yellow" (mousedown)="trigger($event, objectAct.copy)" type="button" title="Duplicate">
+            <fa-icon [icon]="faClone" [fixedWidth]="true"/>
+          </button>
+          <button class="btn btn-sm btn-dark float-end" (mousedown)="trigger($event, objectAct.snapGrid)" type="button" title="Snap to Grid">
+            <fa-icon [icon]="faBorderNone" [fixedWidth]="true"/>
+          </button>
+          <br />
+          <button class="btn btn-sm btn-dark text-red" (mousedown)="trigger($event, objectAct.delete)" type="button" title="Delete">
+            <fa-icon [icon]="faTrashCan" [fixedWidth]="true"/>
+          </button>
+          <button class="btn btn-sm btn-dark float-end" (mousedown)="trigger($event, objectAct.rotReset)" type="button" title="Reset Rotation">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="faRotate" [fixedWidth]="true"/>
+              <fa-layers-text content="0" transform="shrink-2 right-8 down-6" class="fw-bold text-gray"/>
+            </fa-layers>
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-dark text-gray" (mousedown)="trigger($event, objectAct.forward)" type="button" title="Move forward">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="faRoad" [fixedWidth]="true"/>
+              <fa-icon class="d-inline-block text-cyan" [icon]="faArrowUp" transform="shrink-6 up-8"/>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-dark text-gray" (mousedown)="trigger($event, objectAct.backward)" type="button" title="Move back">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="faRoad" [fixedWidth]="true"/>
+              <fa-icon class="d-inline-block text-cyan" [icon]="faArrowDown" transform="shrink-3 down-8"/>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-dark text-cyan" (mousedown)="trigger($event, objectAct.left)" type="button" title="Move left">
+            <fa-icon [icon]="faArrowLeft" [fixedWidth]="true"/>
+          </button>
+          <button class="btn btn-sm btn-dark text-cyan" (mousedown)="trigger($event, objectAct.right)" type="button" title="Move right">
+            <fa-icon [icon]="faArrowRight" [fixedWidth]="true"/>
+          </button>
+          <button class="btn btn-sm btn-dark text-cyan" (mousedown)="trigger($event, objectAct.up)" type="button" title="Move up">
+            <fa-icon [icon]="faArrowUp" [fixedWidth]="true"/>
+          </button>
+          <button class="btn btn-sm btn-dark text-cyan" (mousedown)="trigger($event, objectAct.down)" type="button" title="Move down">
+            <fa-icon [icon]="faArrowDown" [fixedWidth]="true"/>
+          </button>
+          <br/>
+          <button class="btn btn-sm btn-dark" (mousedown)="trigger($event, objectAct.rotnX)" type="button" title="Tilt -X axis">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"/>
+              <fa-layers-text content="X" transform="shrink-2 right-8 down-6" class="fw-bold text-red"/>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-dark" (mousedown)="trigger($event, objectAct.rotX)" type="button" title="Tilt +X axis">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"/>
+              <fa-layers-text content="X" transform="shrink-2 left-8 down-6" class="fw-bold text-red"/>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-dark" (mousedown)="trigger($event, objectAct.rotnY)" type="button" title="Turn left">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"/>
+              <fa-layers-text content="Y" transform="shrink-2 right-8 down-6" class="fw-bold text-green"/>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-dark" (mousedown)="trigger($event, objectAct.rotY)" type="button" title="Turn right">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"/>
+              <fa-layers-text content="Y" transform="shrink-2 left-8 down-6" class="fw-bold text-green"/>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-dark" (mousedown)="trigger($event, objectAct.rotnZ)" type="button" title="Roll -Z axis">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"/>
+              <fa-layers-text content="Z" transform="shrink-2 right-8 down-6" class="fw-bold text-blue"/>
+            </fa-layers>
+          </button>
+          <button class="btn btn-sm btn-dark" (mousedown)="trigger($event, objectAct.rotZ)" type="button" title="Roll +Z axis">
+            <fa-layers [fixedWidth]="true">
+              <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"/>
+              <fa-layers-text content="Z" transform="shrink-2 left-8 down-6" class="fw-bold text-blue"/>
+            </fa-layers>
+          </button>
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">Object</th>
+        <td><input type="text" class="form-control" [(ngModel)]="selectedObject().name"/></td>
+      </tr>
+      <tr>
+        <th scope="row">Description</th>
+        <td><textarea class="form-control" rows="3" [(ngModel)]="selectedObject().desc"></textarea></td>
+      </tr>
+      <tr>
+        <th scope="row">Action</th>
+        <td><textarea class="form-control" rows="3" [(ngModel)]="selectedObject().act"></textarea></td>
+      </tr>
+      <tr>
+      <th scope="row">Date</th>
+        <td>{{ selectedObject().date * 1000 | date:'EEE MMM d, y h:mm a' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

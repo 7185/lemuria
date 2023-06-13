@@ -13,3 +13,99 @@ html, body, app-root {
   margin: 0;
   padding: 0;
 }
+
+.ngx-draggable {
+  cursor: move;
+}
+
+.ngx-dragging {
+  cursor: grabbing !important;
+}
+
+.text-blue {
+  color: $blue-400;
+}
+
+.text-indigo {
+  color: $indigo-400;
+}
+
+.text-purple {
+  color: $purple-400;
+}
+
+.text-pink {
+  color: $pink-400;
+}
+
+.text-red {
+  color: $red-400;
+}
+
+.text-orange {
+  color: $orange-400;
+}
+
+.text-yellow {
+  color: $yellow-400;
+}
+
+.text-green {
+  color: $green-400;
+}
+
+.text-teal {
+  color: $teal-400;
+}
+
+.text-cyan {
+  color: $cyan-400;
+}
+
+.text-gray {
+  color: $gray-400;
+}
+
+.btn.text-blue:hover, .btn:active.text-blue {
+  color: $blue-500;
+}
+
+.btn.text-indigo:hover, .btn:active.text-indigo {
+  color: $indigo-500;
+}
+
+.btn.text-purple:hover, .btn:active.text-purple {
+  color: $purple-500;
+}
+
+.btn.text-pink:hover, .btn:active.text-pink {
+  color: $pink-500;
+}
+
+.btn.text-red:hover, .btn:active.text-pink {
+  color: $red-500;
+}
+
+.btn.text-orange:hover, .btn:active.text-orange {
+  color: $orange-500;
+}
+
+.btn.text-yellow:hover, .btn:active.text-yellow {
+  color: $yellow-500;
+}
+
+.btn.text-green:hover, .btn:active.text-green {
+  color: $green-500;
+}
+
+.btn.text-teal:hover, .btn:active.text-teal {
+  color: $teal-500;
+}
+
+.btn.text-cyan:hover, .btn:active.text-cyan {
+  color: $cyan-500;
+}
+
+.btn.text-gray:hover, .btn:active.text-gray {
+  color: $gray-500;
+}

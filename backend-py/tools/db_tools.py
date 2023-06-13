@@ -91,8 +91,8 @@ async def prop_dump(file):
                 continue
             data = s[11]
             obj_len = int(s[8])
-            desc_len = int(s[9]) - data[obj_len:obj_len + int(s[9])].count('\n')
-            act_len = int(s[10]) + data.count('\n') - 1
+            desc_len = int(s[9])
+            act_len = int(s[10])
             yield [int(s[1]), data[:obj_len], int(s[2]), int(s[3]), int(s[4]),
                    int(s[6]), int(s[5]), int(s[7]),
                    data[obj_len:obj_len + desc_len] or None,

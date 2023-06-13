@@ -2,7 +2,7 @@
   position: absolute;
   pointer-events: all;
   padding: 1em;
-  border-radius: 0.25rem 0.25rem 0 0;
+  border-radius: 0.25rem;
   bottom: 15px;
   right: 15px;
   min-height: 360px;
@@ -24,5 +24,11 @@
     thead, tbody, tfoot, tr, td, th {
       border-style: none;
     }
+  }
+  hr {
+    height: 8px;
+    border-top: 2px solid white;
+    border-bottom: 2px solid white;
+    margin: 0 0 8px 0;
   }
 }
