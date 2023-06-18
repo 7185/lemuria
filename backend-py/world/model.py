@@ -112,7 +112,7 @@ class World:
         ]
 
         props = [
-            [prop.date, prop.name, prop.x, prop.y, prop.z, prop.pi, prop.ya, prop.ro, prop.desc, prop.act]
+            [prop.id, prop.date, prop.name, prop.x, prop.y, prop.z, prop.pi, prop.ya, prop.ro, prop.desc, prop.act]
             for prop in await db.prop.find_many(
                 where={
                     'AND': [

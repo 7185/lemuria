@@ -29,6 +29,7 @@ import {
 } from 'three'
 import type {Object3D} from 'three'
 import {Utils} from '../utils'
+import {BuildService} from '../engine/build.service'
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
@@ -67,7 +68,6 @@ export class WorldService {
 
   private maxLodDistance: number = config.world.lod.maxDistance
 
-  private uListListener: Subscription
   private uAvatarListener: Subscription
   private avatarListener: Subscription
 
@@ -80,7 +80,8 @@ export class WorldService {
     private httpSvc: HttpService,
     private settings: SettingsService,
     private socket: SocketService,
-    private teleportSvc: TeleportService
+    private teleportSvc: TeleportService,
+    private buildSvc: BuildService
   ) {
     this.skyTop = signal(Utils.colorHexToStr(0))
     this.skyNorth = signal(Utils.colorHexToStr(0))
@@ -141,6 +142,13 @@ export class WorldService {
       )
     })
 
+    // Register texture animator to the engine
+    effect(() => {
+      if (this.engineSvc.texturesAnimation() > 0) {
+        this.objSvc.texturesNextFrame()
+      }
+    })
+
     for (let i = -this.chunkLoadRadius; i <= this.chunkLoadRadius; i++) {
       for (let j = -this.chunkLoadRadius; j <= this.chunkLoadRadius; j++) {
         // Only keep chunks within a certain circular radius (if circular loadin is enabled)
@@ -170,31 +178,39 @@ export class WorldService {
     }
 
     // Register chunk updater to the engine
-    this.engineSvc.localUserPosObservable().subscribe((pos: Vector3) => {
-      this.autoUpdateChunks(pos)
+    effect(() => {
+      this.autoUpdateChunks(this.engineSvc.playerPosition())
     })
 
-    // Register texture animator to the engine
-    this.engineSvc.texturesAnimationObservable().subscribe(() => {
-      this.objSvc.texturesNextFrame()
+    // User list change
+    effect(() => {
+      for (const user of this.engineSvc.users()) {
+        if (
+          this.userSvc
+            .userListSignal()
+            .filter((u) => u.world === this.worldId)
+            .map((u) => u.id)
+            .indexOf(user.name) === -1
+        ) {
+          this.engineSvc.removeUser(user)
+        }
+      }
+      for (const u of this.userSvc.userListSignal()) {
+        const user = this.engineSvc.users().find((o) => o.name === u.id)
+        if (
+          user == null &&
+          this.avatarList.length > 0 &&
+          u.world === this.worldId
+        ) {
+          this.addUser(u)
+        }
+      }
     })
 
     // Register object chunk updater to the engine
     this.objSvc.objectAction.subscribe((action: ObjectAct) => {
-      switch (action) {
-        case ObjectAct.up:
-        case ObjectAct.down:
-        case ObjectAct.forward:
-        case ObjectAct.backward:
-        case ObjectAct.left:
-        case ObjectAct.right:
-        case ObjectAct.snapGrid:
-        case ObjectAct.copy: {
-          this.setObjectChunk(this.engineSvc.selectedObject)
-          break
-        }
-        default:
-          return
+      if (action === ObjectAct.copy) {
+        this.setObjectChunk(this.buildSvc.selectedProp)
       }
     })
   }
@@ -207,31 +223,6 @@ export class WorldService {
     this.engineSvc.attachCam(this.avatar)
 
     // listeners
-    this.uListListener = this.userSvc.listChanged.subscribe(
-      (userList: User[]) => {
-        for (const user of this.engineSvc.users()) {
-          if (
-            userList
-              .filter((u) => u.world === this.worldId)
-              .map((u) => u.id)
-              .indexOf(user.name) === -1
-          ) {
-            this.engineSvc.removeUser(user)
-          }
-        }
-        for (const u of userList) {
-          const user = this.engineSvc.users().find((o) => o.name === u.id)
-          if (
-            user == null &&
-            this.avatarList.length > 0 &&
-            u.world === this.worldId
-          ) {
-            this.addUser(u)
-          }
-        }
-      }
-    )
-
     // other avatars
     this.uAvatarListener = this.userSvc.avatarChanged.subscribe((u) => {
       const user = this.engineSvc.users().find((o) => o.name === u.id)
@@ -271,7 +262,6 @@ export class WorldService {
     this.resetChunks()
     this.engineSvc.resetChunkMap()
     this.uAvatarListener?.unsubscribe()
-    this.uListListener?.unsubscribe()
     this.avatarListener?.unsubscribe()
   }
 
@@ -380,6 +370,7 @@ export class WorldService {
   }
 
   private async loadItem(
+    id: number,
     item: string,
     pos: Vector3,
     rot: Vector3,
@@ -391,6 +382,7 @@ export class WorldService {
     const o = await firstValueFrom(this.objSvc.loadObject(item))
     const g = o.clone()
     g.name = item
+    g.userData.id = id
     g.userData.date = date
     g.userData.desc = desc
     g.userData.act = act
@@ -470,16 +462,14 @@ export class WorldService {
   // Return true if, given the provided chunk indices, this target chunk is different from the current one,
   // false otherwise
   private hasChunkChanged(chunkX: number, chunkZ: number) {
-    if (this.previousLocalUserPos !== null) {
-      const [previousChunkX, previousChunkZ] = this.getChunkTile(
-        this.previousLocalUserPos
-      )
-
-      if (previousChunkX === chunkX && previousChunkZ === chunkZ) {
-        return false
-      }
+    if (this.previousLocalUserPos == null) {
+      return true
     }
-    return true
+    const [previousChunkX, previousChunkZ] = this.getChunkTile(
+      this.previousLocalUserPos
+    )
+
+    return !(previousChunkX === chunkX && previousChunkZ === chunkZ)
   }
 
   // this method is method to be called on each frame to update the state of chunks if needed
@@ -491,7 +481,7 @@ export class WorldService {
       return
     }
 
-    this.previousLocalUserPos = pos.clone()
+    this.previousLocalUserPos?.copy(pos)
 
     // For clarity: we get an Observable from loadChunk, if it produces anything: we take care of it
     // in subscribe() (note that if the chunk has already been loaded, it won't reach the operator).
@@ -550,12 +540,13 @@ export class WorldService {
             concatMap((arr) => from(arr)), // Each individual emission from bufferCount is an array of items
             mergeMap((item: any) =>
               this.loadItem(
-                item[1],
-                new Vector3(item[2], item[3], item[4]),
-                new Vector3(item[5], item[6], item[7]),
                 item[0],
-                item[8],
-                item[9]
+                item[2],
+                new Vector3(item[3], item[4], item[5]),
+                new Vector3(item[6], item[7], item[8]),
+                item[1],
+                item[9],
+                item[10]
               )
             ),
             mergeMap((item: Object3D) => {
@@ -726,7 +717,7 @@ export class WorldService {
           : new Map<number, number>()
       this.avatarSub.next(avatarMap.get(this.worldId) || 0)
       // Trigger list update to create users
-      this.userSvc.listChanged.next(this.userSvc.userList)
+      this.userSvc.userListSignal.set([...this.userSvc.userList])
     })
 
     this.terrainSvc.setTerrain(world)

@@ -82,6 +82,10 @@ export class AvatarAnimationPlayer {
         newState = {name: 'fly', velocityMultiplier: null}
         newFallbackState = {name: 'walk', velocityMultiplier: 0.5}
         break
+      case 'fall':
+        newState = {name: 'fall', velocityMultiplier: null}
+        newFallbackState = {name: 'walk', velocityMultiplier: 0.5}
+        break
       default:
         newState = {name: 'idle', velocityMultiplier: null}
         break
@@ -191,7 +195,9 @@ export class AvatarAnimationPlayer {
     return frame
   }
 
-  private findBestAnimation(animationList: AnimationEntry[]): any[] {
+  private findBestAnimation(
+    animationList: AnimationEntry[]
+  ): [ThreeSequence, number] {
     let threeSequence: ThreeSequence = null
 
     // Iterate of each proposed animation

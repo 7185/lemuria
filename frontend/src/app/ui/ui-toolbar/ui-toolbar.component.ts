@@ -15,6 +15,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  effect,
   ElementRef,
   Renderer2,
   signal,
@@ -124,7 +125,20 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     private userSvc: UserService,
     public teleportSvc: TeleportService,
     private settings: SettingsService
-  ) {}
+  ) {
+    effect(() => {
+      this.userList = this.userSvc.userListSignal()
+      this.worldSvc.worldList.forEach((w) => (w.users = 0))
+      for (const u of this.userList) {
+        for (const w of this.worldSvc.worldList) {
+          if (u.world === w.id) {
+            w.users++
+          }
+        }
+      }
+      this.cdRef.detectChanges()
+    })
+  }
 
   public changeVisibility(visibility: number) {
     this.visibility = visibility
@@ -219,18 +233,6 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public ngOnInit(): void {
-    this.userSvc.listChanged.subscribe((l) => {
-      this.userList = l
-      this.worldSvc.worldList.forEach((w) => (w.users = 0))
-      for (const u of this.userList) {
-        for (const w of this.worldSvc.worldList) {
-          if (u.world === w.id) {
-            w.users++
-          }
-        }
-      }
-      this.cdRef.detectChanges()
-    })
     this.worldSvc.avatarSub.subscribe((avatarId) => (this.avatarId = avatarId))
     this.http.getLogged().subscribe((u: any) => {
       this.userId = u.id
@@ -270,14 +272,17 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       .pipe(
         throttleTime(100),
         distinctUntilChanged(
-          (prev: any, curr: any) =>
+          (
+            prev: {pos: Vector3; theta: number},
+            curr: {pos: Vector3; theta: number}
+          ) =>
             prev.pos.x === curr.pos.x &&
             prev.pos.y === curr.pos.y &&
             prev.pos.z === curr.pos.z &&
             prev.theta === curr.theta
         )
       )
-      .subscribe((o: any) => {
+      .subscribe((o: {pos: Vector3; theta: number}) => {
         this.strPos = Utils.posToStringSimple(o.pos)
         this.strAlt = Utils.altToString(o.pos)
         this.renderer.setStyle(

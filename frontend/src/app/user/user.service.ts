@@ -1,12 +1,13 @@
-import {Injectable} from '@angular/core'
-import {BehaviorSubject, Subject} from 'rxjs'
+import {Injectable, signal} from '@angular/core'
+import type {WritableSignal} from '@angular/core'
+import {Subject} from 'rxjs'
 import {HttpService} from '../network'
 import {User} from './user.model'
 
 @Injectable({providedIn: 'root'})
 export class UserService {
   public userList: User[] = []
-  public listChanged: BehaviorSubject<User[]> = new BehaviorSubject([])
+  public userListSignal: WritableSignal<User[]> = signal([])
   public avatarChanged: Subject<any> = new Subject()
   public currentName = 'Anonymous'
 
@@ -18,7 +19,7 @@ export class UserService {
 
   clearList() {
     this.userList = []
-    this.listChanged.next([])
+    this.userListSignal.set(this.userList)
   }
 
   refreshList(list: any[]) {
@@ -35,7 +36,7 @@ export class UserService {
         )
       }
     }
-    this.listChanged.next(this.userList)
+    this.userListSignal.set(this.userList)
   }
 
   setAvatar(userId: string, avatarId: number) {

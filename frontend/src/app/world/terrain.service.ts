@@ -1,13 +1,13 @@
 import {Injectable} from '@angular/core'
 import {
+  BufferAttribute,
   Mesh,
   Group,
-  PlaneGeometry,
-  TextureLoader,
-  RepeatWrapping,
   MeshPhongMaterial,
-  BufferAttribute,
-  SRGBColorSpace
+  PlaneGeometry,
+  RepeatWrapping,
+  SRGBColorSpace,
+  TextureLoader
 } from 'three'
 import {PlayerCollider} from '../engine/player-collider'
 import {EngineService} from '../engine/engine.service'
@@ -18,6 +18,7 @@ export class TerrainService {
   private textureLoader = new TextureLoader()
 
   constructor(private engineSvc: EngineService) {}
+
   public setTerrain(world: any) {
     if (this.terrain != null) {
       this.engineSvc.removeWorldObject(this.terrain)

@@ -5,15 +5,15 @@
     </thead>
     <tbody>
       <tr class="buttons">
-        <th></th>
-        <td>
+        <th>
           <button class="btn btn-sm btn-dark text-green" (mousedown)="trigger($event)" type="button" title="Rotate Left">
             <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"/>
           </button>
           <button class="btn btn-sm btn-dark text-green" (mousedown)="trigger($event)" type="button" title="Rotate Right">
             <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"/>
           </button>
-          <div class="float-end">
+        </th>
+        <td>
           <button class="btn btn-sm btn-dark text-red" (mousedown)="trigger($event)" type="button" title="Copy">
             <fa-icon [icon]="faClone" [fixedWidth]="true"/>
           </button>
@@ -29,7 +29,6 @@
               <fa-icon [icon]="faSquare" class="text-green" [fixedWidth]="true" transform="shrink-2 right-8 down-6"/>
             </fa-layers>
           </button>
-          </div>
         </td>
       </tr>
       <tr>

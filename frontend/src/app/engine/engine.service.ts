@@ -20,17 +20,12 @@ import {
   Spherical,
   Mesh,
   MeshBasicMaterial,
-  AxesHelper,
-  EdgesGeometry,
-  LineSegments,
-  LineBasicMaterial,
   SRGBColorSpace,
   Color,
-  PointLight,
-  Line,
-  BufferGeometry
+  PointLight
 } from 'three'
-import type {Box3, Material, LOD, Triangle} from 'three'
+import type {Box3, LOD, Triangle} from 'three'
+import {BuildService} from './build.service'
 import {TeleportService} from './teleport.service'
 import {UserService} from '../user'
 import {ObjectAct, ObjectService} from '../world/object.service'
@@ -42,9 +37,10 @@ import {Utils} from '../utils'
 
 export const DEG = Math.PI / 180
 export const RPM = Math.PI / 30
-const xAxis = new Vector3(1, 0, 0)
-const yAxis = new Vector3(0, 1, 0)
-const zAxis = new Vector3(0, 0, 1)
+export const X_AXIS = new Vector3(1, 0, 0)
+export const Y_AXIS = new Vector3(0, 1, 0)
+export const Z_AXIS = new Vector3(0, 0, 1)
+
 const playerBoxSide = config.world.collider.boxSide
 const playerClimbHeight = config.world.collider.climbHeight
 const playerGroundAdjust = config.world.collider.groundAdjust
@@ -68,13 +64,12 @@ const nearestChunkPattern = [
 
 @Injectable({providedIn: 'root'})
 export class EngineService {
-  public compassSub: Subject<any> = new Subject()
+  public compassSub: Subject<{pos: Vector3; theta: number}> = new Subject()
   public fpsSub = new BehaviorSubject<string>('0')
   public maxFps = signal(60)
   public maxLights = signal(6)
-  public selectedObject: Group
-  public selectedObjectSignal = signal({})
-  public selectedCellSignal = signal({})
+  public texturesAnimation = signal(0)
+  public playerPosition = signal(new Vector3())
   private chunkMap = new Map<number, LOD>()
   private compass = new Spherical()
   private canvas: HTMLCanvasElement
@@ -94,7 +89,6 @@ export class EngineService {
   private fog: Fog
   private avatar: Group
   private skybox: Group
-  private buildMode = false
   private flyMode = false
   private userState = 'idle'
   private userGesture: string = null
@@ -111,11 +105,6 @@ export class EngineService {
   private deltaSinceLastFrame = 0
   private animationElapsed = 0
 
-  private selectionGroup: Group
-  private selectionBox: LineSegments
-  private axesHelper: AxesHelper
-  private selectionCell: Group
-
   private mouse = new Vector2()
   private raycaster = new Raycaster()
   private cameraDirection = new Vector3()
@@ -123,6 +112,7 @@ export class EngineService {
   private usersNode = new Group()
   private worldNode = new Group()
   private objectsNode = new Group()
+  private buildNode = new Group()
   private sprites: Set<Group> = new Set()
   private animatedObjects: Set<Group> = new Set()
   private litObjects: Set<Group> = new Set()
@@ -130,8 +120,6 @@ export class EngineService {
 
   private mouseIdle = 0
   private labelDesc: HTMLDivElement
-  private localUserPosSub = new Subject<Vector3>()
-  private texturesAnimationSub = new Subject<any>()
 
   private chunkTile = [0, 0]
 
@@ -160,6 +148,7 @@ export class EngineService {
     private userSvc: UserService,
     private inputSysSvc: InputSystemService,
     private objSvc: ObjectService,
+    private buildSvc: BuildService,
     private teleportSvc: TeleportService
   ) {
     effect(() => {
@@ -177,14 +166,6 @@ export class EngineService {
       this.renderer = null
       this.canvas = null
     }
-  }
-
-  public localUserPosObservable() {
-    return this.localUserPosSub.asObservable()
-  }
-
-  public texturesAnimationObservable() {
-    return this.texturesAnimationSub.asObservable()
   }
 
   public createScene(
@@ -282,6 +263,7 @@ export class EngineService {
     this.scene.add(this.worldNode)
     this.scene.add(this.usersNode)
     this.scene.add(this.objectsNode)
+    this.scene.add(this.buildNode)
 
     if (config.debug) {
       const shadowHelper = new CameraHelper(this.dirLight.shadow.camera)
@@ -290,19 +272,20 @@ export class EngineService {
   }
 
   public clearObjects() {
-    if (this.selectionBox != null) {
-      this.deselect()
-    }
+    this.buildSvc.deselectProp(this.buildNode)
     // Children is a dynamic iterable, we need a copy to get all of them
     for (const item of [...this.objectsNode.children]) {
       this.removeObject(item as Group)
     }
+    this.sprites.clear()
+    this.animatedObjects.clear()
+    // Turn off the lights
+    this.litObjects.clear()
+    this.updatePointLights()
   }
 
   public clearScene() {
-    if (this.selectionBox != null) {
-      this.deselect()
-    }
+    this.buildSvc.deselectProp(this.buildNode)
     for (const item of [...this.worldNode.children]) {
       this.removeWorldObject(item as Group)
     }
@@ -549,8 +532,8 @@ export class EngineService {
   }
 
   public removeObject(group: Group) {
-    if (group === this.selectedObject) {
-      this.deselect()
+    if (group === this.buildSvc.selectedProp) {
+      this.buildSvc.deselectProp(this.buildNode)
     }
     if (group.userData.rwx?.axisAlignment !== 'none') {
       this.sprites.delete(group)
@@ -668,7 +651,7 @@ export class EngineService {
         this.mouseIdle = 0
         this.labelDesc.style.display = 'none'
         this.hoveredObject = null
-        if (this.buildMode) {
+        if (this.buildSvc.buildMode) {
           const act =
             this.keyActionMap.get(this.inputSysSvc.getKey(k.code)) ||
             ObjectAct.nop
@@ -679,9 +662,16 @@ export class EngineService {
         this.mouseIdle = 0
       })
       this.objSvc.objectAction.subscribe((act) => {
-        if (this.buildMode) {
-          this.moveItem(act)
+        if (!this.buildSvc.buildMode) {
+          return
         }
+        if (act === ObjectAct.delete) {
+          // Remove prop from scene and do nothing else
+          this.removeObject(this.buildSvc.selectedProp)
+          return
+        }
+        // Handle prop moving and duplication
+        this.buildSvc.moveProp(act, this.cameraDirection, this.buildNode)
       })
       timer(0, 100).subscribe(() => {
         this.mouseIdle++
@@ -740,29 +730,6 @@ export class EngineService {
 
   public getLODs(): LOD[] {
     return this.objectsNode.children as LOD[]
-  }
-
-  public updateSelectionBox(): void {
-    this.selectedObject.updateMatrix()
-    const chunkData = this.selectedObject.parent.userData.world.chunk
-    const center = new Vector3(
-      this.selectedObject.userData.boxCenter.x,
-      this.selectedObject.userData.boxCenter.y,
-      this.selectedObject.userData.boxCenter.z
-    )
-    this.selectionBox.position.copy(center)
-    center.applyAxisAngle(yAxis, this.selectedObject.rotation.y)
-    center.applyAxisAngle(zAxis, this.selectedObject.rotation.z)
-    center.applyAxisAngle(xAxis, this.selectedObject.rotation.x)
-    this.selectionGroup.position.copy(
-      new Vector3(
-        chunkData.x + this.selectedObject.position.x,
-        this.selectedObject.position.y,
-        chunkData.z + this.selectedObject.position.z
-      )
-    )
-    this.selectionGroup.rotation.copy(this.selectedObject.rotation)
-    this.selectionGroup.updateMatrix()
   }
 
   public setChunkTile(chunkX: number, chunkZ: number) {
@@ -832,13 +799,13 @@ export class EngineService {
     this.renderer.render(this.scene, this.activeCamera)
 
     if (this.animationElapsed > 0.1) {
-      this.texturesAnimationSub.next(null)
+      this.texturesAnimation.set(this.frameId)
       this.animationElapsed = 0
     } else {
       this.animationElapsed += this.deltaSinceLastFrame
     }
 
-    if (!this.buildMode) {
+    if (!this.buildSvc.buildMode) {
       this.moveCamera()
       this.animateItems()
       this.updatePointLights()
@@ -866,125 +833,6 @@ export class EngineService {
     this.renderer.setSize(width, height)
   }
 
-  private deselect() {
-    PlayerCollider.updateObjectBVH(this.selectedObject)
-    this.buildMode = false
-    this.selectedObject = null
-    this.selectedObjectSignal.set({})
-    this.selectionBox.geometry.dispose()
-    ;(this.selectionBox.material as Material).dispose()
-    this.axesHelper.dispose()
-    this.scene.remove(this.selectionGroup)
-    this.selectionBox = null
-    this.axesHelper = null
-    this.selectionGroup = null
-  }
-
-  private select(item: Group) {
-    if (this.selectionCell != null) {
-      this.deselectCell()
-    }
-    if (this.selectionBox != null) {
-      this.deselect()
-    }
-    this.buildMode = true
-    this.selectedObject = item
-    this.selectedObjectSignal.set({
-      name: item.name,
-      desc: item.userData.desc,
-      act: item.userData.act,
-      date: item.userData.date
-    })
-    console.log(item)
-
-    const geometry = new BoxGeometry(
-      item.userData.box.x,
-      item.userData.box.y,
-      item.userData.box.z
-    )
-    const edges = new EdgesGeometry(geometry)
-    this.selectionGroup = new Group()
-    this.selectionBox = new LineSegments(
-      edges,
-      new LineBasicMaterial({color: 0xffff00, depthTest: false})
-    )
-    this.axesHelper = new AxesHelper(5)
-    ;(this.axesHelper.material as Material).depthTest = false
-    this.selectionGroup.add(this.selectionBox, this.axesHelper)
-
-    this.updateSelectionBox()
-
-    this.scene.add(this.selectionGroup)
-  }
-
-  private selectCell(terrainPage: Object3D, faceIndex: number) {
-    if (this.selectionBox != null) {
-      this.deselect()
-    }
-    if (this.selectionCell != null) {
-      this.deselectCell()
-    }
-
-    this.selectionCell = new Group()
-
-    const {position} = (terrainPage as Mesh).geometry.attributes
-    const localPos = (terrainPage as Mesh).getWorldPosition(new Vector3())
-    const seIndex = faceIndex % 2 === 0 ? faceIndex : faceIndex - 1
-    const nwIndex = faceIndex % 2 !== 0 ? faceIndex : faceIndex + 1
-    const index = (terrainPage as Mesh).geometry.getIndex()
-
-    const cellSE = localPos
-      .clone()
-      .add(new Vector3().fromBufferAttribute(position, index.getX(seIndex * 3)))
-    const cellNE = localPos
-      .clone()
-      .add(new Vector3().fromBufferAttribute(position, index.getY(seIndex * 3)))
-    const cellSW = localPos
-      .clone()
-      .add(new Vector3().fromBufferAttribute(position, index.getZ(seIndex * 3)))
-    const cellNW = localPos
-      .clone()
-      .add(new Vector3().fromBufferAttribute(position, index.getY(nwIndex * 3)))
-
-    const squareGeom = new BufferGeometry().setFromPoints([
-      new Vector3(-0.5, 0, -0.5).add(cellSE),
-      new Vector3(-0.5, 0, 0.5).add(cellSE),
-      new Vector3(0.5, 0, 0.5).add(cellSE),
-      new Vector3(0.5, 0, -0.5).add(cellSE),
-      new Vector3(-0.5, 0, -0.5).add(cellSE)
-    ])
-    const square = new Line(
-      squareGeom,
-      new LineBasicMaterial({color: 0xffff00, depthTest: false})
-    )
-    this.selectionCell.add(square)
-
-    const cellGeom = new BufferGeometry().setFromPoints([
-      cellSE,
-      cellNE,
-      cellNW,
-      cellSW,
-      cellSE
-    ])
-    const cell = new Line(
-      cellGeom,
-      new LineBasicMaterial({color: 0xff0000, depthTest: false})
-    )
-    this.selectionCell.add(cell)
-    this.scene.add(this.selectionCell)
-    this.selectedCellSignal.set({height: cellSE.y})
-  }
-
-  private deselectCell() {
-    for (const line of this.selectionCell.children as Line[]) {
-      line.geometry.dispose()
-      ;(line.material as Material).dispose()
-    }
-    this.scene.remove(this.selectionCell)
-    this.selectionCell = null
-    this.selectedCellSignal.set({})
-  }
-
   private pointedItem() {
     this.raycaster.setFromCamera(this.mouse, this.activeCamera)
     const terrain = this.worldNode.getObjectByName('terrain')
@@ -1009,57 +857,53 @@ export class EngineService {
   }
 
   private leftClick(_: MouseEvent) {
-    if (this.selectionCell != null) {
-      this.deselectCell()
+    this.buildSvc.deselectCell(this.buildNode)
+    if (this.buildSvc.selectedProp != null) {
+      this.buildSvc.deselectProp(this.buildNode)
+      // Left click to exit buildMode, do nothing else
+      return
     }
-    if (this.selectionBox != null) {
-      this.deselect()
-    } else {
-      const item = this.pointedItem().obj
-      if (
-        item != null &&
-        item.userData?.clickable &&
-        item.userData.teleportClick != null
-      ) {
-        let [newX, newY, newZ] = [null, null, null]
-        const yaw = item.userData.teleportClick?.direction || 0
-        if (item.userData.teleportClick.altitude != null) {
-          if (
-            item.userData.teleportClick.altitude.altitudeType === 'absolute'
-          ) {
-            newY = item.userData.teleportClick.altitude.value * 10
-          } else {
-            newY =
-              this.player.position.y +
-              item.userData.teleportClick.altitude.value * 10
-          }
+    const item = this.pointedItem().obj
+    if (
+      item != null &&
+      item.userData?.clickable &&
+      item.userData.teleportClick != null
+    ) {
+      let [newX, newY, newZ] = [null, null, null]
+      const yaw = item.userData.teleportClick?.direction || 0
+      if (item.userData.teleportClick.altitude != null) {
+        if (item.userData.teleportClick.altitude.altitudeType === 'absolute') {
+          newY = item.userData.teleportClick.altitude.value * 10
+        } else {
+          newY =
+            this.player.position.y +
+            item.userData.teleportClick.altitude.value * 10
         }
-        if (item.userData.teleportClick.coordinates != null) {
-          if (
-            item.userData.teleportClick.coordinates.coordinateType ===
-            'absolute'
-          ) {
-            newX = item.userData.teleportClick.coordinates.EW * -10
-            newZ = item.userData.teleportClick.coordinates.NS * 10
-          } else {
-            newX =
-              this.player.position.x +
-              item.userData.teleportClick.coordinates.x * -10
-            newZ =
-              this.player.position.z +
-              item.userData.teleportClick.coordinates.y * 10
-          }
-        }
-        this.teleportSvc.teleport.set({
-          world: item.userData.teleportClick.worldName,
-          // Don't send 0 if coordinates are null (world entry point)
-          position:
-            newX == null || newY == null || newZ == null
-              ? null
-              : Utils.posToString(new Vector3(newX, newY, newZ), yaw),
-          isNew: true
-        })
       }
+      if (item.userData.teleportClick.coordinates != null) {
+        if (
+          item.userData.teleportClick.coordinates.coordinateType === 'absolute'
+        ) {
+          newX = item.userData.teleportClick.coordinates.EW * -10
+          newZ = item.userData.teleportClick.coordinates.NS * 10
+        } else {
+          newX =
+            this.player.position.x +
+            item.userData.teleportClick.coordinates.x * -10
+          newZ =
+            this.player.position.z +
+            item.userData.teleportClick.coordinates.y * 10
+        }
+      }
+      this.teleportSvc.teleport.set({
+        world: item.userData.teleportClick.worldName,
+        // Don't send 0 if coordinates are null (world entry point)
+        position:
+          newX == null || newY == null || newZ == null
+            ? null
+            : Utils.posToString(new Vector3(newX, newY, newZ), yaw),
+        isNew: true
+      })
     }
   }
 
@@ -1070,142 +914,9 @@ export class EngineService {
       return
     }
     if (obj.parent != null && obj.parent.name === 'terrain') {
-      this.selectCell(obj, faceIndex)
+      this.buildSvc.selectCell(obj, faceIndex, this.buildNode)
     } else {
-      this.select(obj)
-    }
-  }
-
-  private moveItem(action: ObjectAct) {
-    if (action === ObjectAct.deselect) {
-      this.deselect()
-      return
-    }
-    const allowRotation =
-      this.selectedObject.userData.rwx?.axisAlignment === 'none'
-    let moveStep = 0.5
-    let rotStep = Math.PI / 12
-    if (this.inputSysSvc.controls[PressedKey.clip]) {
-      moveStep = 0.05
-      rotStep = Math.PI / 120
-      if (this.inputSysSvc.controls[PressedKey.run]) {
-        moveStep = 0.01
-        rotStep = Math.PI / 180
-      }
-    }
-    const v = new Vector3()
-    if (Math.abs(this.cameraDirection.x) >= Math.abs(this.cameraDirection.z)) {
-      v.x = Math.sign(this.cameraDirection.x)
-    } else {
-      v.z = Math.sign(this.cameraDirection.z)
-    }
-    switch (action) {
-      case ObjectAct.up: {
-        this.selectedObject.translateY(moveStep)
-        this.updateSelectionBox()
-        break
-      }
-      case ObjectAct.down: {
-        this.selectedObject.translateY(-moveStep)
-        this.updateSelectionBox()
-        break
-      }
-      case ObjectAct.forward: {
-        this.selectedObject.position.add(v.multiplyScalar(moveStep))
-        this.updateSelectionBox()
-        break
-      }
-      case ObjectAct.backward: {
-        this.selectedObject.position.add(v.multiplyScalar(-moveStep))
-        this.updateSelectionBox()
-        break
-      }
-      case ObjectAct.left: {
-        this.selectedObject.position.add(
-          new Vector3(v.z * moveStep, 0, v.x * -moveStep)
-        )
-        this.updateSelectionBox()
-        break
-      }
-      case ObjectAct.right: {
-        this.selectedObject.position.add(
-          new Vector3(v.z * -moveStep, 0, v.x * moveStep)
-        )
-        this.updateSelectionBox()
-        break
-      }
-      case ObjectAct.rotY: {
-        if (allowRotation) {
-          this.selectedObject.rotateOnAxis(yAxis, rotStep)
-          this.updateSelectionBox()
-        }
-        break
-      }
-      case ObjectAct.rotnY: {
-        if (allowRotation) {
-          this.selectedObject.rotateOnAxis(yAxis, -rotStep)
-          this.updateSelectionBox()
-        }
-        break
-      }
-      case ObjectAct.rotX: {
-        if (allowRotation) {
-          this.selectedObject.rotateOnAxis(xAxis, rotStep)
-          this.updateSelectionBox()
-        }
-        break
-      }
-      case ObjectAct.rotnX: {
-        if (allowRotation) {
-          this.selectedObject.rotateOnAxis(xAxis, -rotStep)
-          this.updateSelectionBox()
-        }
-        break
-      }
-      case ObjectAct.rotZ: {
-        if (allowRotation) {
-          this.selectedObject.rotateOnAxis(zAxis, rotStep)
-          this.updateSelectionBox()
-        }
-        break
-      }
-      case ObjectAct.rotnZ: {
-        if (allowRotation) {
-          this.selectedObject.rotateOnAxis(zAxis, -rotStep)
-          this.updateSelectionBox()
-        }
-        break
-      }
-      case ObjectAct.snapGrid: {
-        this.selectedObject.position.set(
-          Math.round(this.selectedObject.position.x * 2) / 2,
-          Math.round(this.selectedObject.position.y * 2) / 2,
-          Math.round(this.selectedObject.position.z * 2) / 2
-        )
-        this.updateSelectionBox()
-        break
-      }
-      case ObjectAct.rotReset: {
-        if (allowRotation) {
-          this.selectedObject.rotation.set(0, 0, 0)
-          this.updateSelectionBox()
-        }
-        break
-      }
-      case ObjectAct.copy: {
-        const {parent} = this.selectedObject
-        this.selectedObject = this.selectedObject.clone()
-        this.selectedObject.position.add(v.multiplyScalar(moveStep))
-        parent.add(this.selectedObject)
-        this.updateSelectionBox()
-        break
-      }
-      case ObjectAct.delete: {
-        this.removeObject(this.selectedObject)
-        return
-      }
-      default:
-        return
+      this.buildSvc.selectProp(obj, this.buildNode)
     }
   }
 
@@ -1284,14 +995,14 @@ export class EngineService {
     }
 
     if (boxCollision) {
-      this.playerVelocity.set(0.0, 0.0, 0.0)
+      this.playerVelocity.set(0, 0, 0)
       this.playerCollider.copyPos(oldPosition)
       this.player.position.copy(oldPosition)
       keepGoing = false
     } else {
       if (this.playerVelocity.y <= 0 && climbHeight !== null) {
         // Player is on floor
-        this.playerVelocity.setY(0.0)
+        this.playerVelocity.setY(0)
         newPosition.setY(climbHeight - playerGroundAdjust)
         this.playerOnFloor = true
         this.flyMode = false
@@ -1303,7 +1014,7 @@ export class EngineService {
         climbHeight !== minHeight
       ) {
         // Player hits the ceiling
-        this.playerVelocity.setY(0.0)
+        this.playerVelocity.setY(0)
         newPosition.setY(minHeight - playerGroundAdjust)
       }
 
@@ -1313,14 +1024,14 @@ export class EngineService {
         newPosition.y + playerGroundAdjust < oldPosition.y
       ) {
         // Prevent the player from falling in a small gap
-        this.playerVelocity.setY(0.0)
+        this.playerVelocity.setY(0)
         newPosition.setY(oldPosition.y)
       }
 
       if (feetCollision) {
         this.flyMode = false
-        if (originalDelta.y < 0.0) {
-          originalDelta.setY(0.0)
+        if (originalDelta.y < 0) {
+          originalDelta.setY(0)
         }
       }
 
@@ -1353,16 +1064,14 @@ export class EngineService {
 
         this.userState = 'idle'
 
-        if (Math.abs(velocity) > 0.1) {
-          this.userState = 'walk'
-        }
-
-        if (Math.abs(velocity) > 5.5) {
-          this.userState = 'run'
-        }
-
         if (this.flyMode) {
           this.userState = 'fly'
+        } else if (this.playerVelocity.y < 0) {
+          this.userState = 'fall'
+        } else if (Math.abs(velocity) > 5.5) {
+          this.userState = 'run'
+        } else if (Math.abs(velocity) > 0.1) {
+          this.userState = 'walk'
         }
 
         // When applicable: reset gesture on completion
@@ -1415,7 +1124,7 @@ export class EngineService {
       this.player.position.y = 0
     }
 
-    this.localUserPosSub.next(this.player.position)
+    this.playerPosition.set(this.player.position)
   }
 
   private updatePointLights() {
@@ -1578,11 +1287,11 @@ export class EngineService {
     // compass
     this.compass.setFromVector3(this.cameraDirection)
     this.compassSub.next({
-      pos: {
-        x: Math.round(this.player.position.x * 100) / 100,
-        y: Math.round(this.player.position.y * 100) / 100,
-        z: Math.round(this.player.position.z * 100) / 100
-      },
+      pos: new Vector3(
+        Math.round(this.player.position.x * 100) / 100,
+        Math.round(this.player.position.y * 100) / 100,
+        Math.round(this.player.position.z * 100) / 100
+      ),
       theta: this.getYaw()
     })
   }
@@ -1633,21 +1342,21 @@ export class EngineService {
           item.userData.rotate.waiting -= this.deltaSinceLastFrame
         } else {
           item.rotateOnAxis(
-            yAxis,
+            Y_AXIS,
             item.userData.rotate.speed.y *
               RPM *
               this.deltaSinceLastFrame *
               item.userData.rotate.direction
           )
           item.rotateOnAxis(
-            zAxis,
+            Z_AXIS,
             item.userData.rotate.speed.z *
               RPM *
               this.deltaSinceLastFrame *
               item.userData.rotate.direction
           )
           item.rotateOnAxis(
-            xAxis,
+            X_AXIS,
             item.userData.rotate.speed.x *
               RPM *
               this.deltaSinceLastFrame *
@@ -1729,6 +1438,10 @@ export class EngineService {
 
   private moveLabels() {
     for (const user of this.usersNode.children) {
+      const div = document.getElementById('label-' + user.name)
+      if (div == null) {
+        continue
+      }
       const pos = user.position.clone()
       if (user.userData.height > 1.1) {
         pos.y += user.userData.height / 2
@@ -1738,14 +1451,11 @@ export class EngineService {
       const vector = pos.project(this.activeCamera)
       vector.x = ((vector.x + 1) / 2) * window.innerWidth
       vector.y = (-(vector.y - 1) / 2) * window.innerHeight
-      const div = document.getElementById('label-' + user.name)
-      if (div != null) {
-        if (vector.z < 1) {
-          div.style.left = vector.x + 'px'
-          div.style.top = vector.y + 'px'
-        }
-        div.style.visibility = vector.z < 1 ? 'visible' : 'hidden'
+      if (vector.z < 1) {
+        div.style.left = vector.x + 'px'
+        div.style.top = vector.y + 'px'
       }
+      div.style.visibility = vector.z < 1 ? 'visible' : 'hidden'
     }
   }
 }

@@ -5,7 +5,7 @@ import {FormsModule} from '@angular/forms'
 import {NgxDraggableDomModule} from 'ngx-draggable-dom'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {ObjectService, ObjectAct} from '../../world/object.service'
-import {EngineService} from '../../engine/engine.service'
+import {BuildService} from '../../engine/build.service'
 import {
   faArrowDown,
   faArrowLeft,
@@ -50,10 +50,10 @@ export class UiPropEditComponent {
   }>
 
   public constructor(
-    private engineSvc: EngineService,
+    private buildSvc: BuildService,
     private objSvc: ObjectService
   ) {
-    this.selectedObject = this.engineSvc.selectedObjectSignal
+    this.selectedObject = this.buildSvc.selectedObjectSignal
   }
 
   trigger(event: MouseEvent, action: number) {

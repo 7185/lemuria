@@ -13,7 +13,7 @@ export class PlayerCollider {
   private topBox: Box3
   private bottomBox: Box3
   private rays: Ray[]
-  private currentPos: Vector3
+  private currentPos = new Vector3()
 
   public constructor(boxHeight: number, pos = new Vector3()) {
     // We need to ensure the total collider height doesn't go too low
@@ -51,7 +51,7 @@ export class PlayerCollider {
         downward
       )
     ]
-    this.currentPos = pos.clone()
+    this.currentPos.copy(pos)
 
     this.translate(this.currentPos)
   }
@@ -140,6 +140,6 @@ export class PlayerCollider {
   public copyPos(pos: Vector3): void {
     const delta = pos.clone().sub(this.currentPos)
     this.translate(delta)
-    this.currentPos = pos.clone()
+    this.currentPos.copy(pos)
   }
 }

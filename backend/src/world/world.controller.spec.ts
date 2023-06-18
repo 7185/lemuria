@@ -18,7 +18,7 @@ describe('WorldController', () => {
           Promise.resolve({
             id: 1,
             name: 'Lemuria',
-            data: '{"welcome": "Bienvenue sur Lemuria", "enable_terrain": false}'
+            data: '{"welcome": "Bienvenue sur Lemuria", "enable_terrain": false, "enable_fog": true}'
           }),
         findMany: () => Promise.resolve([{id: 1, name: 'Lemuria', data: '{}'}])
       },
@@ -34,7 +34,8 @@ describe('WorldController', () => {
       authorizedUsers: new Set([
         new User({id: 'dummy', name: 'alice', world: 1, connected: true})
       ]),
-      getUserFromCookie: () => new User({id: 'dummy'})
+      getUserFromCookie: () => new User({id: 'dummy'}),
+      broadcastUserlist: () => Promise.resolve()
     }
     const module: TestingModule = await Test.createTestingModule({
       imports: [UserModule],
@@ -116,7 +117,7 @@ describe('WorldController', () => {
         },
         terrain: false,
         light_dir: [-0.8, -0.5, -0.2],
-        fog: false,
+        fog: true,
         fog_color: [0, 0, 127],
         fog_max: 120,
         fog_min: 0,

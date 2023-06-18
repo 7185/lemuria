@@ -4,7 +4,7 @@ import {DecimalPipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
 import {NgxDraggableDomModule} from 'ngx-draggable-dom'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
-import {EngineService} from '../../engine/engine.service'
+import {BuildService} from '../../engine/build.service'
 import {
   faArrowsUpDown,
   faArrowRotateLeft,
@@ -37,8 +37,8 @@ export class UiTerrainEditComponent {
   }>
   public height = 0
 
-  constructor(private engineSvc: EngineService) {
-    this.selectedCell = this.engineSvc.selectedCellSignal
+  constructor(private buildSvc: BuildService) {
+    this.selectedCell = this.buildSvc.selectedCellSignal
     effect(() => {
       this.height = this.selectedCell().height
     })

@@ -62,6 +62,7 @@ export class WorldService {
 
     return await this.db.prop.findMany({
       select: {
+        id: true,
         date: true,
         name: true,
         x: true,
