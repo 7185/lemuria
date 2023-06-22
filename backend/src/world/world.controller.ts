@@ -60,7 +60,7 @@ export class WorldController {
     const max_z = /^-?\d+$/.test(query.max_z) ? parseInt(query.max_z) : null
 
     const entries = (
-      await this.worldService.getProps(
+      (await this.worldService.getProps(
         parseInt(id),
         min_x,
         max_x,
@@ -68,7 +68,7 @@ export class WorldController {
         max_y,
         min_z,
         max_z
-      )
+      )) as unknown[]
     ).map((e) => Object.values(e))
 
     return {entries}

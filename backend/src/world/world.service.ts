@@ -1,10 +1,15 @@
-import {Injectable} from '@nestjs/common'
+import {Injectable, Inject} from '@nestjs/common'
+import {CACHE_MANAGER} from '@nestjs/cache-manager'
+import {Cache} from 'cache-manager'
 import {DbService} from '../db/db.service'
 import {World} from './world'
 
 @Injectable()
 export class WorldService {
-  constructor(private readonly db: DbService) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private cache: Cache,
+    private readonly db: DbService
+  ) {}
 
   async getList() {
     return await this.db.world.findMany()
@@ -60,22 +65,30 @@ export class WorldService {
       orClause.push({z: {lt: maxZ}})
     }
 
-    return await this.db.prop.findMany({
-      select: {
-        id: true,
-        date: true,
-        name: true,
-        x: true,
-        y: true,
-        z: true,
-        pi: true,
-        ya: true,
-        ro: true,
-        desc: true,
-        act: true
-      },
-      where: {AND: [{wid}, {AND: orClause}]}
-    })
+    // Ignore Y for cache keys
+    const cacheKey = `P-${wid}-${minX}-${maxX}-${minZ}-${maxZ}`
+    let props = await this.cache.get(cacheKey)
+
+    if (props == null) {
+      props = await this.db.prop.findMany({
+        select: {
+          id: true,
+          date: true,
+          name: true,
+          x: true,
+          y: true,
+          z: true,
+          pi: true,
+          ya: true,
+          ro: true,
+          desc: true,
+          act: true
+        },
+        where: {AND: [{wid}, {AND: orClause}]}
+      })
+      await this.cache.set(cacheKey, props)
+    }
+    return props
   }
 
   async getElev(wid: number) {

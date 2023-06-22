@@ -1,11 +1,15 @@
 STATIC_PATH = "static"
 DEBUG = true
 DB_FILE = "app.db"
+CACHE_TYPE = "SimpleCache"
+CACHE_DEFAULT_TIMEOUT = 3600
+CACHE_THRESHOLD = 5000
 JWT_TOKEN_LOCATION = ["cookies"]
 JWT_ACCESS_COOKIE_NAME = "lemuria_token_access"
 JWT_ACCESS_COOKIE_PATH = "/api/v1/"
 JWT_ACCESS_CSRF_COOKIE_NAME = "lemuria_csrf_access"
 JWT_ACCESS_CSRF_COOKIE_PATH = "/"
+JWT_ACCESS_TOKEN_EXPIRES = 900
 JWT_REFRESH_COOKIE_NAME = "lemuria_token_renew"
 JWT_REFRESH_COOKIE_PATH = "/api/v1/auth/renew"
 JWT_REFRESH_CSRF_COOKIE_NAME = "lemuria_csrf_renew"

@@ -129,13 +129,12 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     effect(() => {
       this.userList = this.userSvc.userListSignal()
       this.worldSvc.worldList.forEach((w) => (w.users = 0))
-      for (const u of this.userList) {
-        for (const w of this.worldSvc.worldList) {
-          if (u.world === w.id) {
-            w.users++
-          }
+      this.userList.forEach((u) => {
+        const world = this.worldSvc.worldList.find((w) => u.world === w.id)
+        if (world) {
+          world.users++
         }
-      }
+      })
       this.cdRef.detectChanges()
     })
   }

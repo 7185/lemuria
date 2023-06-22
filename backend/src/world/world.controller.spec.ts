@@ -1,6 +1,7 @@
 import {UserModule} from '../user/user.module'
 import {UserService} from '../user/user.service'
 import {Test, TestingModule} from '@nestjs/testing'
+import {CACHE_MANAGER} from '@nestjs/cache-manager'
 import type {FastifyReply} from 'fastify'
 import {DbService} from '../db/db.service'
 import {WorldController} from './world.controller'
@@ -40,7 +41,14 @@ describe('WorldController', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [UserModule],
       controllers: [WorldController],
-      providers: [WorldService, DbService]
+      providers: [
+        WorldService,
+        DbService,
+        {
+          provide: CACHE_MANAGER,
+          useValue: {get: () => null, set: () => jest.fn()}
+        }
+      ]
     })
       .overrideProvider(DbService)
       .useValue(mockDb)
@@ -56,7 +64,14 @@ describe('WorldController', () => {
     const offlineModule: TestingModule = await Test.createTestingModule({
       imports: [UserModule],
       controllers: [WorldController],
-      providers: [WorldService, DbService]
+      providers: [
+        WorldService,
+        DbService,
+        {
+          provide: CACHE_MANAGER,
+          useValue: {get: () => null, set: () => jest.fn()}
+        }
+      ]
     })
       .overrideProvider(UserService)
       .useValue(mockUserWithNullId)

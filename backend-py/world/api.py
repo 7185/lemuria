@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """World API routes"""
 
-from quart import request, jsonify, Blueprint
+from quart import request, jsonify, Blueprint, current_app
 from quart_jwt_extended import create_access_token, jwt_refresh_token_required, create_refresh_token, set_access_cookies, set_refresh_cookies, get_jwt_identity, jwt_required, unset_jwt_cookies
 from user.model import User, authorized_users
 from world.model import World
@@ -30,6 +30,7 @@ async def world_get(world_id):
 @jwt_required
 async def world_props_get(world_id):
     """World props fetching"""
+    cache = current_app.cache
 
     # Fetch all arguments
     min_x = request.args.get("min_x")
@@ -47,6 +48,12 @@ async def world_props_get(world_id):
     min_z = int(min_z) if min_z and min_z.lstrip('-').isdigit() else None
     max_z = int(max_z) if max_z and max_z.lstrip('-').isdigit() else None
 
+    # Ignore Y for cache keys
+    cache_key = f"P-{world_id}-{min_x}-{max_x}-{min_z}-{max_z}"
+    if (props := cache.get(cache_key)) is not None:
+        return props, 200
+
     props = await World(world_id).props(min_x, max_x, min_y, max_y, min_z, max_z)
+    cache.set(cache_key, props)
 
     return props, 200
