@@ -15,6 +15,11 @@ export class World {
   fog_color?: number[]
   fog_min?: number
   fog_max?: number
+  water?: boolean
+  water_offset?: number
+  water_color?: number[]
+  water_texture_top?: string
+  water_texture_bottom?: string
   amblight_color?: number[]
   dirlight_color?: number[]
   light_dir?: number[]
@@ -23,12 +28,17 @@ export class World {
   constructor(params: World = {}) {
     this.terrain = false
     this.fog = false
+    this.water = false
     this.fog_color = [0, 0, 127]
     this.fog_min = 0
     this.fog_max = 120
     this.terrain_offset = 0
     this.terrain_ambient = 0.2
     this.terrain_diffuse = 1
+    this.water_offset = 0
+    this.water_color = [0, 0, 255]
+    this.water_texture_top = ''
+    this.water_texture_bottom = ''
     this.entry = '0N 0W'
     this.sky_color = {
       top: [0, 0, 0],

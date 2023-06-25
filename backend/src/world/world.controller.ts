@@ -29,7 +29,7 @@ export class WorldController {
     @Param('id') id: string,
     @Res() res: FastifyReply
   ) {
-    const user = this.userService.getUserFromCookie(cookie)
+    const user = this.userService.getUserFromAccessCookie(cookie)
     if (!user.id) {
       return res.status(401).send()
     }

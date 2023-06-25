@@ -30,7 +30,7 @@ export class TextCanvas {
 
     // Find the maximum font size that fits the text without cropping
     while (!fontFit && fontSize > 0) {
-      ctx.font = fontSize + 'px Arial'
+      ctx.font = `500 ${fontSize}px Arimo,Arial,sans-serif`
       const lines = this.breakTextIntoLines(text, ctx, canvasWidth)
 
       const totalHeight = lines.length * fontSize * 1.2
@@ -41,13 +41,13 @@ export class TextCanvas {
       if (totalHeight <= canvasHeight && totalWidth <= canvasWidth) {
         fontFit = true
       } else {
-        fontSize--
+        fontSize -= 2
       }
     }
 
     const lines = TextCanvas.breakTextIntoLines(text, ctx, canvasWidth)
 
-    ctx.font = fontSize + 'px Arial'
+    ctx.font = `500 ${fontSize}px Arimo,Arial,sans-serif`
     ctx.textBaseline = 'top'
 
     const lineHeight = fontSize * 1.2

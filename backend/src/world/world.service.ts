@@ -22,6 +22,10 @@ export class WorldService {
       attr.terrain = attr.enable_terrain
       delete attr.enable_terrain
     }
+    if (attr.enable_water != null) {
+      attr.water = attr.enable_water
+      delete attr.enable_water
+    }
     if (attr.enable_fog != null) {
       attr.fog = attr.enable_fog
       delete attr.enable_fog

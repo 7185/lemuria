@@ -4,8 +4,15 @@ export const config: any = {
     timeout: 3600
   },
   cookie: {
-    access: 'lemuria_token_access',
-    renew: 'lemuria_token_renew'
+    secure: false,
+    sameSite: 'strict',
+    accessName: 'lemuria_token_access',
+    accessExpires: 900,
+    accessPath: '/api/v1/',
+    refreshName: 'lemuria_token_renew',
+    refreshExpires: 2592000,
+    refreshPath: '/api/v1/auth/renew'
   },
-  positionUpdateTick: 200
+  positionUpdateTick: 200,
+  secret: '**changeme**'
 }

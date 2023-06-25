@@ -24,7 +24,7 @@ import {
   Color,
   PointLight
 } from 'three'
-import type {Box3, LOD, Triangle} from 'three'
+import type {LOD, Triangle} from 'three'
 import {BuildService} from './build.service'
 import {TeleportService} from './teleport.service'
 import {UserService} from '../user'
@@ -686,7 +686,10 @@ export class EngineService {
             this.hoveredObject = item
             if (item != null && item.userData?.desc) {
               this.labelDesc.style.display = 'block'
-              this.labelDesc.innerHTML = item.userData.desc
+              this.labelDesc.innerHTML = item.userData.desc.replace(
+                /[\u0000-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u00FF]/g,
+                (c: string) => '&#' + `000${c.charCodeAt(0)}`.slice(-4) + ';'
+              )
               this.labelDesc.style.left =
                 ((this.mouse.x + 1) / 2) * window.innerWidth + 'px'
               this.labelDesc.style.top =
@@ -925,12 +928,10 @@ export class EngineService {
     delta: Vector3,
     originalDelta: Vector3
   ): boolean {
-    let keepGoing = true
     const newPosition = oldPosition.clone().add(delta)
     const terrain = this.worldNode.getObjectByName('terrain')
 
     this.playerCollider.copyPos(newPosition)
-
     this.boxMaterial?.color.setHex(0x00ff00)
 
     let climbHeight = null
@@ -948,9 +949,7 @@ export class EngineService {
       const rayIntersectionPoint =
         this.playerCollider.raysIntersectTriangle(tri)
 
-      if (this.playerCollider.bottomBoxIntersectsTriangle(tri)) {
-        feetCollision = true
-      }
+      feetCollision = this.playerCollider.bottomBoxIntersectsTriangle(tri)
 
       if (collision) {
         boxCollision = true
@@ -973,24 +972,20 @@ export class EngineService {
       }
     }
 
-    terrain?.userData.boundsTree?.shapecast({
-      intersectsBounds: (box: Box3) =>
-        box.intersectsBox(this.playerCollider.mainBox),
+    this.playerCollider.checkBoundsTree(
+      terrain?.userData.boundsTree,
       intersectsTriangle
-    })
+    )
 
     // We expect maximum 9 LODs to be available to test collision: the one the player
     // stands in and the 8 neighbouring ones (sides and corners)
     for (const lod of this.getNearestChunks()) {
       const lodOffset = lod.position
       this.playerCollider.translate(lodOffset.negate())
-
-      lod.userData.boundsTree?.shapecast({
-        intersectsBounds: (box: Box3) =>
-          box.intersectsBox(this.playerCollider.mainBox),
+      this.playerCollider.checkBoundsTree(
+        lod.userData.boundsTree,
         intersectsTriangle
-      })
-
+      )
       this.playerCollider.translate(lodOffset.negate())
     }
 
@@ -998,48 +993,48 @@ export class EngineService {
       this.playerVelocity.set(0, 0, 0)
       this.playerCollider.copyPos(oldPosition)
       this.player.position.copy(oldPosition)
-      keepGoing = false
-    } else {
-      if (this.playerVelocity.y <= 0 && climbHeight !== null) {
-        // Player is on floor
-        this.playerVelocity.setY(0)
-        newPosition.setY(climbHeight - playerGroundAdjust)
-        this.playerOnFloor = true
-        this.flyMode = false
-      }
-
-      if (
-        this.playerVelocity.y > 0 &&
-        minHeight !== null &&
-        climbHeight !== minHeight
-      ) {
-        // Player hits the ceiling
-        this.playerVelocity.setY(0)
-        newPosition.setY(minHeight - playerGroundAdjust)
-      }
-
-      if (
-        climbHeight === null &&
-        feetCollision &&
-        newPosition.y + playerGroundAdjust < oldPosition.y
-      ) {
-        // Prevent the player from falling in a small gap
-        this.playerVelocity.setY(0)
-        newPosition.setY(oldPosition.y)
-      }
-
-      if (feetCollision) {
-        this.flyMode = false
-        if (originalDelta.y < 0) {
-          originalDelta.setY(0)
-        }
-      }
-
-      this.playerCollider.copyPos(newPosition)
-      this.player.position.copy(newPosition)
+      return false
     }
 
-    return keepGoing
+    if (this.playerVelocity.y <= 0 && climbHeight !== null) {
+      // Player is on floor
+      this.playerVelocity.setY(0)
+      newPosition.setY(climbHeight - playerGroundAdjust)
+      this.playerOnFloor = true
+      this.flyMode = false
+    }
+
+    if (
+      this.playerVelocity.y > 0 &&
+      minHeight !== null &&
+      climbHeight !== minHeight
+    ) {
+      // Player hits the ceiling
+      this.playerVelocity.setY(0)
+      newPosition.setY(minHeight - playerGroundAdjust)
+    }
+
+    if (
+      climbHeight === null &&
+      feetCollision &&
+      newPosition.y + playerGroundAdjust < oldPosition.y
+    ) {
+      // Prevent the player from falling in a small gap
+      this.playerVelocity.setY(0)
+      newPosition.setY(oldPosition.y)
+    }
+
+    if (feetCollision) {
+      this.flyMode = false
+      if (originalDelta.y < 0) {
+        originalDelta.setY(0)
+      }
+    }
+
+    this.playerCollider.copyPos(newPosition)
+    this.player.position.copy(newPosition)
+
+    return true
   }
 
   private updatePlayerPosition() {
@@ -1089,7 +1084,7 @@ export class EngineService {
     if (!this.inputSysSvc.controls[PressedKey.clip] && this.playerCollider) {
       let deltaLength = deltaPosition.length()
 
-      for (let i = 0; deltaLength > 0.0 && i < playerMaxNbSteps; i++) {
+      for (let i = 0; deltaLength > 0 && i < playerMaxNbSteps; i++) {
         // Do not proceed in steps longer than the dimensions on the colliding box
         // Interpolate the movement by moving step by step, stop if we collide with something, continue otherwise
         const deltaScalar = Math.min(playerMaxStepLength, deltaLength)

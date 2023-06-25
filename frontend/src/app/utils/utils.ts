@@ -36,9 +36,9 @@ export class Utils {
         pos
       ) || []
     if (zNum && xNum) {
-      r.z = Number.parseFloat(zNum) * (zHemi === 'N' ? 10 : -10)
+      r.z = Number.parseFloat(zNum) * (zHemi.toUpperCase() === 'N' ? 10 : -10)
       r.y = (Number.parseFloat(yNum) || 0) * 10
-      r.x = Number.parseFloat(xNum) * (xHemi === 'W' ? 10 : -10)
+      r.x = Number.parseFloat(xNum) * (xHemi.toUpperCase() === 'W' ? 10 : -10)
     }
     return r
   }

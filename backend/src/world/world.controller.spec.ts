@@ -35,7 +35,7 @@ describe('WorldController', () => {
       authorizedUsers: new Set([
         new User({id: 'dummy', name: 'alice', world: 1, connected: true})
       ]),
-      getUserFromCookie: () => new User({id: 'dummy'}),
+      getUserFromAccessCookie: () => new User({id: 'dummy'}),
       broadcastUserlist: () => Promise.resolve()
     }
     const module: TestingModule = await Test.createTestingModule({
@@ -59,7 +59,7 @@ describe('WorldController', () => {
     controller = module.get<WorldController>(WorldController)
 
     const mockUserWithNullId = {
-      getUserFromCookie: () => new User({id: null})
+      getUserFromAccessCookie: () => new User({id: null})
     }
     const offlineModule: TestingModule = await Test.createTestingModule({
       imports: [UserModule],
@@ -140,7 +140,12 @@ describe('WorldController', () => {
         dirlight_color: [255, 255, 255],
         terrain_ambient: 0.2,
         terrain_diffuse: 1,
-        terrain_offset: 0
+        terrain_offset: 0,
+        water: false,
+        water_color: [0, 0, 255],
+        water_offset: 0,
+        water_texture_bottom: '',
+        water_texture_top: ''
       })
     })
   })

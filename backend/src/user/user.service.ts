@@ -8,7 +8,10 @@ import {config} from '../app.config'
 @Injectable()
 export class UserService {
   public authorizedUsers = new Set<User>()
-  private cookieRegex = new RegExp(`${config.cookie.access}=([^;]+)`)
+  private cookieAccessRegex = new RegExp(`${config.cookie.accessName}=([^;]+)`)
+  private cookieRefreshRegex = new RegExp(
+    `${config.cookie.refreshName}=([^;]+)`
+  )
 
   constructor(private readonly jwtService: JwtService) {}
 
@@ -22,8 +25,10 @@ export class UserService {
     return {id: user.id, name: user.name}
   }
 
-  logout() {
-    // todo: remove user from authorizedUsers
+  logout(userId: string) {
+    this.authorizedUsers.forEach((u) =>
+      u.id === userId ? this.authorizedUsers.delete(u) : u
+    )
     return {}
   }
 
@@ -36,13 +41,12 @@ export class UserService {
     return new User()
   }
 
-  getUserFromCookie(cookie: string) {
-    const accessCookie = cookie?.match(this.cookieRegex)
-    if (accessCookie) {
-      const userId = this.jwtService.decode(accessCookie[1])['id']
-      return this.getUser(userId)
-    }
-    return new User()
+  getUserFromAccessCookie(cookie: string) {
+    return this.getUserFromCookie(cookie, this.cookieAccessRegex)
+  }
+
+  getUserFromRefreshCookie(cookie: string) {
+    return this.getUserFromCookie(cookie, this.cookieRefreshRegex)
   }
 
   broadcast(message: Message) {
@@ -92,5 +96,18 @@ export class UserService {
         gesture: user.gesture
       }
     })
+  }
+
+  private getUserFromCookie(cookie: string, regex: RegExp) {
+    const authCookie = cookie?.match(regex)
+    if (authCookie) {
+      try {
+        const userId = this.jwtService.verify(authCookie[1])['id']
+        return this.getUser(userId)
+      } catch (error) {
+        return new User()
+      }
+    }
+    return new User()
   }
 }

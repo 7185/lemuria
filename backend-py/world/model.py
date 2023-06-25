@@ -30,6 +30,11 @@ class World:
         self._terrain_offset = 0
         self._terrain_ambient = 0.2
         self._terrain_diffuse = 1
+        self._water = False
+        self._water_color = [0, 0, 255]
+        self._water_offset = -1
+        self._water_texture_top = ''
+        self._water_texture_bottom = ''
         self._elev = None
 
     @db_required
@@ -59,6 +64,11 @@ class World:
             self._fog_color = world_data.get('fog_color', self._fog_color)
             self._fog_min = world_data.get('fog_min', self._fog_min)
             self._fog_max = world_data.get('fog_max', self._fog_max)
+            self._water = world_data.get('enable_water', self._water)
+            self._water_color = world_data.get('water_color', self._water_color)
+            self._water_offset = world_data.get('water_offset', self._water_offset)
+            self._water_texture_top = world_data.get('water_texture_top', self._water_texture_top)
+            self._water_texture_bottom = world_data.get('water_texture_bottom', self._water_texture_bottom)
             self._amblight_color = world_data.get('amblight_color', self._amblight_color)
             self._dirlight_color = world_data.get('dirlight_color', self._dirlight_color)
             self._light_dir = world_data.get('light_dir', self._light_dir)
@@ -94,7 +104,12 @@ class World:
             'fog': self._fog,
             'fog_color': self._fog_color,
             'fog_min': self._fog_min,
-            'fog_max': self._fog_max
+            'fog_max': self._fog_max,
+            'water': self._water,
+            'water_color': self._water_color,
+            'water_offset': self._water_offset,
+            'water_texture_top': self._water_texture_top,
+            'water_texture_bottom': self._water_texture_bottom
         }
 
     @db_required

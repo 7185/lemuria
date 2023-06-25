@@ -12,7 +12,7 @@ describe('WsGateway', () => {
   beforeEach(async () => {
     const mockUser = {
       authorizedUsers: new Set([new User({id: 'dummy', name: 'alice'})]),
-      getUserFromCookie: jest.fn((x) => x)
+      getUserFromAccessCookie: jest.fn((x) => x)
     }
     const module: TestingModule = await Test.createTestingModule({
       imports: [UserModule],

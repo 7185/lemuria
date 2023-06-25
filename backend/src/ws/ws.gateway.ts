@@ -20,7 +20,9 @@ export class WsGateway {
     this.server.on(
       'connection',
       (client: WebSocket, request: IncomingMessage) => {
-        const user = this.userSvc.getUserFromCookie(request.headers.cookie)
+        const user = this.userSvc.getUserFromAccessCookie(
+          request.headers.cookie
+        )
         if (!user.id) {
           client.close()
           return
@@ -66,7 +68,7 @@ export class WsGateway {
   }
 
   handleConnection(client: WebSocket, request: IncomingMessage) {
-    const user = this.userSvc.getUserFromCookie(request.headers.cookie)
+    const user = this.userSvc.getUserFromAccessCookie(request.headers.cookie)
     if (!user.id) {
       client.close()
       return

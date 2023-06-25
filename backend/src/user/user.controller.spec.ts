@@ -4,6 +4,7 @@ import {User} from './user'
 import {UserController} from './user.controller'
 import {UserService} from './user.service'
 import type {FastifyReply} from 'fastify'
+import {config} from '../app.config'
 
 describe('UserController', () => {
   let offlineController: UserController
@@ -11,7 +12,7 @@ describe('UserController', () => {
 
   beforeEach(async () => {
     const offlineModule: TestingModule = await Test.createTestingModule({
-      imports: [JwtModule.register({secret: '**changeme**'})],
+      imports: [JwtModule.register({secret: config.secret})],
       controllers: [UserController],
       providers: [UserService]
     }).compile()
@@ -19,7 +20,7 @@ describe('UserController', () => {
     offlineController = offlineModule.get<UserController>(UserController)
 
     const mockUser = {
-      getUserFromCookie: () => new User({id: 'dummy'})
+      getUserFromAccessCookie: () => new User({id: 'dummy'})
     }
     const module: TestingModule = await Test.createTestingModule({
       imports: [JwtModule],
@@ -100,7 +101,9 @@ describe('UserController', () => {
       send: jest.fn((x) => x)
     } as unknown as FastifyReply
     it('should return empty', () => {
-      expect(offlineController.authLogout(responseMock)).toStrictEqual({})
+      expect(
+        offlineController.authLogout('cookie', responseMock)
+      ).toStrictEqual({})
       expect(responseMock.status).toHaveBeenCalledWith(200)
     })
   })

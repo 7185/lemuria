@@ -73,11 +73,9 @@ export class PlayerCollider {
       chunk.parent.userData.boundsTree = null
     } else {
       chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
-        lazyGeneration: false,
+        lazyGeneration: true,
         onProgress: (progress: number) => {
-          if (progress === 1.0) {
-            chunk.parent.visible = true
-          }
+          chunk.parent.visible = progress === 1
         }
       })
     }
@@ -96,7 +94,7 @@ export class PlayerCollider {
       terrain.userData.boundsTree = null
     } else {
       terrain.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
-        lazyGeneration: false
+        lazyGeneration: true
       })
     }
   }
@@ -128,6 +126,14 @@ export class PlayerCollider {
     })
     return intersectionPoint
   }
+
+  public checkBoundsTree(boundsTree: MeshBVH, intersectsTriangle): void {
+    boundsTree?.shapecast({
+      intersectsBounds: (box: Box3) => box.intersectsBox(this.mainBox),
+      intersectsTriangle
+    })
+  }
+
   public translate(delta: Vector3): void {
     this.mainBox.translate(delta)
     this.topBox.translate(delta)

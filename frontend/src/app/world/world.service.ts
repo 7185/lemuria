@@ -721,6 +721,7 @@ export class WorldService {
     })
 
     this.terrainSvc.setTerrain(world)
+    this.terrainSvc.setWater(world)
     this.resetChunks()
     this.teleport(entry)
   }

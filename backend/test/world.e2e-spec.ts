@@ -1,5 +1,6 @@
 import {Test, TestingModule} from '@nestjs/testing'
 import {FastifyAdapter, NestFastifyApplication} from '@nestjs/platform-fastify'
+import {CacheModule} from '@nestjs/cache-manager'
 import * as request from 'supertest'
 import {WorldModule} from '../src/world/world.module'
 
@@ -8,7 +9,7 @@ describe('AppController (e2e)', () => {
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [WorldModule]
+      imports: [CacheModule.register({isGlobal: true}), WorldModule]
     }).compile()
 
     app = moduleFixture.createNestApplication<NestFastifyApplication>(

@@ -3,6 +3,7 @@ import {FastifyAdapter, NestFastifyApplication} from '@nestjs/platform-fastify'
 import {fastifyCookie} from '@fastify/cookie'
 import * as request from 'supertest'
 import {UserModule} from '../src/user/user.module'
+import {config} from '../src/app.config'
 
 describe('AppController (e2e)', () => {
   let app: NestFastifyApplication
@@ -16,7 +17,7 @@ describe('AppController (e2e)', () => {
       new FastifyAdapter()
     )
     app.register(fastifyCookie, {
-      secret: '**changeme**'
+      secret: config.secret
     })
     await app.init()
     await app.getHttpAdapter().getInstance().ready()
