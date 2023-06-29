@@ -18,19 +18,6 @@ export class WorldService {
   async getWorld(id: number) {
     const world = await this.db.world.findFirst({where: {id}})
     const attr = JSON.parse(world.data)
-    if (attr.enable_terrain != null) {
-      attr.terrain = attr.enable_terrain
-      delete attr.enable_terrain
-    }
-    if (attr.enable_water != null) {
-      attr.water = attr.enable_water
-      delete attr.enable_water
-    }
-    if (attr.enable_fog != null) {
-      attr.fog = attr.enable_fog
-      delete attr.enable_fog
-    }
-
     return new World({
       id: world.id,
       name: world.name,

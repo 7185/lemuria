@@ -101,5 +101,53 @@
         </div>
       </div>
     </tab>
+    <tab heading="Water">
+      <div class="mb-2 row">
+        <label for="water" class="col col-form-label form-check-label">
+          Enable water
+        </label>
+        <div class="col col-2">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" [ngModel]="water()" (ngModelChange)="water.set($event)" id="water">
+          </div>
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="waterTopTexture" class="col col-form-label">Top texture</label>
+        <div class="col">
+          <input id="waterTopTexture" class="form-control" type="text" [ngModel]="waterTopTexture()" (ngModelChange)="waterTopTexture.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="waterBottomTexture" class="col col-form-label">Bottom texture</label>
+        <div class="col">
+          <input id="waterBottomTexture" class="form-control" type="text" [ngModel]="waterBottomTexture()" (ngModelChange)="waterBottomTexture.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="waterColor" class="col col-form-label">Color</label>
+        <div class="col col-2">
+          <input id="waterColor" class="form-control" type="color" [ngModel]="waterColor()" (ngModelChange)="waterColor.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="waterOpacity" class="col col-form-label">Opacity</label>
+        <div class="col col-3">
+          <input id="waterOpacity" class="form-control" type="number" [ngModel]="waterOpacity()" (ngModelChange)="waterOpacity.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="waterLevel" class="col col-form-label">Water Level</label>
+        <div class="col col-3">
+          <input id="waterLevel" class="form-control" type="number" [ngModel]="waterLevel()" (ngModelChange)="waterLevel.set($event)">
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="waterUnderView" class="col col-form-label">Underwater view distance</label>
+        <div class="col col-3">
+          <input id="waterUnderView" class="form-control" type="number" [ngModel]="waterUnderView()" (ngModelChange)="waterUnderView.set($event)">
+        </div>
+      </div>
+    </tab>
   </tabset>
 </div>

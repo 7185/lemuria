@@ -2,8 +2,8 @@
 """World API routes"""
 
 from quart import request, jsonify, Blueprint, current_app
-from quart_jwt_extended import create_access_token, jwt_refresh_token_required, create_refresh_token, set_access_cookies, set_refresh_cookies, get_jwt_identity, jwt_required, unset_jwt_cookies
-from user.model import User, authorized_users
+from quart_jwt_extended import get_jwt_identity, jwt_required
+from user.model import authorized_users
 from world.model import World
 
 api_world = Blueprint('api_world', __name__, url_prefix='/api/v1/world')

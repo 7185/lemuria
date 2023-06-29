@@ -332,6 +332,9 @@ export class ObjectService {
           }
           m.dispose()
         })
+        newMaterials.forEach((m: MeshPhongMaterial) => {
+          m.shininess = 0
+        })
         child.material = newMaterials
         child.material.needsUpdate = true
       }
@@ -339,14 +342,40 @@ export class ObjectService {
     return forkJoin(promises)
   }
 
-  loadObject(name: string, basic = false): Observable<any> {
+  loadProp(name: string, basic = false): Observable<any> {
+    return this.loadObject(name, this.objects, basic ? 'basic' : 'prop')
+  }
+
+  loadAvatar(name: string): Observable<any> {
+    return this.loadObject(name, this.avatars, 'avatar')
+  }
+
+  cleanCache() {
+    this.objects.clear()
+    this.avatars.clear()
+  }
+
+  public texturesNextFrame() {
+    this.rwxMaterialManager.texturesNextFrame()
+  }
+
+  private loadObject(
+    name: string,
+    objectCache: Map<string, Observable<any>>,
+    loaderType = 'basic'
+  ) {
     name = Utils.modelName(name)
-    const object = this.objects.get(name)
+    const object = objectCache.get(name)
     if (object !== undefined) {
       return object
     }
-    const loader: RWXLoader = basic ? this.basicLoader : this.rwxPropLoader
-    if (loader.path !== this.rwxPath()) {
+    const loader: RWXLoader =
+      loaderType === 'prop'
+        ? this.rwxPropLoader
+        : loaderType === 'avatar'
+        ? this.rwxAvatarLoader
+        : this.basicLoader
+    if (loader === this.basicLoader && loader.path !== this.rwxPath()) {
       // Dirty fix for skybox loading too fast
       loader.setPath(this.rwxPath()).setResourcePath(this.resPath())
     }
@@ -358,40 +387,10 @@ export class ObjectService {
         () => observer.next(this.unknown)
       )
     })
-    this.objects.set(name, observable)
+    objectCache.set(name, observable)
     return observable.pipe(
       map((newObject: Observable<Group>) => newObject),
       catchError(() => of(this.unknown))
     )
-  }
-
-  loadAvatar(name: string, basic = false): Observable<any> {
-    name = Utils.modelName(name)
-    const avatar = this.avatars.get(name)
-    if (avatar !== undefined) {
-      return avatar
-    }
-    const loader = basic ? this.basicLoader : this.rwxAvatarLoader
-    const observable = new Observable((observer) => {
-      loader.load(
-        name,
-        (rwx: Group) => observer.next(rwx),
-        null,
-        () => observer.next(this.unknown)
-      )
-    })
-    this.avatars.set(name, observable)
-    return observable.pipe(
-      map((newAvatar: Observable<Group>) => newAvatar),
-      catchError(() => of(this.unknown))
-    )
-  }
-
-  cleanCache() {
-    this.objects.clear()
-  }
-
-  public texturesNextFrame() {
-    this.rwxMaterialManager.texturesNextFrame()
   }
 }

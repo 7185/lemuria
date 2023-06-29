@@ -23,16 +23,23 @@ import {WorldService} from 'src/app/world/world.service'
 export class UiWorldAttribsComponent {
   @Output() closeModal = new EventEmitter()
 
-  public fogColor: WritableSignal<string>
   public ambLight: WritableSignal<string>
   public dirLight: WritableSignal<string>
   public lightDirX: WritableSignal<number>
   public lightDirY: WritableSignal<number>
   public lightDirZ: WritableSignal<number>
   public fog: WritableSignal<boolean>
+  public fogColor: WritableSignal<string>
   public fogMin: WritableSignal<number>
   public fogMax: WritableSignal<number>
   public skybox: WritableSignal<string>
+  public water: WritableSignal<boolean>
+  public waterColor: WritableSignal<string>
+  public waterBottomTexture: WritableSignal<string>
+  public waterTopTexture: WritableSignal<string>
+  public waterLevel: WritableSignal<number>
+  public waterOpacity: WritableSignal<number>
+  public waterUnderView: WritableSignal<number>
 
   constructor(private engineSvc: EngineService, public worldSvc: WorldService) {
     this.fog = signal(false)
@@ -43,7 +50,7 @@ export class UiWorldAttribsComponent {
     this.lightDirZ = signal(this.engineSvc.getDirLightTarget()[2] | 0)
 
     this.fogColor = signal(
-      Utils.colorHexToStr(this.engineSvc.getFog()?.color.getHex() || 0x00007f)
+      Utils.colorHexToStr(this.engineSvc.getWorldFog()?.color || 0x00007f)
     )
     this.ambLight = signal(
       Utils.colorHexToStr(this.engineSvc.getAmbLightColor())
@@ -51,9 +58,20 @@ export class UiWorldAttribsComponent {
     this.dirLight = signal(
       Utils.colorHexToStr(this.engineSvc.getDirLightColor())
     )
+    this.water = signal(false)
+    this.waterColor = signal(
+      Utils.colorHexToStr(
+        this.engineSvc.getWater()?.userData?.color || 0x00ffff
+      )
+    )
+    this.waterBottomTexture = signal('')
+    this.waterTopTexture = signal('')
+    this.waterLevel = signal(0)
+    this.waterOpacity = signal(128)
+    this.waterUnderView = signal(500)
 
     effect(() => {
-      this.engineSvc.setFog(
+      this.engineSvc.setWorldFog(
         Utils.colorStrToHex(this.fogColor()),
         this.fogMin(),
         this.fogMax(),

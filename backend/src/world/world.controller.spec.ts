@@ -19,7 +19,7 @@ describe('WorldController', () => {
           Promise.resolve({
             id: 1,
             name: 'Lemuria',
-            data: '{"welcome": "Bienvenue sur Lemuria", "enable_terrain": false, "enable_fog": true}'
+            data: '{"welcome": "Bienvenue sur Lemuria"}'
           }),
         findMany: () => Promise.resolve([{id: 1, name: 'Lemuria', data: '{}'}])
       },
@@ -122,30 +122,31 @@ describe('WorldController', () => {
         name: 'Lemuria',
         welcome: 'Bienvenue sur Lemuria',
         elev: expect.any(Object),
-        sky_color: {
-          top: [0, 0, 0],
-          north: [0, 0, 0],
-          east: [0, 0, 0],
-          south: [0, 0, 0],
-          west: [0, 0, 0],
-          bottom: [0, 0, 0]
+        sky: {
+          skybox: '',
+          top_color: [0, 0, 0],
+          north_color: [0, 0, 0],
+          east_color: [0, 0, 0],
+          south_color: [0, 0, 0],
+          west_color: [0, 0, 0],
+          bottom_color: [0, 0, 0]
         },
-        terrain: false,
-        light_dir: [-0.8, -0.5, -0.2],
-        fog: true,
-        fog_color: [0, 0, 127],
-        fog_max: 120,
-        fog_min: 0,
-        amblight_color: [255, 255, 255],
-        dirlight_color: [255, 255, 255],
-        terrain_ambient: 0.2,
-        terrain_diffuse: 1,
-        terrain_offset: 0,
-        water: false,
-        water_color: [0, 0, 255],
-        water_offset: 0,
-        water_texture_bottom: '',
-        water_texture_top: ''
+        terrain: {enabled: false, ambient: 0.2, diffuse: 1, offset: 0},
+        light: {
+          dir: {x: -0.8, y: -0.5, z: -0.2},
+          fog: {enabled: false, color: [0, 0, 127], min: 0, max: 120},
+          amb_color: [255, 255, 255],
+          dir_color: [255, 255, 255]
+        },
+        water: {
+          enabled: false,
+          color: [0, 0, 255],
+          offset: -1,
+          opacity: 180,
+          texture_bottom: '',
+          texture_top: '',
+          under_view: 120
+        }
       })
     })
   })

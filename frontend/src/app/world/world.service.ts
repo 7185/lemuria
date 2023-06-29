@@ -27,7 +27,7 @@ import {
   Box3,
   BufferAttribute
 } from 'three'
-import type {Object3D} from 'three'
+import type {MeshPhongMaterial, Object3D} from 'three'
 import {Utils} from '../utils'
 import {BuildService} from '../engine/build.service'
 
@@ -352,7 +352,7 @@ export class WorldService {
     skyboxGroup.add(oct)
 
     if (skybox) {
-      this.objSvc.loadObject(skybox, true).subscribe((s) => {
+      this.objSvc.loadProp(skybox, true).subscribe((s) => {
         const skyboxRwx = s.clone()
         const box = new Box3()
         box.setFromObject(skyboxRwx)
@@ -379,13 +379,20 @@ export class WorldService {
     act = null
   ): Promise<Object3D> {
     item = Utils.modelName(item)
-    const o = await firstValueFrom(this.objSvc.loadObject(item))
+    const o = await firstValueFrom(this.objSvc.loadProp(item))
     const g = o.clone()
     g.name = item
     g.userData.id = id
     g.userData.date = date
     g.userData.desc = desc
     g.userData.act = act
+    g.traverse((child: Object3D) => {
+      if (child instanceof Mesh) {
+        child.material.forEach((m: MeshPhongMaterial) => {
+          m.shininess = 0
+        })
+      }
+    })
     const box = new Box3()
     box.setFromObject(g)
     const center = box.getCenter(new Vector3())
@@ -660,51 +667,53 @@ export class WorldService {
     this.objSvc.cleanCache()
     this.anmSvc.cleanCache()
     this.objSvc.path.set(world.path)
-    this.skybox.set(world.skybox)
+    this.skybox.set(world.sky.skybox)
     this.skyTop.set(
       Utils.colorHexToStr(
-        Utils.rgbToHex(...(world.sky_color.top as [number, number, number]))
+        Utils.rgbToHex(...(world.sky.top_color as [number, number, number]))
       )
     )
     this.skyNorth.set(
       Utils.colorHexToStr(
-        Utils.rgbToHex(...(world.sky_color.north as [number, number, number]))
+        Utils.rgbToHex(...(world.sky.north_color as [number, number, number]))
       )
     )
     this.skyEast.set(
       Utils.colorHexToStr(
-        Utils.rgbToHex(...(world.sky_color.east as [number, number, number]))
+        Utils.rgbToHex(...(world.sky.east_color as [number, number, number]))
       )
     )
     this.skySouth.set(
       Utils.colorHexToStr(
-        Utils.rgbToHex(...(world.sky_color.south as [number, number, number]))
+        Utils.rgbToHex(...(world.sky.south_color as [number, number, number]))
       )
     )
     this.skyWest.set(
       Utils.colorHexToStr(
-        Utils.rgbToHex(...(world.sky_color.west as [number, number, number]))
+        Utils.rgbToHex(...(world.sky.west_color as [number, number, number]))
       )
     )
     this.skyBottom.set(
       Utils.colorHexToStr(
-        Utils.rgbToHex(...(world.sky_color.bottom as [number, number, number]))
+        Utils.rgbToHex(...(world.sky.bottom_color as [number, number, number]))
       )
     )
     this.engineSvc.setAmbLightColor(
-      Utils.rgbToHex(...(world.amblight_color as [number, number, number]))
+      Utils.rgbToHex(...(world.light.amb_color as [number, number, number]))
     )
     this.engineSvc.setDirLightColor(
-      Utils.rgbToHex(...(world.dirlight_color as [number, number, number]))
+      Utils.rgbToHex(...(world.light.dir_color as [number, number, number]))
     )
     this.engineSvc.setDirLightTarget(
-      ...world.light_dir.map((v: number) => v * 100)
+      world.light.dir.x * 100,
+      world.light.dir.y * 100,
+      world.light.dir.z * 100
     )
-    this.engineSvc.setFog(
-      Utils.rgbToHex(...(world.fog_color as [number, number, number])),
-      world.fog_min,
-      world.fog_max,
-      world.fog
+    this.engineSvc.setWorldFog(
+      Utils.rgbToHex(...(world.light.fog.color as [number, number, number])),
+      world.light.fog.min,
+      world.light.fog.max,
+      world.light.fog.enabled
     )
 
     this.objSvc.loadAvatars().subscribe((list) => {

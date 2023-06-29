@@ -26,7 +26,7 @@ export class TerrainService {
     if (this.water != null) {
       this.engineSvc.removeWorldObject(this.water)
     }
-    if (!world.water) {
+    if (!world.water.enabled) {
       this.water = null
       return
     }
@@ -40,28 +40,24 @@ export class TerrainService {
     geometryBottom.rotateX(Math.PI / 2)
     geometryBottom.addGroup(0, geometryBottom.getIndex().count, 0)
 
+    this.water.userData.color = Utils.rgbToHex(
+      ...((world?.water?.color || [0, 255, 255]) as [number, number, number])
+    )
+
     const waterMaterialTop = new MeshLambertMaterial({
-      color: 0x0000ff,
-      opacity: 0.5,
-      transparent: true
+      transparent: true,
+      color: new Color(this.water.userData.color),
+      opacity: (world?.water?.opacity || 128) / 255
     })
     const waterMaterialBottom = new MeshLambertMaterial({
-      color: 0x0000ff,
-      opacity: 0.5,
-      transparent: true
+      transparent: true,
+      color: new Color(this.water.userData.color),
+      opacity: (world?.water?.opacity || 128) / 255
     })
-    if (world.water_color != null) {
-      waterMaterialTop.color = new Color(
-        Utils.rgbToHex(...(world.water_color as [number, number, number]))
-      )
-      waterMaterialBottom.color = new Color(
-        Utils.rgbToHex(...(world.water_color as [number, number, number]))
-      )
-    }
 
-    if (world.water_texture_top) {
+    if (world.water?.texture_top) {
       const topTexture = this.textureLoader.load(
-        `${world.path}/textures/${world.water_texture_top}.jpg`
+        `${world.path}/textures/${world.water.texture_top}.jpg`
       )
       topTexture.colorSpace = SRGBColorSpace
       topTexture.wrapS = RepeatWrapping
@@ -70,9 +66,9 @@ export class TerrainService {
       waterMaterialTop.map = topTexture
     }
 
-    if (world.water_texture_bottom) {
+    if (world.water?.texture_bottom) {
       const bottomTexture = this.textureLoader.load(
-        `${world.path}/textures/${world.water_texture_bottom}.jpg`
+        `${world.path}/textures/${world.water.texture_bottom}.jpg`
       )
       bottomTexture.colorSpace = SRGBColorSpace
       bottomTexture.wrapS = RepeatWrapping
@@ -86,8 +82,8 @@ export class TerrainService {
     this.water.add(waterMeshTop)
     this.water.add(waterMeshBottom)
 
-    if (world.water_offset != null) {
-      this.water.position.setY(world.water_offset)
+    if (world.water?.offset != null) {
+      this.water.position.setY(world.water.offset)
     }
     this.engineSvc.addWorldObject(this.water)
   }
@@ -96,7 +92,7 @@ export class TerrainService {
     if (this.terrain != null) {
       this.engineSvc.removeWorldObject(this.terrain)
     }
-    if (!world.terrain) {
+    if (!world.terrain.enabled) {
       this.terrain = null
       return
     }
@@ -180,8 +176,8 @@ export class TerrainService {
       const terrainMesh = new Mesh(geometry, terrainMaterials)
       this.terrain.add(terrainMesh)
     }
-    if (world.terrain_offset != null) {
-      this.terrain.position.setY(world.terrain_offset)
+    if (world.terrain?.offset != null) {
+      this.terrain.position.setY(world.terrain.offset)
     }
     this.engineSvc.addWorldObject(this.terrain)
     this.terrain.updateMatrixWorld()

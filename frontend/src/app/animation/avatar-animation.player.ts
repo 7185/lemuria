@@ -78,13 +78,24 @@ export class AvatarAnimationPlayer {
         newState = {name: 'run', velocityMultiplier: 0.5}
         newFallbackState = {name: 'walk', velocityMultiplier: 1.7}
         break
+      case 'hover':
+        newState = {name: 'hover', velocityMultiplier: null}
+        break
       case 'fly':
         newState = {name: 'fly', velocityMultiplier: null}
-        newFallbackState = {name: 'walk', velocityMultiplier: 0.5}
+        newFallbackState = {name: 'hover', velocityMultiplier: 0.5}
         break
       case 'fall':
         newState = {name: 'fall', velocityMultiplier: null}
         newFallbackState = {name: 'walk', velocityMultiplier: 0.5}
+        break
+      case 'swim':
+        newState = {name: 'swim', velocityMultiplier: null}
+        newFallbackState = {name: 'float', velocityMultiplier: 0.5}
+        break
+      case 'float':
+        newState = {name: 'float', velocityMultiplier: null}
+        newFallbackState = {name: 'fly', velocityMultiplier: 0.5}
         break
       default:
         newState = {name: 'idle', velocityMultiplier: null}

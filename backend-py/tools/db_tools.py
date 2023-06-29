@@ -9,55 +9,56 @@ from db import db, db_required
 world_attr = {
     0: 'name',
     3: 'path',
-    11: 'fog_color_r',
-    12: 'fog_color_g',
-    13: 'fog_color_b',
+    11: 'light.fog.color.r',
+    12: 'light.fog.color.g',
+    13: 'light.fog.color.b',
     25: 'welcome',
-    41: 'light_dir_x',
-    42: 'light_dir_y',
-    43: 'light_dir_z',
-    44: 'dir_light_r',
-    45: 'dir_light_g',
-    46: 'dir_light_b',
-    47: 'amb_light_r',
-    48: 'amb_light_g',
-    49: 'amb_light_b',
-    51: 'enable_fog',
-    52: 'fog_min',
-    53: 'fog_max',
-    61: 'skybox',
+    41: 'light.dir.x',
+    42: 'light.dir.y',
+    43: 'light.dir.z',
+    44: 'light.dir_color.r',
+    45: 'light.dir_color.g',
+    46: 'light.dir_color.b',
+    47: 'light.amb_color.r',
+    48: 'light.amb_color.g',
+    49: 'light.amb_color.b',
+    51: 'light.fog.enabled',
+    52: 'light.fog.min',
+    53: 'light.fog.max',
+    61: 'sky.skybox',
     64: 'keywords',
-    65: 'enable_terrain',
+    65: 'terrain.enabled',
     69: 'entry',
-    70: 'sky_color_top_r',
-    71: 'sky_color_top_g',
-    72: 'sky_color_top_b',
-    73: 'sky_color_north_r',
-    74: 'sky_color_north_g',
-    75: 'sky_color_north_b',
-    76: 'sky_color_east_r',
-    77: 'sky_color_east_g',
-    78: 'sky_color_east_b',
-    79: 'sky_color_south_r',
-    80: 'sky_color_south_g',
-    81: 'sky_color_south_b',
-    82: 'sky_color_west_r',
-    83: 'sky_color_west_g',
-    84: 'sky_color_west_b',
-    85: 'sky_color_bottom_r',
-    86: 'sky_color_bottom_g',
-    87: 'sky_color_bottom_b',
-    111: 'water_texture_top',
-    112: 'water_opacity',
-    113: 'water_color_r',
-    114: 'water_color_g',
-    115: 'water_color_b',
-    116: 'water_offset',
-    120: 'water_texture_bottom',
-    123: 'enable_water',
-    130: 'terrain_ambient',
-    131: 'terrain_diffuse',
-    141: 'terrain_offset'
+    70: 'sky.top_color.r',
+    71: 'sky.top_color.g',
+    72: 'sky.top_color.b',
+    73: 'sky.north_color.r',
+    74: 'sky.north_color.g',
+    75: 'sky.north_color.b',
+    76: 'sky.east_color.r',
+    77: 'sky.east_color.g',
+    78: 'sky.east_color.b',
+    79: 'sky.south_color.r',
+    80: 'sky.south_color.g',
+    81: 'sky.south_color.b',
+    82: 'sky.west_color.r',
+    83: 'sky.west_color.g',
+    84: 'sky.west_color.b',
+    85: 'sky.bottom_color.r',
+    86: 'sky.bottom_color.g',
+    87: 'sky.bottom_color.b',
+    111: 'water.texture_top',
+    112: 'water.opacity',
+    113: 'water.color.r',
+    114: 'water.color.g',
+    115: 'water.color.b',
+    116: 'water.offset',
+    120: 'water.texture_bottom',
+    123: 'water.enabled',
+    130: 'terrain.ambient',
+    131: 'terrain.diffuse',
+    132: 'water.under_view',
+    141: 'terrain.offset'
 }
 
 
@@ -125,30 +126,60 @@ async def save_propdump(world_name, file):
             await f.write(f"{' '.join(str(v) for v in prop.values())}\r\n")
 
 
+@db_required
+async def save_atdump(world_name, file):
+    world = await db.query_raw(
+        f"SELECT * FROM world WHERE LOWER(name) = '{world_name.lower()}'"
+    )
+    if not world:
+        print('World not found')
+        return
+
+    attr_dict = json.loads(world[0]['data'])
+
+    reverse_world_attr = {value: key for key, value in world_attr.items()}
+
+    lines = [(reverse_world_attr.get(key), value) for key, value in _flatten_dict(attr_dict).items()]
+    # Sort the lines based on the numeric keys
+    lines.sort(key=lambda x: x[0])
+
+    # Extract the sorted lines including the numeric keys
+    sorted_lines = [f"{num} {value}" for num, value in lines]
+    async with aiofiles.open(file, 'w', encoding='windows-1252') as f:
+        await f.write('atdump version 1\r\n')
+        for line in sorted_lines:
+            await f.write(f"{line}\r\n")
+
+
 async def parse_atdump(attr_file):
+    # Read the file and populate the JSON structure
     attr_dict = {}
 
     async for entry in load_atdump(attr_file):
-        attr_key = world_attr.get(entry[0])
-        if attr_key is not None:
-            if attr_key.startswith('sky_color'):
-                attr_dict.setdefault('sky_color', {}).setdefault(attr_key.split('_')[2], [0, 0, 0])['rgb'.index(attr_key.split('_')[3])] = int(entry[1])
-            elif attr_key.startswith('enable'):
-                attr_dict[attr_key] = entry[1] == 'Y'
-            elif attr_key.endswith('_min') or attr_key.endswith('_max'):
-                attr_dict[attr_key] = int(entry[1])
-            elif attr_key.startswith('dir_light'):
-                attr_dict.setdefault('dirlight_color', [0, 0, 0])['rgb'.index(attr_key.split('_')[2])] = int(entry[1])
-            elif attr_key.startswith('amb_light'):
-                attr_dict.setdefault('amblight_color', [0, 0, 0])['rgb'.index(attr_key.split('_')[2])] = int(entry[1])
-            elif attr_key.startswith('light_dir'):
-                attr_dict.setdefault('light_dir', [0, 0, 0])['xyz'.index(attr_key.split('_')[2])] = float(entry[1])
-            elif attr_key.startswith('fog_color_'):
-                attr_dict.setdefault('fog_color', [0, 0, 0])['rgb'.index(attr_key.split('_')[2])] = int(entry[1])
-            elif attr_key.startswith('water_color_'):
-                attr_dict.setdefault('water_color', [0, 0, 0])['rgb'.index(attr_key.split('_')[2])] = int(entry[1])
-            else:
-                attr_dict[attr_key] = entry[1]
+        key, value = entry[0], entry[1]
+        path = world_attr.get(key)
+        if path is None:
+            continue
+        # Set the value in the JSON structure using the JSON path
+        keys = path.split(".")
+        target = attr_dict
+        for key in keys[:-1]:
+            if key not in target:
+                target[key] = [0, 0, 0] if key.endswith('color') else {}
+            target = target[key]
+        if keys[-1] == "enabled":
+            target[keys[-1]] = value == "Y"
+        elif keys[-1] in "rgb":
+            color_index = "rgb".index(keys[-1])
+            target[color_index] = int(value)
+        else:
+            try:
+                target[keys[-1]] = int(value)
+            except ValueError:
+                try:
+                    target[keys[-1]] = float(value)
+                except ValueError:
+                    target[keys[-1]] = value
     return attr_dict
 
 
@@ -207,5 +238,23 @@ async def import_world(world_name, path='../dumps'):
 
 
 async def export_world(world_name, path='../dumps'):
+    await save_atdump(world_name, f'{path}/export_at{world_name}.txt')
     await save_elevdump(world_name, f'{path}/export_elev{world_name}.txt')
     await save_propdump(world_name, f'{path}/export_prop{world_name}.txt')
+
+
+def _flatten_dict_gen(d, parent_key, sep):
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, list):
+            v = {'r': v[0], 'g': v[1], 'b': v[2]}
+        if isinstance(v, dict):
+            yield from _flatten_dict(v, new_key, sep=sep).items()
+        else:
+            if isinstance(v, bool):
+                v = "Y" if v else "N"
+            yield new_key, v
+
+
+def _flatten_dict(d: dict, parent_key: str = '', sep: str = '.'):
+    return dict(_flatten_dict_gen(d, parent_key, sep))

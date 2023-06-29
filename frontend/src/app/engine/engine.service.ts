@@ -86,10 +86,12 @@ export class EngineService {
   private light: AmbientLight
   private dirLight: DirectionalLight
   private dirLightTarget: Object3D
-  private fog: Fog
+  private worldFog = {color: 0x00007f, near: 0, far: 120, enabled: false}
+  private fog = new Fog(0)
   private avatar: Group
   private skybox: Group
   private flyMode = false
+  private inWater = signal(false)
   private userState = 'idle'
   private userGesture: string = null
   private hoveredObject: Group
@@ -108,6 +110,7 @@ export class EngineService {
   private mouse = new Vector2()
   private raycaster = new Raycaster()
   private cameraDirection = new Vector3()
+  private cameraPosition = new Vector3()
 
   private usersNode = new Group()
   private worldNode = new Group()
@@ -153,6 +156,21 @@ export class EngineService {
   ) {
     effect(() => {
       this.refreshLights(this.maxLights())
+    })
+    effect(() => {
+      if (this.inWater()) {
+        const water = this.getWater()
+        this.fog.color = new Color(water.userData?.color || 0x00ffff)
+        this.fog.near = 0
+        this.fog.far = water.userData?.under_view || 500
+      } else if (this.worldFog.enabled) {
+        this.fog.color = new Color(this.worldFog.color)
+        this.fog.near = this.worldFog.near
+        this.fog.far = this.worldFog.far
+      } else {
+        this.fog.near = 0
+        this.fog.far = 10000
+      }
     })
   }
 
@@ -257,7 +275,6 @@ export class EngineService {
 
     this.refreshLights(this.maxLights())
 
-    this.fog = new Fog(0)
     this.scene.fog = this.fog
 
     this.scene.add(this.worldNode)
@@ -421,7 +438,11 @@ export class EngineService {
     return this.userState
   }
 
-  public setFog(color = 0x00007f, near = 0, far = 120, enabled = false) {
+  public setWorldFog(color = 0x00007f, near = 0, far = 120, enabled = false) {
+    this.worldFog = {color, near, far, enabled}
+    if (this.inWater()) {
+      return
+    }
     if (enabled) {
       this.fog.color = new Color(color)
       this.fog.near = near
@@ -432,8 +453,8 @@ export class EngineService {
     }
   }
 
-  public getFog() {
-    return this.fog
+  public getWorldFog() {
+    return this.worldFog
   }
 
   public getAmbLightColor(): number {
@@ -458,6 +479,10 @@ export class EngineService {
 
   public setDirLightTarget(x = -80, y = -50, z = -20) {
     this.dirLightTarget.position.set(x, y, z)
+  }
+
+  public getWater() {
+    return this.worldNode.getObjectByName('water')
   }
 
   public attachCam(group: Group) {
@@ -1059,8 +1084,10 @@ export class EngineService {
 
         this.userState = 'idle'
 
-        if (this.flyMode) {
-          this.userState = 'fly'
+        if (this.inWater()) {
+          this.userState = Math.abs(velocity) > 0.5 ? 'swim' : 'float'
+        } else if (this.flyMode) {
+          this.userState = Math.abs(velocity) > 0.5 ? 'fly' : 'hover'
         } else if (this.playerVelocity.y < 0) {
           this.userState = 'fall'
         } else if (Math.abs(velocity) > 5.5) {
@@ -1117,6 +1144,11 @@ export class EngineService {
     if (this.player.position.y < -350) {
       this.playerVelocity.set(0.0, 0.0, 0.0)
       this.player.position.y = 0
+    }
+
+    const water = this.getWater()
+    if (water != null) {
+      this.inWater.set(water.position.y >= this.cameraPosition.y)
     }
 
     this.playerPosition.set(this.player.position)
@@ -1266,6 +1298,7 @@ export class EngineService {
     }
 
     this.updatePlayerPosition()
+    this.activeCamera.getWorldPosition(this.cameraPosition)
 
     for (const item of this.sprites) {
       item.rotation.y = this.player.rotation.y
