@@ -1,5 +1,6 @@
 import {Injectable, signal} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
+import type {Vector3} from 'three'
 import {Subject} from 'rxjs'
 import {HttpService} from '../network'
 import {User} from './user.model'
@@ -49,7 +50,7 @@ export class UserService {
 
   setPosition(
     userId: string,
-    postion: [THREE.Vector3, THREE.Vector3],
+    postion: [Vector3, Vector3],
     state = 'idle',
     gesture: string = null
   ) {

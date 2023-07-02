@@ -247,7 +247,7 @@ export class WorldService {
           avatarEntry.implicit,
           avatarEntry.explicit
         )
-      this.setAvatar(avatarEntry.geometry, animationManager)
+      this.setAvatar(avatarEntry.geometry, animationManager, this.avatar)
       const savedAvatars = this.settings.get('avatar')
       const avatarMap =
         savedAvatars != null
@@ -421,8 +421,12 @@ export class WorldService {
   private setAvatar(
     name: string,
     animationMgr: Promise<AvatarAnimationManager>,
-    group: Group = this.avatar
+    group: Group
   ) {
+    if (group == null) {
+      // User not within this world
+      return
+    }
     name = Utils.modelName(name)
     this.objSvc.loadAvatar(name).subscribe((o) => {
       this.engineSvc.disposeMaterial(group)
