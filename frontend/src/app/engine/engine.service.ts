@@ -412,14 +412,12 @@ export class EngineService {
   }
 
   public getPosition(): [Vector3, Vector3] {
-    if (this.player == null) {
-      return [new Vector3(), new Vector3()]
-    } else {
-      return [
-        this.player.position.clone(),
-        new Vector3().setFromEuler(this.player.rotation)
-      ]
-    }
+    return this.player == null
+      ? [new Vector3(), new Vector3()]
+      : [
+          this.player.position.clone(),
+          new Vector3().setFromEuler(this.player.rotation)
+        ]
   }
 
   public getYaw(): number {
@@ -443,14 +441,14 @@ export class EngineService {
     if (this.inWater()) {
       return
     }
-    if (enabled) {
-      this.fog.color = new Color(color)
-      this.fog.near = near
-      this.fog.far = far
-    } else {
+    if (!enabled) {
       this.fog.near = 0
       this.fog.far = 10000
+      return
     }
+    this.fog.color = new Color(color)
+    this.fog.near = near
+    this.fog.far = far
   }
 
   public getWorldFog() {

@@ -62,10 +62,10 @@ class World:
             self._welcome = world_data['welcome']
             self._path = world_data['path']
             self._entry = world_data.get('entry', self._entry)
-            self._light = world_data.get('light', self._light)
-            self._sky = world_data.get('sky', self._sky)
-            self._terrain = world_data.get('terrain', self._terrain)
-            self._water = world_data.get('water', self._water)
+            self._light.update(world_data.get('light', {}))
+            self._sky.update(world_data.get('sky', {}))
+            self._terrain.update(world_data.get('terrain', {}))
+            self._water.update(world_data.get('water', {}))
 
             with contextlib.suppress(FileNotFoundError):
                 self._elev = await self.get_elev()

@@ -519,12 +519,10 @@ export class WorldService {
     }
 
     // tag this chunk as being worked on already
-    if (this.chunkMap.has(x)) {
-      this.chunkMap.get(x).add(z)
-    } else {
+    if (!this.chunkMap.has(x)) {
       this.chunkMap.set(x, new Set<number>())
-      this.chunkMap.get(x).add(z)
     }
+    this.chunkMap.get(x).add(z)
 
     const chunkPos = this.getChunkCenter(x, z)
 

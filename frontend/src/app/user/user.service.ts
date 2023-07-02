@@ -30,11 +30,11 @@ export class UserService {
       const existingUser = this.userList.find((user) => user.id === u.id)
       if (existingUser) {
         existingUser.world = u.world
-      } else {
-        this.userList.push(
-          new User({id: u.id, name: u.name, avatar: u.avatar, world: u.world})
-        )
+        continue
       }
+      this.userList.push(
+        new User({id: u.id, name: u.name, avatar: u.avatar, world: u.world})
+      )
     }
     this.userListSignal.set(this.userList)
   }

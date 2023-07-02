@@ -5,31 +5,36 @@ export class World {
   path?: string
   skybox?: string
   sky?: {
-    skybox: string
-    top_color: number[]
-    north_color: number[]
-    east_color: number[]
-    south_color: number[]
-    west_color: number[]
-    bottom_color: number[]
+    skybox?: string
+    top_color?: number[]
+    north_color?: number[]
+    east_color?: number[]
+    south_color?: number[]
+    west_color?: number[]
+    bottom_color?: number[]
   }
   entry?: string = '0N 0W'
   objects?: any
   light?: {
-    fog: {color: number[]; enabled: boolean; min: number; max: number}
-    dir_color: number[]
-    amb_color: number[]
-    dir: {x: number; y: number; z: number}
+    fog?: {color?: number[]; enabled?: boolean; min?: number; max?: number}
+    dir_color?: number[]
+    amb_color?: number[]
+    dir?: {x?: number; y?: number; z?: number}
   }
-  terrain?: {enabled: boolean; ambient: number; diffuse: number; offset: number}
+  terrain?: {
+    enabled?: boolean
+    ambient?: number
+    diffuse?: number
+    offset?: number
+  }
   water?: {
-    texture_top: string
-    opacity: number
-    color: number[]
-    offset: number
-    texture_bottom: string
-    enabled: boolean
-    under_view: number
+    texture_top?: string
+    opacity?: number
+    color?: number[]
+    offset?: number
+    texture_bottom?: string
+    enabled?: boolean
+    under_view?: number
   }
   water_offset?: number
   water_color?: number[]
@@ -74,6 +79,11 @@ export class World {
       enabled: false,
       under_view: 120
     }
-    Object.assign(this, params)
+    Object.assign(this, params, {
+      light: Object.assign(this.light, params.light),
+      sky: Object.assign(this.sky, params.sky),
+      terrain: Object.assign(this.terrain, params.terrain),
+      water: Object.assign(this.water, params.water)
+    })
   }
 }

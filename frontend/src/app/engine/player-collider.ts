@@ -71,14 +71,13 @@ export class PlayerCollider {
     // If the mesh is empty (no faces): we don't need a bounds tree
     if (bvhMesh.geometry.getIndex().array.length === 0) {
       chunk.parent.userData.boundsTree = null
-    } else {
-      chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
-        lazyGeneration: true,
-        onProgress: (progress: number) => {
-          chunk.parent.visible = progress === 1
-        }
-      })
+      return
     }
+    chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
+      onProgress: (progress: number) => {
+        chunk.parent.visible = progress === 1
+      }
+    })
   }
 
   public static updateTerrainBVH(terrain: Group) {
@@ -92,11 +91,9 @@ export class PlayerCollider {
     // If the mesh is empty (no faces): we don't need a bounds tree
     if (bvhMesh.geometry.getIndex().array.length === 0) {
       terrain.userData.boundsTree = null
-    } else {
-      terrain.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
-        lazyGeneration: true
-      })
+      return
     }
+    terrain.userData.boundsTree = new MeshBVH(bvhMesh.geometry)
   }
 
   public topBoxIntersectsTriangle(tri: Triangle): boolean {
