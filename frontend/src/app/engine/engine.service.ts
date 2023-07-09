@@ -1007,7 +1007,10 @@ export class EngineService {
     const terrainPage = terrain.getObjectByName(`${pageX}_${pageZ}`)
 
     if (terrainPage != null) {
-      const pageOffset = terrainPage.position
+      const pageOffset = new Vector3().addVectors(
+        terrainPage.position,
+        terrain.position
+      )
       this.playerCollider.translate(pageOffset.negate())
       this.playerCollider.checkBoundsTree(
         terrainPage.userData.boundsTree,
@@ -1151,12 +1154,12 @@ export class EngineService {
     this.playerCollider?.copyPos(this.player.position)
     this.playerColliderBox?.position.set(
       this.player.position.x,
-      this.player.position.y + boxHeight / 2.0,
+      this.player.position.y + boxHeight / 2,
       this.player.position.z
     )
 
     if (this.player.position.y < -350) {
-      this.playerVelocity.set(0.0, 0.0, 0.0)
+      this.playerVelocity.set(0, 0, 0)
       this.player.position.y = 0
     }
 

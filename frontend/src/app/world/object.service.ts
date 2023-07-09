@@ -310,11 +310,7 @@ export class ObjectService {
             newRWXMat.texture = textureName
             newRWXMat.mask = maskName
             if (color != null) {
-              newRWXMat.color = [
-                color.r / 255.0,
-                color.g / 255.0,
-                color.b / 255.0
-              ]
+              newRWXMat.color = [color.r / 255, color.g / 255, color.b / 255]
             }
             const signature = newRWXMat.getMatSignature()
             this.rwxMaterialManager.addRWXMaterial(newRWXMat, signature)

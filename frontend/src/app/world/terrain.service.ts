@@ -21,6 +21,8 @@ export class TerrainService {
   private water: Group
   private textureLoader = new TextureLoader()
   private terrainMaterials = []
+  private waterBottomMaterials = []
+  private waterTopMaterials = []
   private worldId = 0
   private loadingPages = new Set()
 
@@ -40,48 +42,21 @@ export class TerrainService {
     this.water = new Group()
     this.water.name = 'water'
 
-    const geometryTop = new PlaneGeometry(
-      TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE,
-      TERRAIN_PAGE_SIZE
-    )
-    geometryTop.rotateX(-Math.PI / 2)
-    geometryTop.addGroup(0, geometryTop.getIndex().count, 0)
-    const geometryBottom = new PlaneGeometry(
-      TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE,
-      TERRAIN_PAGE_SIZE
-    )
-    geometryBottom.rotateX(Math.PI / 2)
-    geometryBottom.addGroup(0, geometryBottom.getIndex().count, 0)
-
     this.water.userData.color = Utils.rgbToHex(
       ...((world?.water?.color || [0, 255, 255]) as [number, number, number])
     )
 
-    const waterMaterialTop = new MeshLambertMaterial({
-      transparent: true,
-      color: new Color(this.water.userData.color),
-      opacity: (world?.water?.opacity || 128) / 255
-    })
     const waterMaterialBottom = new MeshLambertMaterial({
       transparent: true,
       color: new Color(this.water.userData.color),
       opacity: (world?.water?.opacity || 128) / 255
     })
 
-    if (world.water?.texture_top) {
-      const topTexture = this.textureLoader.load(
-        `${world.path}/textures/${world.water.texture_top}.jpg`
-      )
-      topTexture.colorSpace = SRGBColorSpace
-      topTexture.wrapS = RepeatWrapping
-      topTexture.wrapT = RepeatWrapping
-      topTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
-      waterMaterialTop.map = topTexture
-    }
+    const waterMaterialTop = new MeshLambertMaterial({
+      transparent: true,
+      color: new Color(this.water.userData.color),
+      opacity: (world?.water?.opacity || 128) / 255
+    })
 
     if (world.water?.texture_bottom) {
       const bottomTexture = this.textureLoader.load(
@@ -94,10 +69,19 @@ export class TerrainService {
       waterMaterialBottom.map = bottomTexture
     }
 
-    const waterMeshTop = new Mesh(geometryTop, [waterMaterialTop])
-    const waterMeshBottom = new Mesh(geometryBottom, [waterMaterialBottom])
-    this.water.add(waterMeshTop)
-    this.water.add(waterMeshBottom)
+    if (world.water?.texture_top) {
+      const topTexture = this.textureLoader.load(
+        `${world.path}/textures/${world.water.texture_top}.jpg`
+      )
+      topTexture.colorSpace = SRGBColorSpace
+      topTexture.wrapS = RepeatWrapping
+      topTexture.wrapT = RepeatWrapping
+      topTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
+      waterMaterialTop.map = topTexture
+    }
+
+    this.waterBottomMaterials = [waterMaterialBottom]
+    this.waterTopMaterials = [waterMaterialTop]
 
     if (world.water?.offset != null) {
       this.water.position.setY(world.water.offset)
@@ -176,17 +160,18 @@ export class TerrainService {
         !this.loadingPages.has(`${page[0]}_${page[1]}`)
       ) {
         this.setTerrainPage(page[0], page[1])
+        this.setWaterPage(page[0], page[1])
       }
     })
   }
 
   private setTerrainPage(xPage: number, zPage: number) {
     if (this.terrain == null) {
-      // Terrain is not ready
+      // Terrain is disabled or not ready
       return
     }
 
-    this.loadingPages.add(`${xPage}_${zPage}`.replace(/^-0$/, '0'))
+    this.loadingPages.add(`${xPage}_${zPage}`)
 
     this.httpSvc.terrain(this.worldId, xPage, zPage).subscribe((elevData) => {
       const geometry = new PlaneGeometry(
@@ -248,5 +233,44 @@ export class TerrainService {
       this.terrain.add(terrainMesh)
       this.loadingPages.delete(`${xPage}_${zPage}`)
     })
+  }
+
+  private setWaterPage(xPage: number, zPage: number) {
+    if (this.water == null) {
+      // Water is disabled or not ready
+      return
+    }
+
+    const geometryTop = new PlaneGeometry(
+      TERRAIN_PAGE_SIZE * 10,
+      TERRAIN_PAGE_SIZE * 10,
+      TERRAIN_PAGE_SIZE,
+      TERRAIN_PAGE_SIZE
+    )
+    geometryTop.rotateX(-Math.PI / 2)
+    geometryTop.addGroup(0, geometryTop.getIndex().count, 0)
+    const geometryBottom = new PlaneGeometry(
+      TERRAIN_PAGE_SIZE * 10,
+      TERRAIN_PAGE_SIZE * 10,
+      TERRAIN_PAGE_SIZE,
+      TERRAIN_PAGE_SIZE
+    )
+    geometryBottom.rotateX(Math.PI / 2)
+    geometryBottom.addGroup(0, geometryBottom.getIndex().count, 0)
+
+    const waterMeshTop = new Mesh(geometryTop, this.waterTopMaterials)
+    const waterMeshBottom = new Mesh(geometryBottom, this.waterBottomMaterials)
+    waterMeshTop.position.set(
+      xPage * TERRAIN_PAGE_SIZE * 10,
+      0,
+      zPage * TERRAIN_PAGE_SIZE * 10
+    )
+    waterMeshBottom.position.set(
+      xPage * TERRAIN_PAGE_SIZE * 10,
+      0,
+      zPage * TERRAIN_PAGE_SIZE * 10
+    )
+    this.water.add(waterMeshTop)
+    this.water.add(waterMeshBottom)
   }
 }

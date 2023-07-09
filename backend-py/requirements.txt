@@ -1,7 +1,6 @@
 aiofiles~=23.1.0
 Flask-Caching~=2.0.2
-prisma~=0.8.2
+prisma~=0.9.1
 quart~=0.18
-quart-auth~=0.8.0
 quart-jwt-extended~=0.1.0
 uvloop~=0.17.0

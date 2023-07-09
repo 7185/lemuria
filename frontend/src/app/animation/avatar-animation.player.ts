@@ -16,7 +16,7 @@ const transitionDuration = 0.1
 
 export class AvatarAnimationPlayer {
   private avatarView = {}
-  private currentState: AnimationEntry = {name: 'idle', velocityMultiplier: 1.0}
+  private currentState: AnimationEntry = {name: 'idle', velocityMultiplier: 1}
   private currentStepState: StepState = null
   private lastPlayedFrame = this.makeNullFrame()
   private currentTransition: ThreeSequence = null

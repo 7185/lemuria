@@ -215,7 +215,7 @@ export class AnimationService {
     const nbFrames: number = sequence.totalNFrames
 
     for (let i = 0; i < nbFrames; i++) {
-      threeFrames.push({joints: {}, location: new Vector3(0.0, 0.0, 0.0)})
+      threeFrames.push({joints: {}, location: new Vector3()})
     }
 
     for (const [frameId, frame] of Object.entries<any>(sequence.frames)) {
@@ -262,7 +262,7 @@ export class AnimationService {
     const keyFrameIDs = []
 
     for (let i = 0, len = sequence.frames.length * ratio; i < len; i++) {
-      threeFrames.push({joints: {}, location: new Vector3(0.0, 0.0, 0.0)})
+      threeFrames.push({joints: {}, location: new Vector3()})
     }
 
     sequence.keyFrameIDs.forEach((id) => {
