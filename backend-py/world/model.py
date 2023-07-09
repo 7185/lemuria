@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """World module"""
 
-import contextlib
 from quart import json
 from db import db, db_required
 from user.model import authorized_users
 
 class World:
+    """World class"""
     def __init__(self, world_id):
         self.world_id = world_id
         self._resolved = False
@@ -44,7 +44,6 @@ class World:
             "enabled": False,
             "under_view": 120
         }
-        self._elev = None
 
     @db_required
     async def _resolve(self):
@@ -67,9 +66,6 @@ class World:
             self._terrain.update(world_data.get('terrain', {}))
             self._water.update(world_data.get('water', {}))
 
-            with contextlib.suppress(FileNotFoundError):
-                self._elev = await self.get_elev()
-
             self._resolved = True
 
 
@@ -88,8 +84,7 @@ class World:
             'light': self._light,
             'sky': self._sky,
             'terrain': self._terrain,
-            'water': self._water,
-            'elev': self._elev
+            'water': self._water
         }
 
     @db_required
@@ -118,7 +113,7 @@ class World:
                                 for clause in where_clauses
                                 if clause is not None
                             ]
-                        },
+                        }
                     ]
                 }
             )
@@ -139,13 +134,13 @@ class World:
         ]
 
     @db_required
-    async def get_elev(self):
-        data = {}
-        for elev in await db.elev.find_many(where= {'wid': self.world_id}):
-            page = f"{128 * elev.page_x}_{128 * elev.page_z}" 
-            data.setdefault(page, {})
+    async def get_terrain_page(self, page_x, page_z):
+        page = {}
+        for elev in await db.elev.find_many(where={
+                'wid': self.world_id, 'page_x': page_x, 'page_z': page_z
+            }):
             width = elev.radius * 2
-            textures = [int(n) for n in elev.textures.split(' ')] 
+            textures = [int(n) for n in elev.textures.split(' ')]
             heights = [int(n) for n in elev.heights.split(' ')]
             for i in range(width):
                 row = i * 128
@@ -156,5 +151,5 @@ class World:
                     if texture == height == 0:
                         continue
                     cell = row + j + elev.node_x + elev.node_z * 128
-                    data[page][cell] = [texture, height]
-        return data
+                    page[cell] = [texture, height]
+        return page

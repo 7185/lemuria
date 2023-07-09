@@ -8,14 +8,17 @@ from world.model import World
 
 api_world = Blueprint('api_world', __name__, url_prefix='/api/v1/world')
 
-@api_world.route('/', methods=['GET'])
+@api_world.before_request
 @jwt_required
+async def before_request():
+    """Before request"""
+
+@api_world.get('/')
 async def world_list():
     """World list"""
     return jsonify(await World.get_list()), 200
 
-@api_world.route('/<int:world_id>', methods=['GET'])
-@jwt_required
+@api_world.get('/<int:world_id>')
 async def world_get(world_id):
     """World fetching"""
     if curr_user := next((user for user in authorized_users if user.auth_id == get_jwt_identity()), None):
@@ -26,8 +29,7 @@ async def world_get(world_id):
         return world, 200
     return {}, 401
 
-@api_world.route('/<int:world_id>/props', methods=['GET'])
-@jwt_required
+@api_world.get('/<int:world_id>/props')
 async def world_props_get(world_id):
     """World props fetching"""
     cache = current_app.cache
@@ -40,7 +42,7 @@ async def world_props_get(world_id):
     min_z = request.args.get("min_z")
     max_z = request.args.get("max_z")
 
-    # Convert them to integers when fitting 
+    # Convert them to integers when fitting
     min_x = int(min_x) if min_x and min_x.lstrip('-').isdigit() else None
     max_x = int(max_x) if max_x and max_x.lstrip('-').isdigit() else None
     min_y = int(min_y) if min_y and min_y.lstrip('-').isdigit() else None
@@ -57,3 +59,22 @@ async def world_props_get(world_id):
     cache.set(cache_key, props)
 
     return props, 200
+
+
+@api_world.get('/<int:world_id>/terrain')
+async def get_terrain_page(world_id):
+    cache = current_app.cache
+
+    page_x = request.args.get("page_x")
+    page_z = request.args.get("page_z")
+
+    page_x = int(page_x) if page_x and page_x.lstrip('-').isdigit() else 0
+    page_z = int(page_z) if page_z and page_z.lstrip('-').isdigit() else 0
+
+    cache_key = f"T-{world_id}-{page_x}-{page_z}"
+    if (page := cache.get(cache_key)) is not None:
+        return page, 200
+
+    page = await World(world_id).get_terrain_page(page_x, page_z)
+
+    return page, 200

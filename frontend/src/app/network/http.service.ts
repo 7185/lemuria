@@ -16,7 +16,10 @@ export class HttpService extends HttpClient {
   )
   private mExpiration: number
 
-  constructor(private httpHandler: HttpHandler, private router: Router) {
+  constructor(
+    private httpHandler: HttpHandler,
+    private router: Router
+  ) {
     super(httpHandler)
     this.mExpiration = parseInt(localStorage.getItem('expiration'), 10) || 0
   }
@@ -175,6 +178,12 @@ export class HttpService extends HttpClient {
 
   public worlds() {
     return this.get(`${this.baseUrl}/world/`)
+  }
+
+  public terrain(worldId: number, pageX: number, pageZ: number) {
+    return this.get(`${this.baseUrl}/world/${worldId}/terrain`, {
+      params: {page_x: pageX, page_z: pageZ}
+    })
   }
 
   private hasExpired(): boolean {

@@ -9,7 +9,7 @@ from user.model import User, authorized_users
 
 api_auth = Blueprint('api_auth', __name__, url_prefix='/api/v1/auth')
 
-@api_auth.route('/', methods=['POST'])
+@api_auth.post('/')
 async def auth_login():
     """User login"""
     data = await request.json
@@ -26,14 +26,14 @@ async def auth_login():
     set_refresh_cookies(resp, refresh_token)
     return resp, 200
 
-@api_auth.route('/', methods=['DELETE'])
+@api_auth.delete('/')
 async def auth_logout():
     """User logout"""
     resp = jsonify({})
     unset_jwt_cookies(resp)
     return resp, 200
 
-@api_auth.route('/', methods=['GET'])
+@api_auth.get('/')
 @jwt_required
 async def auth_session():
     """User session"""
@@ -41,7 +41,7 @@ async def auth_session():
         return jsonify({'id': curr_user.auth_id, 'name': await curr_user.name}), 200
     return {}, 401
 
-@api_auth.route("/renew", methods=["POST"])
+@api_auth.post("/renew")
 @jwt_refresh_token_required
 async def auth_renew():
     """User token renewal"""

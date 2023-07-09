@@ -11,7 +11,8 @@ import {
   TextureLoader
 } from 'three'
 import {PlayerCollider} from '../engine/player-collider'
-import {EngineService} from '../engine/engine.service'
+import {EngineService, TERRAIN_PAGE_SIZE} from '../engine/engine.service'
+import {HttpService} from '../network'
 import {Utils} from '../utils'
 
 @Injectable({providedIn: 'root'})
@@ -19,8 +20,14 @@ export class TerrainService {
   private terrain: Group
   private water: Group
   private textureLoader = new TextureLoader()
+  private terrainMaterials = []
+  private worldId = 0
+  private loadingPages = new Set()
 
-  constructor(private engineSvc: EngineService) {}
+  constructor(
+    private engineSvc: EngineService,
+    private httpSvc: HttpService
+  ) {}
 
   public setWater(world: any) {
     if (this.water != null) {
@@ -33,10 +40,20 @@ export class TerrainService {
     this.water = new Group()
     this.water.name = 'water'
 
-    const geometryTop = new PlaneGeometry(1280, 1280, 128, 128)
+    const geometryTop = new PlaneGeometry(
+      TERRAIN_PAGE_SIZE * 10,
+      TERRAIN_PAGE_SIZE * 10,
+      TERRAIN_PAGE_SIZE,
+      TERRAIN_PAGE_SIZE
+    )
     geometryTop.rotateX(-Math.PI / 2)
     geometryTop.addGroup(0, geometryTop.getIndex().count, 0)
-    const geometryBottom = new PlaneGeometry(1280, 1280, 128, 128)
+    const geometryBottom = new PlaneGeometry(
+      TERRAIN_PAGE_SIZE * 10,
+      TERRAIN_PAGE_SIZE * 10,
+      TERRAIN_PAGE_SIZE,
+      TERRAIN_PAGE_SIZE
+    )
     geometryBottom.rotateX(Math.PI / 2)
     geometryBottom.addGroup(0, geometryBottom.getIndex().count, 0)
 
@@ -62,7 +79,7 @@ export class TerrainService {
       topTexture.colorSpace = SRGBColorSpace
       topTexture.wrapS = RepeatWrapping
       topTexture.wrapT = RepeatWrapping
-      topTexture.repeat.set(128, 128)
+      topTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
       waterMaterialTop.map = topTexture
     }
 
@@ -73,7 +90,7 @@ export class TerrainService {
       bottomTexture.colorSpace = SRGBColorSpace
       bottomTexture.wrapS = RepeatWrapping
       bottomTexture.wrapT = RepeatWrapping
-      bottomTexture.repeat.set(128, 128)
+      bottomTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
       waterMaterialBottom.map = bottomTexture
     }
 
@@ -89,6 +106,7 @@ export class TerrainService {
   }
 
   public setTerrain(world: any) {
+    this.worldId = world.id
     if (this.terrain != null) {
       this.engineSvc.removeWorldObject(this.terrain)
     }
@@ -99,7 +117,7 @@ export class TerrainService {
 
     this.terrain = new Group()
     this.terrain.name = 'terrain'
-    const terrainMaterials = []
+    this.terrainMaterials = []
 
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 64; j++) {
@@ -110,77 +128,125 @@ export class TerrainService {
         terrainTexture.wrapS = RepeatWrapping
         terrainTexture.wrapT = RepeatWrapping
         terrainTexture.rotation = (i * Math.PI) / 2
-        terrainTexture.repeat.set(128, 128)
-        terrainMaterials.push(new MeshLambertMaterial({map: terrainTexture}))
-      }
-    }
-
-    if (world.elev != null) {
-      for (const [page, elevData] of Object.entries(world.elev)) {
-        const geometry = new PlaneGeometry(1280, 1280, 128, 128)
-        geometry.rotateX(-Math.PI / 2)
-
-        const positions = new Float32Array(
-          (geometry.getAttribute('position') as BufferAttribute).array
+        terrainTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
+        this.terrainMaterials.push(
+          new MeshLambertMaterial({map: terrainTexture})
         )
-        let gap = 0
-        for (let i = 0, j = 0; i < positions.length; i++, j += 3) {
-          if (i % 128 == 0) {
-            // skip edge
-            gap++
-          }
-          positions[j - 2 + gap * 3] = elevData[i]?.[1] / 100 || 0
-        }
-        geometry.setAttribute('position', new BufferAttribute(positions, 3))
-
-        const indices = new Uint16Array(
-          (geometry.getIndex() as BufferAttribute).array
-        )
-        let changeTexture = 0
-        let currTexture = 0
-        for (let k = 0; k < 128 * 128; k++) {
-          if (elevData[k] != null) {
-            if (elevData[k][0] === 254) {
-              // Empty cell
-              indices.fill(0, k * 6, k * 6 + 6)
-              continue
-            }
-            if (elevData[k][0] !== currTexture) {
-              geometry.addGroup(
-                changeTexture,
-                k * 6 - changeTexture,
-                currTexture
-              )
-              changeTexture = k * 6
-              currTexture = elevData[k][0]
-            }
-          } else if (currTexture !== 0) {
-            geometry.addGroup(changeTexture, k * 6 - changeTexture, currTexture)
-            changeTexture = k * 6
-            currTexture = 0
-          }
-        }
-
-        geometry.setIndex(new BufferAttribute(indices, 1))
-        geometry.addGroup(changeTexture, geometry.getIndex().count, currTexture)
-
-        const terrainMesh = new Mesh(geometry, terrainMaterials)
-        const pos = page.split('_').map((p) => parseInt(p, 10))
-        terrainMesh.position.set(pos[0] * 10, 0, pos[1] * 10)
-        this.terrain.add(terrainMesh)
       }
-    } else {
-      const geometry = new PlaneGeometry(1280, 1280, 128, 128)
-      geometry.rotateX(-Math.PI / 2)
-      geometry.addGroup(0, geometry.getIndex().count, 0)
-      const terrainMesh = new Mesh(geometry, terrainMaterials)
-      this.terrain.add(terrainMesh)
     }
     if (world.terrain?.offset != null) {
       this.terrain.position.setY(world.terrain.offset)
     }
     this.engineSvc.addWorldObject(this.terrain)
     this.terrain.updateMatrixWorld()
-    PlayerCollider.updateTerrainBVH(this.terrain)
+  }
+
+  public getTerrainPages(playerX: number, playerZ: number, radius: number) {
+    // Since the pages are centered, we need to add an offset
+    const centerOffset = (TERRAIN_PAGE_SIZE * 10) / 2
+    const pageX: number = Math.floor(
+      (playerX + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
+    )
+    const pageZ: number = Math.floor(
+      (playerZ + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
+    )
+
+    const pages: [number, number][] = []
+    for (let i = -radius; i <= radius; i++) {
+      for (let j = -radius; j <= radius; j++) {
+        pages.push([pageX + i, pageZ + j])
+      }
+    }
+
+    pages.sort((a, b) => {
+      const distanceA: number = Math.sqrt(
+        (a[0] - pageX) ** 2 + (a[1] - pageZ) ** 2
+      )
+      const distanceB: number = Math.sqrt(
+        (b[0] - pageX) ** 2 + (b[1] - pageZ) ** 2
+      )
+      return distanceA - distanceB
+    })
+
+    pages.forEach((page) => {
+      if (
+        !this.terrain?.children?.find(
+          (m) => m.name === `${page[0]}_${page[1]}`
+        ) &&
+        !this.loadingPages.has(`${page[0]}_${page[1]}`)
+      ) {
+        this.setTerrainPage(page[0], page[1])
+      }
+    })
+  }
+
+  private setTerrainPage(xPage: number, zPage: number) {
+    if (this.terrain == null) {
+      // Terrain is not ready
+      return
+    }
+
+    this.loadingPages.add(`${xPage}_${zPage}`.replace(/^-0$/, '0'))
+
+    this.httpSvc.terrain(this.worldId, xPage, zPage).subscribe((elevData) => {
+      const geometry = new PlaneGeometry(
+        TERRAIN_PAGE_SIZE * 10,
+        TERRAIN_PAGE_SIZE * 10,
+        TERRAIN_PAGE_SIZE,
+        TERRAIN_PAGE_SIZE
+      )
+      geometry.rotateX(-Math.PI / 2)
+
+      const positions = new Float32Array(
+        (geometry.getAttribute('position') as BufferAttribute).array
+      )
+      let gap = 0
+      for (let i = 0, j = 0; i < positions.length; i++, j += 3) {
+        if (i % TERRAIN_PAGE_SIZE == 0) {
+          // skip edge
+          gap++
+        }
+        positions[j - 2 + gap * 3] = elevData[i]?.[1] / 100 || 0
+      }
+      geometry.setAttribute('position', new BufferAttribute(positions, 3))
+
+      const indices = new Uint16Array(
+        (geometry.getIndex() as BufferAttribute).array
+      )
+      let changeTexture = 0
+      let currTexture = 0
+      for (let k = 0; k < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE; k++) {
+        const newTexture = elevData[k] != null ? elevData[k][0] : 0
+
+        if (elevData[k] != null && elevData[k][0] === 254) {
+          // Empty cell
+          indices.fill(0, k * 6, k * 6 + 6)
+          continue
+        }
+        if (newTexture !== currTexture) {
+          geometry.addGroup(changeTexture, k * 6 - changeTexture, currTexture)
+          changeTexture = k * 6
+          currTexture = newTexture
+        }
+      }
+
+      geometry.setIndex(new BufferAttribute(indices, 1))
+      geometry.addGroup(
+        changeTexture,
+        geometry.getIndex().count - changeTexture,
+        currTexture
+      )
+
+      const terrainMesh = new Mesh(geometry, this.terrainMaterials)
+      terrainMesh.name = `${xPage}_${zPage}`
+      terrainMesh.position.set(
+        xPage * TERRAIN_PAGE_SIZE * 10,
+        0,
+        zPage * TERRAIN_PAGE_SIZE * 10
+      )
+      PlayerCollider.updateTerrainBVH(terrainMesh)
+      this.terrain.add(terrainMesh)
+      this.loadingPages.delete(`${xPage}_${zPage}`)
+    })
   }
 }

@@ -21,8 +21,7 @@ export class WorldService {
     return new World({
       id: world.id,
       name: world.name,
-      ...attr,
-      elev: await this.getElev(world.id)
+      ...attr
     })
   }
 
@@ -82,39 +81,43 @@ export class WorldService {
     return props
   }
 
-  async getElev(wid: number) {
-    const d: object = {}
-    for (const elev of await this.db.elev.findMany({
-      select: {
-        page_x: true,
-        page_z: true,
-        node_x: true,
-        node_z: true,
-        radius: true,
-        textures: true,
-        heights: true
-      },
-      where: {wid}
-    })) {
-      const page = `${128 * elev.page_x}_${128 * elev.page_z}`
-      page in d || (d[page] = {})
-      const width = elev.radius * 2
-      const textures = elev.textures.split(' ').map((n: string) => parseInt(n))
-      const heights = elev.heights.split(' ').map((n: string) => parseInt(n))
-      for (let i = 0; i < width; i++) {
-        const row = i * 128
-        for (let j = 0; j < width; j++) {
-          const idx = width * i + j
-          const texture = idx < textures.length ? textures[idx] : textures[0]
-          const height = idx < heights.length ? heights[idx] : heights[0]
-          if (texture === 0 && height === 0) {
-            continue
+  async getTerrainPage(wid: number, pageX: number, pageZ: number) {
+    const cacheKey = `T-${wid}-${pageX}-${pageZ}`
+    let page = await this.cache.get(cacheKey)
+
+    if (page == null) {
+      page = {}
+      for (const elev of await this.db.elev.findMany({
+        select: {
+          node_x: true,
+          node_z: true,
+          radius: true,
+          textures: true,
+          heights: true
+        },
+        where: {AND: [{wid}, {page_x: pageX}, {page_z: pageZ}]}
+      })) {
+        const width = elev.radius * 2
+        const textures = elev.textures
+          .split(' ')
+          .map((n: string) => parseInt(n))
+        const heights = elev.heights.split(' ').map((n: string) => parseInt(n))
+        for (let i = 0; i < width; i++) {
+          const row = i * 128
+          for (let j = 0; j < width; j++) {
+            const idx = width * i + j
+            const texture = idx < textures.length ? textures[idx] : textures[0]
+            const height = idx < heights.length ? heights[idx] : heights[0]
+            if (texture === 0 && height === 0) {
+              continue
+            }
+            const cell = row + j + elev.node_x + elev.node_z * 128
+            page[cell] = [texture, height]
           }
-          const cell = row + j + elev.node_x + elev.node_z * 128
-          d[page][cell] = [texture, height]
         }
       }
+      await this.cache.set(cacheKey, page)
     }
-    return d
+    return page
   }
 }

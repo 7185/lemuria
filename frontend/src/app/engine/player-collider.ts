@@ -80,20 +80,17 @@ export class PlayerCollider {
     })
   }
 
-  public static updateTerrainBVH(terrain: Group) {
-    if (terrain == null) {
+  public static updateTerrainBVH(terrainMesh: Mesh) {
+    if (terrainMesh == null) {
       return
     }
-
-    // Regenerate boundsTree for associated LOD
-    const bvhMesh = flattenGroup(terrain)
 
     // If the mesh is empty (no faces): we don't need a bounds tree
-    if (bvhMesh.geometry.getIndex().array.length === 0) {
-      terrain.userData.boundsTree = null
+    if (terrainMesh.geometry.getIndex().array.length === 0) {
+      terrainMesh.userData.boundsTree = null
       return
     }
-    terrain.userData.boundsTree = new MeshBVH(bvhMesh.geometry)
+    terrainMesh.userData.boundsTree = new MeshBVH(terrainMesh.geometry)
   }
 
   public topBoxIntersectsTriangle(tri: Triangle): boolean {
@@ -124,7 +121,10 @@ export class PlayerCollider {
     return intersectionPoint
   }
 
-  public checkBoundsTree(boundsTree: MeshBVH, intersectsTriangle): void {
+  public checkBoundsTree(
+    boundsTree: MeshBVH,
+    intersectsTriangle: (_: Triangle) => void
+  ): void {
     boundsTree?.shapecast({
       intersectsBounds: (box: Box3) => box.intersectsBox(this.mainBox),
       intersectsTriangle

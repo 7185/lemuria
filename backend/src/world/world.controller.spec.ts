@@ -121,7 +121,6 @@ describe('WorldController', () => {
         id: 1,
         name: 'Lemuria',
         welcome: 'Bienvenue sur Lemuria',
-        elev: expect.any(Object),
         sky: {
           skybox: '',
           top_color: [0, 0, 0],
@@ -171,6 +170,17 @@ describe('WorldController', () => {
       expect(await controller.worldProps('1', {})).toStrictEqual({
         entries: [[0, 'tracteur1', 0, 0, 0, 0, 0, 0, null, null]]
       })
+    })
+  })
+
+  describe('worldTerrainPage', () => {
+    it('should return world 1 elev page', async () => {
+      expect(
+        await controller.worldTerrainPage('1', {
+          page_x: '0',
+          page_z: '0'
+        })
+      ).toStrictEqual({})
     })
   })
 })

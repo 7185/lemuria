@@ -177,9 +177,15 @@ export class WorldService {
       })
     }
 
-    // Register chunk updater to the engine
+    // Position update
     effect(() => {
+      // Register chunk updater to the engine
       this.autoUpdateChunks(this.engineSvc.playerPosition())
+      this.terrainSvc.getTerrainPages(
+        this.engineSvc.playerPosition().x,
+        this.engineSvc.playerPosition().z,
+        1
+      )
     })
 
     // User list change
@@ -669,6 +675,8 @@ export class WorldService {
     this.objSvc.cleanCache()
     this.anmSvc.cleanCache()
     this.objSvc.path.set(world.path)
+    this.terrainSvc.setTerrain(world)
+    this.terrainSvc.setWater(world)
     this.skybox.set(world.sky.skybox)
     this.skyTop.set(
       Utils.colorHexToStr(
@@ -731,8 +739,6 @@ export class WorldService {
       this.userSvc.userListSignal.set([...this.userSvc.userList])
     })
 
-    this.terrainSvc.setTerrain(world)
-    this.terrainSvc.setWater(world)
     this.resetChunks()
     this.teleport(entry)
   }

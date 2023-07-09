@@ -73,4 +73,19 @@ export class WorldController {
 
     return {entries}
   }
+
+  @Get(':id/terrain')
+  async worldTerrainPage(
+    @Param('id') id: string,
+    @Query()
+    query: {
+      page_x?: string
+      page_z?: string
+    }
+  ) {
+    const pageX = /^-?\d+$/.test(query.page_x) ? parseInt(query.page_x) : 0
+    const pageZ = /^-?\d+$/.test(query.page_z) ? parseInt(query.page_z) : 0
+
+    return await this.worldService.getTerrainPage(parseInt(id), pageX, pageZ)
+  }
 }

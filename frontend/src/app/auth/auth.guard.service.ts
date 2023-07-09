@@ -8,7 +8,10 @@ import {HttpService} from '../network/http.service'
  */
 @Injectable({providedIn: 'root'})
 export class AuthGuard {
-  constructor(private router: Router, private http: HttpService) {}
+  constructor(
+    private router: Router,
+    private http: HttpService
+  ) {}
 
   canActivate(): boolean {
     if (!this.http.isLogged()) {

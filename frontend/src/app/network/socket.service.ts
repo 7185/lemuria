@@ -27,7 +27,10 @@ export class SocketService {
   private lastSentPos = [new Vector3(), new Vector3()]
   private lastSentGesture: string = null
 
-  constructor(private engineSvc: EngineService, private userSvc: UserService) {}
+  constructor(
+    private engineSvc: EngineService,
+    private userSvc: UserService
+  ) {}
 
   connect() {
     if (this.connected || this.connecting) {

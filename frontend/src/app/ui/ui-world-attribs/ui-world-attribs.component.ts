@@ -41,7 +41,10 @@ export class UiWorldAttribsComponent {
   public waterOpacity: WritableSignal<number>
   public waterUnderView: WritableSignal<number>
 
-  constructor(private engineSvc: EngineService, public worldSvc: WorldService) {
+  constructor(
+    private engineSvc: EngineService,
+    public worldSvc: WorldService
+  ) {
     this.fog = signal(false)
     this.fogMin = signal(0)
     this.fogMax = signal(120)

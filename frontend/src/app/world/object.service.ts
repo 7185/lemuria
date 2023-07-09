@@ -2,7 +2,6 @@ import {forkJoin, of, Observable, Subject} from 'rxjs'
 import {catchError, map} from 'rxjs/operators'
 import {computed, effect, Injectable, signal} from '@angular/core'
 import {HttpService} from '../network'
-import {SettingsService} from '../settings/settings.service'
 import {AWActionParser} from 'aw-action-parser'
 import {
   Group,
@@ -66,7 +65,7 @@ export class ObjectService {
   private pictureLoader = new TextureLoader()
   private remoteUrl = /.+\..+\/.+/g
 
-  constructor(private http: HttpService, private settings: SettingsService) {
+  constructor(private http: HttpService) {
     const unknownGeometry = new BufferGeometry()
     const positions = [-0.2, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.2, 0.0]
     unknownGeometry.setAttribute(

@@ -40,6 +40,7 @@ export const RPM = Math.PI / 30
 export const X_AXIS = new Vector3(1, 0, 0)
 export const Y_AXIS = new Vector3(0, 1, 0)
 export const Z_AXIS = new Vector3(0, 0, 1)
+export const TERRAIN_PAGE_SIZE = 128
 
 const playerBoxSide = config.world.collider.boxSide
 const playerClimbHeight = config.world.collider.climbHeight
@@ -995,10 +996,25 @@ export class EngineService {
       }
     }
 
-    this.playerCollider.checkBoundsTree(
-      terrain?.userData.boundsTree,
-      intersectsTriangle
+    // Since the pages are centered, we need to add an offset
+    const centerOffset = (TERRAIN_PAGE_SIZE * 10) / 2
+    const pageX: number = Math.floor(
+      (newPosition.x + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
     )
+    const pageZ: number = Math.floor(
+      (newPosition.z + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
+    )
+    const terrainPage = terrain.getObjectByName(`${pageX}_${pageZ}`)
+
+    if (terrainPage != null) {
+      const pageOffset = terrainPage.position
+      this.playerCollider.translate(pageOffset.negate())
+      this.playerCollider.checkBoundsTree(
+        terrainPage.userData.boundsTree,
+        intersectsTriangle
+      )
+      this.playerCollider.translate(pageOffset.negate())
+    }
 
     // We expect maximum 9 LODs to be available to test collision: the one the player
     // stands in and the 8 neighbouring ones (sides and corners)
@@ -1145,11 +1161,15 @@ export class EngineService {
     }
 
     const water = this.getWater()
-    if (water != null) {
-      this.inWater.set(water.position.y >= this.cameraPosition.y)
-    }
+    this.inWater.set(water != null && water.position.y >= this.cameraPosition.y)
 
-    this.playerPosition.set(this.player.position)
+    if (
+      Math.abs(this.playerPosition().x - this.player.position.x) > 1e-3 ||
+      Math.abs(this.playerPosition().y - this.player.position.y) > 1e-3 ||
+      Math.abs(this.playerPosition().z - this.player.position.z) > 1e-3
+    ) {
+      this.playerPosition.set(this.player.position.clone())
+    }
   }
 
   private updatePointLights() {

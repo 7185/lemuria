@@ -87,9 +87,12 @@ export class AnimationService {
   }
   private frameRate = 60
 
-  constructor(private engineSvc: EngineService, private objSvc: ObjectService) {
+  constructor(
+    private engineSvc: EngineService,
+    private objSvc: ObjectService
+  ) {
     effect(() => {
-      this.setFrameRate(engineSvc.maxFps())
+      this.setFrameRate(this.engineSvc.maxFps())
     })
   }
 

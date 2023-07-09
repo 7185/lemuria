@@ -40,7 +40,6 @@ export class World {
   water_color?: number[]
   water_texture_top?: string
   water_texture_bottom?: string
-  elev?: any
 
   constructor(params: World = {}) {
     this.entry = '0N 0W'
