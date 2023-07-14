@@ -20,9 +20,9 @@ export class JwtInterceptor implements HttpInterceptor {
   constructor(private injector: Injector) {}
 
   intercept(
-    req: HttpRequest<any>,
+    req: HttpRequest<unknown>,
     next: HttpHandler
-  ): Observable<HttpEvent<any>> {
+  ): Observable<HttpEvent<unknown>> {
     return next.handle(req).pipe(
       catchError((err) => {
         if (
@@ -42,7 +42,7 @@ export class JwtInterceptor implements HttpInterceptor {
     )
   }
 
-  renewCookie(_: HttpRequest<any>): Observable<any> {
+  renewCookie(_: HttpRequest<unknown>): Observable<unknown> {
     // Get HttpService here to avoid cyclic dependency (angular issue #18224)
     const http: HttpService = this.injector.get(HttpService)
     if (!http.isLogged()) {
@@ -56,7 +56,7 @@ export class JwtInterceptor implements HttpInterceptor {
       HttpService.getCookie(config.csrf.renew)
     )
     return http.post(`${this.authUrl}/renew`, null, {headers}).pipe(
-      catchError((refreshError: HttpResponse<any>) => {
+      catchError((refreshError: HttpResponse<unknown>) => {
         http.logout().subscribe()
         return throwError(() => refreshError)
       })

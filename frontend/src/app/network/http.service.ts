@@ -75,7 +75,7 @@ export class HttpService extends HttpClient {
 
   public session() {
     return this.get(`${this.baseUrl}/auth`).pipe(
-      catchError((error: HttpResponse<any>) => {
+      catchError((error: HttpResponse<unknown>) => {
         this.logout().subscribe()
         return throwError(() => error)
       }),

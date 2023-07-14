@@ -229,10 +229,144 @@ export class TerrainService {
         0,
         zPage * TERRAIN_PAGE_SIZE * 10
       )
-      PlayerCollider.updateTerrainBVH(terrainMesh)
+      this.fixPageGaps(terrainMesh, xPage, zPage)
       this.terrain.add(terrainMesh)
       this.loadingPages.delete(`${xPage}_${zPage}`)
     })
+  }
+
+  /**
+   * Fix the height gaps between the pages
+   * Called only once per new page and calculate the BVH (or recalculate for neighbors)
+   *
+   * @param page Terrain page mesh
+   * @param xPage X coordinate for page
+   * @param zPage Z coordinate for page
+   */
+  private fixPageGaps(page: Mesh, xPage: number, zPage: number) {
+    const northPage = this.terrain.getObjectByName(
+      `${xPage}_${zPage + 1}`
+    ) as Mesh
+    const westPage = this.terrain.getObjectByName(
+      `${xPage + 1}_${zPage}`
+    ) as Mesh
+    const southPage = this.terrain.getObjectByName(
+      `${xPage}_${zPage - 1}`
+    ) as Mesh
+    const eastPage = this.terrain.getObjectByName(
+      `${xPage - 1}_${zPage}`
+    ) as Mesh
+    const northWestPage = this.terrain.getObjectByName(
+      `${xPage + 1}_${zPage + 1}`
+    ) as Mesh
+    const southEastPage = this.terrain.getObjectByName(
+      `${xPage - 1}_${zPage - 1}`
+    ) as Mesh
+    const lastFaceIndex = TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE * 2 - 1
+
+    const positions = page.geometry.getAttribute('position')
+    const indices = page.geometry.getIndex()
+
+    if (northPage) {
+      const northPositions = northPage.geometry.getAttribute('position')
+      const northIndices = northPage.geometry.getIndex()
+      // Get north page's south
+      const south = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
+        northPositions.getY(northIndices.getX(i * 2 * 3))
+      )
+      // Update current page's north
+      let southIndex = 0
+      for (
+        let i = (TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE - TERRAIN_PAGE_SIZE) * 2;
+        i < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE * 2;
+        i += 2
+      ) {
+        positions.setY(indices.getY(i * 3), south[southIndex])
+        southIndex++
+      }
+      positions.needsUpdate = true
+    }
+    if (westPage) {
+      const westPositions = westPage.geometry.getAttribute('position')
+      const westIndices = westPage.geometry.getIndex()
+      // Get west page's east
+      const east = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
+        westPositions.getY(westIndices.getX(i * TERRAIN_PAGE_SIZE * 2 * 3))
+      )
+      // Update current page's west
+      let eastIndex = 0
+      for (
+        let i = (TERRAIN_PAGE_SIZE - 1) * 2;
+        i < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE * 2;
+        i += TERRAIN_PAGE_SIZE * 2
+      ) {
+        positions.setY(indices.getZ(i * 3), east[eastIndex])
+        eastIndex++
+      }
+      positions.needsUpdate = true
+    }
+    if (southPage) {
+      const southPositions = southPage.geometry.getAttribute('position')
+      const southIndices = southPage.geometry.getIndex()
+      // Get current south
+      const south = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
+        positions.getY(indices.getX(i * 2 * 3))
+      )
+      // Update south page's north
+      let southIndex = 0
+      for (
+        let i = (TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE - TERRAIN_PAGE_SIZE) * 2;
+        i < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE * 2;
+        i += 2
+      ) {
+        southPositions.setY(southIndices.getY(i * 3), south[southIndex])
+        southIndex++
+      }
+      southPositions.needsUpdate = true
+      PlayerCollider.updateTerrainBVH(southPage)
+    }
+    if (eastPage) {
+      const eastPositions = eastPage.geometry.getAttribute('position')
+      const eastIndices = eastPage.geometry.getIndex()
+      // Get current east
+      const east = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
+        positions.getY(indices.getX(i * TERRAIN_PAGE_SIZE * 2 * 3))
+      )
+      // Update east page's west
+      let eastIndex = 0
+      for (
+        let i = (TERRAIN_PAGE_SIZE - 1) * 2;
+        i < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE * 2;
+        i += TERRAIN_PAGE_SIZE * 2
+      ) {
+        eastPositions.setY(eastIndices.getZ(i * 3), east[eastIndex])
+        eastIndex++
+      }
+      eastPositions.needsUpdate = true
+      PlayerCollider.updateTerrainBVH(eastPage)
+    }
+    if (northWestPage) {
+      // We can fix current north-west corner
+      const nwPositions = northWestPage.geometry.getAttribute('position')
+      const nwIndices = northWestPage.geometry.getIndex()
+      // Get north west page's south east corner (0 = first face)
+      const seCorner = nwPositions.getY(nwIndices.getX(0))
+      // Set corner
+      positions.setY(indices.getY(lastFaceIndex * 3), seCorner)
+      positions.needsUpdate = true
+    }
+    if (southEastPage) {
+      // We can fix south-east page's north-west corner
+      const sePositions = southEastPage.geometry.getAttribute('position')
+      const seIndices = southEastPage.geometry.getIndex()
+      // Get current south east corner (0 = first face)
+      const seCorner = positions.getY(indices.getX(0))
+      // Set corner
+      sePositions.setY(seIndices.getY(lastFaceIndex * 3), seCorner)
+      sePositions.needsUpdate = true
+      PlayerCollider.updateTerrainBVH(southEastPage)
+    }
+    PlayerCollider.updateTerrainBVH(page)
   }
 
   private setWaterPage(xPage: number, zPage: number) {

@@ -246,6 +246,22 @@ export class BuildService {
     faceIndex: number,
     buildNode: Group
   ) {
+    /**
+     * Face indices for a 2x2 page:
+     * +--+--+
+     * |7/|5/|
+     * |/6|/4|  ^
+     * +--+--+  N
+     * |3/|1/|
+     * |/2|/0|
+     * +--+--+
+     *
+     * Face vertices for a cell:
+     * nwY---seY
+     *  |   / |   ^
+     *  | /   |   N
+     * seZ---seX
+     */
     this.deselectProp(buildNode)
     if (this.cellSelection != null) {
       this.deselectCell(buildNode)

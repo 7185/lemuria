@@ -1,5 +1,5 @@
 import {Group, Quaternion, Vector3} from 'three'
-import type {AvatarAnimationManager} from './avatar-animation.manager'
+import {AvatarAnimationManager} from './avatar-animation.manager'
 import type {ThreeSequence, StepState} from './animation.service'
 import {interpolateThreeFrames} from './animation.service'
 
@@ -24,7 +24,7 @@ export class AvatarAnimationPlayer {
 
   constructor(
     private avatarAnimationManager: AvatarAnimationManager,
-    avatarGroup: Group
+    private avatarGroup: Group
   ) {
     this.populateAvatarViewRecursive(avatarGroup)
   }

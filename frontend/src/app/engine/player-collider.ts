@@ -90,7 +90,8 @@ export class PlayerCollider {
       terrainMesh.userData.boundsTree = null
       return
     }
-    terrainMesh.userData.boundsTree = new MeshBVH(terrainMesh.geometry)
+    // Clone the geometry to avoid messed up faces
+    terrainMesh.userData.boundsTree = new MeshBVH(terrainMesh.geometry.clone())
   }
 
   public topBoxIntersectsTriangle(tri: Triangle): boolean {
