@@ -256,14 +256,14 @@ export class EngineService {
     this.skybox.name = 'skybox'
     this.worldNode.add(this.skybox)
 
-    this.light = new AmbientLight(0xffffff, 0.8)
+    this.light = new AmbientLight(0xffffff, 2.5)
     this.light.position.z = 100
     this.worldNode.add(this.light)
 
     this.dirLightTarget = new Object3D()
     this.worldNode.add(this.dirLightTarget)
 
-    this.dirLight = new DirectionalLight(0xffffff, 0.5)
+    this.dirLight = new DirectionalLight(0xffffff, 2)
     this.dirLight.name = 'dirlight'
     this.dirLight.shadow.camera.left = 100
     this.dirLight.shadow.camera.right = -100
@@ -1191,19 +1191,39 @@ export class EngineService {
       .slice(0, this.pointLights.length)
 
     this.pointLights.forEach((light, index) => {
+      let fx = 1
       light.position.set(0, 0, 0)
       light.intensity = 0
+      light.decay = 0.2
       light.distance = 0.01
-      light.color = new Color(0xffffff)
+      light.color.set(0xffffff)
       light.castShadow = false
       if (toLit[index]?.obj != null) {
+        switch (toLit[index].obj.userData.light?.fx) {
+          case 'fire':
+            fx = Math.random() * (1.2 - 0.8) + 0.8
+            break
+          case 'pulse':
+            const power = (Date.now() / 1000) % 1
+            fx = power < 0.5 ? power : 1 - power
+            break
+          case 'flash':
+            fx = Math.random() > 0.02 ? 0 : 1
+            break
+          case 'flicker':
+            fx = Math.random() > 0.02 ? 1 : 0
+            break
+          default:
+            break
+        }
         light.position.set(
           toLit[index].pos.x,
           toLit[index].pos.y,
           toLit[index].pos.z
         )
-        light.color = new Color(toLit[index].obj.userData.light.color)
-        light.intensity = toLit[index].obj.userData.light.brightness || 0.5
+        light.color.set(toLit[index].obj.userData.light.color)
+        light.intensity =
+          2.5 * fx * (toLit[index].obj.userData.light.brightness || 0.5)
         light.distance = toLit[index].obj.userData.light.radius || 10
       }
     })

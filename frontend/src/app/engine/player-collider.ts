@@ -1,7 +1,7 @@
 import {Vector3, Box3, Ray} from 'three'
 import type {Group, Mesh, Object3D, Triangle} from 'three'
 import {flattenGroup} from 'three-rwx-loader'
-import {MeshBVH} from 'three-mesh-bvh/build/index.module'
+import {MeshBVH} from 'three-mesh-bvh'
 import {config} from '../app.config'
 
 const playerHalfSide = config.world.collider.boxSide / 2
@@ -71,6 +71,7 @@ export class PlayerCollider {
     // If the mesh is empty (no faces): we don't need a bounds tree
     if (bvhMesh.geometry.getIndex().array.length === 0) {
       chunk.parent.userData.boundsTree = null
+      chunk.parent.visible = true
       return
     }
     chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {

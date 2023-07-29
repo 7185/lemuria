@@ -221,6 +221,7 @@ export class TerrainService {
         geometry.getIndex().count - changeTexture,
         currTexture
       )
+      geometry.computeVertexNormals()
 
       const terrainMesh = new Mesh(geometry, this.terrainMaterials)
       terrainMesh.name = `${xPage}_${zPage}`
@@ -285,6 +286,7 @@ export class TerrainService {
         southIndex++
       }
       positions.needsUpdate = true
+      page.geometry.computeVertexNormals()
     }
     if (westPage) {
       const westPositions = westPage.geometry.getAttribute('position')
@@ -304,6 +306,7 @@ export class TerrainService {
         eastIndex++
       }
       positions.needsUpdate = true
+      page.geometry.computeVertexNormals()
     }
     if (southPage) {
       const southPositions = southPage.geometry.getAttribute('position')
@@ -323,6 +326,7 @@ export class TerrainService {
         southIndex++
       }
       southPositions.needsUpdate = true
+      southPage.geometry.computeVertexNormals()
       PlayerCollider.updateTerrainBVH(southPage)
     }
     if (eastPage) {
@@ -343,6 +347,7 @@ export class TerrainService {
         eastIndex++
       }
       eastPositions.needsUpdate = true
+      eastPage.geometry.computeVertexNormals()
       PlayerCollider.updateTerrainBVH(eastPage)
     }
     if (northWestPage) {
@@ -354,6 +359,7 @@ export class TerrainService {
       // Set corner
       positions.setY(indices.getY(lastFaceIndex * 3), seCorner)
       positions.needsUpdate = true
+      page.geometry.computeVertexNormals()
     }
     if (southEastPage) {
       // We can fix south-east page's north-west corner
@@ -364,6 +370,7 @@ export class TerrainService {
       // Set corner
       sePositions.setY(seIndices.getY(lastFaceIndex * 3), seCorner)
       sePositions.needsUpdate = true
+      southEastPage.geometry.computeVertexNormals()
       PlayerCollider.updateTerrainBVH(southEastPage)
     }
     PlayerCollider.updateTerrainBVH(page)

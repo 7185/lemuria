@@ -131,7 +131,8 @@ export class ObjectService {
               ? Utils.rgbToHex(cmd.color.r, cmd.color.g, cmd.color.b)
               : 0xffffff,
             brightness: cmd?.brightness,
-            radius: cmd?.radius
+            radius: cmd?.radius,
+            fx: cmd?.fx
           }
         }
         if (cmd.commandType === 'visible') {
