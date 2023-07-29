@@ -1,7 +1,7 @@
 import {forkJoin, Observable, Subject} from 'rxjs'
 import {computed, effect, inject, Injectable, signal} from '@angular/core'
 import {HttpService} from '../network'
-import {AWActionParser} from 'aw-action-parser'
+import {Action} from 'action-parser'
 import {
   Group,
   Mesh,
@@ -60,7 +60,7 @@ export class ObjectService {
   private rwxAvatarLoader = new RWXLoader(new LoadingManager())
   private basicLoader = new RWXLoader(new LoadingManager())
   private rwxMaterialManager: RWXMaterialManager
-  private actionParser = new AWActionParser()
+  private actionParser = new Action()
   private objects: Map<string, Observable<Group>> = new Map()
   private avatars: Map<string, Observable<Group>> = new Map()
   private geomCache: Map<string, BufferGeometry> = new Map()

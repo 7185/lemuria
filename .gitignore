@@ -6,6 +6,7 @@
 /out-tsc
 
 # dependencies
+action-parser/node_modules
 backend/node_modules
 frontend/node_modules
 
@@ -30,7 +31,7 @@ speed-measure-plugin.json
 frontend/.angular
 /.sass-cache
 /connect.lock
-/coverage
+*/coverage
 /libpeerconnection.log
 npm-debug.log
 yarn-error.log

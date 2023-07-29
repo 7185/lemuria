@@ -33,7 +33,6 @@
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
     "@iharbeck/ngx-virtual-scroller": "^17.0.0",
     "@tweenjs/tween.js": "^21.0.0",
-    "aw-action-parser": "^1.1.9",
     "aw-sequence-parser": "^0.4.0",
     "fflate": "^0.8.1",
     "linkify-string": "^4.1.3",

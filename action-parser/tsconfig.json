@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "es2020",
+    "outDir": "./dist",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "strict": true,
+    "allowImportingTsExtensions": false
+  }
+}
