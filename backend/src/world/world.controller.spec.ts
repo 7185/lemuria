@@ -182,5 +182,14 @@ describe('WorldController', () => {
         })
       ).toStrictEqual({})
     })
+
+    it('should return world 1 default 0 0 elev page', async () => {
+      expect(
+        await controller.worldTerrainPage('1', {
+          page_x: '',
+          page_z: ''
+        })
+      ).toStrictEqual({})
+    })
   })
 })

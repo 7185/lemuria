@@ -167,13 +167,7 @@ export class WorldService {
       this.chunkLoadingLayout.sort((c0, c1) => {
         const d0 = c0[0] * c0[0] + c0[1] * c0[1]
         const d1 = c1[0] * c1[0] + c1[1] * c1[1]
-        if (d0 < d1) {
-          return -1
-        }
-        if (d0 > d1) {
-          return 1
-        }
-        return 0
+        return d0 - d1
       })
     }
 

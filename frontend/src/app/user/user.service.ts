@@ -23,7 +23,7 @@ export class UserService {
     this.userListSignal.set(this.userList)
   }
 
-  refreshList(list: any[]) {
+  refreshList(list: User[]) {
     this.userList = this.userList.filter(
       (u) => list.map((c) => c.id).indexOf(u.id) > -1
     )

@@ -62,6 +62,7 @@ export class ObjectService {
   private actionParser = new AWActionParser()
   private objects: Map<string, Observable<any>> = new Map()
   private avatars: Map<string, Observable<any>> = new Map()
+  private geomCache: Map<string, BufferGeometry> = new Map()
   private pictureLoader = new TextureLoader()
   private remoteUrl = /.+\..+\/.+/g
 
@@ -314,7 +315,9 @@ export class ObjectService {
               newRWXMat.color = [color.r / 255, color.g / 255, color.b / 255]
             }
             const signature = newRWXMat.getMatSignature()
-            this.rwxMaterialManager.addRWXMaterial(newRWXMat, signature)
+            if (!this.rwxMaterialManager.hasThreeMaterialPack(signature)) {
+              this.rwxMaterialManager.addRWXMaterial(newRWXMat, signature)
+            }
             const curMat =
               this.rwxMaterialManager.getThreeMaterialPack(signature)
             newMaterials.push(curMat.threeMat)
@@ -349,6 +352,8 @@ export class ObjectService {
   cleanCache() {
     this.objects.clear()
     this.avatars.clear()
+    this.rwxMaterialManager.clear()
+    this.geomCache.clear()
   }
 
   public texturesNextFrame() {
@@ -378,7 +383,18 @@ export class ObjectService {
     const observable = new Observable((observer) => {
       loader.load(
         name,
-        (rwx: Group) => observer.next(rwx),
+        (rwx: Group) => {
+          if (rwx instanceof Mesh) {
+            // Caching should probably be done by the loader
+            // but this is still better than nothing
+            if (this.geomCache.has(name)) {
+              rwx.geometry = this.geomCache.get(name)
+            } else {
+              this.geomCache.set(name, rwx.geometry)
+            }
+          }
+          observer.next(rwx)
+        },
         null,
         () => observer.next(this.unknown)
       )

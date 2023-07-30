@@ -12,11 +12,20 @@ export interface AvatarSequences {
 }
 
 export interface ThreeSequence {
-  original: unknown
-  frames: {joints: Record<string, Quaternion>; location: any}[]
+  original: ParsedSequence
+  frames: {joints: Record<string, Quaternion>; location: Vector3}[]
   frameRate: number
   rootJointTag: number
   keyFrameIDs: number[]
+}
+
+export interface ParsedSequence {
+  fileType: string
+  totalNFrames: number
+  nJoints: number
+  modelName: string
+  rootJointName: string
+  frames: object
 }
 
 export interface StepState {
@@ -26,7 +35,7 @@ export interface StepState {
 }
 
 export const interpolateThreeFrames = (
-  threeFrames: {joints: object; location: any}[],
+  threeFrames: ThreeSequence['frames'],
   firstKeyId: number,
   secondKeyId: number
 ) => {
@@ -52,10 +61,6 @@ export const interpolateThreeFrames = (
 
     // Computing intermediate location
     frame.location.copy(firstKey.location).lerp(secondKey.location, ratio)
-    frame.location.firstKeyId = firstKeyId
-    frame.location.secondKeyId = secondKeyId
-    frame.location.offset = offset
-    frame.location.ratio = ratio
 
     // Now taking care of quaternions on joints
     const {joints} = frame
@@ -101,7 +106,7 @@ export class AnimationService {
       return this.sequences.get(name)
     } else {
       const promise = parseSequence(uri, this.sequenceParserOpts)
-        .then(async (seq: any) =>
+        .then(async (seq: ParsedSequence) =>
           this.toThreeAndInterpolate(seq, this.frameRate)
         )
         .catch((_) => {
@@ -201,15 +206,17 @@ export class AnimationService {
     )
   }
 
-  private toThreeAndInterpolate(sequence, targetFrameRate = 30): ThreeSequence {
+  private toThreeAndInterpolate(
+    sequence: ParsedSequence,
+    targetFrameRate = 30
+  ): ThreeSequence {
     return this.interpolate(
       this.maybeUpscale(this.toThree(sequence), targetFrameRate)
     )
   }
 
-  private toThree(sequence: any): ThreeSequence {
-    const threeFrames: {joints: Record<string, Quaternion>; location: any}[] =
-      []
+  private toThree(sequence: ParsedSequence): ThreeSequence {
+    const threeFrames: ThreeSequence['frames'] = []
     const keyFrameIDs: number[] = []
     const rootJointTag: number = getJointTag(sequence.rootJointName) || 1
     const nbFrames: number = sequence.totalNFrames
@@ -218,7 +225,7 @@ export class AnimationService {
       threeFrames.push({joints: {}, location: new Vector3()})
     }
 
-    for (const [frameId, frame] of Object.entries<any>(sequence.frames)) {
+    for (const [frameId, frame] of Object.entries(sequence.frames)) {
       if (frame === undefined) {
         continue
       }
@@ -229,7 +236,7 @@ export class AnimationService {
         continue
       }
 
-      const location: number[] = frame.location || [0, 0, 0]
+      const location: [number, number, number] = frame.location || [0, 0, 0]
       keyFrameIDs.push(fId)
       threeFrames[fId].location.set(...location).multiplyScalar(0.1)
 

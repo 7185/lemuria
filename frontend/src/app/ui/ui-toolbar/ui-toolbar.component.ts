@@ -233,12 +233,12 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
 
   public ngOnInit(): void {
     this.worldSvc.avatarSub.subscribe((avatarId) => (this.avatarId = avatarId))
-    this.http.getLogged().subscribe((u: any) => {
+    this.http.getLogged().subscribe((u: User) => {
       this.userId = u.id
       this.name = u.name
       this.userSvc.currentName = u.name
       if (u.id != null) {
-        this.http.worlds().subscribe((w: any) => {
+        this.http.worlds().subscribe((w: any[]) => {
           this.worldSvc.worldList = w
           const home = this.settings.get('home')
           this.home = {

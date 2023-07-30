@@ -26,7 +26,7 @@ export class AvatarAnimationPlayer {
     private avatarAnimationManager: AvatarAnimationManager,
     private avatarGroup: Group
   ) {
-    this.populateAvatarViewRecursive(avatarGroup)
+    this.populateAvatarViewRecursive(this.avatarGroup)
   }
 
   static computeTransition = (
