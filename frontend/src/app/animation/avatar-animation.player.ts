@@ -1,5 +1,5 @@
 import {Group, Quaternion, Vector3} from 'three'
-import {AvatarAnimationManager} from './avatar-animation.manager'
+import type {AvatarAnimationManager} from './avatar-animation.manager'
 import type {ThreeSequence, StepState} from './animation.service'
 import {interpolateThreeFrames} from './animation.service'
 

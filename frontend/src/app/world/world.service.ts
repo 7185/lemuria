@@ -744,7 +744,6 @@ export class WorldService {
       group.position.set(user.x, user.y, user.z)
       group.rotation.set(user.roll, user.yaw, user.pitch)
       group.userData.player = true
-      this.engineSvc.createTextLabel(group)
       const avatarEntry = this.avatarList[user.avatar]
       this.setAvatar(
         this.avatarList[user.avatar].geometry || 'michel',

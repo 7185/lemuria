@@ -24,6 +24,10 @@ import {
   Color,
   PointLight
 } from 'three'
+import {
+  CSS2DObject,
+  CSS2DRenderer
+} from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import type {LOD, Triangle} from 'three'
 import {BuildService} from './build.service'
 import {TeleportService} from './teleport.service'
@@ -76,6 +80,8 @@ export class EngineService {
   private canvas: HTMLCanvasElement
   private labelZone: HTMLDivElement
   private renderer: WebGLRenderer
+  private labelRenderer: CSS2DRenderer
+  private labelMap: Map<string, CSS2DObject> = new Map()
   private clock: Clock
   private camera: PerspectiveCamera
   private thirdCamera: PerspectiveCamera
@@ -204,9 +210,12 @@ export class EngineService {
       antialias: true, // smooth edges
       stencil: false
     })
+    this.renderer.setPixelRatio(window.devicePixelRatio)
     this.renderer.setSize(window.innerWidth, window.innerHeight)
     this.renderer.shadowMap.enabled = false
     this.renderer.outputColorSpace = SRGBColorSpace
+    this.labelRenderer = new CSS2DRenderer({element: this.labelZone})
+    this.labelRenderer.setSize(window.innerWidth, window.innerHeight)
 
     this.scene = new Scene()
 
@@ -396,22 +405,6 @@ export class EngineService {
     }
   }
 
-  public createTextLabel(group: Group) {
-    // avoid duplicate labels
-    const oldLabel = document.getElementById('label-' + group.name)
-    if (oldLabel != null) {
-      oldLabel.remove()
-    }
-    const div = document.createElement('div')
-    div.className = 'text-label'
-    div.id = 'label-' + group.name
-    div.style.position = 'absolute'
-    div.style.transform = 'translate(-50%, -100%)'
-    const user = this.userSvc.userList.find((u) => u.id === group.name)
-    div.innerHTML = user ? user.name : ''
-    this.labelZone.appendChild(div)
-  }
-
   public getPosition(): [Vector3, Vector3] {
     return this.player == null
       ? [new Vector3(), new Vector3()]
@@ -486,7 +479,7 @@ export class EngineService {
 
   public attachCam(group: Group) {
     this.avatar = group
-    this.avatar.visible = this.activeCamera === this.thirdCamera
+    this.avatar.visible = this.activeCamera !== this.camera
     this.player.attach(this.avatar)
   }
 
@@ -528,6 +521,14 @@ export class EngineService {
   }
 
   public addUser(group: Group) {
+    const div = document.createElement('div')
+    div.className = 'text-label'
+    const user = this.userSvc.userList.find((u) => u.id === group.name)
+    div.textContent = user ? user.name : ''
+
+    const label = new CSS2DObject(div)
+    this.labelMap.set(group.name, label)
+    this.scene.add(label)
     this.usersNode.add(group)
   }
 
@@ -618,9 +619,9 @@ export class EngineService {
   }
 
   public removeUser(group: Group) {
-    const divUser = document.getElementById('label-' + group.name)
-    if (divUser) {
-      divUser.remove()
+    const label = this.labelMap.get(group.name)
+    if (label != null) {
+      this.scene.remove(label)
     }
     this.disposeMaterial(group)
     group.traverse((child: Object3D) => {
@@ -824,6 +825,7 @@ export class EngineService {
     this.deltaSinceLastFrame = this.deltaFps
     this.deltaFps = (this.deltaFps % 1) / this.maxFps()
     this.renderer.render(this.scene, this.activeCamera)
+    this.labelRenderer.render(this.scene, this.activeCamera)
 
     if (this.animationElapsed > 0.1) {
       this.texturesAnimation.set(this.frameId)
@@ -844,9 +846,6 @@ export class EngineService {
   }
 
   private resize(): void {
-    if (this.renderer == null) {
-      return
-    }
     const width = window.innerWidth
     const height = window.innerHeight
 
@@ -857,7 +856,8 @@ export class EngineService {
     this.camera.updateProjectionMatrix()
     this.thirdCamera.updateProjectionMatrix()
     this.thirdFrontCamera.updateProjectionMatrix()
-    this.renderer.setSize(width, height)
+    this.renderer?.setSize(width, height)
+    this.labelRenderer?.setSize(width, height)
   }
 
   private pointedItem() {
@@ -1507,24 +1507,16 @@ export class EngineService {
 
   private moveLabels() {
     for (const user of this.usersNode.children) {
-      const div = document.getElementById('label-' + user.name)
+      const div = this.labelMap.get(user.name)
       if (div == null) {
         continue
       }
       const pos = user.position.clone()
-      if (user.userData.height > 1.1) {
-        pos.y += user.userData.height / 2
-      } else {
-        pos.y += user.userData.height
-      }
-      const vector = pos.project(this.activeCamera)
-      vector.x = ((vector.x + 1) / 2) * window.innerWidth
-      vector.y = (-(vector.y - 1) / 2) * window.innerHeight
-      if (vector.z < 1) {
-        div.style.left = vector.x + 'px'
-        div.style.top = vector.y + 'px'
-      }
-      div.style.visibility = vector.z < 1 ? 'visible' : 'hidden'
+      pos.y +=
+        user.userData.height > 1.1
+          ? user.userData.height / 2
+          : user.userData.height
+      this.labelMap.get(user.name).position.copy(pos)
     }
   }
 }
