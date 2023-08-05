@@ -288,31 +288,28 @@ export class BuildService {
       .clone()
       .add(new Vector3().fromBufferAttribute(position, index.getY(nwIndex * 3)))
 
-    const squareGeom = new BufferGeometry().setFromPoints([
-      new Vector3(-0.5, 0, -0.5).add(cellSE),
-      new Vector3(-0.5, 0, 0.5).add(cellSE),
-      new Vector3(0.5, 0, 0.5).add(cellSE),
-      new Vector3(0.5, 0, -0.5).add(cellSE),
-      new Vector3(-0.5, 0, -0.5).add(cellSE)
-    ])
     const square = new Line(
-      squareGeom,
+      new BufferGeometry().setFromPoints([
+        new Vector3(-0.5, 0, -0.5).add(cellSE),
+        new Vector3(-0.5, 0, 0.5).add(cellSE),
+        new Vector3(0.5, 0, 0.5).add(cellSE),
+        new Vector3(0.5, 0, -0.5).add(cellSE),
+        new Vector3(-0.5, 0, -0.5).add(cellSE)
+      ]),
       new LineBasicMaterial({color: 0xffff00, depthTest: false})
     )
-    this.cellSelection.add(square)
 
-    const cellGeom = new BufferGeometry().setFromPoints([
-      cellSE,
-      cellNE,
-      cellNW,
-      cellSW,
-      cellSE
-    ])
     const cell = new Line(
-      cellGeom,
+      new BufferGeometry().setFromPoints([
+        cellSE,
+        cellNE,
+        cellNW,
+        cellSW,
+        cellSE
+      ]),
       new LineBasicMaterial({color: 0xff0000, depthTest: false})
     )
-    this.cellSelection.add(cell)
+    this.cellSelection.add(cell, square)
     buildNode.add(this.cellSelection)
     this.selectedCellSignal.set({height: cellSE.y})
   }

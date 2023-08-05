@@ -1,5 +1,5 @@
-import {Subject, Observable, throwError, from, of, firstValueFrom} from 'rxjs'
-import type {Subscription} from 'rxjs'
+import {EMPTY, Subject, throwError, from, of, firstValueFrom} from 'rxjs'
+import type {Observable, Subscription} from 'rxjs'
 import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
 import {UserService} from '../user'
 import {SettingsService} from '../settings/settings.service'
@@ -187,7 +187,7 @@ export class WorldService {
       for (const user of this.engineSvc.users()) {
         if (
           this.userSvc
-            .userListSignal()
+            .userList()
             .filter((u) => u.world === this.worldId)
             .map((u) => u.id)
             .indexOf(user.name) === -1
@@ -195,7 +195,7 @@ export class WorldService {
           this.engineSvc.removeUser(user)
         }
       }
-      for (const u of this.userSvc.userListSignal()) {
+      for (const u of this.userSvc.userList()) {
         const user = this.engineSvc.users().find((o) => o.name === u.id)
         if (
           user == null &&
@@ -444,7 +444,7 @@ export class WorldService {
         this.engineSvc.setCameraOffset(group.userData.height * 0.9)
         this.engineSvc.updateBoundingBox()
       } else {
-        const user = this.userSvc.userList.find((u) => u.id === group.name)
+        const user = this.userSvc.getUser(group.name)
         group.position.y = user.y + group.userData.offsetY
       }
     })
@@ -517,9 +517,7 @@ export class WorldService {
   private loadChunk(x: number, z: number): Observable<LOD> {
     // If the chunk was already loaded: we skip it
     if (this.chunkMap.get(x)?.has(z)) {
-      return new Observable<LOD>((subscriber) => {
-        subscriber.complete()
-      })
+      return EMPTY
     }
 
     // tag this chunk as being worked on already
@@ -730,7 +728,7 @@ export class WorldService {
           : new Map<number, number>()
       this.avatarSub.next(avatarMap.get(this.worldId) || 0)
       // Trigger list update to create users
-      this.userSvc.userListSignal.set([...this.userSvc.userList])
+      this.userSvc.userList.set([...this.userSvc.userList()])
     })
 
     this.resetChunks()

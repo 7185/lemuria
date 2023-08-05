@@ -127,7 +127,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     private settings: SettingsService
   ) {
     effect(() => {
-      this.userList = this.userSvc.userListSignal()
+      this.userList = this.userSvc.userList()
       this.worldSvc.worldList.forEach((w) => (w.users = 0))
       this.userList.forEach((u) => {
         const world = this.worldSvc.worldList.find((w) => u.world === w.id)
@@ -222,7 +222,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public join(userId: string) {
-    const user = this.userSvc.userList.find((v) => v.id === userId)
+    const user = this.userSvc.getUser(userId)
     this.engineSvc.setPlayerPos(new Vector3(user.x, user.y, user.z))
   }
 

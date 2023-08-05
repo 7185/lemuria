@@ -13,13 +13,15 @@ import {
   CanvasTexture,
   TextureLoader,
   SRGBColorSpace,
-  Color
+  Color,
+  Sprite,
+  SpriteMaterial
 } from 'three'
 import type {MeshPhongMaterial, Object3D} from 'three'
 import RWXLoader, {
   RWXMaterialManager,
-  pictureTag,
-  signTag
+  pictureTag as PICTURE_TAG,
+  signTag as SIGN_TAG
 } from 'three-rwx-loader'
 import * as fflate from 'fflate'
 import {config} from '../app.config'
@@ -63,7 +65,7 @@ export class ObjectService {
   private objects: Map<string, Observable<any>> = new Map()
   private avatars: Map<string, Observable<any>> = new Map()
   private geomCache: Map<string, BufferGeometry> = new Map()
-  private pictureLoader = new TextureLoader()
+  private textureLoader = new TextureLoader()
   private remoteUrl = /.+\..+\/.+/g
 
   constructor(private http: HttpService) {
@@ -136,8 +138,52 @@ export class ObjectService {
             fx: cmd?.fx
           }
         }
+        if (cmd.commandType === 'corona') {
+          item.userData.corona = {
+            texture: cmd?.resource,
+            size: cmd?.size
+          }
+          if (item.userData.corona.texture != null) {
+            const textureUrl = `${this.resPath()}/${
+              item.userData.corona.texture
+            }${item.userData.corona.texture.endsWith('.jpg') ? '' : '.jpg'}`
+            const size = item.userData.corona?.size / 100 || 1
+            const color = result.create.find((c) => c.commandType === 'light')
+              ?.color || {r: 255, g: 255, b: 255}
+            this.textureLoader.load(textureUrl, (texture) => {
+              const corona = new Sprite(
+                new SpriteMaterial({
+                  map: texture,
+                  alphaMap: texture,
+                  color: Utils.rgbToHex(color.r, color.g, color.b),
+                  sizeAttenuation: false,
+                  depthTest: false
+                })
+              )
+              corona.name = 'corona'
+              corona.scale.set(size, size, size)
+              corona.position.set(
+                item.userData.boxCenter.x,
+                item.userData.boxCenter.y,
+                item.userData.boxCenter.z
+              )
+              item.add(corona)
+            })
+          }
+        }
         if (cmd.commandType === 'visible') {
-          item.visible = cmd.value
+          item.traverse((child: Object3D) => {
+            if (child instanceof Mesh) {
+              child.material.forEach((m: MeshPhongMaterial, i: number) => {
+                // Clone in order to not hide shared materials
+                child.material[i] = m.clone()
+                // Keep the material from the loader (not serializable)
+                child.material[i].userData.rwx.material =
+                  m.userData.rwx.material
+                child.material[i].visible = cmd.value
+              })
+            }
+          })
         } else if (cmd.commandType === 'color') {
           this.applyTexture(item, null, null, cmd.color)
         } else if (cmd.commandType === 'texture') {
@@ -195,8 +241,7 @@ export class ObjectService {
       for (const cmd of result.activate) {
         item.userData.clickable = true
         if (cmd.commandType === 'teleport') {
-          item.userData.teleportClick = {}
-          Object.assign(item.userData.teleportClick, cmd.coordinates[0])
+          item.userData.teleportClick = {...cmd.coordinates?.[0]}
           item.userData.teleportClick.worldName =
             cmd.worldName != null ? cmd.worldName[0] : null
         }
@@ -234,14 +279,14 @@ export class ObjectService {
     url = url.match(this.remoteUrl)
       ? `${config.url.imgProxy}${url}`
       : `${this.resPath()}/${url}`
-    this.pictureLoader.load(url, (image) => {
+    this.textureLoader.load(url, (image) => {
       image.colorSpace = SRGBColorSpace
       item.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           const newMaterials = []
           newMaterials.push(...child.material)
-          if (item.userData.taggedMaterials[pictureTag]) {
-            for (const i of item.userData.taggedMaterials[pictureTag]) {
+          if (item.userData.taggedMaterials[PICTURE_TAG]) {
+            for (const i of item.userData.taggedMaterials[PICTURE_TAG]) {
               newMaterials[i] = child.material[i].clone()
               newMaterials[i].color = new Color(1, 1, 1)
               newMaterials[i].map = image
@@ -275,8 +320,8 @@ export class ObjectService {
       if (child instanceof Mesh) {
         const newMaterials = []
         newMaterials.push(...child.material)
-        if (item.userData.taggedMaterials[signTag]) {
-          for (const i of item.userData.taggedMaterials[signTag]) {
+        if (item.userData.taggedMaterials[SIGN_TAG]) {
+          for (const i of item.userData.taggedMaterials[SIGN_TAG]) {
             newMaterials[i] = child.material[i].clone()
             newMaterials[i].color = new Color(1, 1, 1)
             newMaterials[i].map = new CanvasTexture(

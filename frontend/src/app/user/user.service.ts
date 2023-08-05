@@ -7,8 +7,7 @@ import {User} from './user.model'
 
 @Injectable({providedIn: 'root'})
 export class UserService {
-  public userList: User[] = []
-  public userListSignal: WritableSignal<User[]> = signal([])
+  public userList: WritableSignal<User[]> = signal([])
   public avatarChanged: Subject<any> = new Subject()
   public currentName = 'Anonymous'
 
@@ -18,30 +17,35 @@ export class UserService {
     return this.http.getLogged()
   }
 
+  public getUser(id: string) {
+    return this.userList().find((user) => user.id === id)
+  }
+
   clearList() {
-    this.userList = []
-    this.userListSignal.set(this.userList)
+    this.userList.set([])
   }
 
   refreshList(list: User[]) {
-    this.userList = this.userList.filter(
+    // Remove unlisted users
+    const newList = this.userList().filter(
       (u) => list.map((c) => c.id).indexOf(u.id) > -1
     )
     for (const u of list) {
-      const existingUser = this.userList.find((user) => user.id === u.id)
+      // Still update world for listed users
+      const existingUser = this.getUser(u.id)
       if (existingUser) {
         existingUser.world = u.world
         continue
       }
-      this.userList.push(
+      newList.push(
         new User({id: u.id, name: u.name, avatar: u.avatar, world: u.world})
       )
     }
-    this.userListSignal.set(this.userList)
+    this.userList.set([...newList])
   }
 
   setAvatar(userId: string, avatarId: number) {
-    const user = this.userList.find((u) => u.id === userId)
+    const user = this.getUser(userId)
     if (user != null && user.name !== this.currentName) {
       user.avatar = avatarId
       this.avatarChanged.next(user)
@@ -54,7 +58,7 @@ export class UserService {
     state = 'idle',
     gesture: string = null
   ) {
-    const u = this.userList.find((user) => user.id === userId)
+    const u = this.getUser(userId)
     if (u == null) {
       return
     }

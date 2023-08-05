@@ -88,11 +88,11 @@ export class PlayerCollider {
 
     // If the mesh is empty (no faces): we don't need a bounds tree
     if (terrainMesh.geometry.getIndex().array.length === 0) {
-      terrainMesh.userData.boundsTree = null
+      terrainMesh.geometry.boundsTree = null
       return
     }
     // Clone the geometry to avoid messed up faces
-    terrainMesh.userData.boundsTree = new MeshBVH(terrainMesh.geometry.clone())
+    terrainMesh.geometry.boundsTree = new MeshBVH(terrainMesh.geometry.clone())
   }
 
   public topBoxIntersectsTriangle(tri: Triangle): boolean {

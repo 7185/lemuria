@@ -287,10 +287,12 @@ export class EngineService {
 
     this.scene.fog = this.fog
 
-    this.scene.add(this.worldNode)
-    this.scene.add(this.usersNode)
-    this.scene.add(this.objectsNode)
-    this.scene.add(this.buildNode)
+    this.scene.add(
+      this.worldNode,
+      this.usersNode,
+      this.objectsNode,
+      this.buildNode
+    )
 
     if (config.debug) {
       const shadowHelper = new CameraHelper(this.dirLight.shadow.camera)
@@ -362,30 +364,10 @@ export class EngineService {
         wireframe: true
       })
 
-      const mainBox = new Mesh(mainBoxGeometry, [
-        this.boxMaterial,
-        this.boxMaterial,
-        this.boxMaterial,
-        this.boxMaterial,
-        this.boxMaterial,
-        this.boxMaterial
-      ])
-      const topBox = new Mesh(topBoxGeometry, [
-        this.boxMaterial,
-        this.boxMaterial,
-        this.boxMaterial,
-        this.boxMaterial,
-        this.boxMaterial,
-        this.boxMaterial
-      ])
-      const bottomBox = new Mesh(bottomBoxGeometry, [
-        this.boxMaterial,
-        this.boxMaterial,
-        this.boxMaterial,
-        this.boxMaterial,
-        this.boxMaterial,
-        this.boxMaterial
-      ])
+      const materials = Array(6).fill(this.boxMaterial)
+      const mainBox = new Mesh(mainBoxGeometry, materials)
+      const topBox = new Mesh(topBoxGeometry, materials)
+      const bottomBox = new Mesh(bottomBoxGeometry, materials)
 
       topBox.position.set(
         0,
@@ -393,9 +375,7 @@ export class EngineService {
         0
       )
       bottomBox.position.set(0, (playerClimbHeight - boxHeight) / 2, 0)
-      boundingBox.add(mainBox)
-      boundingBox.add(topBox)
-      boundingBox.add(bottomBox)
+      boundingBox.add(mainBox, topBox, bottomBox)
       boundingBox.position.set(boxPos.x, boxPos.y, boxPos.z)
       boundingBox.userData.mainBox = mainBox
       boundingBox.userData.topBox = topBox
@@ -523,7 +503,7 @@ export class EngineService {
   public addUser(group: Group) {
     const div = document.createElement('div')
     div.className = 'text-label'
-    const user = this.userSvc.userList.find((u) => u.id === group.name)
+    const user = this.userSvc.getUser(group.name)
     div.textContent = user ? user.name : ''
 
     const label = new CSS2DObject(div)
@@ -1004,7 +984,7 @@ export class EngineService {
     const pageZ: number = Math.floor(
       (newPosition.z + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
     )
-    const terrainPage = terrain.getObjectByName(`${pageX}_${pageZ}`)
+    const terrainPage = terrain.getObjectByName(`${pageX}_${pageZ}`) as Mesh
 
     if (terrainPage != null) {
       const pageOffset = new Vector3().addVectors(
@@ -1013,7 +993,7 @@ export class EngineService {
       )
       this.playerCollider.translate(pageOffset.negate())
       this.playerCollider.checkBoundsTree(
-        terrainPage.userData.boundsTree,
+        terrainPage.geometry.boundsTree,
         intersectsTriangle
       )
       this.playerCollider.translate(pageOffset.negate())
@@ -1353,6 +1333,12 @@ export class EngineService {
       10 + this.player.position.z
     )
 
+    this.objectsNode
+      .getObjectsByProperty('name', 'corona')
+      .forEach((corona) => {
+        corona.visible = this.isCoronaVisible(corona)
+      })
+
     // compass
     this.compass.setFromVector3(this.cameraDirection)
     this.compassSub.next({
@@ -1454,7 +1440,8 @@ export class EngineService {
   }
 
   private moveUsers() {
-    this.userSvc.userList
+    this.userSvc
+      .userList()
       .filter((u) => this.usersNode.getObjectByName(u.id))
       .forEach((u) => {
         const user = this.usersNode.getObjectByName(u.id)
@@ -1518,5 +1505,33 @@ export class EngineService {
           : user.userData.height
       this.labelMap.get(user.name).position.copy(pos)
     }
+  }
+
+  private isCoronaVisible(sprite) {
+    const cameraPosition = this.activeCamera.getWorldPosition(new Vector3())
+    const spritePosition = sprite.getWorldPosition(new Vector3())
+    const cameraToSpriteDirection = new Vector3()
+      .subVectors(spritePosition, cameraPosition)
+      .normalize()
+
+    this.raycaster.set(cameraPosition, cameraToSpriteDirection)
+
+    // Ignore the current prop during raycasting to prevent self-intersection
+    const ignoreList = [sprite, sprite.parent]
+    const terrain = this.worldNode.getObjectByName('terrain')
+    const intersects = this.raycaster
+      .intersectObjects(
+        this.objectsNode.children.concat(terrain != null ? terrain : []),
+        true
+      )
+      .filter((intersect) => !ignoreList.includes(intersect.object))
+
+    const closestIntersection = intersects[0]
+
+    // Check if there is an intersection and it is in front of the sprite
+    return (
+      !closestIntersection ||
+      closestIntersection.distance >= cameraPosition.distanceTo(spritePosition)
+    )
   }
 }

@@ -10,6 +10,7 @@ import {
   SRGBColorSpace,
   TextureLoader
 } from 'three'
+import {acceleratedRaycast} from 'three-mesh-bvh'
 import {PlayerCollider} from '../engine/player-collider'
 import {EngineService, TERRAIN_PAGE_SIZE} from '../engine/engine.service'
 import {HttpService} from '../network'
@@ -21,6 +22,8 @@ export class TerrainService {
   private water: Group
   private textureLoader = new TextureLoader()
   private terrainMaterials = []
+  private waterBottomGeom: PlaneGeometry
+  private waterTopGeom: PlaneGeometry
   private waterBottomMaterials = []
   private waterTopMaterials = []
   private worldId = 0
@@ -45,6 +48,23 @@ export class TerrainService {
     this.water.userData.color = Utils.rgbToHex(
       ...((world?.water?.color || [0, 255, 255]) as [number, number, number])
     )
+
+    this.waterTopGeom = new PlaneGeometry(
+      TERRAIN_PAGE_SIZE * 10,
+      TERRAIN_PAGE_SIZE * 10,
+      TERRAIN_PAGE_SIZE,
+      TERRAIN_PAGE_SIZE
+    )
+    this.waterTopGeom.rotateX(-Math.PI / 2)
+    this.waterTopGeom.addGroup(0, this.waterTopGeom.getIndex().count, 0)
+    this.waterBottomGeom = new PlaneGeometry(
+      TERRAIN_PAGE_SIZE * 10,
+      TERRAIN_PAGE_SIZE * 10,
+      TERRAIN_PAGE_SIZE,
+      TERRAIN_PAGE_SIZE
+    )
+    this.waterBottomGeom.rotateX(Math.PI / 2)
+    this.waterBottomGeom.addGroup(0, this.waterBottomGeom.getIndex().count, 0)
 
     const waterMaterialBottom = new MeshLambertMaterial({
       transparent: true,
@@ -224,6 +244,8 @@ export class TerrainService {
       geometry.computeVertexNormals()
 
       const terrainMesh = new Mesh(geometry, this.terrainMaterials)
+      // Overwrite raycast to use BVH
+      terrainMesh.raycast = acceleratedRaycast
       terrainMesh.name = `${xPage}_${zPage}`
       terrainMesh.position.set(
         xPage * TERRAIN_PAGE_SIZE * 10,
@@ -382,36 +404,16 @@ export class TerrainService {
       return
     }
 
-    const geometryTop = new PlaneGeometry(
-      TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE,
-      TERRAIN_PAGE_SIZE
+    const waterPage = new Group()
+    waterPage.add(
+      new Mesh(this.waterTopGeom, this.waterTopMaterials),
+      new Mesh(this.waterBottomGeom, this.waterBottomMaterials)
     )
-    geometryTop.rotateX(-Math.PI / 2)
-    geometryTop.addGroup(0, geometryTop.getIndex().count, 0)
-    const geometryBottom = new PlaneGeometry(
-      TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE,
-      TERRAIN_PAGE_SIZE
-    )
-    geometryBottom.rotateX(Math.PI / 2)
-    geometryBottom.addGroup(0, geometryBottom.getIndex().count, 0)
-
-    const waterMeshTop = new Mesh(geometryTop, this.waterTopMaterials)
-    const waterMeshBottom = new Mesh(geometryBottom, this.waterBottomMaterials)
-    waterMeshTop.position.set(
+    waterPage.position.set(
       xPage * TERRAIN_PAGE_SIZE * 10,
       0,
       zPage * TERRAIN_PAGE_SIZE * 10
     )
-    waterMeshBottom.position.set(
-      xPage * TERRAIN_PAGE_SIZE * 10,
-      0,
-      zPage * TERRAIN_PAGE_SIZE * 10
-    )
-    this.water.add(waterMeshTop)
-    this.water.add(waterMeshBottom)
+    this.water.add(waterPage)
   }
 }
