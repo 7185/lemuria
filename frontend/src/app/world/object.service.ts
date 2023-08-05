@@ -67,6 +67,7 @@ export class ObjectService {
   private geomCache: Map<string, BufferGeometry> = new Map()
   private textureLoader = new TextureLoader()
   private remoteUrl = /.+\..+\/.+/g
+  private animatedPictures = []
 
   constructor(private http: HttpService) {
     const unknownGeometry = new BufferGeometry()
@@ -161,6 +162,7 @@ export class ObjectService {
                 })
               )
               corona.name = 'corona'
+              corona.visible = false
               corona.scale.set(size, size, size)
               corona.position.set(
                 item.userData.boxCenter.x,
@@ -279,8 +281,8 @@ export class ObjectService {
     url = url.match(this.remoteUrl)
       ? `${config.url.imgProxy}${url}`
       : `${this.resPath()}/${url}`
-    this.textureLoader.load(url, (image) => {
-      image.colorSpace = SRGBColorSpace
+    this.textureLoader.load(url, (picture) => {
+      picture.colorSpace = SRGBColorSpace
       item.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           const newMaterials = []
@@ -289,7 +291,21 @@ export class ObjectService {
             for (const i of item.userData.taggedMaterials[PICTURE_TAG]) {
               newMaterials[i] = child.material[i].clone()
               newMaterials[i].color = new Color(1, 1, 1)
-              newMaterials[i].map = image
+              newMaterials[i].map = picture
+              const {width, height} = picture.image
+              if (height > width && height % width === 0) {
+                // Animated picture
+                const yTiles = height / width
+                const yHeight = width / height
+                newMaterials[i].userData.rwx.animation = {
+                  yTiles,
+                  yHeight,
+                  step: 0
+                }
+                picture.offset.y = 1 - yHeight
+                picture.repeat.set(1, yHeight)
+                this.animatedPictures.push(newMaterials[i])
+              }
               newMaterials[i].needsUpdate = true
             }
           }
@@ -397,12 +413,21 @@ export class ObjectService {
   cleanCache() {
     this.objects.clear()
     this.avatars.clear()
+    this.animatedPictures.length = 0
     this.rwxMaterialManager.clear()
     this.geomCache.clear()
   }
 
   public texturesNextFrame() {
     this.rwxMaterialManager.texturesNextFrame()
+    for (const m of this.animatedPictures) {
+      const anim = m.userData.rwx.animation
+      if (anim != null) {
+        anim.step = (anim.step + 1) % anim.yTiles
+        m.map.offset.y = 1 - anim.yHeight * (anim.step + 1)
+        m.needsUpdate = true
+      }
+    }
   }
 
   private loadObject(

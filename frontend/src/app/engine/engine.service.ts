@@ -1152,6 +1152,7 @@ export class EngineService {
       Math.abs(this.playerPosition().z - this.player.position.z) > 1e-3
     ) {
       this.playerPosition.set(this.player.position.clone())
+      this.rotateSprites()
     }
   }
 
@@ -1252,6 +1253,7 @@ export class EngineService {
           this.player.rotation.y + reverse * rotSteps
         )
       }
+      this.rotateSprites()
     }
     if (this.inputSysSvc.controls[PressedKey.turnRgt]) {
       if (this.inputSysSvc.controls[PressedKey.clip]) {
@@ -1267,6 +1269,7 @@ export class EngineService {
           this.player.rotation.y - reverse * rotSteps
         )
       }
+      this.rotateSprites()
     }
     if (this.inputSysSvc.controls[PressedKey.moveLft]) {
       this.playerVelocity.add(
@@ -1321,11 +1324,6 @@ export class EngineService {
     this.updatePlayerPosition()
     this.activeCamera.getWorldPosition(this.cameraPosition)
 
-    for (const item of this.sprites) {
-      item.rotation.y = this.player.rotation.y
-      item.updateMatrix()
-    }
-
     this.skybox.position.copy(this.player.position)
     this.dirLight.position.set(
       -50 + this.player.position.x,
@@ -1333,11 +1331,15 @@ export class EngineService {
       10 + this.player.position.z
     )
 
-    this.objectsNode
-      .getObjectsByProperty('name', 'corona')
-      .forEach((corona) => {
-        corona.visible = this.isCoronaVisible(corona)
-      })
+    if (this.frameId % 10 === 0) {
+      // Skip some frames because this causes heavy
+      // raycasting just to check corona visibility
+      this.objectsNode
+        .getObjectsByProperty('name', 'corona')
+        .forEach((corona) => {
+          corona.visible = this.isCoronaVisible(corona)
+        })
+    }
 
     // compass
     this.compass.setFromVector3(this.cameraDirection)
@@ -1504,6 +1506,13 @@ export class EngineService {
           ? user.userData.height / 2
           : user.userData.height
       this.labelMap.get(user.name).position.copy(pos)
+    }
+  }
+
+  private rotateSprites() {
+    for (const item of this.sprites) {
+      item.rotation.y = this.player.rotation.y
+      item.updateMatrix()
     }
   }
 
