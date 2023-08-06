@@ -42,7 +42,7 @@ export class UiPropEditComponent {
   public faTrashCan = faTrashCan
 
   public objectAct = ObjectAct
-  public selectedObject: WritableSignal<{
+  public selectedProp: WritableSignal<{
     name?: string
     desc?: string
     act?: string
@@ -53,7 +53,7 @@ export class UiPropEditComponent {
     private buildSvc: BuildService,
     private objSvc: ObjectService
   ) {
-    this.selectedObject = this.buildSvc.selectedObjectSignal
+    this.selectedProp = this.buildSvc.selectedPropSignal
   }
 
   trigger(event: MouseEvent, action: number) {

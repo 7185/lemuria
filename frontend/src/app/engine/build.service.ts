@@ -23,7 +23,7 @@ export class BuildService {
   public buildMode = false
   public selectedProp: Group
   public selectedCellSignal = signal({})
-  public selectedObjectSignal = signal({})
+  public selectedPropSignal = signal({})
   private axesHelper: AxesHelper
   private cellSelection: Group
   private propSelection: Group
@@ -40,7 +40,7 @@ export class BuildService {
     }
     this.buildMode = true
     this.selectedProp = item
-    this.selectedObjectSignal.set({
+    this.selectedPropSignal.set({
       name: item.name,
       desc: item.userData.desc,
       act: item.userData.act,
@@ -75,7 +75,7 @@ export class BuildService {
     PlayerCollider.updateObjectBVH(this.selectedProp)
     this.buildMode = false
     this.selectedProp = null
-    this.selectedObjectSignal.set({})
+    this.selectedPropSignal.set({})
     this.propSelectionBox.geometry.dispose()
     ;(this.propSelectionBox.material as Material).dispose()
     this.axesHelper.dispose()

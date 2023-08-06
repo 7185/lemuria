@@ -252,8 +252,8 @@ export class TerrainService {
         0,
         zPage * TERRAIN_PAGE_SIZE * 10
       )
-      this.fixPageGaps(terrainMesh, xPage, zPage)
       this.terrain.add(terrainMesh)
+      this.fixPageGaps(terrainMesh, xPage, zPage)
       this.loadingPages.delete(`${xPage}_${zPage}`)
     })
   }

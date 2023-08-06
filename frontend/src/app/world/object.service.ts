@@ -169,6 +169,7 @@ export class ObjectService {
                 item.userData.boxCenter.y,
                 item.userData.boxCenter.z
               )
+              item.userData.corona = corona
               item.add(corona)
             })
           }

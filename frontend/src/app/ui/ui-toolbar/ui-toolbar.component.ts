@@ -221,7 +221,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.engineSvc.toggleCamera()
   }
 
-  public join(userId: string) {
+  public joinUser(userId: string) {
     const user = this.userSvc.getUser(userId)
     this.engineSvc.setPlayerPos(new Vector3(user.x, user.y, user.z))
   }

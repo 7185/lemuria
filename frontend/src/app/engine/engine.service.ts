@@ -28,7 +28,7 @@ import {
   CSS2DObject,
   CSS2DRenderer
 } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
-import type {LOD, Triangle} from 'three'
+import type {LOD, Sprite, Triangle} from 'three'
 import {BuildService} from './build.service'
 import {TeleportService} from './teleport.service'
 import {UserService} from '../user'
@@ -75,6 +75,8 @@ export class EngineService {
   public maxLights = signal(6)
   public texturesAnimation = signal(0)
   public playerPosition = signal(new Vector3())
+  public water: Group
+  private terrain: Group
   private chunkMap = new Map<number, LOD>()
   private compass = new Spherical()
   private canvas: HTMLCanvasElement
@@ -90,6 +92,7 @@ export class EngineService {
   private lodCamera: PerspectiveCamera
   private player: Object3D
   private scene: Scene
+  private buildScene: Scene
   private light: AmbientLight
   private dirLight: DirectionalLight
   private dirLightTarget: Object3D
@@ -161,15 +164,15 @@ export class EngineService {
     private buildSvc: BuildService,
     private teleportSvc: TeleportService
   ) {
+    this.raycaster.firstHitOnly = true
     effect(() => {
       this.refreshLights(this.maxLights())
     })
     effect(() => {
       if (this.inWater()) {
-        const water = this.getWater()
-        this.fog.color = new Color(water.userData?.color || 0x00ffff)
+        this.fog.color = new Color(this.water.userData?.color || 0x00ffff)
         this.fog.near = 0
-        this.fog.far = water.userData?.under_view || 500
+        this.fog.far = this.water.userData?.under_view || 500
       } else if (this.worldFog.enabled) {
         this.fog.color = new Color(this.worldFog.color)
         this.fog.near = this.worldFog.near
@@ -214,10 +217,12 @@ export class EngineService {
     this.renderer.setSize(window.innerWidth, window.innerHeight)
     this.renderer.shadowMap.enabled = false
     this.renderer.outputColorSpace = SRGBColorSpace
+    this.renderer.autoClear = false
     this.labelRenderer = new CSS2DRenderer({element: this.labelZone})
     this.labelRenderer.setSize(window.innerWidth, window.innerHeight)
 
     this.scene = new Scene()
+    this.buildScene = new Scene()
 
     this.player = new Object3D()
     this.player.rotation.order = 'YXZ'
@@ -287,12 +292,8 @@ export class EngineService {
 
     this.scene.fog = this.fog
 
-    this.scene.add(
-      this.worldNode,
-      this.usersNode,
-      this.objectsNode,
-      this.buildNode
-    )
+    this.scene.add(this.worldNode, this.usersNode, this.objectsNode)
+    this.buildScene.add(this.buildNode)
 
     if (config.debug) {
       const shadowHelper = new CameraHelper(this.dirLight.shadow.camera)
@@ -334,55 +335,53 @@ export class EngineService {
     const {position} = this.player
     this.playerCollider = new PlayerCollider(boxHeight, position)
 
-    if (config.debug) {
-      for (const item of this.worldNode.children.filter(
-        (i) => i.name === 'boundingBox'
-      )) {
-        this.disposeMaterial(item as Group)
-        this.worldNode.remove(item)
-      }
-      const boxPos = new Vector3(0, boxHeight / 2, 0).add(position)
-      const boundingBox = new Group()
-      boundingBox.name = 'boundingBox'
-      const mainBoxGeometry = new BoxGeometry(
-        playerBoxSide,
-        boxHeight,
-        playerBoxSide
-      )
-      const topBoxGeometry = new BoxGeometry(
-        playerBoxSide,
-        boxHeight - playerClimbHeight,
-        playerBoxSide
-      )
-      const bottomBoxGeometry = new BoxGeometry(
-        playerBoxSide,
-        playerClimbHeight,
-        playerBoxSide
-      )
-      this.boxMaterial = new MeshBasicMaterial({
-        color: 0x00ff00,
-        wireframe: true
-      })
-
-      const materials = Array(6).fill(this.boxMaterial)
-      const mainBox = new Mesh(mainBoxGeometry, materials)
-      const topBox = new Mesh(topBoxGeometry, materials)
-      const bottomBox = new Mesh(bottomBoxGeometry, materials)
-
-      topBox.position.set(
-        0,
-        (boxHeight - (boxHeight - playerClimbHeight)) / 2,
-        0
-      )
-      bottomBox.position.set(0, (playerClimbHeight - boxHeight) / 2, 0)
-      boundingBox.add(mainBox, topBox, bottomBox)
-      boundingBox.position.set(boxPos.x, boxPos.y, boxPos.z)
-      boundingBox.userData.mainBox = mainBox
-      boundingBox.userData.topBox = topBox
-      boundingBox.userData.bottomBox = bottomBox
-      this.playerColliderBox = boundingBox
-      this.worldNode.add(boundingBox)
+    if (!config.debug) {
+      return
     }
+
+    for (const item of this.worldNode.children.filter(
+      (i) => i.name === 'boundingBox'
+    )) {
+      this.disposeMaterial(item as Group)
+      this.worldNode.remove(item)
+    }
+    const boxPos = new Vector3(0, boxHeight / 2, 0).add(position)
+    const boundingBox = new Group()
+    boundingBox.name = 'boundingBox'
+    const mainBoxGeometry = new BoxGeometry(
+      playerBoxSide,
+      boxHeight,
+      playerBoxSide
+    )
+    const topBoxGeometry = new BoxGeometry(
+      playerBoxSide,
+      boxHeight - playerClimbHeight,
+      playerBoxSide
+    )
+    const bottomBoxGeometry = new BoxGeometry(
+      playerBoxSide,
+      playerClimbHeight,
+      playerBoxSide
+    )
+    this.boxMaterial = new MeshBasicMaterial({
+      color: 0x00ff00,
+      wireframe: true
+    })
+
+    const materials = Array(6).fill(this.boxMaterial)
+    const mainBox = new Mesh(mainBoxGeometry, materials)
+    const topBox = new Mesh(topBoxGeometry, materials)
+    const bottomBox = new Mesh(bottomBoxGeometry, materials)
+
+    topBox.position.set(0, (boxHeight - (boxHeight - playerClimbHeight)) / 2, 0)
+    bottomBox.position.set(0, (playerClimbHeight - boxHeight) / 2, 0)
+    boundingBox.add(mainBox, topBox, bottomBox)
+    boundingBox.position.set(boxPos.x, boxPos.y, boxPos.z)
+    boundingBox.userData.mainBox = mainBox
+    boundingBox.userData.topBox = topBox
+    boundingBox.userData.bottomBox = bottomBox
+    this.playerColliderBox = boundingBox
+    this.worldNode.add(boundingBox)
   }
 
   public getPosition(): [Vector3, Vector3] {
@@ -453,10 +452,6 @@ export class EngineService {
     this.dirLightTarget.position.set(x, y, z)
   }
 
-  public getWater() {
-    return this.worldNode.getObjectByName('water')
-  }
-
   public attachCam(group: Group) {
     this.avatar = group
     this.avatar.visible = this.activeCamera !== this.camera
@@ -498,6 +493,11 @@ export class EngineService {
 
   public addWorldObject(group: Group) {
     this.worldNode.add(group)
+    if (group.name === 'terrain') {
+      this.terrain = group
+    } else if (group.name === 'water') {
+      this.water = group
+    }
   }
 
   public addUser(group: Group) {
@@ -586,6 +586,11 @@ export class EngineService {
 
   public removeWorldObject(group: Group) {
     if (group) {
+      if (group.name === 'terrain') {
+        this.terrain = null
+      } else if (group.name === 'water') {
+        this.water = null
+      }
       this.disposeMaterial(group)
       group.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
@@ -804,8 +809,12 @@ export class EngineService {
     this.fpsSub.next((1 / this.deltaFps).toFixed())
     this.deltaSinceLastFrame = this.deltaFps
     this.deltaFps = (this.deltaFps % 1) / this.maxFps()
+    this.renderer.clear()
     this.renderer.render(this.scene, this.activeCamera)
     this.labelRenderer.render(this.scene, this.activeCamera)
+    // Render build scene last
+    this.renderer.clearDepth()
+    this.renderer.render(this.buildScene, this.activeCamera)
 
     if (this.animationElapsed > 0.1) {
       this.texturesAnimation.set(this.frameId)
@@ -842,20 +851,19 @@ export class EngineService {
 
   private pointedItem() {
     this.raycaster.setFromCamera(this.mouse, this.activeCamera)
-    const terrain = this.worldNode.getObjectByName('terrain')
     const intersects = this.raycaster.intersectObjects(
-      this.objectsNode.children.concat(terrain != null ? terrain : []),
+      this.objectsNode.children.concat(this.terrain ?? []),
       true
     )
     for (const i of intersects) {
       let obj = i.object
-      while (obj.parent !== terrain && !obj.parent.userData.world?.chunk) {
+      while (obj.parent !== this.terrain && !obj.parent.userData.world?.chunk) {
         obj = obj.parent
       }
       if (obj.name.endsWith('.rwx')) {
         return {obj: obj as Group, faceIndex: i.faceIndex}
       }
-      if (obj.parent === terrain) {
+      if (obj.parent === this.terrain) {
         // Terrain page
         return {obj: obj as Group, faceIndex: i.faceIndex}
       }
@@ -933,7 +941,6 @@ export class EngineService {
     originalDelta: Vector3
   ): boolean {
     const newPosition = oldPosition.clone().add(delta)
-    const terrain = this.worldNode.getObjectByName('terrain')
 
     this.playerCollider.copyPos(newPosition)
     this.boxMaterial?.color.setHex(0x00ff00)
@@ -984,12 +991,14 @@ export class EngineService {
     const pageZ: number = Math.floor(
       (newPosition.z + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
     )
-    const terrainPage = terrain.getObjectByName(`${pageX}_${pageZ}`) as Mesh
+    const terrainPage = this.terrain?.getObjectByName(
+      `${pageX}_${pageZ}`
+    ) as Mesh
 
     if (terrainPage != null) {
       const pageOffset = new Vector3().addVectors(
         terrainPage.position,
-        terrain.position
+        this.terrain.position
       )
       this.playerCollider.translate(pageOffset.negate())
       this.playerCollider.checkBoundsTree(
@@ -1143,8 +1152,9 @@ export class EngineService {
       this.player.position.y = 0
     }
 
-    const water = this.getWater()
-    this.inWater.set(water != null && water.position.y >= this.cameraPosition.y)
+    this.inWater.set(
+      this.water != null && this.water.position.y >= this.cameraPosition.y
+    )
 
     if (
       Math.abs(this.playerPosition().x - this.player.position.x) > 1e-3 ||
@@ -1172,41 +1182,42 @@ export class EngineService {
       .slice(0, this.pointLights.length)
 
     this.pointLights.forEach((light, index) => {
-      let fx = 1
       light.position.set(0, 0, 0)
       light.intensity = 0
       light.decay = 0.2
       light.distance = 0.01
       light.color.set(0xffffff)
       light.castShadow = false
-      if (toLit[index]?.obj != null) {
-        switch (toLit[index].obj.userData.light?.fx) {
-          case 'fire':
-            fx = Math.random() * (1.2 - 0.8) + 0.8
-            break
-          case 'pulse':
-            const power = (Date.now() / 1000) % 1
-            fx = power < 0.5 ? power : 1 - power
-            break
-          case 'flash':
-            fx = Math.random() > 0.02 ? 0 : 1
-            break
-          case 'flicker':
-            fx = Math.random() > 0.02 ? 1 : 0
-            break
-          default:
-            break
-        }
-        light.position.set(
-          toLit[index].pos.x,
-          toLit[index].pos.y,
-          toLit[index].pos.z
-        )
-        light.color.set(toLit[index].obj.userData.light.color)
-        light.intensity =
-          2.5 * fx * (toLit[index].obj.userData.light.brightness || 0.5)
-        light.distance = toLit[index].obj.userData.light.radius || 10
+
+      const prop = toLit[index]
+      if (prop?.obj == null) {
+        return
       }
+      let fx = 1
+      switch (prop.obj.userData.light?.fx) {
+        case 'fire':
+          fx = Math.random() * (1.2 - 0.8) + 0.8
+          break
+        case 'pulse':
+          const power = (Date.now() / 1000) % 1
+          fx = Math.sin(power * Math.PI)
+          break
+        case 'flash':
+          fx = Math.random() > 0.02 ? 0 : 1
+          break
+        case 'flicker':
+          fx = Math.random() > 0.02 ? 1 : 0
+          break
+        default:
+          break
+      }
+      if (prop.obj.userData.corona?.visible) {
+        prop.obj.userData.corona.material.opacity = fx
+      }
+      light.position.set(prop.pos.x, prop.pos.y, prop.pos.z)
+      light.color.set(prop.obj.userData.light.color)
+      light.intensity = 2.5 * fx * (prop.obj.userData.light.brightness || 0.5)
+      light.distance = prop.obj.userData.light.radius || 10
     })
   }
 
@@ -1336,7 +1347,8 @@ export class EngineService {
       // raycasting just to check corona visibility
       this.objectsNode
         .getObjectsByProperty('name', 'corona')
-        .forEach((corona) => {
+        .filter((corona: Sprite) => corona.parent.parent.visible)
+        .forEach((corona: Sprite) => {
           corona.visible = this.isCoronaVisible(corona)
         })
     }
@@ -1355,85 +1367,77 @@ export class EngineService {
 
   private animateItems() {
     for (const item of this.animatedObjects) {
-      if (item.userData.move) {
-        if (item.userData.move.waiting > 0) {
-          item.userData.move.waiting -= this.deltaSinceLastFrame
-        } else if (item.userData.move.completion < 1) {
+      const moveData = item.userData.move
+      const rotateData = item.userData.rotate
+
+      if (moveData) {
+        if (moveData.waiting > 0) {
+          moveData.waiting -= this.deltaSinceLastFrame
+        } else if (moveData.completion < 1) {
           // move is in progress
-          item.position.x +=
-            (item.userData.move.distance.x / item.userData.move.time) *
-            this.deltaSinceLastFrame *
-            item.userData.move.direction
-          item.position.y +=
-            (item.userData.move.distance.y / item.userData.move.time) *
-            this.deltaSinceLastFrame *
-            item.userData.move.direction
-          item.position.z +=
-            (item.userData.move.distance.z / item.userData.move.time) *
-            this.deltaSinceLastFrame *
-            item.userData.move.direction
-          item.userData.move.completion +=
-            this.deltaSinceLastFrame / item.userData.move.time
-        } else if (item.userData.move.direction === -1) {
+          const moveFactor =
+            moveData.direction * (this.deltaSinceLastFrame / moveData.time)
+          item.position.x += moveData.distance.x * moveFactor
+          item.position.y += moveData.distance.y * moveFactor
+          item.position.z += moveData.distance.z * moveFactor
+          moveData.completion += this.deltaSinceLastFrame / moveData.time
+        } else if (moveData.direction === -1) {
           // wayback is done
-          if (item.userData.move.loop) {
-            item.userData.move.direction *= -1
-            item.userData.move.completion = 0
+          if (moveData.loop) {
+            moveData.direction *= -1
+            moveData.completion = 0
           }
-        } else if (item.userData.move.reset) {
+        } else if (moveData.reset) {
           // no wayback, all done
-          item.position.copy(item.userData.move.orig)
-          if (item.userData.move.loop) {
+          item.position.copy(moveData.orig)
+          if (moveData.loop) {
             // loop
-            item.userData.move.completion = 0
+            moveData.completion = 0
           }
         } else {
-          item.userData.move.waiting = item.userData.move.wait
+          moveData.waiting = moveData.wait
           // wayback is starting
-          item.userData.move.direction *= -1
-          item.userData.move.completion = 0
+          moveData.direction *= -1
+          moveData.completion = 0
         }
       }
-      if (item.userData.rotate) {
-        if (item.userData.rotate.waiting > 0) {
-          item.userData.rotate.waiting -= this.deltaSinceLastFrame
+
+      if (rotateData) {
+        if (rotateData.waiting > 0) {
+          rotateData.waiting -= this.deltaSinceLastFrame
         } else {
           item.rotateOnAxis(
             Y_AXIS,
-            item.userData.rotate.speed.y *
+            rotateData.speed.y *
               RPM *
               this.deltaSinceLastFrame *
-              item.userData.rotate.direction
+              rotateData.direction
           )
           item.rotateOnAxis(
             Z_AXIS,
-            item.userData.rotate.speed.z *
+            rotateData.speed.z *
               RPM *
               this.deltaSinceLastFrame *
-              item.userData.rotate.direction
+              rotateData.direction
           )
           item.rotateOnAxis(
             X_AXIS,
-            item.userData.rotate.speed.x *
+            rotateData.speed.x *
               RPM *
               this.deltaSinceLastFrame *
-              item.userData.rotate.direction
+              rotateData.direction
           )
-          if (
-            item.userData.rotate.time &&
-            item.userData.rotate.completion >= 1
-          ) {
-            if (item.userData.rotate.loop) {
-              item.userData.rotate.completion = 0
-              if (item.userData.rotate.reset) {
-                item.rotation.copy(item.userData.rotate.orig)
+          if (rotateData.time && rotateData.completion >= 1) {
+            if (rotateData.loop) {
+              rotateData.completion = 0
+              if (rotateData.reset) {
+                item.rotation.copy(rotateData.orig)
               } else {
-                item.userData.rotate.waiting = item.userData.rotate.wait
-                item.userData.rotate.direction *= -1
+                rotateData.waiting = rotateData.wait
+                rotateData.direction *= -1
               }
             }
-            item.userData.rotate.completion +=
-              this.deltaSinceLastFrame / item.userData.rotate.time
+            rotateData.completion += this.deltaSinceLastFrame / rotateData.time
           }
         }
       }
@@ -1505,7 +1509,7 @@ export class EngineService {
         user.userData.height > 1.1
           ? user.userData.height / 2
           : user.userData.height
-      this.labelMap.get(user.name).position.copy(pos)
+      div.position.copy(pos)
     }
   }
 
@@ -1516,9 +1520,9 @@ export class EngineService {
     }
   }
 
-  private isCoronaVisible(sprite) {
+  private isCoronaVisible(corona: Sprite) {
     const cameraPosition = this.activeCamera.getWorldPosition(new Vector3())
-    const spritePosition = sprite.getWorldPosition(new Vector3())
+    const spritePosition = corona.getWorldPosition(new Vector3())
     const cameraToSpriteDirection = new Vector3()
       .subVectors(spritePosition, cameraPosition)
       .normalize()
@@ -1526,11 +1530,10 @@ export class EngineService {
     this.raycaster.set(cameraPosition, cameraToSpriteDirection)
 
     // Ignore the current prop during raycasting to prevent self-intersection
-    const ignoreList = [sprite, sprite.parent]
-    const terrain = this.worldNode.getObjectByName('terrain')
+    const ignoreList = [corona, corona.parent]
     const intersects = this.raycaster
       .intersectObjects(
-        this.objectsNode.children.concat(terrain != null ? terrain : []),
+        this.objectsNode.children.concat(this.terrain ?? []),
         true
       )
       .filter((intersect) => !ignoreList.includes(intersect.object))

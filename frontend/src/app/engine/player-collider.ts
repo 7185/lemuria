@@ -1,7 +1,7 @@
 import {Vector3, Box3, Ray} from 'three'
 import type {Group, Mesh, Object3D, Triangle} from 'three'
 import {flattenGroup} from 'three-rwx-loader'
-import {MeshBVH} from 'three-mesh-bvh'
+import {MeshBVH, MeshBVHVisualizer} from 'three-mesh-bvh'
 import {config} from '../app.config'
 
 const playerHalfSide = config.world.collider.boxSide / 2
@@ -93,6 +93,16 @@ export class PlayerCollider {
     }
     // Clone the geometry to avoid messed up faces
     terrainMesh.geometry.boundsTree = new MeshBVH(terrainMesh.geometry.clone())
+    if (!config.debug) {
+      return
+    }
+    // Display BVH
+    if (terrainMesh.userData.bvhHelper != null) {
+      terrainMesh.userData.bvhHelper.update()
+    } else {
+      terrainMesh.userData.bvhHelper = new MeshBVHVisualizer(terrainMesh, 20)
+      terrainMesh.parent.add(terrainMesh.userData.bvhHelper)
+    }
   }
 
   public topBoxIntersectsTriangle(tri: Triangle): boolean {

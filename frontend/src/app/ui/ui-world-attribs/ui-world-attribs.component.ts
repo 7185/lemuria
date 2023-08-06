@@ -63,9 +63,7 @@ export class UiWorldAttribsComponent {
     )
     this.water = signal(false)
     this.waterColor = signal(
-      Utils.colorHexToStr(
-        this.engineSvc.getWater()?.userData?.color || 0x00ffff
-      )
+      Utils.colorHexToStr(this.engineSvc.water?.userData?.color || 0x00ffff)
     )
     this.waterBottomTexture = signal('')
     this.waterTopTexture = signal('')

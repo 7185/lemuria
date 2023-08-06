@@ -1,4 +1,4 @@
-<div id="build-zone" [ngxDraggableDom]="true" [handle]="handle" [class.d-none]="selectedObject().name === undefined">
+<div id="build-zone" [ngxDraggableDom]="true" [handle]="handle" [class.d-none]="selectedProp().name === undefined">
   <hr #handle/>
   <table class="table table-sm small">
     <thead>
@@ -89,19 +89,19 @@
       </tr>
       <tr>
         <th scope="row">Object</th>
-        <td><input type="text" class="form-control" [(ngModel)]="selectedObject().name"/></td>
+        <td><input type="text" class="form-control" [(ngModel)]="selectedProp().name"/></td>
       </tr>
       <tr>
         <th scope="row">Description</th>
-        <td><textarea class="form-control" rows="3" [(ngModel)]="selectedObject().desc"></textarea></td>
+        <td><textarea class="form-control" rows="3" [(ngModel)]="selectedProp().desc"></textarea></td>
       </tr>
       <tr>
         <th scope="row">Action</th>
-        <td><textarea class="form-control" rows="3" [(ngModel)]="selectedObject().act"></textarea></td>
+        <td><textarea class="form-control" rows="3" [(ngModel)]="selectedProp().act"></textarea></td>
       </tr>
       <tr>
       <th scope="row">Date</th>
-        <td>{{ selectedObject().date * 1000 | date:'EEE MMM d, y h:mm a' }}</td>
+        <td>{{ selectedProp().date * 1000 | date:'EEE MMM d, y h:mm a' }}</td>
       </tr>
     </tbody>
   </table>
