@@ -113,15 +113,15 @@
         </div>
       </div>
       <div class="mb-2 row">
-        <label for="waterTopTexture" class="col col-form-label">Top texture</label>
+        <label for="waterTextureTop" class="col col-form-label">Top texture</label>
         <div class="col">
-          <input id="waterTopTexture" class="form-control" type="text" [ngModel]="waterTopTexture()" (ngModelChange)="waterTopTexture.set($event)">
+          <input id="waterTextureTop" class="form-control" type="text" [ngModel]="waterTextureTop()" (ngModelChange)="waterTextureTop.set($event)">
         </div>
       </div>
       <div class="mb-2 row">
-        <label for="waterBottomTexture" class="col col-form-label">Bottom texture</label>
+        <label for="waterTextureBottom" class="col col-form-label">Bottom texture</label>
         <div class="col">
-          <input id="waterBottomTexture" class="form-control" type="text" [ngModel]="waterBottomTexture()" (ngModelChange)="waterBottomTexture.set($event)">
+          <input id="waterTextureBottom" class="form-control" type="text" [ngModel]="waterTextureBottom()" (ngModelChange)="waterTextureBottom.set($event)">
         </div>
       </div>
       <div class="mb-2 row">
@@ -133,7 +133,7 @@
       <div class="mb-2 row">
         <label for="waterOpacity" class="col col-form-label">Opacity</label>
         <div class="col col-3">
-          <input id="waterOpacity" class="form-control" type="number" [ngModel]="waterOpacity()" (ngModelChange)="waterOpacity.set($event)">
+          <input id="waterOpacity" class="form-control" type="number" min="0" max="255" [ngModel]="waterOpacity()" (ngModelChange)="waterOpacity.set($event)">
         </div>
       </div>
       <div class="mb-2 row">

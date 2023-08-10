@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-"""Database tools module"""
+"""
+Database import and export tools module
+"""
 
 import json
 import aiofiles
@@ -62,42 +64,81 @@ world_attr = {
 }
 
 
-async def load_atdump(file):
-    async with aiofiles.open(file, 'r', encoding='windows-1252') as f:
-        async for l in f:
-            s = l.split(' ', 1)
-            if s[0] == 'atdump':
+async def load_atdump(file_path):
+    """
+    Asynchronously load data from an atdump file.
+
+    Args:
+        file_path (str): The path to the atdump file.
+
+    Yields:
+        tuple: A tuple containing the integer value and the stripped string value.
+    """
+    async with aiofiles.open(file_path, 'r', encoding='windows-1252') as file:
+        async for line in file:
+            parts = line.split(' ', 1)
+            if parts[0] == 'atdump':
                 continue
-            yield (int(s[0]), s[1].strip())
+            yield (int(parts[0]), parts[1].strip())
 
 
-async def load_elevdump(file):
-    async with aiofiles.open(file, 'r', encoding='windows-1252') as f:
-        async for l in f:
-            s = l.split()
-            if s[0] == 'elevdump':
+async def load_elevdump(file_path):
+    """
+    Asynchronously load data from an elevdump file.
+
+    Args:
+        file_path (str): The path to the elevdump file.
+
+    Yields:
+        list: A list containing extracted integer values from the file.
+    """
+    async with aiofiles.open(file_path, 'r', encoding='windows-1252') as file:
+        async for line in file:
+            parts = line.split()
+            if parts[0] == 'elevdump':
                 continue
             yield [
-                int(s[0]), int(s[1]), int(s[2]), int(s[3]), int(s[4]),
-                list(map(int, s[7:7+int(s[5])])), list(map(int, s[7+int(s[5]):]))
+                int(parts[0]), int(parts[1]), int(parts[2]), int(parts[3]), int(parts[4]),
+                list(map(int, parts[7:7 + int(parts[5])])),
+                list(map(int, parts[7 + int(parts[5]):]))
             ]
 
 
-async def load_propdump(file):
-    async with aiofiles.open(file, 'r', encoding='windows-1252') as f:
-        async for l in f:
-            l = l.encode('windows-1252').replace(b'\x80\x7f', b'\r\n').replace(b'\x7f', b'\n').decode('windows-1252')
-            s = l.split(' ', 11)
-            if s[0] == 'propdump':
+async def load_propdump(file_path):
+    """
+    Asynchronously load data from a propdump file.
+
+    Args:
+        file_path (str): The path to the propdump file.
+
+    Yields:
+        list: A list containing extracted integer values and slices from the file.
+    """
+    async with aiofiles.open(file_path, 'r', encoding='windows-1252') as file:
+        async for line in file:
+            line = (line.encode('windows-1252')
+                        .replace(b'\x80\x7f', b'\r\n')
+                        .replace(b'\x7f', b'\n')
+                        .decode('windows-1252'))
+            parts = line.split(' ', 11)
+            if parts[0] == 'propdump':
                 continue
-            data = s[11]
-            obj_len = int(s[8])
-            desc_len = int(s[9])
-            act_len = int(s[10])
-            yield [int(s[1]), data[:obj_len], int(s[2]), int(s[3]), int(s[4]),
-                   int(s[6]), int(s[5]), int(s[7]),
-                   data[obj_len:obj_len + desc_len] or None,
-                   data[obj_len + desc_len:obj_len + desc_len + act_len] or None]
+            data = parts[11]
+            obj_len = int(parts[8])
+            desc_len = int(parts[9])
+            act_len = int(parts[10])
+            yield [
+                int(parts[1]),
+                data[:obj_len],
+                int(parts[2]),
+                int(parts[3]),
+                int(parts[4]),
+                int(parts[6]),
+                int(parts[5]),
+                int(parts[7]),
+                data[obj_len:obj_len + desc_len] or None,
+                data[obj_len + desc_len:obj_len + desc_len + act_len] or None
+            ]
 
 
 @db_required
@@ -106,11 +147,13 @@ async def save_elevdump(world_name, file):
         await f.write('elevdump version 1\r\n')
         for elev in await db.query_raw((
             "select page_x, page_z, node_x, node_z, radius, textures, heights "
-            f"from elev where wid = (SELECT id FROM world WHERE LOWER(name) = '{world_name.lower()}')"
+            "from elev where wid = (SELECT id FROM world WHERE LOWER(name) = "
+            f"'{world_name.lower()}')"
         )):
             await f.write((
-                f"{elev['page_x']} {elev['page_z']} {elev['node_x']} {elev['node_z']} {elev['radius']} "
-                f"{len(elev['textures'].split(' '))} {len(elev['heights'].split(' '))} {elev['textures']} {elev['heights']}\r\n"
+                f"{elev['page_x']} {elev['page_z']} {elev['node_x']} {elev['node_z']} "
+                f"{elev['radius']} {len(elev['textures'].split(' '))} "
+                f"{len(elev['heights'].split(' '))} {elev['textures']} {elev['heights']}\r\n"
             ))
 
 
@@ -139,7 +182,9 @@ async def save_atdump(world_name, file):
 
     reverse_world_attr = {value: key for key, value in world_attr.items()}
 
-    lines = [(reverse_world_attr.get(key), value) for key, value in _flatten_dict(attr_dict).items()]
+    lines = [
+        (reverse_world_attr.get(key), value) for key, value in _flatten_dict(attr_dict).items()
+    ]
     # Sort the lines based on the numeric keys
     lines.sort(key=lambda x: x[0])
 
@@ -238,23 +283,52 @@ async def import_world(world_name, path='../dumps'):
 
 
 async def export_world(world_name, path='../dumps'):
+    """
+    Asynchronously export world data in different dump formats.
+
+    Args:
+        world_name (str): The name of the world to be exported.
+        path (str, optional): The path where the dump files will be saved. Defaults to '../dumps'.
+    """
     await save_atdump(world_name, f'{path}/export_at{world_name}.txt')
     await save_elevdump(world_name, f'{path}/export_elev{world_name}.txt')
     await save_propdump(world_name, f'{path}/export_prop{world_name}.txt')
 
 
-def _flatten_dict_gen(d, parent_key, sep):
-    for k, v in d.items():
-        new_key = parent_key + sep + k if parent_key else k
-        if isinstance(v, list):
-            v = {'r': v[0], 'g': v[1], 'b': v[2]}
-        if isinstance(v, dict):
-            yield from _flatten_dict(v, new_key, sep=sep).items()
+def _flatten_dict_gen(dictionary, parent_key, separator):
+    """
+    Generator function to flatten a nested dictionary.
+
+    Args:
+        dictionary (dict): The input dictionary to be flattened.
+        parent_key (str): The prefix for the current key.
+        separator (str): Separator to be used between keys.
+
+    Yields:
+        tuple: A tuple containing the flattened key and its value.
+    """
+    for key, value in dictionary.items():
+        new_key = parent_key + separator + key if parent_key else key
+        if isinstance(value, list):
+            value = {'r': value[0], 'g': value[1], 'b': value[2]}
+        if isinstance(value, dict):
+            yield from _flatten_dict(value, new_key, separator).items()
         else:
-            if isinstance(v, bool):
-                v = "Y" if v else "N"
-            yield new_key, v
+            if isinstance(value, bool):
+                value = "Y" if value else "N"
+            yield new_key, value
 
 
-def _flatten_dict(d: dict, parent_key: str = '', sep: str = '.'):
-    return dict(_flatten_dict_gen(d, parent_key, sep))
+def _flatten_dict(nested_dict: dict, parent_key: str = '', separator: str = '.'):
+    """
+    Flatten a nested dictionary.
+
+    Args:
+        nested_dict (dict): The input dictionary to be flattened.
+        parent_key (str, optional): The prefix for the current key. Defaults to an empty string.
+        separator (str, optional): Separator to be used between keys. Defaults to '.'.
+
+    Returns:
+        dict: A new dictionary with flattened keys and their corresponding values.
+    """
+    return dict(_flatten_dict_gen(nested_dict, parent_key, separator))

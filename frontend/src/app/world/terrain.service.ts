@@ -13,13 +13,14 @@ import {
 import {acceleratedRaycast} from 'three-mesh-bvh'
 import {PlayerCollider} from '../engine/player-collider'
 import {EngineService, TERRAIN_PAGE_SIZE} from '../engine/engine.service'
+import {ObjectService} from './object.service'
 import {HttpService} from '../network'
 import {Utils} from '../utils'
 
 @Injectable({providedIn: 'root'})
 export class TerrainService {
+  public water: Group
   private terrain: Group
-  private water: Group
   private textureLoader = new TextureLoader()
   private terrainMaterials = []
   private waterBottomGeom: PlaneGeometry
@@ -31,23 +32,35 @@ export class TerrainService {
 
   constructor(
     private engineSvc: EngineService,
-    private httpSvc: HttpService
+    private httpSvc: HttpService,
+    private objSvc: ObjectService
   ) {}
 
-  public setWater(world: any) {
+  public setWater(water: {
+    enabled?: boolean
+    color?: number[]
+    offset?: number
+    opacity?: number
+    texture_bottom?: string
+    texture_top?: string
+    under_view?: number
+  }) {
     if (this.water != null) {
       this.engineSvc.removeWorldObject(this.water)
     }
-    if (!world.water.enabled) {
+    if (!water?.enabled) {
       this.water = null
       return
     }
     this.water = new Group()
     this.water.name = 'water'
-
+    this.water.userData.under_view = water.under_view ?? 120
     this.water.userData.color = Utils.rgbToHex(
-      ...((world?.water?.color || [0, 255, 255]) as [number, number, number])
+      ...((water?.color || [0, 255, 255]) as [number, number, number])
     )
+    this.water.userData.texture_bottom = water.texture_bottom
+    this.water.userData.texture_top = water.texture_top
+    this.water.userData.opacity = water?.opacity ?? 128
 
     this.waterTopGeom = new PlaneGeometry(
       TERRAIN_PAGE_SIZE * 10,
@@ -69,18 +82,18 @@ export class TerrainService {
     const waterMaterialBottom = new MeshLambertMaterial({
       transparent: true,
       color: new Color(this.water.userData.color),
-      opacity: (world?.water?.opacity || 128) / 255
+      opacity: this.water.userData.opacity / 255
     })
 
     const waterMaterialTop = new MeshLambertMaterial({
       transparent: true,
       color: new Color(this.water.userData.color),
-      opacity: (world?.water?.opacity || 128) / 255
+      opacity: this.water.userData.opacity / 255
     })
 
-    if (world.water?.texture_bottom) {
+    if (water?.texture_bottom) {
       const bottomTexture = this.textureLoader.load(
-        `${world.path}/textures/${world.water.texture_bottom}.jpg`
+        `${this.objSvc.path()}/textures/${water.texture_bottom}.jpg`
       )
       bottomTexture.colorSpace = SRGBColorSpace
       bottomTexture.wrapS = RepeatWrapping
@@ -89,9 +102,9 @@ export class TerrainService {
       waterMaterialBottom.map = bottomTexture
     }
 
-    if (world.water?.texture_top) {
+    if (water?.texture_top) {
       const topTexture = this.textureLoader.load(
-        `${world.path}/textures/${world.water.texture_top}.jpg`
+        `${this.objSvc.path()}/textures/${water.texture_top}.jpg`
       )
       topTexture.colorSpace = SRGBColorSpace
       topTexture.wrapS = RepeatWrapping
@@ -103,18 +116,21 @@ export class TerrainService {
     this.waterBottomMaterials = [waterMaterialBottom]
     this.waterTopMaterials = [waterMaterialTop]
 
-    if (world.water?.offset != null) {
-      this.water.position.setY(world.water.offset)
+    if (water?.offset != null) {
+      this.water.position.setY(water.offset)
     }
     this.engineSvc.addWorldObject(this.water)
   }
 
-  public setTerrain(world: any) {
-    this.worldId = world.id
+  public setTerrain(
+    terrain: {enabled: boolean; offset: number},
+    worldId: number
+  ) {
+    this.worldId = worldId
     if (this.terrain != null) {
       this.engineSvc.removeWorldObject(this.terrain)
     }
-    if (!world.terrain.enabled) {
+    if (!terrain?.enabled) {
       this.terrain = null
       return
     }
@@ -126,7 +142,7 @@ export class TerrainService {
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 64; j++) {
         const terrainTexture = this.textureLoader.load(
-          `${world.path}/textures/terrain${j}.jpg`
+          `${this.objSvc.path()}/textures/terrain${j}.jpg`
         )
         terrainTexture.colorSpace = SRGBColorSpace
         terrainTexture.wrapS = RepeatWrapping
@@ -138,8 +154,8 @@ export class TerrainService {
         )
       }
     }
-    if (world.terrain?.offset != null) {
-      this.terrain.position.setY(world.terrain.offset)
+    if (terrain?.offset != null) {
+      this.terrain.position.setY(terrain.offset)
     }
     this.engineSvc.addWorldObject(this.terrain)
     this.terrain.updateMatrixWorld()
@@ -180,6 +196,16 @@ export class TerrainService {
         !this.loadingPages.has(`${page[0]}_${page[1]}`)
       ) {
         this.setTerrainPage(page[0], page[1])
+      }
+    })
+
+    pages.forEach((page) => {
+      if (
+        !this.water?.children?.find(
+          (m) => m.name === `${page[0]}_${page[1]}`
+        ) &&
+        !this.loadingPages.has(`${page[0]}_${page[1]}`)
+      ) {
         this.setWaterPage(page[0], page[1])
       }
     })
@@ -405,6 +431,7 @@ export class TerrainService {
     }
 
     const waterPage = new Group()
+    waterPage.name = `${xPage}_${zPage}`
     waterPage.add(
       new Mesh(this.waterTopGeom, this.waterTopMaterials),
       new Mesh(this.waterBottomGeom, this.waterBottomMaterials)

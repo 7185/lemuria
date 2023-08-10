@@ -238,19 +238,21 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       this.name = u.name
       this.userSvc.currentName = u.name
       if (u.id != null) {
-        this.http.worlds().subscribe((w: any[]) => {
-          this.worldSvc.worldList = w
-          const home = this.settings.get('home')
-          this.home = {
-            world: home?.world,
-            position: home?.position,
-            isNew: true
-          }
-          if (this.home.world || this.home.position) {
-            this.teleportSvc.teleport.set(this.home)
-          }
-          this.cdRef.detectChanges()
-        })
+        this.http
+          .worlds()
+          .subscribe((w: {id: number; name: string; data: unknown}[]) => {
+            this.worldSvc.worldList = w
+            const home = this.settings.get('home')
+            this.home = {
+              world: home?.world,
+              position: home?.position,
+              isNew: true
+            }
+            if (this.home.world || this.home.position) {
+              this.teleportSvc.teleport.set(this.home)
+            }
+            this.cdRef.detectChanges()
+          })
       }
       this.cdRef.detectChanges()
     })

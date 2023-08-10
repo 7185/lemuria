@@ -2,11 +2,9 @@ import {Vector3} from 'three'
 
 export class Utils {
   static posToStringSimple(pos: Vector3): string {
-    return (
-      (Math.abs(pos.z) / 10).toFixed(2).concat(pos.z >= 0 ? 'N' : 'S') +
-      ' ' +
-      (Math.abs(pos.x) / 10).toFixed(2).concat(pos.x >= 0 ? 'W' : 'E')
-    )
+    return `${(Math.abs(pos.z) / 10).toFixed(2)}${pos.z >= 0 ? 'N' : 'S'} ${(
+      Math.abs(pos.x) / 10
+    ).toFixed(2)}${pos.x >= 0 ? 'W' : 'E'}`
   }
 
   /**
@@ -17,12 +15,10 @@ export class Utils {
    * @returns Position string with optional yaw
    */
   static posToString(pos: Vector3, yaw = 0): string {
-    const ns = pos.z >= 0 ? 'N' : 'S'
-    const ew = pos.x >= 0 ? 'W' : 'E'
-    const s = `${(Math.abs(pos.z) / 10).toFixed(2)}${ns} ${(
-      Math.abs(pos.x) / 10
-    ).toFixed(2)}${ew} ${(Math.abs(pos.y) / 10).toFixed(2)}a`
-    return yaw ? `${s} ${yaw}` : s
+    const position = `${this.posToStringSimple(pos)} ${(
+      Math.abs(pos.y) / 10
+    ).toFixed(2)}a`
+    return yaw ? `${position} ${yaw}` : position
   }
 
   static altToString(pos: Vector3): string {
@@ -54,12 +50,7 @@ export class Utils {
   }
 
   static radNormalized(value: number): number {
-    if (value > Math.PI) {
-      value -= 2 * Math.PI
-    } else if (value < -Math.PI) {
-      value += 2 * Math.PI
-    }
-    return value
+    return ((value + Math.PI) % (2 * Math.PI)) - Math.PI
   }
 
   /**

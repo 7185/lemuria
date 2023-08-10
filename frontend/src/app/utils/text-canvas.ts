@@ -6,6 +6,7 @@ export class TextCanvas {
    * @param ratio The canvas ratio
    * @param color The text color
    * @param bcolor The background color
+   * @returns An HTML canvas element
    */
   static textCanvas(
     text: string,

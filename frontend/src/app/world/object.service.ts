@@ -14,6 +14,7 @@ import {
   TextureLoader,
   SRGBColorSpace,
   Color,
+  RepeatWrapping,
   Sprite,
   SpriteMaterial
 } from 'three'
@@ -62,8 +63,8 @@ export class ObjectService {
   private basicLoader = new RWXLoader(new LoadingManager())
   private rwxMaterialManager: RWXMaterialManager
   private actionParser = new AWActionParser()
-  private objects: Map<string, Observable<any>> = new Map()
-  private avatars: Map<string, Observable<any>> = new Map()
+  private objects: Map<string, Observable<Group>> = new Map()
+  private avatars: Map<string, Observable<Group>> = new Map()
   private geomCache: Map<string, BufferGeometry> = new Map()
   private textureLoader = new TextureLoader()
   private remoteUrl = /.+\..+\/.+/g
@@ -71,7 +72,7 @@ export class ObjectService {
 
   constructor(private http: HttpService) {
     const unknownGeometry = new BufferGeometry()
-    const positions = [-0.2, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.2, 0.0]
+    const positions = [-0.2, 0, 0, 0.2, 0, 0, 0, 0.2, 0]
     unknownGeometry.setAttribute(
       'position',
       new BufferAttribute(new Float32Array(positions), 3)
@@ -284,6 +285,8 @@ export class ObjectService {
       : `${this.resPath()}/${url}`
     this.textureLoader.load(url, (picture) => {
       picture.colorSpace = SRGBColorSpace
+      picture.wrapS = RepeatWrapping
+      picture.wrapT = RepeatWrapping
       item.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           const newMaterials = []
@@ -363,8 +366,8 @@ export class ObjectService {
     textureName: string = null,
     maskName: string = null,
     color: {r: number; g: number; b: number} = null
-  ): Observable<any> {
-    const promises: Observable<any>[] = []
+  ): Observable<unknown> {
+    const promises: Observable<unknown>[] = []
     item.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         const newMaterials = []
@@ -403,11 +406,11 @@ export class ObjectService {
     return forkJoin(promises)
   }
 
-  loadProp(name: string, basic = false): Observable<any> {
+  loadProp(name: string, basic = false): Observable<Group> {
     return this.loadObject(name, this.objects, basic ? 'basic' : 'prop')
   }
 
-  loadAvatar(name: string): Observable<any> {
+  loadAvatar(name: string): Observable<Group> {
     return this.loadObject(name, this.avatars, 'avatar')
   }
 
@@ -433,7 +436,7 @@ export class ObjectService {
 
   private loadObject(
     name: string,
-    objectCache: Map<string, Observable<any>>,
+    objectCache: Map<string, Observable<Group>>,
     loaderType = 'basic'
   ) {
     name = Utils.modelName(name)
@@ -451,7 +454,7 @@ export class ObjectService {
       // Dirty fix for skybox loading too fast
       loader.setPath(this.rwxPath()).setResourcePath(this.resPath())
     }
-    const observable = new Observable((observer) => {
+    const observable = new Observable<Group>((observer) => {
       loader.load(
         name,
         (rwx: Group) => {
@@ -469,11 +472,11 @@ export class ObjectService {
         null,
         () => observer.next(this.unknown)
       )
-    })
-    objectCache.set(name, observable)
-    return observable.pipe(
-      map((newObject: Observable<Group>) => newObject),
+    }).pipe(
+      map((newObject: Group) => newObject),
       catchError(() => of(this.unknown))
     )
+    objectCache.set(name, observable)
+    return observable
   }
 }

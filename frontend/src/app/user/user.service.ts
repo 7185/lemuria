@@ -8,7 +8,7 @@ import {User} from './user.model'
 @Injectable({providedIn: 'root'})
 export class UserService {
   public userList: WritableSignal<User[]> = signal([])
-  public avatarChanged: Subject<any> = new Subject()
+  public avatarChanged: Subject<User> = new Subject()
   public currentName = 'Anonymous'
 
   constructor(private http: HttpService) {}

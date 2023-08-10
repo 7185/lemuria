@@ -123,10 +123,7 @@ export class PlayerCollider {
         true,
         new Vector3()
       )
-      if (
-        point !== null &&
-        (intersectionPoint === null || point.y > intersectionPoint.y)
-      ) {
+      if (intersectionPoint === null || point?.y > intersectionPoint.y) {
         intersectionPoint = point
       }
     })

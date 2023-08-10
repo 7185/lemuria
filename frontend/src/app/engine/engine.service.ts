@@ -51,7 +51,6 @@ const playerClimbHeight = config.world.collider.climbHeight
 const playerGroundAdjust = config.world.collider.groundAdjust
 const playerMaxStepLength = config.world.collider.maxStepLength
 const playerMaxNbSteps = config.world.collider.maxNbSteps
-const chunkIndexStep = 100000
 
 // This defines which chunks (offset from the current chunk we sit in) we will
 // query for collisions for each player movement step
@@ -75,9 +74,9 @@ export class EngineService {
   public maxLights = signal(6)
   public texturesAnimation = signal(0)
   public playerPosition = signal(new Vector3())
-  public water: Group
   private terrain: Group
-  private chunkMap = new Map<number, LOD>()
+  private water: Group
+  private chunkLODMap = new Map<string, LOD>()
   private compass = new Spherical()
   private canvas: HTMLCanvasElement
   private labelZone: HTMLDivElement
@@ -169,18 +168,7 @@ export class EngineService {
       this.refreshLights(this.maxLights())
     })
     effect(() => {
-      if (this.inWater()) {
-        this.fog.color = new Color(this.water.userData?.color || 0x00ffff)
-        this.fog.near = 0
-        this.fog.far = this.water.userData?.under_view || 500
-      } else if (this.worldFog.enabled) {
-        this.fog.color = new Color(this.worldFog.color)
-        this.fog.near = this.worldFog.near
-        this.fog.far = this.worldFog.far
-      } else {
-        this.fog.near = 0
-        this.fog.far = 10000
-      }
+      this.updateFog(this.inWater())
     })
   }
 
@@ -409,19 +397,24 @@ export class EngineService {
     return this.userState
   }
 
-  public setWorldFog(color = 0x00007f, near = 0, far = 120, enabled = false) {
-    this.worldFog = {color, near, far, enabled}
-    if (this.inWater()) {
-      return
-    }
-    if (!enabled) {
+  private updateFog(inWater = false) {
+    if (inWater) {
+      this.fog.color = new Color(this.water.userData?.color ?? 0x00ffff)
+      this.fog.near = 0
+      this.fog.far = this.water.userData?.under_view ?? 120
+    } else if (this.worldFog.enabled) {
+      this.fog.color = new Color(this.worldFog.color)
+      this.fog.near = this.worldFog.near
+      this.fog.far = this.worldFog.far
+    } else {
       this.fog.near = 0
       this.fog.far = 10000
-      return
     }
-    this.fog.color = new Color(color)
-    this.fog.near = near
-    this.fog.far = far
+  }
+
+  public setWorldFog(color = 0x00007f, near = 0, far = 120, enabled = false) {
+    this.worldFog = {color, near, far, enabled}
+    this.updateFog(this.inWater())
   }
 
   public getWorldFog() {
@@ -475,9 +468,8 @@ export class EngineService {
       this.handleSpecialObject(child as Group)
     }
 
-    this.chunkMap.set(
-      chunk.userData.world.chunk.x * chunkIndexStep +
-        chunk.userData.world.chunk.z,
+    this.chunkLODMap.set(
+      `${chunk.userData.world.chunk.x}_${chunk.userData.world.chunk.z}`,
       chunk
     )
 
@@ -497,6 +489,7 @@ export class EngineService {
       this.terrain = group
     } else if (group.name === 'water') {
       this.water = group
+      this.updateFog(this.inWater())
     }
   }
 
@@ -749,24 +742,18 @@ export class EngineService {
     this.chunkTile = [chunkX, chunkZ]
   }
 
-  public resetChunkMap() {
-    this.chunkMap.clear()
+  public resetChunkLODMap() {
+    this.chunkLODMap.clear()
   }
 
   public getNearestChunks() {
-    const lods = []
-    nearestChunkPattern.forEach((offset) => {
-      const lod = this.chunkMap.get(
-        (this.chunkTile[0] + offset.x) * chunkIndexStep +
-          this.chunkTile[1] +
-          offset.z
+    return nearestChunkPattern
+      .map((offset) =>
+        this.chunkLODMap.get(
+          `${this.chunkTile[0] + offset.x}_${this.chunkTile[1] + offset.z}`
+        )
       )
-      if (lod !== undefined) {
-        lods.push(lod)
-      }
-    })
-
-    return lods
+      .filter((lod) => lod !== undefined)
   }
 
   private handleSpecialObject(group: Group) {
@@ -831,7 +818,6 @@ export class EngineService {
 
     this.updateLODs()
     this.moveUsers()
-    this.moveLabels()
   }
 
   private resize(): void {
@@ -860,7 +846,7 @@ export class EngineService {
       while (obj.parent !== this.terrain && !obj.parent.userData.world?.chunk) {
         obj = obj.parent
       }
-      if (obj.name.endsWith('.rwx')) {
+      if (obj.name.endsWith('.rwx') && obj.parent.visible) {
         return {obj: obj as Group, faceIndex: i.faceIndex}
       }
       if (obj.parent === this.terrain) {
@@ -1495,22 +1481,17 @@ export class EngineService {
             }
           }
         )
+        // Labels
+        const div = this.labelMap.get(user.name)
+        if (div == null) {
+          return
+        }
+        div.position.copy(user.position)
+        div.position.y +=
+          user.userData.height > 1.1
+            ? user.userData.height / 2
+            : user.userData.height
       })
-  }
-
-  private moveLabels() {
-    for (const user of this.usersNode.children) {
-      const div = this.labelMap.get(user.name)
-      if (div == null) {
-        continue
-      }
-      const pos = user.position.clone()
-      pos.y +=
-        user.userData.height > 1.1
-          ? user.userData.height / 2
-          : user.userData.height
-      div.position.copy(pos)
-    }
   }
 
   private rotateSprites() {

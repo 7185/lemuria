@@ -27,6 +27,7 @@ import {
   Box3,
   BufferAttribute
 } from 'three'
+import {SRGBToLinear} from 'three/src/math/ColorManagement.js'
 import type {MeshPhongMaterial, Object3D} from 'three'
 import {Utils} from '../utils'
 import {BuildService} from '../engine/build.service'
@@ -54,7 +55,7 @@ export class WorldService {
 
   private worldName = 'Nowhere'
   private avatar: Group
-  private previousLocalUserPos = null
+  private lastChunk = null
 
   private propBatchSize: number = config.world.propBatchSize
   private chunkWidth: number = config.world.chunk.width // in cm
@@ -260,7 +261,7 @@ export class WorldService {
 
   public destroyWorld() {
     this.resetChunks()
-    this.engineSvc.resetChunkMap()
+    this.engineSvc.resetChunkLODMap()
     this.uAvatarListener?.unsubscribe()
     this.avatarListener?.unsubscribe()
   }
@@ -305,23 +306,18 @@ export class WorldService {
     // 6 vertices to make an octahedron
     // prettier-ignore
     const positions = [
-       0.0,  0.0,  1.0, // north vertex (0)
-      -1.0,  0.0,  0.0, // east vertex (1)
-       0.0,  0.0, -1.0, // south vertex (2)
-       1.0,  0.0,  0.0, // west vertex (3)
-       0.0,  1.0,  0.0, // top vertex (4)
-       0.0, -1.0,  0.0  // bottom vertex (5)
+       0,  0,  1, // north vertex (0)
+      -1,  0,  0, // east vertex (1)
+       0,  0, -1, // south vertex (2)
+       1,  0,  0, // west vertex (3)
+       0,  1,  0, // top vertex (4)
+       0, -1,  0  // bottom vertex (5)
     ]
 
-    const {top, north, east, south, west, bottom} = skyColors
-    const colors = [...north, ...east, ...south, ...west, ...top, ...bottom]
-      .map((v: number) => v / 255.0)
-      // Vertex colors should be in linear space
-      .map((c: number) =>
-        c < 0.04045
-          ? c * 0.0773993808
-          : Math.pow(c * 0.9478672986 + 0.0521327014, 2.4)
-      )
+    const colors = ['north', 'east', 'south', 'west', 'top', 'bottom']
+      .flatMap((attr: string) => skyColors[attr])
+      .map((c: number) => SRGBToLinear(c / 255))
+
     octGeom.setAttribute(
       'position',
       new BufferAttribute(new Float32Array(positions), 3)
@@ -365,7 +361,7 @@ export class WorldService {
   }
 
   private resetChunks() {
-    this.previousLocalUserPos = null
+    this.lastChunk = null
     this.chunkMap = new Map<number, Set<number>>()
   }
 
@@ -464,35 +460,28 @@ export class WorldService {
 
   // Get chunk position from tile X and Z ids
   private getChunkCenter(tileX: number, tileZ: number) {
-    const xPos = (tileX * this.chunkWidth) / 100.0
-    const zPos = (tileZ * this.chunkDepth) / 100.0
+    const xPos = (tileX * this.chunkWidth) / 100
+    const zPos = (tileZ * this.chunkDepth) / 100
 
     return new Vector3(xPos, 0, zPos)
   }
 
-  // Return true if, given the provided chunk indices, this target chunk is different from the current one,
-  // false otherwise
-  private hasChunkChanged(chunkX: number, chunkZ: number) {
-    if (this.previousLocalUserPos == null) {
-      return true
-    }
-    const [previousChunkX, previousChunkZ] = this.getChunkTile(
-      this.previousLocalUserPos
-    )
-
-    return !(previousChunkX === chunkX && previousChunkZ === chunkZ)
-  }
-
-  // this method is method to be called on each frame to update the state of chunks if needed
+  // this method is to be called on each position change to update the state of chunks if needed
   private autoUpdateChunks(pos: Vector3) {
     const [chunkX, chunkZ] = this.getChunkTile(pos)
     this.engineSvc.setChunkTile(chunkX, chunkZ)
 
-    if (this.worldId === 0 || !this.hasChunkChanged(chunkX, chunkZ)) {
+    // Do nothing if the current chunk didn't change or if we're nowhere
+    if (
+      (this.lastChunk != null &&
+        this.lastChunk[0] === chunkX &&
+        this.lastChunk[1] === chunkZ) ||
+      this.worldId === 0
+    ) {
       return
     }
 
-    this.previousLocalUserPos?.copy(pos)
+    this.lastChunk = [chunkX, chunkZ]
 
     // For clarity: we get an Observable from loadChunk, if it produces anything: we take care of it
     // in subscribe() (note that if the chunk has already been loaded, it won't reach the operator).
@@ -667,8 +656,8 @@ export class WorldService {
     this.objSvc.cleanCache()
     this.anmSvc.cleanCache()
     this.objSvc.path.set(world.path)
-    this.terrainSvc.setTerrain(world)
-    this.terrainSvc.setWater(world)
+    this.terrainSvc.setTerrain(world?.terrain, world.id)
+    this.terrainSvc.setWater(world?.water)
     this.skybox.set(world.sky.skybox)
     this.skyTop.set(
       Utils.colorHexToStr(

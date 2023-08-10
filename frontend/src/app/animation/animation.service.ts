@@ -170,7 +170,7 @@ export class AnimationService {
     name: string,
     implicit: Map<string, string>,
     explicit: Map<string, string>,
-    extension
+    extension: string
   ) {
     const implicitSequences = new Map<string, ThreeSequence>()
     const explicitSequences = new Map<string, ThreeSequence>()
@@ -268,7 +268,7 @@ export class AnimationService {
     const threeFrames = []
     const keyFrameIDs = []
 
-    for (let i = 0, len = sequence.frames.length * ratio; i < len; i++) {
+    for (let i = 0; i < sequence.frames.length * ratio; i++) {
       threeFrames.push({joints: {}, location: new Vector3()})
     }
 
@@ -289,10 +289,14 @@ export class AnimationService {
 
   private interpolate(threeSeq: ThreeSequence): ThreeSequence {
     // Fill the gap between each key frame (if any)
-    for (let i = 0, len = threeSeq.keyFrameIDs.length; i < len - 1; i++) {
-      const firstKeyId = threeSeq.keyFrameIDs[i]
-      const secondKeyId = threeSeq.keyFrameIDs[i + 1]
-      interpolateThreeFrames(threeSeq.frames, firstKeyId, secondKeyId)
+    const {keyFrameIDs} = threeSeq
+
+    for (let i = 0; i < keyFrameIDs.length - 1; i++) {
+      interpolateThreeFrames(
+        threeSeq.frames,
+        keyFrameIDs[i],
+        keyFrameIDs[i + 1]
+      )
     }
 
     return threeSeq
