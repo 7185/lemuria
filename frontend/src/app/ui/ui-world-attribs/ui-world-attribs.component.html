@@ -6,6 +6,26 @@
 </div>
 <div class="modal-body">
   <tabset type="pills">
+    <tab heading="Ground">
+      <div class="mb-2 row">
+        <label for="terrain" class="col col-form-label form-check-label">
+          Enable Terrain
+        </label>
+        <div class="col col-2">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" [ngModel]="terrain()" (ngModelChange)="terrain.set($event)" id="terrain">
+          </div>
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <label for="terrainOffset" class="col col-form-label">
+          Terrain elevation offset
+        </label>
+        <div class="col col-3">
+          <input id="terrainOffset" class="form-control" type="number" [ngModel]="terrainOffset()" (ngModelChange)="terrainOffset.set($event)">
+        </div>
+      </div>
+    </tab>
     <tab heading="Lighting">
       <div class="mb-2 row">
         <label for="fog" class="col col-form-label form-check-label">

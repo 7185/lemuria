@@ -375,8 +375,7 @@ export class WorldService {
     act = null
   ): Promise<Object3D> {
     item = Utils.modelName(item)
-    const o = await firstValueFrom(this.objSvc.loadProp(item))
-    const g = o.clone()
+    const g = await firstValueFrom(this.objSvc.loadProp(item))
     g.name = item
     g.userData.id = id
     g.userData.date = date
@@ -426,6 +425,7 @@ export class WorldService {
     name = Utils.modelName(name)
     this.objSvc.loadAvatar(name).subscribe((o) => {
       this.engineSvc.disposeMaterial(group)
+      this.engineSvc.disposeGeometry(group)
       group.clear()
       o.rotation.copy(new Euler(0, Math.PI, 0))
       group.add(o.clone())

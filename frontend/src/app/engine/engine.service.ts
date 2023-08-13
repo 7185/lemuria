@@ -308,9 +308,7 @@ export class EngineService {
       this.removeWorldObject(item as Group)
     }
     this.scene.traverse((child: Object3D) => {
-      if (child instanceof Mesh) {
-        child.geometry.dispose()
-      }
+      this.disposeGeometry(child as Group)
       this.disposeMaterial(child as Group)
       if (child.parent) {
         child.parent.remove()
@@ -399,9 +397,9 @@ export class EngineService {
 
   private updateFog(inWater = false) {
     if (inWater) {
-      this.fog.color = new Color(this.water.userData?.color ?? 0x00ffff)
+      this.fog.color = new Color(this.water?.userData?.color ?? 0x00ffff)
       this.fog.near = 0
-      this.fog.far = this.water.userData?.under_view ?? 120
+      this.fog.far = this.water?.userData?.under_view ?? 120
     } else if (this.worldFog.enabled) {
       this.fog.color = new Color(this.worldFog.color)
       this.fog.near = this.worldFog.near
@@ -509,8 +507,18 @@ export class EngineService {
     if (!this.skybox) {
       return
     }
+    this.disposeMaterial(this.skybox)
+    this.disposeGeometry(this.skybox)
     this.skybox.clear()
     this.skybox.add(skybox)
+  }
+
+  public disposeGeometry(group: Group) {
+    group.traverse((child: Object3D) => {
+      if (child instanceof Mesh) {
+        child.geometry.dispose()
+      }
+    })
   }
 
   public disposeMaterial(group: Group) {
@@ -543,11 +551,7 @@ export class EngineService {
       this.litObjects.delete(group)
     }
     this.disposeMaterial(group)
-    group.traverse((child: Object3D) => {
-      if (child instanceof Mesh) {
-        child.geometry.dispose()
-      }
-    })
+    this.disposeGeometry(group)
 
     const chunk = group.parent as Group
     chunk.remove(group)
@@ -585,11 +589,7 @@ export class EngineService {
         this.water = null
       }
       this.disposeMaterial(group)
-      group.traverse((child: Object3D) => {
-        if (child instanceof Mesh) {
-          child.geometry.dispose()
-        }
-      })
+      this.disposeGeometry(group)
       if (group.parent) {
         group.parent.remove(group)
       }
@@ -602,11 +602,7 @@ export class EngineService {
       this.scene.remove(label)
     }
     this.disposeMaterial(group)
-    group.traverse((child: Object3D) => {
-      if (child instanceof Mesh) {
-        child.geometry.dispose()
-      }
-    })
+    this.disposeGeometry(group)
     this.usersNode.remove(group)
   }
 
@@ -935,6 +931,8 @@ export class EngineService {
     let minHeight = null
     let boxCollision = false
     let feetCollision = false
+    // Terrain is not being checked for collision yet
+    let checkTerrain = 0
 
     this.playerOnFloor = false
 
@@ -955,7 +953,9 @@ export class EngineService {
 
       if (
         rayIntersectionPoint != null &&
-        rayIntersectionPoint.y > newPosition.y
+        // Add terrain offset if needed
+        rayIntersectionPoint.y + checkTerrain * this.terrain.position.y >
+          newPosition.y
       ) {
         this.boxMaterial?.color.setHex(0xffff00)
 
@@ -967,31 +967,6 @@ export class EngineService {
           minHeight = rayIntersectionPoint.y
         }
       }
-    }
-
-    // Since the pages are centered, we need to add an offset
-    const centerOffset = (TERRAIN_PAGE_SIZE * 10) / 2
-    const pageX: number = Math.floor(
-      (newPosition.x + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
-    )
-    const pageZ: number = Math.floor(
-      (newPosition.z + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
-    )
-    const terrainPage = this.terrain?.getObjectByName(
-      `${pageX}_${pageZ}`
-    ) as Mesh
-
-    if (terrainPage != null) {
-      const pageOffset = new Vector3().addVectors(
-        terrainPage.position,
-        this.terrain.position
-      )
-      this.playerCollider.translate(pageOffset.negate())
-      this.playerCollider.checkBoundsTree(
-        terrainPage.geometry.boundsTree,
-        intersectsTriangle
-      )
-      this.playerCollider.translate(pageOffset.negate())
     }
 
     // We expect maximum 9 LODs to be available to test collision: the one the player
@@ -1006,6 +981,32 @@ export class EngineService {
       this.playerCollider.translate(lodOffset.negate())
     }
 
+    // Since the pages are centered, we need to add an offset
+    const centerOffset = (TERRAIN_PAGE_SIZE * 10) / 2
+    const pageX: number = Math.floor(
+      (newPosition.x + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
+    )
+    const pageZ: number = Math.floor(
+      (newPosition.z + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
+    )
+    const terrainPage = this.terrain?.getObjectByName(
+      `${pageX}_${pageZ}`
+    ) as Mesh
+
+    if (climbHeight == null && terrainPage != null) {
+      // Terrain is now being checked for collision
+      checkTerrain = 1
+      const pageOffset = terrainPage.position
+        .clone()
+        .setY(this.terrain.position.y)
+      this.playerCollider.translate(pageOffset.negate())
+      this.playerCollider.checkBoundsTree(
+        terrainPage.geometry.boundsTree,
+        intersectsTriangle
+      )
+      this.playerCollider.translate(pageOffset.negate())
+    }
+
     if (boxCollision) {
       this.playerVelocity.set(0, 0, 0)
       this.playerCollider.copyPos(oldPosition)
@@ -1016,6 +1017,8 @@ export class EngineService {
     if (this.playerVelocity.y <= 0 && climbHeight !== null) {
       // Player is on floor
       this.playerVelocity.setY(0)
+      // Add terrain offset if needed
+      climbHeight += checkTerrain * this.terrain.position.y
       newPosition.setY(climbHeight - playerGroundAdjust)
       this.playerOnFloor = true
       this.flyMode = false

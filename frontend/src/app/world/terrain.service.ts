@@ -19,8 +19,8 @@ import {Utils} from '../utils'
 
 @Injectable({providedIn: 'root'})
 export class TerrainService {
+  public terrain: Group
   public water: Group
-  private terrain: Group
   private textureLoader = new TextureLoader()
   private terrainMaterials = []
   private waterBottomGeom: PlaneGeometry

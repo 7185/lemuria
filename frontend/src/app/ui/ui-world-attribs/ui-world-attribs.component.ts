@@ -24,6 +24,8 @@ import {TerrainService} from 'src/app/world/terrain.service'
 export class UiWorldAttribsComponent {
   @Output() closeModal = new EventEmitter()
 
+  public terrain: WritableSignal<boolean>
+  public terrainOffset: WritableSignal<number>
   public ambLight: WritableSignal<string>
   public dirLight: WritableSignal<string>
   public lightDirX: WritableSignal<number>
@@ -47,6 +49,8 @@ export class UiWorldAttribsComponent {
     private terrainSvc: TerrainService,
     public worldSvc: WorldService
   ) {
+    this.terrain = signal(this.terrainSvc.terrain != null)
+    this.terrainOffset = signal(this.terrainSvc.terrain?.position.y ?? 0)
     this.fog = signal(this.engineSvc.getWorldFog()?.enabled ?? false)
     this.fogMin = signal(this.engineSvc.getWorldFog()?.near ?? 0)
     this.fogMax = signal(this.engineSvc.getWorldFog()?.far ?? 120)
@@ -98,6 +102,15 @@ export class UiWorldAttribsComponent {
         this.lightDirX(),
         this.lightDirY(),
         this.lightDirZ()
+      )
+    })
+    effect(() => {
+      this.terrainSvc.setTerrain(
+        {
+          enabled: this.terrain(),
+          offset: this.terrainOffset()
+        },
+        this.worldSvc.worldId
       )
     })
     effect(() => {

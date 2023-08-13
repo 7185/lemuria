@@ -1,5 +1,4 @@
-import {forkJoin, of, Observable, Subject} from 'rxjs'
-import {catchError, map} from 'rxjs/operators'
+import {forkJoin, Observable, Subject} from 'rxjs'
 import {computed, effect, Injectable, signal} from '@angular/core'
 import {HttpService} from '../network'
 import {AWActionParser} from 'aw-action-parser'
@@ -470,12 +469,9 @@ export class ObjectService {
           observer.next(rwx)
         },
         null,
-        () => observer.next(this.unknown)
+        () => observer.next(this.unknown.clone())
       )
-    }).pipe(
-      map((newObject: Group) => newObject),
-      catchError(() => of(this.unknown))
-    )
+    })
     objectCache.set(name, observable)
     return observable
   }
