@@ -1361,40 +1361,65 @@ export class EngineService {
 
       if (moveData) {
         if (moveData.waiting > 0) {
+          // We're still waiting
           moveData.waiting -= this.deltaSinceLastFrame
         } else if (moveData.completion < 1) {
-          // move is in progress
+          // If the move is in progress, update the item's position
           const moveFactor =
             moveData.direction * (this.deltaSinceLastFrame / moveData.time)
           item.position.x += moveData.distance.x * moveFactor
           item.position.y += moveData.distance.y * moveFactor
           item.position.z += moveData.distance.z * moveFactor
           moveData.completion += this.deltaSinceLastFrame / moveData.time
+
+          // Check if the item has reached its destination (completion = 1)
+          if (moveData.completion >= 1) {
+            if (moveData.loop) {
+              // If looping is enabled, reset the completion and change the direction for the way back
+              moveData.direction *= -1
+              moveData.completion = 0
+              // Add a wait time before starting the way back
+              moveData.waiting = moveData.wait
+            } else {
+              // If looping is not enabled, set the completion to 1 to indicate the move is finished
+              moveData.completion = 1
+            }
+          }
         } else if (moveData.direction === -1) {
-          // wayback is done
+          // If the way back is done and direction is -1 (indicating the way back)
           if (moveData.loop) {
+            // If looping is enabled, reset the direction and completion for the next forward movement
             moveData.direction *= -1
             moveData.completion = 0
+            // Add a wait time before starting the next forward movement
+            moveData.waiting = moveData.wait
           }
         } else if (moveData.reset) {
-          // no wayback, all done
+          // If no way back, all is done
+          // Reset the item's position to the original position
           item.position.copy(moveData.orig)
           if (moveData.loop) {
-            // loop
+            // If looping is enabled, reset the completion for the next forward movement
             moveData.completion = 0
+            // Add a wait time before starting the next forward movement
+            moveData.waiting = moveData.wait
           }
         } else {
-          moveData.waiting = moveData.wait
-          // wayback is starting
+          // Way back is starting
+          // Reset the direction and completion for the way back
           moveData.direction *= -1
           moveData.completion = 0
+          // Add a wait time before starting the way back
+          moveData.waiting = moveData.wait
         }
       }
 
       if (rotateData) {
         if (rotateData.waiting > 0) {
+          // We're still waiting
           rotateData.waiting -= this.deltaSinceLastFrame
         } else {
+          // Update rotation
           item.rotateOnAxis(
             Y_AXIS,
             rotateData.speed.y *
@@ -1416,20 +1441,28 @@ export class EngineService {
               this.deltaSinceLastFrame *
               rotateData.direction
           )
+          // Check if rotation has completed (completion >= 1)
           if (rotateData.time && rotateData.completion >= 1) {
             if (rotateData.loop) {
+              // If looping is enabled, reset the completion and handle resetting or waiting based on the reset flag
               rotateData.completion = 0
               if (rotateData.reset) {
+                // Reset the rotation to the original rotation
                 item.rotation.copy(rotateData.orig)
               } else {
+                // Add a wait time before starting the next rotation
                 rotateData.waiting = rotateData.wait
+                // Reverse the rotation direction for the next rotation
                 rotateData.direction *= -1
               }
             }
+          } else {
+            // Update the rotation completion based on the provided time
             rotateData.completion += this.deltaSinceLastFrame / rotateData.time
           }
         }
       }
+
       item.updateMatrix()
     }
   }
