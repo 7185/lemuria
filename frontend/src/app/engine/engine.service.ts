@@ -2,7 +2,6 @@ import {BehaviorSubject, fromEvent, Subject, timer} from 'rxjs'
 import {effect, Injectable, NgZone, signal} from '@angular/core'
 import type {ElementRef} from '@angular/core'
 import {
-  AmbientLight,
   Cache,
   Clock,
   Fog,
@@ -14,8 +13,6 @@ import {
   Vector2,
   Vector3,
   WebGLRenderer,
-  DirectionalLight,
-  CameraHelper,
   Object3D,
   Spherical,
   Mesh,
@@ -28,23 +25,17 @@ import {
   CSS2DObject,
   CSS2DRenderer
 } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
-import type {LOD, Sprite, Triangle} from 'three'
+import type {DirectionalLight, LOD, Sprite, Triangle} from 'three'
 import {BuildService} from './build.service'
 import {TeleportService} from './teleport.service'
 import {UserService} from '../user'
 import {ObjectAct, ObjectService} from '../world/object.service'
+import {PropAnimationService} from '../animation'
 import type {AvatarAnimationPlayer} from '../animation'
 import {PressedKey, InputSystemService} from './inputsystem.service'
 import {config} from '../app.config'
 import {PlayerCollider} from './player-collider'
-import {Utils} from '../utils'
-
-export const DEG = Math.PI / 180
-export const RPM = Math.PI / 30
-export const X_AXIS = new Vector3(1, 0, 0)
-export const Y_AXIS = new Vector3(0, 1, 0)
-export const Z_AXIS = new Vector3(0, 0, 1)
-export const TERRAIN_PAGE_SIZE = 128
+import {DEG, TERRAIN_PAGE_SIZE, Utils} from '../utils'
 
 const playerBoxSide = config.world.collider.boxSide
 const playerClimbHeight = config.world.collider.climbHeight
@@ -74,6 +65,8 @@ export class EngineService {
   public maxLights = signal(6)
   public texturesAnimation = signal(0)
   public playerPosition = signal(new Vector3())
+  public worldFog = {color: 0x00007f, near: 0, far: 120, enabled: false}
+
   private terrain: Group
   private water: Group
   private chunkLODMap = new Map<string, LOD>()
@@ -92,10 +85,7 @@ export class EngineService {
   private player: Object3D
   private scene: Scene
   private buildScene: Scene
-  private light: AmbientLight
   private dirLight: DirectionalLight
-  private dirLightTarget: Object3D
-  private worldFog = {color: 0x00007f, near: 0, far: 120, enabled: false}
   private fog = new Fog(0)
   private avatar: Group
   private skybox: Group
@@ -161,6 +151,7 @@ export class EngineService {
     private inputSysSvc: InputSystemService,
     private objSvc: ObjectService,
     private buildSvc: BuildService,
+    private propAnimSvc: PropAnimationService,
     private teleportSvc: TeleportService
   ) {
     this.raycaster.firstHitOnly = true
@@ -258,35 +249,12 @@ export class EngineService {
     this.skybox.name = 'skybox'
     this.worldNode.add(this.skybox)
 
-    this.light = new AmbientLight(0xffffff, 2.5)
-    this.light.position.z = 100
-    this.worldNode.add(this.light)
-
-    this.dirLightTarget = new Object3D()
-    this.worldNode.add(this.dirLightTarget)
-
-    this.dirLight = new DirectionalLight(0xffffff, 2)
-    this.dirLight.name = 'dirlight'
-    this.dirLight.shadow.camera.left = 100
-    this.dirLight.shadow.camera.right = -100
-    this.dirLight.shadow.camera.top = 100
-    this.dirLight.shadow.camera.bottom = -100
-    this.dirLight.shadow.mapSize.width = 2048
-    this.dirLight.shadow.mapSize.height = 2048
-    this.dirLight.target = this.dirLightTarget
-    this.worldNode.add(this.dirLight)
-
     this.refreshLights(this.maxLights())
 
     this.scene.fog = this.fog
 
     this.scene.add(this.worldNode, this.usersNode, this.objectsNode)
     this.buildScene.add(this.buildNode)
-
-    if (config.debug) {
-      const shadowHelper = new CameraHelper(this.dirLight.shadow.camera)
-      this.scene.add(shadowHelper)
-    }
   }
 
   public clearObjects() {
@@ -370,7 +338,7 @@ export class EngineService {
     this.worldNode.add(boundingBox)
   }
 
-  public getPosition(): [Vector3, Vector3] {
+  public get position(): [Vector3, Vector3] {
     return this.player == null
       ? [new Vector3(), new Vector3()]
       : [
@@ -379,23 +347,23 @@ export class EngineService {
         ]
   }
 
-  public getYaw(): number {
+  public get yaw(): number {
     return Math.round(this.compass.theta / DEG)
   }
 
-  public setGesture(gesture: string) {
+  public set gesture(gesture: string) {
     this.userGesture = gesture
   }
 
-  public getGesture(): string {
+  public get gesture(): string {
     return this.userGesture
   }
 
-  public getState(): string {
+  public get state(): string {
     return this.userState
   }
 
-  private updateFog(inWater = false) {
+  public updateFog(inWater = this.inWater()) {
     if (inWater) {
       this.fog.color = new Color(this.water?.userData?.color ?? 0x00ffff)
       this.fog.near = 0
@@ -408,39 +376,6 @@ export class EngineService {
       this.fog.near = 0
       this.fog.far = 10000
     }
-  }
-
-  public setWorldFog(color = 0x00007f, near = 0, far = 120, enabled = false) {
-    this.worldFog = {color, near, far, enabled}
-    this.updateFog(this.inWater())
-  }
-
-  public getWorldFog() {
-    return this.worldFog
-  }
-
-  public getAmbLightColor(): number {
-    return this.light.color.getHex()
-  }
-
-  public getDirLightColor(): number {
-    return this.dirLight.color.getHex()
-  }
-
-  public setAmbLightColor(color: number) {
-    this.light.color = new Color(color)
-  }
-
-  public setDirLightColor(color: number) {
-    this.dirLight.color = new Color(color)
-  }
-
-  public getDirLightTarget(): number[] {
-    return this.dirLightTarget.position.toArray()
-  }
-
-  public setDirLightTarget(x = -80, y = -50, z = -20) {
-    this.dirLightTarget.position.set(x, y, z)
   }
 
   public attachCam(group: Group) {
@@ -481,13 +416,19 @@ export class EngineService {
     }
   }
 
-  public addWorldObject(group: Group) {
-    this.worldNode.add(group)
-    if (group.name === 'terrain') {
-      this.terrain = group
-    } else if (group.name === 'water') {
-      this.water = group
-      this.updateFog(this.inWater())
+  public addWorldObject(obj: Object3D) {
+    this.worldNode.add(obj)
+    switch (obj.name) {
+      case 'dirLight':
+        this.dirLight = obj as DirectionalLight
+        break
+      case 'terrain':
+        this.terrain = obj as Group
+        break
+      case 'water':
+        this.water = obj as Group
+        this.updateFog()
+        break
     }
   }
 
@@ -582,17 +523,24 @@ export class EngineService {
   }
 
   public removeWorldObject(group: Group) {
-    if (group) {
-      if (group.name === 'terrain') {
+    if (!group) {
+      return
+    }
+
+    switch (group.name) {
+      case 'terrain':
         this.terrain = null
-      } else if (group.name === 'water') {
+        break
+      case 'water':
         this.water = null
-      }
-      this.disposeMaterial(group)
-      this.disposeGeometry(group)
-      if (group.parent) {
-        group.parent.remove(group)
-      }
+        break
+    }
+
+    this.disposeMaterial(group)
+    this.disposeGeometry(group)
+
+    if (group.parent) {
+      group.parent.remove(group)
     }
   }
 
@@ -683,7 +631,7 @@ export class EngineService {
           if (item !== this.hoveredObject) {
             this.labelDesc.style.display = 'none'
             this.hoveredObject = item
-            if (item != null && item.userData?.desc) {
+            if (item?.userData?.desc) {
               this.labelDesc.style.display = 'block'
               this.labelDesc.innerHTML = item.userData.desc.replace(
                 /[\u0000-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u00FF]/g,
@@ -717,7 +665,7 @@ export class EngineService {
       return
     }
     if (typeof pos === 'string') {
-      const yawMatch = pos.match(/\s([0-9]+)$/)
+      const yawMatch = /\s(\d+)$/.exec(pos)
       yaw = yawMatch ? parseInt(yawMatch[1], 10) : 0
       pos = Utils.stringToPos(pos)
     }
@@ -861,11 +809,7 @@ export class EngineService {
       return
     }
     const item = this.pointedItem().obj
-    if (
-      item != null &&
-      item.userData?.clickable &&
-      item.userData.teleportClick != null
-    ) {
+    if (item?.userData?.clickable && item?.userData?.teleportClick != null) {
       let [newX, newY, newZ] = [null, null, null]
       const yaw = item.userData.teleportClick?.direction || 0
       if (item.userData.teleportClick.altitude != null) {
@@ -1091,12 +1035,16 @@ export class EngineService {
           this.userState = 'walk'
         }
 
+        const gestureVelocity = this.inputSysSvc.controls[PressedKey.moveBck]
+          ? -velocity
+          : velocity
+
         // When applicable: reset gesture on completion
         this.userGesture = animation.animate(
           this.deltaSinceLastFrame,
           this.userState,
           this.userGesture,
-          this.inputSysSvc.controls[PressedKey.moveBck] ? -velocity : velocity
+          gestureVelocity
         )
           ? null
           : this.userGesture
@@ -1350,119 +1298,14 @@ export class EngineService {
         Math.round(this.player.position.y * 100) / 100,
         Math.round(this.player.position.z * 100) / 100
       ),
-      theta: this.getYaw()
+      theta: this.yaw
     })
   }
 
   private animateItems() {
     for (const item of this.animatedObjects) {
-      const moveData = item.userData.move
-      const rotateData = item.userData.rotate
-
-      if (moveData) {
-        if (moveData.waiting > 0) {
-          // We're still waiting
-          moveData.waiting -= this.deltaSinceLastFrame
-        } else if (moveData.completion < 1) {
-          // If the move is in progress, update the item's position
-          const moveFactor =
-            moveData.direction * (this.deltaSinceLastFrame / moveData.time)
-          item.position.x += moveData.distance.x * moveFactor
-          item.position.y += moveData.distance.y * moveFactor
-          item.position.z += moveData.distance.z * moveFactor
-          moveData.completion += this.deltaSinceLastFrame / moveData.time
-
-          // Check if the item has reached its destination (completion = 1)
-          if (moveData.completion >= 1) {
-            if (moveData.loop) {
-              // If looping is enabled, reset the completion and change the direction for the way back
-              moveData.direction *= -1
-              moveData.completion = 0
-              // Add a wait time before starting the way back
-              moveData.waiting = moveData.wait
-            } else {
-              // If looping is not enabled, set the completion to 1 to indicate the move is finished
-              moveData.completion = 1
-            }
-          }
-        } else if (moveData.direction === -1) {
-          // If the way back is done and direction is -1 (indicating the way back)
-          if (moveData.loop) {
-            // If looping is enabled, reset the direction and completion for the next forward movement
-            moveData.direction *= -1
-            moveData.completion = 0
-            // Add a wait time before starting the next forward movement
-            moveData.waiting = moveData.wait
-          }
-        } else if (moveData.reset) {
-          // If no way back, all is done
-          // Reset the item's position to the original position
-          item.position.copy(moveData.orig)
-          if (moveData.loop) {
-            // If looping is enabled, reset the completion for the next forward movement
-            moveData.completion = 0
-            // Add a wait time before starting the next forward movement
-            moveData.waiting = moveData.wait
-          }
-        } else {
-          // Way back is starting
-          // Reset the direction and completion for the way back
-          moveData.direction *= -1
-          moveData.completion = 0
-          // Add a wait time before starting the way back
-          moveData.waiting = moveData.wait
-        }
-      }
-
-      if (rotateData) {
-        if (rotateData.waiting > 0) {
-          // We're still waiting
-          rotateData.waiting -= this.deltaSinceLastFrame
-        } else {
-          // Update rotation
-          item.rotateOnAxis(
-            Y_AXIS,
-            rotateData.speed.y *
-              RPM *
-              this.deltaSinceLastFrame *
-              rotateData.direction
-          )
-          item.rotateOnAxis(
-            Z_AXIS,
-            rotateData.speed.z *
-              RPM *
-              this.deltaSinceLastFrame *
-              rotateData.direction
-          )
-          item.rotateOnAxis(
-            X_AXIS,
-            rotateData.speed.x *
-              RPM *
-              this.deltaSinceLastFrame *
-              rotateData.direction
-          )
-          // Check if rotation has completed (completion >= 1)
-          if (rotateData.time && rotateData.completion >= 1) {
-            if (rotateData.loop) {
-              // If looping is enabled, reset the completion and handle resetting or waiting based on the reset flag
-              rotateData.completion = 0
-              if (rotateData.reset) {
-                // Reset the rotation to the original rotation
-                item.rotation.copy(rotateData.orig)
-              } else {
-                // Add a wait time before starting the next rotation
-                rotateData.waiting = rotateData.wait
-                // Reverse the rotation direction for the next rotation
-                rotateData.direction *= -1
-              }
-            }
-          } else {
-            // Update the rotation completion based on the provided time
-            rotateData.completion += this.deltaSinceLastFrame / rotateData.time
-          }
-        }
-      }
-
+      this.propAnimSvc.moveItem(item, this.deltaSinceLastFrame)
+      this.propAnimSvc.rotateIem(item, this.deltaSinceLastFrame)
       item.updateMatrix()
     }
   }

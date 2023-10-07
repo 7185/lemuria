@@ -1,7 +1,7 @@
 import {Group, Quaternion, Vector3} from 'three'
 import type {AvatarAnimationManager} from './avatar-animation.manager'
-import type {ThreeSequence, StepState} from './animation.service'
-import {interpolateThreeFrames} from './animation.service'
+import type {ThreeSequence, StepState} from './avatar-animation.service'
+import {interpolateThreeFrames} from './avatar-animation.service'
 
 interface AnimationEntry {
   name: string

@@ -4,14 +4,14 @@ import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
 import {UserService} from '../user'
 import {SettingsService} from '../settings/settings.service'
 import type {User} from '../user'
-import {EngineService, DEG} from '../engine/engine.service'
+import {EngineService} from '../engine/engine.service'
 import {TerrainService} from './terrain.service'
 import {TeleportService} from '../engine/teleport.service'
 import {PlayerCollider} from '../engine/player-collider'
 import {ObjectService, ObjectAct} from './object.service'
 import {SocketService} from '../network/socket.service'
-import {AnimationService} from '../animation/animation.service'
-import type {AvatarAnimationManager} from '../animation/avatar-animation.manager'
+import {AvatarAnimationService} from '../animation'
+import type {AvatarAnimationManager} from '../animation'
 import {HttpService} from '../network'
 import {Injectable, effect, signal} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
@@ -29,8 +29,9 @@ import {
 } from 'three'
 import {SRGBToLinear} from 'three/src/math/ColorManagement.js'
 import type {MeshPhongMaterial, Object3D} from 'three'
-import {Utils} from '../utils'
+import {DEG, Utils} from '../utils'
 import {BuildService} from '../engine/build.service'
+import {LightingService} from './lighting.service'
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
@@ -74,10 +75,11 @@ export class WorldService {
 
   constructor(
     private engineSvc: EngineService,
+    private lightingSvc: LightingService,
     private terrainSvc: TerrainService,
     private userSvc: UserService,
     private objSvc: ObjectService,
-    private anmSvc: AnimationService,
+    private anmSvc: AvatarAnimationService,
     private httpSvc: HttpService,
     private settings: SettingsService,
     private socket: SocketService,
@@ -101,7 +103,7 @@ export class WorldService {
       // Connect to the socket first
       this.socket.connect()
 
-      const currentPos = this.getPosition().position
+      const currentPos = this.playerLocation.position
 
       if (!world || world.toLowerCase() === this.worldName.toLowerCase()) {
         this.teleportSvc.teleportFrom(this.worldName, currentPos, isNew)
@@ -130,17 +132,14 @@ export class WorldService {
 
     // Effect for skybox
     effect(() => {
-      this.createSkybox(
-        {
-          top: Utils.hexToRgb(Utils.colorStrToHex(this.skyTop())),
-          north: Utils.hexToRgb(Utils.colorStrToHex(this.skyNorth())),
-          east: Utils.hexToRgb(Utils.colorStrToHex(this.skyEast())),
-          south: Utils.hexToRgb(Utils.colorStrToHex(this.skySouth())),
-          west: Utils.hexToRgb(Utils.colorStrToHex(this.skyWest())),
-          bottom: Utils.hexToRgb(Utils.colorStrToHex(this.skyBottom()))
-        },
-        this.skybox()
-      )
+      this.createSkybox(this.skybox(), {
+        top: Utils.hexToRgb(Utils.colorStrToHex(this.skyTop())),
+        north: Utils.hexToRgb(Utils.colorStrToHex(this.skyNorth())),
+        east: Utils.hexToRgb(Utils.colorStrToHex(this.skyEast())),
+        south: Utils.hexToRgb(Utils.colorStrToHex(this.skySouth())),
+        west: Utils.hexToRgb(Utils.colorStrToHex(this.skyWest())),
+        bottom: Utils.hexToRgb(Utils.colorStrToHex(this.skyBottom()))
+      })
     })
 
     // Register texture animator to the engine
@@ -235,7 +234,7 @@ export class WorldService {
           avatarEntry.implicit,
           avatarEntry.explicit
         )
-      this.setAvatar(avatarEntry.geometry, animationManager, user as Group)
+      this.setAvatar(avatarEntry.geometry, animationManager, user)
     })
 
     // own avatar
@@ -266,22 +265,23 @@ export class WorldService {
     this.avatarListener?.unsubscribe()
   }
 
-  public setVisibility(visibility: number) {
+  public set visibility(visibility: number) {
     this.maxLodDistance = visibility
     this.engineSvc.setChunksDistance(visibility)
   }
 
-  public getPosition() {
+  public get playerLocation() {
     return {
       world: this.worldName,
       position: Utils.posToString(
-        this.engineSvc.getPosition()[0],
-        this.engineSvc.getYaw()
+        this.engineSvc.position[0],
+        this.engineSvc.yaw
       )
     }
   }
 
   private createSkybox(
+    skybox: string,
     skyColors: {
       top: number[]
       north: number[]
@@ -296,8 +296,7 @@ export class WorldService {
       south: [0, 0, 0],
       west: [0, 0, 0],
       bottom: [0, 0, 0]
-    },
-    skybox: string
+    }
   ) {
     const skyboxGroup = new Group()
     skyboxGroup.renderOrder = -1
@@ -623,7 +622,7 @@ export class WorldService {
     const entryPoint = new Vector3()
     let entryYaw = 0
     if (entry) {
-      const yawMatch = entry.match(/\s([-+]?[0-9]+)$/)
+      const yawMatch = /\s([-+]?\d+)$/.exec(entry)
       entryYaw = yawMatch ? parseInt(yawMatch[1], 10) : entryYaw
       entryPoint.copy(Utils.stringToPos(entry))
     }
@@ -689,23 +688,25 @@ export class WorldService {
         Utils.rgbToHex(...(world.sky.bottom_color as [number, number, number]))
       )
     )
-    this.engineSvc.setAmbLightColor(
-      Utils.rgbToHex(...(world.light.amb_color as [number, number, number]))
+    this.lightingSvc.ambLightColor = Utils.rgbToHex(
+      ...(world.light.amb_color as [number, number, number])
     )
-    this.engineSvc.setDirLightColor(
-      Utils.rgbToHex(...(world.light.dir_color as [number, number, number]))
+    this.lightingSvc.dirLightColor = Utils.rgbToHex(
+      ...(world.light.dir_color as [number, number, number])
     )
-    this.engineSvc.setDirLightTarget(
+    this.lightingSvc.dirLightTarget = [
       world.light.dir.x * 100,
       world.light.dir.y * 100,
       world.light.dir.z * 100
-    )
-    this.engineSvc.setWorldFog(
-      Utils.rgbToHex(...(world.light.fog.color as [number, number, number])),
-      world.light.fog.min,
-      world.light.fog.max,
-      world.light.fog.enabled
-    )
+    ]
+    this.lightingSvc.worldFog = {
+      color: Utils.rgbToHex(
+        ...(world.light.fog.color as [number, number, number])
+      ),
+      near: world.light.fog.min,
+      far: world.light.fog.max,
+      enabled: world.light.fog.enabled
+    }
 
     this.objSvc.loadAvatars().subscribe((list) => {
       this.avatarList = list
@@ -733,7 +734,7 @@ export class WorldService {
       group.userData.player = true
       const avatarEntry = this.avatarList[user.avatar]
       this.setAvatar(
-        this.avatarList[user.avatar].geometry || 'michel',
+        this.avatarList[user.avatar].geometry,
         this.anmSvc.getAvatarAnimationManager(
           avatarEntry.name,
           avatarEntry.implicit,

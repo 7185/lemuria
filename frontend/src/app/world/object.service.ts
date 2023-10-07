@@ -25,8 +25,7 @@ import RWXLoader, {
 } from 'three-rwx-loader'
 import * as fflate from 'fflate'
 import {config} from '../app.config'
-import {Utils} from '../utils'
-import {TextCanvas} from '../utils/text-canvas'
+import {TextCanvas, Utils} from '../utils'
 
 // can't be const (angular#25963)
 export enum ObjectAct {
@@ -279,7 +278,7 @@ export class ObjectService {
   }
 
   makePicture(item: Group, url: string) {
-    url = url.match(this.remoteUrl)
+    url = this.remoteUrl.exec(url)
       ? `${config.url.imgProxy}${url}`
       : `${this.resPath()}/${url}`
     this.textureLoader.load(url, (picture) => {
@@ -326,7 +325,7 @@ export class ObjectService {
     bcolor: {r: number; g: number; b: number}
   ) {
     if (text == null) {
-      text = item.userData.desc != null ? item.userData.desc : ''
+      text = item.userData.desc ?? ''
     }
     if (color == null) {
       color = {r: 255, g: 255, b: 255}
@@ -346,9 +345,9 @@ export class ObjectService {
             newMaterials[i].map = new CanvasTexture(
               TextCanvas.textCanvas(
                 text,
-                newMaterials[i].userData.ratio,
                 color,
-                bcolor
+                bcolor,
+                newMaterials[i].userData.ratio
               )
             )
             newMaterials[i].map.colorSpace = SRGBColorSpace
@@ -443,15 +442,21 @@ export class ObjectService {
     if (object !== undefined) {
       return object
     }
-    const loader: RWXLoader =
-      loaderType === 'prop'
-        ? this.rwxPropLoader
-        : loaderType === 'avatar'
-        ? this.rwxAvatarLoader
-        : this.basicLoader
-    if (loader === this.basicLoader && loader.path !== this.rwxPath()) {
-      // Dirty fix for skybox loading too fast
-      loader.setPath(this.rwxPath()).setResourcePath(this.resPath())
+
+    let loader: RWXLoader
+    switch (loaderType) {
+      case 'prop':
+        loader = this.rwxPropLoader
+        break
+      case 'avatar':
+        loader = this.rwxAvatarLoader
+        break
+      default:
+        loader = this.basicLoader
+        if (loader.path !== this.rwxPath()) {
+          // Dirty fix for skybox loading too fast
+          loader.setPath(this.rwxPath()).setResourcePath(this.resPath())
+        }
     }
     const observable = new Observable<Group>((observer) => {
       loader.load(

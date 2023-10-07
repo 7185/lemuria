@@ -46,13 +46,13 @@ export class UiTeleportComponent {
   }
 
   makeHome() {
-    this.settings.set('home', this.world.getPosition())
+    this.settings.set('home', this.world.playerLocation)
     this.close()
   }
 
   save() {
     const teleportList = this.settings.get('teleports') || []
-    teleportList.push({name: this.name, ...this.world.getPosition()})
+    teleportList.push({name: this.name, ...this.world.playerLocation})
     this.settings.set('teleports', teleportList)
     this.close()
   }

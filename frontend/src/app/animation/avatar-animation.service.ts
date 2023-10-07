@@ -72,15 +72,13 @@ export const interpolateThreeFrames = (
         continue
       }
 
-      joints[jointTag] = (q as Quaternion)
-        .clone()
-        .slerp(secondJoints[jointTag], ratio)
+      joints[jointTag] = q.clone().slerp(secondJoints[jointTag], ratio)
     }
   }
 }
 
 @Injectable({providedIn: 'root'})
-export class AnimationService {
+export class AvatarAnimationService {
   private sequences: Map<string, Promise<ThreeSequence>> = new Map()
   private avatarAnimationManagers: Map<
     string,

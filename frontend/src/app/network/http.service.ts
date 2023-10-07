@@ -34,7 +34,9 @@ export class HttpService extends HttpClient {
   }
 
   public static getCookie(name: string) {
-    const c = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')
+    const c = RegExp('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)').exec(
+      document.cookie
+    )
     return c ? c.pop() : ''
   }
 

@@ -10,9 +10,9 @@ export class TextCanvas {
    */
   static textCanvas(
     text: string,
-    ratio = 1,
     color: {r: number; g: number; b: number},
-    bcolor: {r: number; g: number; b: number}
+    bcolor: {r: number; g: number; b: number},
+    ratio = 1
   ) {
     const canvas = document.createElement('canvas')
     const canvasWidth = ratio > 1 ? 256 : 256 * ratio

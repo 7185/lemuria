@@ -8,8 +8,7 @@ import {
   EventEmitter,
   Output
 } from '@angular/core'
-import {Subject, takeUntil} from 'rxjs'
-import {take, timeout} from 'rxjs'
+import {Subject, takeUntil, take, timeout} from 'rxjs'
 
 @Component({
   standalone: true,
@@ -110,12 +109,10 @@ export class UiControlsComponent implements OnInit {
 
   setKeymap() {
     this.input.clearKeys()
-    this.controlsKeymap.forEach((keys, index) => {
-      for (const k of keys) {
-        if (k != null) {
-          this.input.mapKey(k, this.controlsLabels[index][1])
-        }
-      }
+    this.controlsKeymap.forEach((keys: string[], index) => {
+      keys
+        .filter((k) => k !== null)
+        .forEach((k) => this.input.mapKey(k, this.controlsLabels[index][1]))
     })
   }
 

@@ -1,22 +1,16 @@
-import {Injectable} from '@angular/core'
+import {inject} from '@angular/core'
 import {Router} from '@angular/router'
-
 import {HttpService} from '../network/http.service'
 
 /**
  * Guard for routing
  */
-@Injectable({providedIn: 'root'})
-export class AuthGuard {
-  constructor(
-    private router: Router,
-    private http: HttpService
-  ) {}
+export const AuthGuard = () => {
+  const http = inject(HttpService)
+  const router = inject(Router)
 
-  canActivate(): boolean {
-    if (!this.http.isLogged()) {
-      this.router.navigate(['login'])
-    }
-    return this.http.isLogged()
+  if (!http.isLogged()) {
+    router.navigate(['login'])
   }
+  return http.isLogged()
 }

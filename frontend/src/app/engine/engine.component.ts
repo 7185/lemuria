@@ -24,12 +24,12 @@ export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {
   public labelDesc: ElementRef<HTMLDivElement>
 
   public constructor(
-    private engServ: EngineService,
+    private engineSvc: EngineService,
     private world: WorldService
   ) {}
 
   public ngOnInit(): void {
-    this.engServ.createScene(
+    this.engineSvc.createScene(
       this.rendererCanvas,
       this.labelZone,
       this.labelDesc
@@ -38,12 +38,12 @@ export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {
 
   public ngAfterViewInit(): void {
     this.world.initWorld()
-    this.engServ.animate()
+    this.engineSvc.animate()
   }
 
   public ngOnDestroy(): void {
     this.world.destroyWorld()
-    this.engServ.clearScene()
-    this.engServ.cancel()
+    this.engineSvc.clearScene()
+    this.engineSvc.cancel()
   }
 }

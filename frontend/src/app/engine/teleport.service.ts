@@ -17,7 +17,7 @@ export class TeleportService {
   })
   private lastTeleportIndex = -1
 
-  teleportFrom(world = null, position = null, isNew = false) {
+  teleportFrom(world: string = null, position: string = null, isNew = false) {
     if (world?.toLowerCase() === 'nowhere') {
       return
     }

@@ -9,10 +9,10 @@ import {
 import type {WritableSignal} from '@angular/core'
 import {FormsModule} from '@angular/forms'
 import {TabsModule} from 'ngx-bootstrap/tabs'
-import {EngineService} from '../../engine/engine.service'
 import {Utils} from '../../utils'
 import {WorldService} from 'src/app/world/world.service'
 import {TerrainService} from 'src/app/world/terrain.service'
+import {LightingService} from 'src/app/world/lighting.service'
 
 @Component({
   standalone: true,
@@ -45,28 +45,24 @@ export class UiWorldAttribsComponent {
   public waterUnderView: WritableSignal<number>
 
   constructor(
-    private engineSvc: EngineService,
     private terrainSvc: TerrainService,
+    private lightingSvc: LightingService,
     public worldSvc: WorldService
   ) {
     this.terrain = signal(this.terrainSvc.terrain != null)
     this.terrainOffset = signal(this.terrainSvc.terrain?.position.y ?? 0)
-    this.fog = signal(this.engineSvc.getWorldFog()?.enabled ?? false)
-    this.fogMin = signal(this.engineSvc.getWorldFog()?.near ?? 0)
-    this.fogMax = signal(this.engineSvc.getWorldFog()?.far ?? 120)
-    this.lightDirX = signal(this.engineSvc.getDirLightTarget()[0] | 0)
-    this.lightDirY = signal(this.engineSvc.getDirLightTarget()[1] | 0)
-    this.lightDirZ = signal(this.engineSvc.getDirLightTarget()[2] | 0)
+    this.fog = signal(this.lightingSvc.worldFog?.enabled ?? false)
+    this.fogMin = signal(this.lightingSvc.worldFog?.near ?? 0)
+    this.fogMax = signal(this.lightingSvc.worldFog?.far ?? 120)
+    this.lightDirX = signal(this.lightingSvc.dirLightTarget[0] | 0)
+    this.lightDirY = signal(this.lightingSvc.dirLightTarget[1] | 0)
+    this.lightDirZ = signal(this.lightingSvc.dirLightTarget[2] | 0)
 
     this.fogColor = signal(
-      Utils.colorHexToStr(this.engineSvc.getWorldFog()?.color ?? 0x00007f)
+      Utils.colorHexToStr(this.lightingSvc.worldFog?.color ?? 0x00007f)
     )
-    this.ambLight = signal(
-      Utils.colorHexToStr(this.engineSvc.getAmbLightColor())
-    )
-    this.dirLight = signal(
-      Utils.colorHexToStr(this.engineSvc.getDirLightColor())
-    )
+    this.ambLight = signal(Utils.colorHexToStr(this.lightingSvc.ambLightColor))
+    this.dirLight = signal(Utils.colorHexToStr(this.lightingSvc.dirLightColor))
     this.water = signal(this.terrainSvc.water != null)
     this.waterColor = signal(
       Utils.colorHexToStr(this.terrainSvc.water?.userData?.color ?? 0x00ffff)
@@ -84,25 +80,25 @@ export class UiWorldAttribsComponent {
     )
 
     effect(() => {
-      this.engineSvc.setWorldFog(
-        Utils.colorStrToHex(this.fogColor()),
-        this.fogMin(),
-        this.fogMax(),
-        this.fog()
-      )
+      this.lightingSvc.worldFog = {
+        color: Utils.colorStrToHex(this.fogColor()),
+        near: this.fogMin(),
+        far: this.fogMax(),
+        enabled: this.fog()
+      }
     })
     effect(() => {
-      this.engineSvc.setAmbLightColor(Utils.colorStrToHex(this.ambLight()))
+      this.lightingSvc.ambLightColor = Utils.colorStrToHex(this.ambLight())
     })
     effect(() => {
-      this.engineSvc.setDirLightColor(Utils.colorStrToHex(this.dirLight()))
+      this.lightingSvc.dirLightColor = Utils.colorStrToHex(this.dirLight())
     })
     effect(() => {
-      this.engineSvc.setDirLightTarget(
+      this.lightingSvc.dirLightTarget = [
         this.lightDirX(),
         this.lightDirY(),
         this.lightDirZ()
-      )
+      ]
     })
     effect(() => {
       this.terrainSvc.setTerrain(

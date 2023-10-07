@@ -50,19 +50,19 @@ export class UserService {
   }
 
   broadcast(message: Message) {
-    for (const user of this.authorizedUsers) {
-      if (user.connected) {
-        for (const socket of user.websockets) {
+    Array.from(this.authorizedUsers)
+      .filter((user) => user.connected)
+      .forEach((user) => {
+        user.websockets.forEach((socket) => {
           socket.send(JSON.stringify(message))
-        }
-      }
-    }
+        })
+      })
   }
 
   broadcastUserlist() {
     this.broadcast({
       type: 'list',
-      data: Array.from(this.authorizedUsers.values())
+      data: Array.from(this.authorizedUsers)
         .filter((u) => u.connected)
         .map((u) => u.toDict())
     })
@@ -99,7 +99,7 @@ export class UserService {
   }
 
   private getUserFromCookie(cookie: string, regex: RegExp) {
-    const authCookie = cookie?.match(regex)
+    const authCookie = regex?.exec(cookie)
     if (authCookie) {
       try {
         const userId = this.jwtService.verify(authCookie[1])['id']

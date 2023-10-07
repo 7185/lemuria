@@ -1,5 +1,5 @@
 import type {Group} from 'three'
-import type {ThreeSequence} from './animation.service'
+import type {ThreeSequence} from './avatar-animation.service'
 import {AvatarAnimationPlayer} from './avatar-animation.player'
 
 export class AvatarAnimationManager {

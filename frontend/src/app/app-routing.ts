@@ -4,11 +4,13 @@ import {AuthGuard} from './auth/auth.guard.service'
 export const APP_ROUTES: Routes = [
   {
     path: 'login',
+    title: 'Lemuria | Connexion',
     loadComponent: () =>
       import('./auth/auth.component').then((mod) => mod.AuthComponent)
   },
   {
     path: '',
+    title: 'Lemuria',
     canActivate: [AuthGuard],
     loadComponent: () =>
       import('./ui/ui.component').then((mod) => mod.UiComponent)

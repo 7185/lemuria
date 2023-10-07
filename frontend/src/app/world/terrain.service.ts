@@ -12,10 +12,10 @@ import {
 } from 'three'
 import {acceleratedRaycast} from 'three-mesh-bvh'
 import {PlayerCollider} from '../engine/player-collider'
-import {EngineService, TERRAIN_PAGE_SIZE} from '../engine/engine.service'
+import {EngineService} from '../engine/engine.service'
 import {ObjectService} from './object.service'
 import {HttpService} from '../network'
-import {Utils} from '../utils'
+import {TERRAIN_PAGE_SIZE, Utils} from '../utils'
 
 @Injectable({providedIn: 'root'})
 export class TerrainService {
@@ -241,9 +241,7 @@ export class TerrainService {
       }
       geometry.setAttribute('position', new BufferAttribute(positions, 3))
 
-      const indices = new Uint16Array(
-        (geometry.getIndex() as BufferAttribute).array
-      )
+      const indices = new Uint16Array(geometry.getIndex().array)
       let changeTexture = 0
       let currTexture = 0
       for (let k = 0; k < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE; k++) {

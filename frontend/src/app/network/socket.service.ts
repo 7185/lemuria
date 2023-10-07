@@ -54,9 +54,9 @@ export class SocketService {
     })
     this.posTimer = interval(200).subscribe(() => {
       const pos: [Vector3, Vector3] = [new Vector3(), new Vector3()]
-      const gesture = this.engineSvc.getGesture()
+      const {gesture} = this.engineSvc
 
-      for (const [i, vec] of this.engineSvc.getPosition().entries()) {
+      for (const [i, vec] of this.engineSvc.position.entries()) {
         pos[i].fromArray(vec.toArray().map((v) => +v.toFixed(2)))
       }
 
@@ -70,7 +70,7 @@ export class SocketService {
           data: {
             pos: pos[0],
             ori: pos[1],
-            state: this.engineSvc.getState(),
+            state: this.engineSvc.state,
             gesture
           }
         })

@@ -141,11 +141,11 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
 
   public changeVisibility(visibility: number) {
     this.visibility = visibility
-    this.worldSvc.setVisibility(visibility)
+    this.worldSvc.visibility = visibility
   }
 
   public setAnimation(animation: string) {
-    this.engineSvc.setGesture(animation)
+    this.engineSvc.gesture = animation
   }
 
   public changeAvatar(avatarId: number) {

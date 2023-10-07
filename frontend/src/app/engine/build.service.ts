@@ -14,7 +14,7 @@ import type {Object3D, Material, Mesh} from 'three'
 import {PlayerCollider} from './player-collider'
 import {ObjectAct} from '../world/object.service'
 import {PressedKey, InputSystemService} from './inputsystem.service'
-import {X_AXIS, Y_AXIS, Z_AXIS} from './engine.service'
+import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils'
 
 @Injectable({
   providedIn: 'root'
