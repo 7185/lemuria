@@ -1,4 +1,3 @@
-import {CommonModule} from '@angular/common'
 import {ChangeDetectionStrategy, Component} from '@angular/core'
 import type {OnInit} from '@angular/core'
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms'
@@ -13,12 +12,7 @@ import {faCircleNotch, faKey, faUser} from '@fortawesome/free-solid-svg-icons'
 
 @Component({
   standalone: true,
-  imports: [
-    FontAwesomeModule,
-    CommonModule,
-    ReactiveFormsModule,
-    LogoComponent
-  ],
+  imports: [FontAwesomeModule, ReactiveFormsModule, LogoComponent],
   selector: 'app-auth',
   templateUrl: './auth.component.html',
   styleUrls: ['./auth.component.scss'],

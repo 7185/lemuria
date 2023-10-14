@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, ViewChild} from '@angular/core'
-import {CommonModule} from '@angular/common'
+import {NgStyle} from '@angular/common'
 import {FormsModule} from '@angular/forms'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {LinkifyPipe} from '../../utils'
@@ -15,9 +15,9 @@ import {UserService} from '../../user'
 @Component({
   standalone: true,
   imports: [
-    CommonModule,
     FontAwesomeModule,
     FormsModule,
+    NgStyle,
     VirtualScrollerModule,
     LinkifyPipe
   ],

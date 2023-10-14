@@ -1,4 +1,4 @@
-import {CommonModule} from '@angular/common'
+import {KeyValuePipe} from '@angular/common'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {BsDropdownModule} from 'ngx-bootstrap/dropdown'
 import {UiControlsComponent} from '../ui-controls/ui-controls.component'
@@ -55,7 +55,7 @@ import {
 @Component({
   standalone: true,
   imports: [
-    CommonModule,
+    KeyValuePipe,
     BsDropdownModule,
     FontAwesomeModule,
     UiControlsComponent,

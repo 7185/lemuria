@@ -1,4 +1,4 @@
-import {CommonModule} from '@angular/common'
+import {NgClass} from '@angular/common'
 import {InputSystemService, PressedKey} from '../../engine/inputsystem.service'
 import type {OnInit} from '@angular/core'
 import {
@@ -12,7 +12,7 @@ import {Subject, takeUntil, take, timeout} from 'rxjs'
 
 @Component({
   standalone: true,
-  imports: [CommonModule],
+  imports: [NgClass],
   selector: 'app-ui-controls',
   templateUrl: './ui-controls.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
