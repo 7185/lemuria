@@ -2,15 +2,14 @@
 """Bot module"""
 
 import json
-import asks
+import httpx
 import trio
 import trio_websocket
 
-asks.init(trio)
 
 def get_cookie_from_response(response, cookie_name):
     """Returns cookie value of cookie_name"""
-    return next((c.value for c in response.cookies if c.name == cookie_name), None)
+    return response.cookies.get(cookie_name, None)
 
 AUTH_COOKIE = 'lemuria_token_access'
 DEBUG = False
@@ -147,21 +146,24 @@ class Bot(User):
                 break
 
     async def login(self) -> None:
-        rlogin = await asks.post(f'{self.web_url}/auth/',
+        async with httpx.AsyncClient() as client:
+            rlogin = await client.post(f'{self.web_url}/auth/',
                                  json={'login': self.name, 'password': 'password'})
-        self.cookiejar = {
-            AUTH_COOKIE: get_cookie_from_response(rlogin, AUTH_COOKIE)
-        }
+            self.cookiejar = {
+                AUTH_COOKIE: get_cookie_from_response(rlogin, AUTH_COOKIE)
+            }
 
     async def get_world_list(self) -> None:
-        r_world_list = await asks.get(f'{self.web_url}/world/', cookies=self.cookiejar)
-        self.worldlist.clear()
-        for w in r_world_list.json():
-            self.worldlist[w['id']] = {'name': w['name'], 'users': w['users']}
+        async with httpx.AsyncClient() as client:
+            r_world_list = await client.get(f'{self.web_url}/world/', cookies=self.cookiejar)
+            self.worldlist.clear()
+            for w in r_world_list.json():
+                self.worldlist[w['id']] = {'name': w['name'], 'users': w['users']}
 
     async def world_enter(self, world_id) -> None:
-        r_world = await asks.get(f'{self.web_url}/world/{world_id}', cookies=self.cookiejar)
-        self.world = r_world.json()['id']
+        async with httpx.AsyncClient() as client:
+            r_world = await client.get(f'{self.web_url}/world/{world_id}', cookies=self.cookiejar)
+            self.world = r_world.json()['id']
 
     async def connect(self) -> None:
         await self.login()

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-import trio
 from math import atan2, pi
-from bot import Bot
 from random import randint
+import trio
+from bot import Bot
 
 WEB_URL = 'https://lemuria.7185.fr/api/v1'
 WS_URL = 'wss://lemuria.7185.fr/api/v1/ws'
