@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Utilities module"""
+"""Timer module"""
 
 import asyncio
 import contextlib

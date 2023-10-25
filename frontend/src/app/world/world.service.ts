@@ -58,15 +58,12 @@ export class WorldService {
   private avatar: Group
   private lastChunk = null
 
-  private propBatchSize: number = config.world.propBatchSize
   private chunkWidth: number = config.world.chunk.width // in cm
   private chunkDepth: number = config.world.chunk.depth // in cm
   private chunkMap: Map<number, Set<number>>
   private chunkLoadingLayout = []
   private chunkLoadCircular: boolean = config.world.chunk.loadCircular
   private chunkLoadRadius: number = config.world.chunk.loadRadius
-  private prioritizeNearestChunks: boolean =
-    config.world.chunk.prioritizeNearest
 
   private maxLodDistance: number = config.world.lod.maxDistance
 
@@ -163,13 +160,11 @@ export class WorldService {
 
     // For extra comfort: we can sort each chunk in the layout based on there distance to the center,
     // this ought to make the client load and display nearest chunks first
-    if (this.prioritizeNearestChunks) {
-      this.chunkLoadingLayout.sort((c0, c1) => {
-        const d0 = c0[0] * c0[0] + c0[1] * c0[1]
-        const d1 = c1[0] * c1[0] + c1[1] * c1[1]
-        return d0 - d1
-      })
-    }
+    this.chunkLoadingLayout.sort((c0, c1) => {
+      const d0 = c0[0] * c0[0] + c0[1] * c0[1]
+      const d1 = c1[0] * c1[0] + c1[1] * c1[1]
+      return d0 - d1
+    })
 
     // Position update
     effect(() => {
@@ -531,8 +526,6 @@ export class WorldService {
       .pipe(
         concatMap((props: any) =>
           from(props.entries).pipe(
-            bufferCount(props.entries.length, this.propBatchSize), // Pace the loading of items based on the desired batch size
-            concatMap((arr) => from(arr)), // Each individual emission from bufferCount is an array of items
             mergeMap((item: any) =>
               this.loadItem(
                 item[0],
@@ -554,8 +547,8 @@ export class WorldService {
               return of(item)
             }), // Adjust position of objects based on the center of the chunk
             bufferCount(props.entries.length), // Wait for all items to be loaded before proceeding
-            mergeMap((objs: any) => of(new Group().add(...objs))), // Add all buffered objects to the chunkGroup
-            mergeMap((chunkGroup: Group) => {
+            mergeMap((objs: Object3D[]) => {
+              const chunkGroup = new Group().add(...objs)
               // Set metadata on the chunk
               const lod = new LOD()
               lod.userData.rwx = {axisAlignment: 'none'}

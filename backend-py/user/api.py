@@ -4,7 +4,16 @@
 import uuid
 import asyncio
 from quart import request, jsonify, Blueprint
-from quart_jwt_extended import create_access_token, jwt_refresh_token_required, create_refresh_token, set_access_cookies, set_refresh_cookies, get_jwt_identity, jwt_required, unset_jwt_cookies
+from quart_jwt_extended import (
+    create_access_token,
+    jwt_refresh_token_required,
+    create_refresh_token,
+    set_access_cookies,
+    set_refresh_cookies,
+    get_jwt_identity,
+    jwt_required,
+    unset_jwt_cookies
+)
 from user.model import User, authorized_users
 
 api_auth = Blueprint('api_auth', __name__, url_prefix='/api/v1/auth')
@@ -37,15 +46,19 @@ async def auth_logout():
 @jwt_required
 async def auth_session():
     """User session"""
-    if curr_user := next((user for user in authorized_users if user.auth_id == get_jwt_identity()), None):
-        return jsonify({'id': curr_user.auth_id, 'name': await curr_user.name}), 200
+    if curr_user := next(
+        (user for user in authorized_users if user.auth_id == get_jwt_identity()),
+    None):
+        return {'id': curr_user.auth_id, 'name': await curr_user.name}, 200
     return {}, 401
 
 @api_auth.post("/renew")
 @jwt_refresh_token_required
 async def auth_renew():
     """User token renewal"""
-    if curr_user := next((user for user in authorized_users if user.auth_id == get_jwt_identity()), None):
+    if curr_user := next(
+        (user for user in authorized_users if user.auth_id == get_jwt_identity()),
+    None):
         access_token = create_access_token(identity=curr_user.auth_id)
         resp = jsonify({'id': curr_user.auth_id, 'name': await curr_user.name})
         set_access_cookies(resp, access_token)

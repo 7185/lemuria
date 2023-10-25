@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """World API routes"""
 
-from quart import request, jsonify, Blueprint, current_app
+from quart import request, Blueprint, current_app
 from quart_jwt_extended import get_jwt_identity, jwt_required
 from user.model import authorized_users
 from world.model import World
@@ -16,12 +16,14 @@ async def before_request():
 @api_world.get('/')
 async def world_list():
     """World list"""
-    return jsonify(await World.get_list()), 200
+    return await World.get_list(), 200
 
 @api_world.get('/<int:world_id>')
 async def world_get(world_id):
     """World fetching"""
-    if curr_user := next((user for user in authorized_users if user.auth_id == get_jwt_identity()), None):
+    if curr_user := next(
+        (user for user in authorized_users if user.auth_id == get_jwt_identity()),
+    None):
         world = await World(world_id).to_dict()
         if world['name'] is None:
             return world, 404

@@ -197,6 +197,9 @@ export class EngineService {
     this.renderer.shadowMap.enabled = false
     this.renderer.outputColorSpace = SRGBColorSpace
     this.renderer.autoClear = false
+    if (!config.debug) {
+      this.renderer.debug.checkShaderErrors = false
+    }
     this.labelRenderer = new CSS2DRenderer({element: this.labelZone})
     this.labelRenderer.setSize(window.innerWidth, window.innerHeight)
 
@@ -528,6 +531,9 @@ export class EngineService {
     }
 
     switch (group.name) {
+      case 'dirLight':
+        this.dirLight = null
+        break
       case 'terrain':
         this.terrain = null
         break
@@ -722,7 +728,6 @@ export class EngineService {
     )
     this.lodCamera.rotation.copy(this.player.rotation)
     this.lodCamera.updateMatrix()
-    this.lodCamera.updateProjectionMatrix()
 
     for (const lod of this.objectsNode.children as LOD[]) {
       lod.update(this.lodCamera)
@@ -760,7 +765,6 @@ export class EngineService {
       this.updatePointLights()
     }
 
-    this.updateLODs()
     this.moveUsers()
   }
 
@@ -775,6 +779,7 @@ export class EngineService {
     this.camera.updateProjectionMatrix()
     this.thirdCamera.updateProjectionMatrix()
     this.thirdFrontCamera.updateProjectionMatrix()
+    this.lodCamera.updateProjectionMatrix()
     this.renderer?.setSize(width, height)
     this.labelRenderer?.setSize(width, height)
   }
@@ -1100,23 +1105,23 @@ export class EngineService {
     ) {
       this.playerPosition.set(this.player.position.clone())
       this.rotateSprites()
+      this.updateLODs()
     }
   }
 
   private updatePointLights() {
     const seen = []
-    for (const obj of this.litObjects) {
+    this.litObjects.forEach((obj) => {
       const objPos = obj.position.clone().add(obj.parent.parent.position)
       seen.push({
         dist: this.player.position.distanceTo(objPos),
         obj: obj,
         pos: objPos
       })
-    }
+    })
 
-    const toLit = seen
-      .sort((a, b) => (a.dist > b.dist ? 1 : -1))
-      .slice(0, this.pointLights.length)
+    seen.sort((a, b) => a.dist - b.dist)
+    const toLit = seen.slice(0, this.pointLights.length)
 
     this.pointLights.forEach((light, index) => {
       light.position.set(0, 0, 0)
@@ -1273,7 +1278,7 @@ export class EngineService {
     this.activeCamera.getWorldPosition(this.cameraPosition)
 
     this.skybox.position.copy(this.player.position)
-    this.dirLight.position.set(
+    this.dirLight?.position.set(
       -50 + this.player.position.x,
       80 + this.player.position.y,
       10 + this.player.position.z

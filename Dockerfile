@@ -7,7 +7,7 @@ RUN npm run build:prod
 
 
 FROM python:3.10-alpine AS backend-py
-RUN apk add --update build-base
+RUN apk add --update --no-cache build-base
 EXPOSE 8080
 WORKDIR /app
 COPY hypercorn.toml /app/
@@ -23,7 +23,7 @@ VOLUME ["/app/app.db", "/app/dumps"]
 USER nobody
 
 FROM node:16-alpine AS backend
-RUN apk add --update build-base
+RUN apk add --update --no-cache build-base
 EXPOSE 8080
 WORKDIR /app
 CMD ["node", "dist/main"]

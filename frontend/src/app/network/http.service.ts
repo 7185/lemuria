@@ -57,7 +57,7 @@ export class HttpService extends HttpClient {
 
   public login(login: string, password: string) {
     localStorage.setItem('login', login)
-    return this.post(`${this.baseUrl}/auth`, {login, password}).pipe(
+    return this.post(`${this.baseUrl}/auth/`, {login, password}).pipe(
       tap((data) => {
         this.expiration = Math.floor(new Date().getTime() / 1000) + 36000
         this.setLogged(new User(data))
@@ -67,7 +67,7 @@ export class HttpService extends HttpClient {
 
   public logout() {
     this.expiration = 0
-    return this.delete(`${this.baseUrl}/auth`).pipe(
+    return this.delete(`${this.baseUrl}/auth/`).pipe(
       tap(() => {
         this.setLogged(new User())
         this.router.navigate(['login'])
@@ -76,7 +76,7 @@ export class HttpService extends HttpClient {
   }
 
   public session() {
-    return this.get(`${this.baseUrl}/auth`).pipe(
+    return this.get(`${this.baseUrl}/auth/`).pipe(
       catchError((error: HttpResponse<unknown>) => {
         this.logout().subscribe()
         return throwError(() => error)

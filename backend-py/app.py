@@ -2,17 +2,19 @@
 """App module"""
 
 import asyncio
-import toml
-from quart import Quart, render_template, websocket, request, jsonify, send_from_directory
-from quart_jwt_extended import JWTManager, jwt_required, decode_token
+import tomllib
+
+from quart import Quart, render_template, websocket, request, send_from_directory
+from quart_jwt_extended import JWTManager, decode_token
 from flask_caching import Cache
 from user.api import api_auth
+from user.model import authorized_users
 from world.api import api_world
-from user.model import User, authorized_users
 from utils.ws import sending, receiving
+from utils.orjson import OrJSONProvider
 
-with open('config.toml') as config_file:
-    toml_data = toml.load(config_file)
+with open('config.toml', 'rb') as config_file:
+    toml_data = tomllib.load(config_file)
 
 app = Quart(__name__)
 app.config.from_mapping(toml_data)
@@ -24,6 +26,7 @@ app.secret_key = config['SECRET_KEY']
 
 jwt = JWTManager(app)
 app.cache = Cache(app)
+app.json = OrJSONProvider(app)
 
 @app.route('/')
 async def index():
@@ -45,7 +48,7 @@ async def wsocket():
         return
     try:
         data = decode_token(token)
-    except Exception as e:
+    except Exception as dummy:
         await websocket.close(code=401, reason='Invalid JWT')
         return
 
@@ -63,7 +66,7 @@ async def wsocket():
 async def redirect(_):
     """Redirect everything to index"""
     if '/api/' in request.url:
-        return jsonify({'error': 'Not found'}), 404
+        return {'error': 'Not found'}, 404
     return await render_template("index.html")
 
 app.register_blueprint(api_auth)

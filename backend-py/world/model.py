@@ -88,8 +88,10 @@ class World:
         }
 
     @db_required
-    async def props(self, min_x = None, max_x = None, min_y = None, max_y = None, min_z = None, max_z = None):
-        # Having a 'None' value on one of those coordinate criterias means no bound will be applied when querying all objects
+    async def props(self, min_x = None, max_x = None, min_y = None, max_y = None,
+                    min_z = None, max_z = None):
+        # Having a 'None' value on one of those coordinate criterias means no bound will be
+        # applied when querying all objects
 
         # Build the WHERE clause
         where_clauses = [
@@ -102,7 +104,10 @@ class World:
         ]
 
         props = [
-            [prop.id, prop.date, prop.name, prop.x, prop.y, prop.z, prop.pi, prop.ya, prop.ro, prop.desc, prop.act]
+            [
+                prop.id, prop.date, prop.name, prop.x, prop.y, prop.z, prop.pi, prop.ya, prop.ro,
+                prop.desc, prop.act
+            ]
             for prop in await db.prop.find_many(
                 where={
                     'AND': [

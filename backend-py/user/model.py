@@ -24,7 +24,7 @@ async def broadcast_userlist():
 class User:
     """User class"""
     @staticmethod
-    def get(uid):    
+    def get(uid):
         return next((user for user in authorized_users if user.auth_id == uid), None)
 
     def __init__(self, auth_id):
@@ -94,4 +94,3 @@ class User:
 
     async def send_avatar(self):
         await broadcast({'type': 'avatar', 'user': self.auth_id, 'data': self.avatar})
-

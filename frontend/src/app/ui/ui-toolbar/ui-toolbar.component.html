@@ -1,7 +1,8 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-0">
   <div class="container-fluid">
+    @if (!debug) {
     <a class="navbar-brand" href="/">Lemuria</a>
-    @if (debug) {
+    } @else {
     <div class="badge bg-danger">
       DEBUG - {{strFps}}<br/>
       {{strMem}}

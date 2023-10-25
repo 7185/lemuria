@@ -39,10 +39,18 @@ export class TextCanvas {
         ...lines.map((line) => ctx.measureText(line).width)
       )
 
-      if (totalHeight <= canvasHeight && totalWidth <= canvasWidth) {
+      const heightDifference = totalHeight - canvasHeight
+      const widthDifference = totalWidth - canvasWidth
+      // Estimate how big the adjustment needs to be in order to avoid too many measureText calls
+      const adjustment = Math.trunc(
+        Math.max(heightDifference, widthDifference) / fontSize
+      )
+
+      if (heightDifference <= 0 && widthDifference <= 0) {
         fontFit = true
       } else {
-        fontSize -= 2
+        // Keep the size even
+        fontSize -= adjustment + (adjustment % 2) || 2
       }
     }
 
@@ -90,8 +98,7 @@ export class TextCanvas {
           return
         }
 
-        const metrics = ctx.measureText(`${currentLine} ${word}`)
-        const lineWidth = metrics.width
+        const lineWidth = ctx.measureText(`${currentLine} ${word}`).width
 
         if (lineWidth < maxWidth || currentLine.length === 0) {
           currentLine += ` ${word}`

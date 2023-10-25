@@ -164,7 +164,8 @@ async def save_propdump(world_name, file):
         for prop in await db.query_raw((
             "select uid, date, x, y, z, ya, pi, ro, LENGTH(name), coalesce(length(desc), 0), "
             "coalesce(length(act), 0), name || coalesce(desc, '') || coalesce(act, '') "
-            f"from prop where wid = (SELECT id FROM world WHERE LOWER(name) = '{world_name.lower()}')"
+            "from prop where wid = (SELECT id FROM world WHERE LOWER(name) = "
+            f"'{world_name.lower()}')"
         )):
             await f.write(f"{' '.join(str(v) for v in prop.values())}\r\n")
 
@@ -269,13 +270,16 @@ async def import_world(world_name, path='../dumps'):
 
     async for e in load_elevdump(f'{path}/elev{world_name}.txt'):
         await db.query_raw(
-            'INSERT INTO elev (wid, page_x, page_z, node_x, node_z, radius, textures, heights) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            world.id, e[0], e[1], e[2], e[3], e[4], ' '.join(str(n) for n in e[5]), ' '.join(str(n) for n in e[6])
+            ('INSERT INTO elev (wid, page_x, page_z, node_x, node_z, radius, textures, heights) '
+             'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'),
+            world.id, e[0], e[1], e[2], e[3], e[4], ' '.join(str(n) for n in e[5]),
+            ' '.join(str(n) for n in e[6])
         )
 
     async for o in load_propdump(f'{path}/prop{world_name}.txt'):
         await db.query_raw(
-            'INSERT INTO prop (wid, uid, date, name, x, y, z, pi, ya, ro, desc, act) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            ('INSERT INTO prop (wid, uid, date, name, x, y, z, pi, ya, ro, desc, act) '
+             'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
             world.id, admin.id, o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[8], o[9]
         )
 
