@@ -1,6 +1,11 @@
 import {KeyValuePipe} from '@angular/common'
+import {MatBadgeModule} from '@angular/material/badge'
+import {MatButtonModule} from '@angular/material/button'
+import {MatDialog, MatDialogModule} from '@angular/material/dialog'
+import {MatDividerModule} from '@angular/material/divider'
+import {MatMenuModule} from '@angular/material/menu'
+import {MatToolbarModule} from '@angular/material/toolbar'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
-import {BsDropdownModule} from 'ngx-bootstrap/dropdown'
 import {UiControlsComponent} from '../ui-controls/ui-controls.component'
 import {UiSettingsComponent} from '../ui-settings/ui-settings.component'
 import {UiTeleportComponent} from '../ui-teleport/ui-teleport.component'
@@ -19,7 +24,6 @@ import {
   ElementRef,
   Renderer2,
   signal,
-  TemplateRef,
   ViewChild
 } from '@angular/core'
 import type {AfterViewInit, OnInit} from '@angular/core'
@@ -27,8 +31,6 @@ import {SocketService} from '../../network/socket.service'
 import type {User} from '../../user'
 import {config} from '../../app.config'
 import {Vector3} from 'three'
-import type {BsModalRef} from 'ngx-bootstrap/modal'
-import {BsModalService} from 'ngx-bootstrap/modal'
 import {distinctUntilChanged, throttleTime} from 'rxjs'
 import {Utils} from '../../utils'
 import {
@@ -55,8 +57,13 @@ import {
 @Component({
   standalone: true,
   imports: [
+    MatBadgeModule,
+    MatButtonModule,
+    MatDialogModule,
+    MatDividerModule,
+    MatMenuModule,
+    MatToolbarModule,
     KeyValuePipe,
-    BsDropdownModule,
     FontAwesomeModule,
     UiControlsComponent,
     UiSettingsComponent,
@@ -70,10 +77,6 @@ import {
 })
 export class UiToolbarComponent implements OnInit, AfterViewInit {
   @ViewChild('compass', {static: true}) compass: ElementRef
-  @ViewChild('settingsModal') settingsModalTpl: TemplateRef<unknown>
-  @ViewChild('controlsModal') controlsModalTpl: TemplateRef<unknown>
-  @ViewChild('teleportModal') teleportModalTpl: TemplateRef<unknown>
-  @ViewChild('worldAttribsModal') worldAttribsModalTpl: TemplateRef<unknown>
 
   public faArrowLeft = faArrowLeft
   public faArrowRight = faArrowRight
@@ -94,10 +97,6 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public faUsers = faUsers
   public faVideo = faVideo
 
-  public settingsModal: BsModalRef
-  public controlsModal: BsModalRef
-  public teleportModal: BsModalRef
-  public worldAttribsModal: BsModalRef
   public debug = config.debug
   public cameraType = 0
   public name = 'Anonymous'
@@ -112,12 +111,11 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public strAlt: string
   public strFps = '0 FPS'
   public strMem = '0 Geom. 0 Text.'
-  public teleportType = 0
 
   public constructor(
+    public dialog: MatDialog,
     private renderer: Renderer2,
     private cdRef: ChangeDetectorRef,
-    private modalSvc: BsModalService,
     public socket: SocketService,
     private engineSvc: EngineService,
     public worldSvc: WorldService,
@@ -172,48 +170,25 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public openSettings() {
-    this.settingsModal = this.modalSvc.show(this.settingsModalTpl, {
-      backdrop: false
-    })
-  }
-
-  public closeSettings() {
-    this.settingsModal.hide()
+    this.dialog.open(UiSettingsComponent, {hasBackdrop: true})
   }
 
   public openControls() {
-    this.controlsModal = this.modalSvc.show(this.controlsModalTpl, {
-      backdrop: false
-    })
-  }
-
-  public closeControls() {
-    this.controlsModal.hide()
+    this.dialog.open(UiControlsComponent, {hasBackdrop: true})
   }
 
   public openTeleport(type = 0) {
     if (type === 1 && !this.socket.connected) {
       return
     }
-    this.teleportType = type
-    this.teleportModal = this.modalSvc.show(this.teleportModalTpl, {
-      backdrop: false
-    })
-  }
-
-  public closeTeleport() {
-    this.teleportModal.hide()
+    this.dialog.open(UiTeleportComponent, {hasBackdrop: true, data: {type}})
   }
 
   public openWorldAttribs() {
-    this.worldAttribsModal = this.modalSvc.show(this.worldAttribsModalTpl, {
-      backdrop: false,
-      class: 'modal-lg'
+    this.dialog.open(UiWorldAttribsComponent, {
+      hasBackdrop: true,
+      minWidth: 480
     })
-  }
-
-  public closeWorldAttribs() {
-    this.worldAttribsModal.hide()
   }
 
   public toggleCamera(): void {

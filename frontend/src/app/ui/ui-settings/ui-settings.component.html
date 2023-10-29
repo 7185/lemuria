@@ -1,21 +1,14 @@
-<div class="modal-header">
-  <h4 class="modal-title pull-left">Settings</h4>
-  <button type="button" class="btn-close close pull-right" aria-label="Close" (click)="close()">
-    <span aria-hidden="true" class="visually-hidden">&times;</span>
-  </button>
-</div>
-<div class="modal-body">
-  <div class="mb-3 row">
-    <label for="maxFps" class="col col-form-label">Maximum FPS</label>
-    <div class="col">
-      <input id="maxFps" class="form-control" minlength="1" pattern="[0-9]*" [(ngModel)]="maxFps">
-    </div>
-  </div>
-  <div class="mb-3 row">
-    <label for="maxLights" class="col col-form-label">Maximum lights</label>
-    <div class="col">
-      <input id="maxLights" class="form-control" minlength="1" pattern="[0-9]*" [(ngModel)]="maxLights">
-    </div>
-  </div>
-  <button class="btn btn-primary float-end mb-3" (click)="save()">Save</button>
-</div>
+<h1 mat-dialog-title>Settings</h1>
+<mat-dialog-content>
+  <mat-form-field appearance="outline">
+    <mat-label>Maximum FPS</mat-label>
+    <input matInput type='text' minlength="1" pattern="[0-9]*" [(ngModel)]="maxFps">
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Maximum lights</mat-label>
+    <input matInput type='text' minlength="1" pattern="[0-9]*" [(ngModel)]="maxLights">
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-flat-button [mat-dialog-close]="true" cdkFocusInitial color="primary" (click)="save()">Save</button>
+</mat-dialog-actions>

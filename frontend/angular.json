@@ -24,7 +24,10 @@
             "baseHref": "/",
             "index": "src/index.html",
             "main": "src/main.ts",
-            "polyfills": "src/polyfills.ts",
+            "polyfills": [
+              "zone.js",
+              "src/polyfills.ts"
+            ],
             "tsConfig": "src/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -32,6 +35,7 @@
               "src/assets"
             ],
             "styles": [
+              "src/styles/theme.scss",
               "src/styles/main.scss"
             ],
             "scripts": []

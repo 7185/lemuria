@@ -1,45 +1,36 @@
 <div class="container">
   <form class="form-signin" (ngSubmit)="onLogin()" [formGroup]="loginForm">
-    <div class="mx-auto">
-      <app-logo/>
-    </div>
-    @if (loginError) {
-    <div class="alert alert-danger">Wrong login or password</div>
-    }
-    @if (usernameCtl.dirty && usernameCtl.errors?.required) {
-    <div class="alert alert-danger">
-      Username is required
-    </div>
-    }
-    @if (passwordCtl.dirty && passwordCtl.errors?.required) {
-    <div class="alert alert-danger">
-      Password is required
-    </div>
-    }
-    <div class="input-group mb-2">
-      <div class="input-group-text">
-        <fa-icon [icon]="faUser" [fixedWidth]="true"/>
-      </div>
-      <div class="form-floating flex-grow-1">
-        <input class="form-control" formControlName="username" autocomplete="username" required>
-        <label>Login</label>
-      </div>
-    </div>
-    <div class="input-group mb-2">
-      <div class="input-group-text">
-        <fa-icon [icon]="faKey" [fixedWidth]="true"/>
-      </div>
-      <div class="form-floating flex-grow-1">
-        <input type="password" class="form-control" formControlName="password" autocomplete="current-password" required>
-        <label>Password</label>
-      </div>
-    </div>
+    <app-logo/>
+    <mat-form-field appearance="outline">
+      <mat-label><fa-icon [icon]="faUser" [fixedWidth]="true"/>Username</mat-label>
+      <input matInput type='text' formControlName="username" autocomplete="username" required>
+      @if (loginError) {
+      <mat-error>Wrong login or password</mat-error>
+      }
+      @if (usernameCtl.dirty && usernameCtl.errors?.required) {
+      <mat-error>Username is required</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label><fa-icon [icon]="faKey" [fixedWidth]="true"/>Password</mat-label>
+      <input matInput [type]="hide ? 'password' : 'text'" formControlName="password" autocomplete="current-password" required>
+      <button mat-icon-button type="button" matSuffix (click)="hide = !hide" color="accent" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="hide">
+        @if (hide) {
+        <fa-icon [icon]="faEyeSlash" [fixedWidth]="true"/>
+        } @else {
+        <fa-icon [icon]="faEye" [fixedWidth]="true"/>
+        }
+      </button>
+      @if (passwordCtl.dirty && passwordCtl.errors?.required) {
+      <mat-error>Password is required</mat-error>
+      }
+    </mat-form-field>
     @if (!processing) {
-    <button class="btn btn-lg btn-primary btn-block w-100" type="submit" [disabled]="loginForm.invalid">
+    <button mat-flat-button color="primary" class="btn-signin" type="submit" [disabled]="loginForm.invalid">
     Sign in
     </button>
     } @else {
-    <button class="btn btn-lg btn-primary btn-block w-100" type="submit" disabled>
+    <button mat-flat-button color="primary" class="btn-signin" type="submit" disabled>
       <fa-icon [icon]="faCircleNotch" [fixedWidth]="true" [spin]="true"/><span class="sr-only">Loading...</span>
     </button>
     }

@@ -3,16 +3,32 @@ import type {OnInit} from '@angular/core'
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms'
 import type {FormControl, FormGroup} from '@angular/forms'
 import {ActivatedRoute, Router} from '@angular/router'
+import {MatButtonModule} from '@angular/material/button'
+import {MatInputModule} from '@angular/material/input'
+import {MatFormFieldModule} from '@angular/material/form-field'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {finalize} from 'rxjs/operators'
 import {HttpService} from '../network'
 import {SettingsService} from '../settings/settings.service'
 import {LogoComponent} from '../logo/logo.component'
-import {faCircleNotch, faKey, faUser} from '@fortawesome/free-solid-svg-icons'
+import {
+  faCircleNotch,
+  faEye,
+  faEyeSlash,
+  faKey,
+  faUser
+} from '@fortawesome/free-solid-svg-icons'
 
 @Component({
   standalone: true,
-  imports: [FontAwesomeModule, ReactiveFormsModule, LogoComponent],
+  imports: [
+    FontAwesomeModule,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatInputModule,
+    MatFormFieldModule,
+    LogoComponent
+  ],
   selector: 'app-auth',
   templateUrl: './auth.component.html',
   styleUrls: ['./auth.component.scss'],
@@ -20,9 +36,12 @@ import {faCircleNotch, faKey, faUser} from '@fortawesome/free-solid-svg-icons'
 })
 export class AuthComponent implements OnInit {
   public faCircleNotch = faCircleNotch
+  public faEye = faEye
+  public faEyeSlash = faEyeSlash
   public faKey = faKey
   public faUser = faUser
 
+  public hide = true
   public processing = false
   public loginForm: FormGroup
   public loginError = false

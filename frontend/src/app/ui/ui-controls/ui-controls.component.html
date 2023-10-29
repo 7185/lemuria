@@ -1,16 +1,12 @@
-<div class="modal-header">
-  <h4 class="modal-title pull-left">Controls</h4>
-  <button type="button" class="btn-close close pull-right" aria-label="Close" (click)="close()">
-    <span aria-hidden="true" class="visually-hidden">&times;</span>
-  </button>
-</div>
-<div class="modal-body">
-  <table class="table table-sm">
+<h1 mat-dialog-title>Controls</h1>
+<mat-dialog-content>
+  <table>
     <thead>
       <tr>
         <th scope="col"></th>
         <th scope="col"></th>
-        <th scope="col"><button class="btn btn-sm btn-primary" (click)="setDefault()">Default</button></th>
+        <th scope="col">
+          <button mat-flat-button (click)="setDefault()" color="primary">Default</button></th>
       </tr>
     </thead>
     <tbody>
@@ -18,17 +14,19 @@
       <tr>
         <th scope="row">{{ controlsLabels[i][0] }}</th>
         <td>
-          <button class="btn btn-sm"
-                  [ngClass]="activeKey[0] === i && activeKey[1] === 0 ? 'btn-info' : 'btn-light'"
-                  (click)="setKey(i, 0)">{{ item[0] || 'None' }}</button>
+          <button mat-flat-button (click)="setKey(i, 0)"
+                 [color]="activeKey[0] === i && activeKey[1] === 0 ? 'accent' : ''">
+                 {{ item[0] || 'None' }}
+          </button>
         </td>
         <td>
-          <button class="btn btn-sm"
-                  [ngClass]="activeKey[0] === i && activeKey[1] === 1 ? 'btn-info' : 'btn-light'"
-                  (click)="setKey(i, 1)">{{ item[1] || 'None' }}</button>
+          <button mat-flat-button (click)="setKey(i, 1)"
+                  [color]="activeKey[0] === i && activeKey[1] === 1 ? 'accent' : ''">
+                  {{ item[1] || 'None' }}
+          </button>
         </td>
       </tr>
       }
     </tbody>
   </table>
-</div>
+</mat-dialog-content>

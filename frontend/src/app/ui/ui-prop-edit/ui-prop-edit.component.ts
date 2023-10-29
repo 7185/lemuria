@@ -2,7 +2,10 @@ import {ChangeDetectionStrategy, Component} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import {DatePipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
-import {NgxDraggableDomModule} from 'ngx-draggable-dom'
+import {CdkDrag, CdkDragHandle} from '@angular/cdk/drag-drop'
+import {MatButtonModule} from '@angular/material/button'
+import {MatInputModule} from '@angular/material/input'
+import {MatFormFieldModule} from '@angular/material/form-field'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {ObjectService, ObjectAct} from '../../world/object.service'
 import {BuildService} from '../../engine/build.service'
@@ -22,7 +25,16 @@ import {
 
 @Component({
   standalone: true,
-  imports: [FormsModule, FontAwesomeModule, NgxDraggableDomModule, DatePipe],
+  imports: [
+    FormsModule,
+    FontAwesomeModule,
+    CdkDrag,
+    CdkDragHandle,
+    MatButtonModule,
+    MatInputModule,
+    MatFormFieldModule,
+    DatePipe
+  ],
   selector: 'app-ui-prop-edit',
   templateUrl: './ui-prop-edit.component.html',
   styleUrls: ['./ui-prop-edit.component.scss'],
@@ -56,7 +68,7 @@ export class UiPropEditComponent {
     this.selectedProp = this.buildSvc.selectedPropSignal
   }
 
-  trigger(event: MouseEvent, action: number) {
+  public trigger(event: MouseEvent, action: number) {
     if (event.button === 0) {
       this.objSvc.objectAction.next(action)
     }

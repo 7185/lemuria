@@ -1,10 +1,34 @@
-.bg-dark {
-  background-color: #343a4080 !important;
-}
-nav {
+mat-toolbar {
+  background-color: #343a4080;
+  height: 40px;
+  width: 100vw;
   pointer-events: all;
+
+  button:not(.btn-circle) {
+    width: auto;
+  }
 }
+
+.info {
+  font-size: 16px;
+  line-height: 1;
+  text-align: center;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.invisible {
+  visibility: hidden;
+}
+
+button:disabled fa-icon {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
 .btn-circle {
+  background-color: #263238;
   width: 38px;
   height: 38px;
   padding: 6px 0px;
@@ -12,9 +36,4 @@ nav {
   text-align: center;
   font-size: 12px;
   line-height: 1.42857;
-}
-
-ul.dropdown-menu {
-  max-height: 80vh;
-  overflow-y: auto;
 }

@@ -1,30 +1,30 @@
 <div id="chat-zone" [class.active]="chatActive">
   <virtual-scroller #scroll [items]="data">
     @for (m of scroll.viewPortItems; track m) {
-    <p class="line mx-2">
+    <p class="line">
       @if (m.type === 'msg') {
         <b [ngStyle]="{'color': colors[m.user]}">{{ m.user }}</b>: <span [innerHTML]="m.data | linkify"></span>
       }
       @if (m.type === 'join') {
-        <b class="text-success">{{ m.data }} joined</b>
+        <b class="text-green">{{ m.data }} joined</b>
       }
       @if (m.type === 'part') {
-        <b class="text-danger">{{ m.data }} left</b>
+        <b class="text-red">{{ m.data }} left</b>
       }
       @if (m.type === 'err') {
-        <b class="text-danger">{{ m.data }}</b>
+        <b class="text-red">{{ m.data }}</b>
       }
       @if (m.type === 'info') {
-        <em class="text-info">{{ m.data }}</em>
+        <em class="text-cyan">{{ m.data }}</em>
       }
     </p>
     }
   </virtual-scroller>
-  <div class="input-group">
-    <button class="btn btn-outline-dark" type="button" (click)="activeChat()" [class.active]="chatActive">
-      <fa-icon [icon]="faComments"/>
+  <mat-form-field appearance="outline" class="chat-input">
+    <mat-label>Message</mat-label>
+    <input matInput type="text" class="text-input" [(ngModel)]="message" (keydown.enter)="send()" type="text" [disabled]="!socket.connected">
+    <button mat-icon-button type="button" matPrefix (click)="activeChat()" color="accent">
+      <fa-icon [icon]="faComments" [fixedWidth]="true"/>
     </button>
-    <input class="form-control mr-sm-2" [(ngModel)]="message" (keydown.enter)="send()" type="text" 
-           placeholder="Message" aria-label="Message" [disabled]="!socket.connected">
-  </div>
+  </mat-form-field>
 </div>

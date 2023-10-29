@@ -1,25 +1,24 @@
 import {NgClass} from '@angular/common'
+import {MatButtonModule} from '@angular/material/button'
+import {MatDialogModule} from '@angular/material/dialog'
 import {InputSystemService, PressedKey} from '../../engine/inputsystem.service'
 import type {OnInit} from '@angular/core'
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  Component,
-  EventEmitter,
-  Output
+  Component
 } from '@angular/core'
 import {Subject, takeUntil, take, timeout} from 'rxjs'
 
 @Component({
   standalone: true,
-  imports: [NgClass],
+  imports: [NgClass, MatButtonModule, MatDialogModule],
   selector: 'app-ui-controls',
   templateUrl: './ui-controls.component.html',
+  styleUrls: ['./ui-controls.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiControlsComponent implements OnInit {
-  @Output() closeModal = new EventEmitter()
-
   public controlsLabels: [string, PressedKey][] = [
     ['Move Forward', PressedKey.moveFwd],
     ['Move Backward', PressedKey.moveBck],
@@ -114,10 +113,6 @@ export class UiControlsComponent implements OnInit {
         .filter((k) => k !== null)
         .forEach((k) => this.input.mapKey(k, this.controlsLabels[index][1]))
     })
-  }
-
-  close() {
-    this.closeModal.emit()
   }
 
   ngOnInit() {

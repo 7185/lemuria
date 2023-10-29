@@ -1,0 +1,93 @@
+@use '@angular/material' as mat;
+@include mat.core();
+
+$accent-palette: (
+  50: #fff7e4,
+  100: #ffe9ba,
+  200: #fedb8f,
+  300: #fece66,
+  400: #fdc24e,
+  500: #fbb93f,
+  600: #faac3b,
+  700: #f79a38,
+  800: #f58b35,
+  900: #f26e2f,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: rgba(black, 0.87),
+    400: rgba(black, 0.87),
+    500: rgba(black, 0.87),
+    600: rgba(black, 0.87),
+    700: rgba(black, 0.87),
+    800: rgba(black, 0.87),
+    900: rgba(black, 0.87)
+  )
+);
+
+$primary-palette: (
+  50: #e6f2ff,
+  100: #c5deff,
+  200: #a1cbff,
+  300: #81b6ff,
+  400: #6fa6ff,
+  500: #6696fe,
+  600: #6388ee,
+  700: #5d75da,
+  800: #5863c7,
+  900: #4f43a5,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: rgba(black, 0.87),
+    400: rgba(black, 0.87),
+    500: rgba(black, 0.87),
+    600: rgba(black, 0.87),
+    700: white,
+    800: white,
+    900: white
+  )
+);
+
+$warn-palette: (
+  50: #fbe8e7,
+  100: #ffc9bc,
+  200: #fea691,
+  300: #fe8266,
+  400: #fe6545,
+  500: #fe4728,
+  600: #f34124,
+  700: #e53a1f,
+  800: #d7331a,
+  900: #bd2612,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: rgba(black, 0.87),
+    400: rgba(black, 0.87),
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white
+  )
+);
+
+$lemuria-primary: mat.define-palette($primary-palette, 300);
+$lemuria-accent: mat.define-palette($accent-palette, 500);
+$lemuria-warn: mat.define-palette($warn-palette, 300);
+
+$lemuria-theme: mat.define-dark-theme((
+ color: (
+   primary: $lemuria-primary,
+   accent: $lemuria-accent,
+   warn: $lemuria-warn,
+ ),
+ typography: mat.define-typography-config(),
+ density: 0,
+));
+
+@include mat.all-component-themes($lemuria-theme);

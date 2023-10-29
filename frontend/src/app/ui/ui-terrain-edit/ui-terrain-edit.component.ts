@@ -2,7 +2,11 @@ import {ChangeDetectionStrategy, Component, effect} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import {DecimalPipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
-import {NgxDraggableDomModule} from 'ngx-draggable-dom'
+import {CdkDrag, CdkDragHandle} from '@angular/cdk/drag-drop'
+import {MatButtonModule} from '@angular/material/button'
+import {MatCheckboxModule} from '@angular/material/checkbox'
+import {MatInputModule} from '@angular/material/input'
+import {MatFormFieldModule} from '@angular/material/form-field'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {BuildService} from '../../engine/build.service'
 import {
@@ -16,7 +20,17 @@ import {
 
 @Component({
   standalone: true,
-  imports: [FormsModule, FontAwesomeModule, NgxDraggableDomModule, DecimalPipe],
+  imports: [
+    FormsModule,
+    FontAwesomeModule,
+    CdkDrag,
+    CdkDragHandle,
+    MatButtonModule,
+    MatCheckboxModule,
+    MatInputModule,
+    MatFormFieldModule,
+    DecimalPipe
+  ],
   selector: 'app-ui-terrain-edit',
   templateUrl: './ui-terrain-edit.component.html',
   styleUrls: ['./ui-terrain-edit.component.scss'],

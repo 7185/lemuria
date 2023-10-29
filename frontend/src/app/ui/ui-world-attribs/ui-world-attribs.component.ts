@@ -1,14 +1,12 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  EventEmitter,
-  Output,
-  effect,
-  signal
-} from '@angular/core'
+import {ChangeDetectionStrategy, Component, effect, signal} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import {FormsModule} from '@angular/forms'
-import {TabsModule} from 'ngx-bootstrap/tabs'
+import {MatCheckboxModule} from '@angular/material/checkbox'
+import {MatDialogModule} from '@angular/material/dialog'
+import {MatFormFieldModule} from '@angular/material/form-field'
+import {MatInputModule} from '@angular/material/input'
+import {MatSliderModule} from '@angular/material/slider'
+import {MatTabsModule} from '@angular/material/tabs'
 import {Utils} from '../../utils'
 import {WorldService} from 'src/app/world/world.service'
 import {TerrainService} from 'src/app/world/terrain.service'
@@ -16,14 +14,21 @@ import {LightingService} from 'src/app/world/lighting.service'
 
 @Component({
   standalone: true,
-  imports: [FormsModule, TabsModule],
+  imports: [
+    FormsModule,
+    MatCheckboxModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSliderModule,
+    MatTabsModule
+  ],
   selector: 'app-ui-world-attribs',
   templateUrl: './ui-world-attribs.component.html',
+  styleUrls: ['./ui-world-attribs.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiWorldAttribsComponent {
-  @Output() closeModal = new EventEmitter()
-
   public terrain: WritableSignal<boolean>
   public terrainOffset: WritableSignal<number>
   public ambLight: WritableSignal<string>
@@ -120,9 +125,5 @@ export class UiWorldAttribsComponent {
         under_view: this.waterUnderView()
       })
     })
-  }
-
-  close() {
-    this.closeModal.emit()
   }
 }

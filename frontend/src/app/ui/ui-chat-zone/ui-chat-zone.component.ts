@@ -1,6 +1,9 @@
 import {ChangeDetectionStrategy, Component, ViewChild} from '@angular/core'
 import {NgStyle} from '@angular/common'
 import {FormsModule} from '@angular/forms'
+import {MatButtonModule} from '@angular/material/button'
+import {MatInputModule} from '@angular/material/input'
+import {MatFormFieldModule} from '@angular/material/form-field'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {LinkifyPipe} from '../../utils'
 import {faComments} from '@fortawesome/free-solid-svg-icons'
@@ -15,6 +18,9 @@ import {UserService} from '../../user'
 @Component({
   standalone: true,
   imports: [
+    MatButtonModule,
+    MatInputModule,
+    MatFormFieldModule,
     FontAwesomeModule,
     FormsModule,
     NgStyle,
