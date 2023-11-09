@@ -120,9 +120,7 @@ export class WorldService {
       }
 
       this.httpSvc.world(targetWorld.id).subscribe((w: any) => {
-        this.socket.messages.next({type: 'info', data: w.welcome ?? ''})
         this.teleportSvc.teleportFrom(this.worldName, currentPos, isNew)
-
         this.setWorld(w, position)
       })
     })
@@ -204,7 +202,18 @@ export class WorldService {
 
     // Register object chunk updater to the engine
     this.objSvc.objectAction.subscribe((action: ObjectAct) => {
-      if (action === ObjectAct.copy) {
+      if (
+        [
+          ObjectAct.up,
+          ObjectAct.down,
+          ObjectAct.forward,
+          ObjectAct.backward,
+          ObjectAct.left,
+          ObjectAct.right,
+          ObjectAct.snapGrid,
+          ObjectAct.copy
+        ].includes(action)
+      ) {
         this.setObjectChunk(this.buildSvc.selectedProp)
       }
     })
@@ -582,24 +591,25 @@ export class WorldService {
     const absPos = object.position.clone().add(oldChunkPos)
     const [chunkX, chunkZ] = this.getChunkTile(absPos)
 
-    for (const lod of this.engineSvc.getLODs()) {
-      if (
+    const newLOD = this.engineSvc.getLODs().find((lod) => {
+      return (
         lod.userData.world.chunk.x === chunkX &&
         lod.userData.world.chunk.z === chunkZ
-      ) {
-        oldChunk.remove(object)
+      )
+    })
 
-        // Regenerate boundsTree for source LOD, if it's different from the destination one
-        if (oldLOD !== lod) {
-          PlayerCollider.updateChunkBVH(oldChunk)
-        }
+    if (newLOD) {
+      oldChunk.remove(object)
 
-        const chunk = lod.levels[0].object
-        chunk.add(object)
-        object.position.add(oldChunkPos).sub(lod.position)
-
-        return
+      // Regenerate boundsTree for source LOD, if it's different from the destination one
+      if (oldLOD !== newLOD) {
+        PlayerCollider.updateChunkBVH(oldChunk)
       }
+
+      const chunk = newLOD.levels[0].object
+      chunk.add(object)
+      object.position.add(oldChunkPos).sub(newLOD.position)
+      return
     }
     console.log(
       `Warning: Trying to move object ${object.name} to an uninitialized chunk (${chunkX}, ${chunkZ})`
@@ -641,6 +651,8 @@ export class WorldService {
       this.teleport(entry)
       return
     }
+
+    this.socket.messages.next({type: 'info', data: world.welcome ?? ''})
 
     this.worldId = world.id
     this.worldName = world.name

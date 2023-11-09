@@ -18,7 +18,7 @@ import {config} from './app.config'
       max: config.cache.threshold
     }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'static')
+      rootPath: join(__dirname, '..', 'static', 'browser')
     }),
     UserModule,
     WorldModule

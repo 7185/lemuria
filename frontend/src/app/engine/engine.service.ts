@@ -720,7 +720,7 @@ export class EngineService {
 
   private updateLODs() {
     // We trick the LOD into acting like the camera is always on the ground,
-    // this avoids having chunks disappearing if we get to high/far on the Y axis
+    // this avoids having chunks disappearing if we get too high/far on the Y axis
     this.lodCamera.position.set(
       this.player.position.x,
       0,

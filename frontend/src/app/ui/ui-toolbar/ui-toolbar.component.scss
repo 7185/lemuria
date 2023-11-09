@@ -1,5 +1,20 @@
+@use 'sass:map';
+@use '@angular/material' as mat;
+@import '../../../styles/_variables';
+
+$color-config: mat.get-color-config($lemuria-theme);
+
+$primary-palette: map.get($color-config, 'primary');
+
+.pill{
+  background-color: mat.get-color-from-palette($primary-palette, 500);
+  color: mat.get-color-from-palette($primary-palette, '500-contrast');
+  border-radius: 10px;
+  padding: 4px;
+}
+
 mat-toolbar {
-  background-color: #343a4080;
+  background-color: #00000080;
   height: 40px;
   width: 100vw;
   pointer-events: all;
@@ -29,9 +44,9 @@ button:disabled fa-icon {
 
 .btn-circle {
   background-color: #263238;
-  width: 38px;
-  height: 38px;
-  padding: 6px 0px;
+  width: 38px !important;
+  height: 38px !important;
+  padding: 6px 0px !important;
   border-radius: 19px;
   text-align: center;
   font-size: 12px;

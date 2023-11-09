@@ -1,4 +1,4 @@
-STATIC_PATH = "static"
+STATIC_PATH = "static/browser"
 DEBUG = true
 DB_FILE = "app.db"
 CACHE_TYPE = "SimpleCache"

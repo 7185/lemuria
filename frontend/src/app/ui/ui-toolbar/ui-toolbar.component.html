@@ -15,8 +15,8 @@
   </button>
   <mat-menu #worldsMenu="matMenu">
     @for (w of worldSvc.worldList; track w) {
-    <button mat-menu-item (click)="teleportWorld(w.name)" >
-      <fa-icon [icon]="faGlobe"/> {{ w.name }} {{ w.users }}
+    <button mat-menu-item (click)="teleportWorld(w.name)">
+      <fa-icon [icon]="faGlobe"/> {{ w.name }} <span class="pill">{{ w.users }}</span>
     </button>
     }
   </mat-menu>
