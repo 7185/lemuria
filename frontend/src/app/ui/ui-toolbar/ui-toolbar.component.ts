@@ -6,10 +6,6 @@ import {MatDividerModule} from '@angular/material/divider'
 import {MatMenuModule} from '@angular/material/menu'
 import {MatToolbarModule} from '@angular/material/toolbar'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
-import {UiControlsComponent} from '../ui-controls/ui-controls.component'
-import {UiSettingsComponent} from '../ui-settings/ui-settings.component'
-import {UiTeleportComponent} from '../ui-teleport/ui-teleport.component'
-import {UiWorldAttribsComponent} from '../ui-world-attribs/ui-world-attribs.component'
 import {HttpService} from '../../network'
 import {EngineService} from '../../engine/engine.service'
 import {SettingsService} from '../../settings/settings.service'
@@ -64,11 +60,7 @@ import {
     MatMenuModule,
     MatToolbarModule,
     KeyValuePipe,
-    FontAwesomeModule,
-    UiControlsComponent,
-    UiSettingsComponent,
-    UiTeleportComponent,
-    UiWorldAttribsComponent
+    FontAwesomeModule
   ],
   selector: 'app-ui-toolbar',
   templateUrl: './ui-toolbar.component.html',
@@ -170,25 +162,41 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public openSettings() {
-    this.dialog.open(UiSettingsComponent, {hasBackdrop: true})
+    import('../ui-settings/ui-settings.component').then(
+      ({UiSettingsComponent}) => {
+        this.dialog.open(UiSettingsComponent, {hasBackdrop: true})
+      }
+    )
   }
 
   public openControls() {
-    this.dialog.open(UiControlsComponent, {hasBackdrop: true})
+    import('../ui-controls/ui-controls.component').then(
+      ({UiControlsComponent}) => {
+        this.dialog.open(UiControlsComponent, {hasBackdrop: true})
+      }
+    )
   }
 
   public openTeleport(type = 0) {
     if (type === 1 && !this.socket.connected) {
       return
     }
-    this.dialog.open(UiTeleportComponent, {hasBackdrop: true, data: {type}})
+    import('../ui-teleport/ui-teleport.component').then(
+      ({UiTeleportComponent}) => {
+        this.dialog.open(UiTeleportComponent, {hasBackdrop: true, data: {type}})
+      }
+    )
   }
 
   public openWorldAttribs() {
-    this.dialog.open(UiWorldAttribsComponent, {
-      hasBackdrop: true,
-      minWidth: 480
-    })
+    import('../ui-world-attribs/ui-world-attribs.component').then(
+      ({UiWorldAttribsComponent}) => {
+        this.dialog.open(UiWorldAttribsComponent, {
+          hasBackdrop: true,
+          minWidth: 480
+        })
+      }
+    )
   }
 
   public toggleCamera(): void {

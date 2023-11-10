@@ -1,3 +1,4 @@
+import type {WritableSignal} from '@angular/core'
 import {Injectable, signal} from '@angular/core'
 import {
   AxesHelper,
@@ -22,8 +23,17 @@ import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils'
 export class BuildService {
   public buildMode = false
   public selectedProp: Group
-  public selectedCellSignal = signal({})
-  public selectedPropSignal = signal({})
+  public selectedCellSignal: WritableSignal<{
+    height?: number
+    texture?: number
+    hole?: boolean
+  }> = signal({})
+  public selectedPropSignal: WritableSignal<{
+    name?: string
+    desc?: string
+    act?: string
+    date?: any
+  }> = signal({})
   private axesHelper: AxesHelper
   private cellSelection: Group
   private propSelection: Group

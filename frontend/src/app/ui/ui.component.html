@@ -1,7 +1,11 @@
 <div class="ui-wrapper container-fluid">
   <app-ui-toolbar/>
   <app-ui-chat-zone/>
+  @defer (when loadPropEdit()) {
   <app-ui-prop-edit/>
+  }
+  @defer (when loadTerrainEdit()) {
   <app-ui-terrain-edit/>
+  }
 </div>
 <app-engine/>

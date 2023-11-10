@@ -1,9 +1,11 @@
+import type {Signal} from '@angular/core'
+import {ChangeDetectionStrategy, Component, computed} from '@angular/core'
 import {EngineComponent} from '../engine/engine.component'
 import {UiChatZoneComponent} from './ui-chat-zone/ui-chat-zone.component'
 import {UiToolbarComponent} from './ui-toolbar/ui-toolbar.component'
 import {UiPropEditComponent} from './ui-prop-edit/ui-prop-edit.component'
 import {UiTerrainEditComponent} from './ui-terrain-edit/ui-terrain-edit.component'
-import {ChangeDetectionStrategy, Component} from '@angular/core'
+import {BuildService} from '../engine/build.service'
 
 @Component({
   standalone: true,
@@ -19,4 +21,16 @@ import {ChangeDetectionStrategy, Component} from '@angular/core'
   templateUrl: './ui.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UiComponent {}
+export class UiComponent {
+  public loadPropEdit: Signal<boolean>
+  public loadTerrainEdit: Signal<boolean>
+
+  public constructor(private buildSvc: BuildService) {
+    this.loadPropEdit = computed(
+      () => this.buildSvc.selectedPropSignal()?.name != null
+    )
+    this.loadTerrainEdit = computed(
+      () => this.buildSvc.selectedCellSignal()?.height != null
+    )
+  }
+}
