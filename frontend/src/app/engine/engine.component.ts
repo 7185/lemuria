@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  inject,
   ViewChild
 } from '@angular/core'
 import type {AfterViewInit, OnInit, OnDestroy} from '@angular/core'
@@ -23,10 +24,8 @@ export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('labelDesc', {static: true})
   public labelDesc: ElementRef<HTMLDivElement>
 
-  public constructor(
-    private engineSvc: EngineService,
-    private world: WorldService
-  ) {}
+  private engineSvc = inject(EngineService)
+  private world = inject(WorldService)
 
   public ngOnInit(): void {
     this.engineSvc.createScene(

@@ -1,5 +1,5 @@
 import {BehaviorSubject, fromEvent, Subject, timer} from 'rxjs'
-import {effect, Injectable, NgZone, signal} from '@angular/core'
+import {effect, Injectable, NgZone, inject, signal} from '@angular/core'
 import type {ElementRef} from '@angular/core'
 import {
   Cache,
@@ -66,6 +66,14 @@ export class EngineService {
   public texturesAnimation = signal(0)
   public playerPosition = signal(new Vector3())
   public worldFog = {color: 0x00007f, near: 0, far: 120, enabled: false}
+
+  private ngZone = inject(NgZone)
+  private userSvc = inject(UserService)
+  private inputSysSvc = inject(InputSystemService)
+  private objSvc = inject(ObjectService)
+  private buildSvc = inject(BuildService)
+  private propAnimSvc = inject(PropAnimationService)
+  private teleportSvc = inject(TeleportService)
 
   private terrain: Group
   private water: Group
@@ -145,15 +153,7 @@ export class EngineService {
     [PressedKey.del, ObjectAct.delete]
   ])
 
-  public constructor(
-    private ngZone: NgZone,
-    private userSvc: UserService,
-    private inputSysSvc: InputSystemService,
-    private objSvc: ObjectService,
-    private buildSvc: BuildService,
-    private propAnimSvc: PropAnimationService,
-    private teleportSvc: TeleportService
-  ) {
+  public constructor() {
     this.raycaster.firstHitOnly = true
     effect(() => {
       this.refreshLights(this.maxLights())
@@ -410,6 +410,7 @@ export class EngineService {
     )
 
     chunk.updateMatrix()
+    this.updateLODs()
   }
 
   public setChunksDistance(meters: number) {

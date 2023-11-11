@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, effect} from '@angular/core'
+import {ChangeDetectionStrategy, Component, effect, inject} from '@angular/core'
 import {MatButtonModule} from '@angular/material/button'
 import {MatDialogModule, MatDialogRef} from '@angular/material/dialog'
 import {MatFormFieldModule} from '@angular/material/form-field'
@@ -23,11 +23,10 @@ import {EngineService} from '../../engine/engine.service'
 export class UiSettingsComponent {
   public maxFps: number
   public maxLights: number
+  public dialogRef = inject(MatDialogRef<UiSettingsComponent>)
+  private engineSvc = inject(EngineService)
 
-  constructor(
-    public dialogRef: MatDialogRef<UiSettingsComponent>,
-    private engineSvc: EngineService
-  ) {
+  constructor() {
     effect(() => {
       this.maxFps = this.engineSvc.maxFps()
       this.maxLights = this.engineSvc.maxLights()

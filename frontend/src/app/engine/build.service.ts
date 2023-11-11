@@ -1,5 +1,5 @@
 import type {WritableSignal} from '@angular/core'
-import {Injectable, signal} from '@angular/core'
+import {inject, Injectable, signal} from '@angular/core'
 import {
   AxesHelper,
   BoxGeometry,
@@ -32,14 +32,13 @@ export class BuildService {
     name?: string
     desc?: string
     act?: string
-    date?: any
+    date?: number
   }> = signal({})
   private axesHelper: AxesHelper
   private cellSelection: Group
   private propSelection: Group
   private propSelectionBox: LineSegments
-
-  constructor(private inputSysSvc: InputSystemService) {}
+  private inputSysSvc = inject(InputSystemService)
 
   public selectProp(item: Group, buildNode: Group) {
     if (this.cellSelection != null) {
@@ -124,12 +123,12 @@ export class BuildService {
     }
     switch (action) {
       case ObjectAct.up: {
-        this.selectedProp.translateY(moveStep)
+        this.selectedProp.position.add(new Vector3(0, moveStep, 0))
         this.updatePropSelectionBox()
         break
       }
       case ObjectAct.down: {
-        this.selectedProp.translateY(-moveStep)
+        this.selectedProp.position.add(new Vector3(0, -moveStep, 0))
         this.updatePropSelectionBox()
         break
       }

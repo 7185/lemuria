@@ -18,6 +18,7 @@ import {
   Component,
   effect,
   ElementRef,
+  inject,
   Renderer2,
   signal,
   ViewChild
@@ -104,18 +105,18 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public strFps = '0 FPS'
   public strMem = '0 Geom. 0 Text.'
 
-  public constructor(
-    public dialog: MatDialog,
-    private renderer: Renderer2,
-    private cdRef: ChangeDetectorRef,
-    public socket: SocketService,
-    private engineSvc: EngineService,
-    public worldSvc: WorldService,
-    private http: HttpService,
-    private userSvc: UserService,
-    public teleportSvc: TeleportService,
-    private settings: SettingsService
-  ) {
+  public dialog = inject(MatDialog)
+  public socket = inject(SocketService)
+  public worldSvc = inject(WorldService)
+  public teleportSvc = inject(TeleportService)
+  private renderer = inject(Renderer2)
+  private cdRef = inject(ChangeDetectorRef)
+  private engineSvc = inject(EngineService)
+  private http = inject(HttpService)
+  private userSvc = inject(UserService)
+  private settings = inject(SettingsService)
+
+  public constructor() {
     effect(() => {
       this.userList = this.userSvc.userList()
       this.worldSvc.worldList.forEach((w) => (w.users = 0))

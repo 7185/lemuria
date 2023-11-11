@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component} from '@angular/core'
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import {DatePipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
@@ -61,10 +61,10 @@ export class UiPropEditComponent {
     date?: number
   }>
 
-  public constructor(
-    private buildSvc: BuildService,
-    private objSvc: ObjectService
-  ) {
+  private buildSvc = inject(BuildService)
+  private objSvc = inject(ObjectService)
+
+  public constructor() {
     this.selectedProp = this.buildSvc.selectedPropSignal
   }
 

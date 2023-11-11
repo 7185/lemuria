@@ -6,7 +6,8 @@ import type {OnInit} from '@angular/core'
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  Component
+  Component,
+  inject
 } from '@angular/core'
 import {Subject, takeUntil, take, timeout} from 'rxjs'
 
@@ -40,13 +41,10 @@ export class UiControlsComponent implements OnInit {
 
   public activeKey = [null, null]
 
+  private inputSysSvc = inject(InputSystemService)
+  private cdRef = inject(ChangeDetectorRef)
   private cancel: Subject<boolean>
   private oldKey: string
-
-  constructor(
-    private input: InputSystemService,
-    private cdRef: ChangeDetectorRef
-  ) {}
 
   setKey(key: number, pos: number) {
     if (this.cancel != null) {
@@ -60,7 +58,7 @@ export class UiControlsComponent implements OnInit {
     this.oldKey = this.controlsKeymap[key][pos]
     this.controlsKeymap[key][pos] = 'Press key...'
     this.cancel = new Subject()
-    this.input.keyDownEvent
+    this.inputSysSvc.keyDownEvent
       .pipe(takeUntil(this.cancel), take(1), timeout(5000))
       .subscribe({
         next: (e: KeyboardEvent) => {
@@ -86,7 +84,7 @@ export class UiControlsComponent implements OnInit {
   }
 
   setDefault() {
-    this.input.setDefault()
+    this.inputSysSvc.setDefault()
     this.getKeymap()
   }
 
@@ -95,7 +93,7 @@ export class UiControlsComponent implements OnInit {
     for (const l of this.controlsLabels) {
       const newKeys = [null, null]
       let i = 0
-      for (const k of this.input.getKeyMap()) {
+      for (const k of this.inputSysSvc.getKeyMap()) {
         // only 2 values allowed
         if (k[1] === l[1] && i < 2) {
           newKeys[i] = k[0]
@@ -107,11 +105,13 @@ export class UiControlsComponent implements OnInit {
   }
 
   setKeymap() {
-    this.input.clearKeys()
+    this.inputSysSvc.clearKeys()
     this.controlsKeymap.forEach((keys: string[], index) => {
       keys
         .filter((k) => k !== null)
-        .forEach((k) => this.input.mapKey(k, this.controlsLabels[index][1]))
+        .forEach((k) =>
+          this.inputSysSvc.mapKey(k, this.controlsLabels[index][1])
+        )
     })
   }
 

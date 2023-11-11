@@ -1,4 +1,4 @@
-import {Injectable, signal} from '@angular/core'
+import {inject, Injectable, signal} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import type {Vector3} from 'three'
 import {Subject} from 'rxjs'
@@ -11,7 +11,7 @@ export class UserService {
   public avatarChanged: Subject<User> = new Subject()
   public currentName = 'Anonymous'
 
-  constructor(private http: HttpService) {}
+  private http = inject(HttpService)
 
   public currentUser() {
     return this.http.getLogged()

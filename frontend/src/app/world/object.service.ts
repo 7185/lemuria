@@ -1,5 +1,5 @@
 import {forkJoin, Observable, Subject} from 'rxjs'
-import {computed, effect, Injectable, signal} from '@angular/core'
+import {computed, effect, inject, Injectable, signal} from '@angular/core'
 import {HttpService} from '../network'
 import {AWActionParser} from 'aw-action-parser'
 import {
@@ -67,8 +67,9 @@ export class ObjectService {
   private textureLoader = new TextureLoader()
   private remoteUrl = /.+\..+\/.+/g
   private animatedPictures = []
+  private http = inject(HttpService)
 
-  constructor(private http: HttpService) {
+  constructor() {
     const unknownGeometry = new BufferGeometry()
     const positions = [-0.2, 0, 0, 0.2, 0, 0, 0, 0.2, 0]
     unknownGeometry.setAttribute(

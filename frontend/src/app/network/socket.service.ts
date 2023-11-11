@@ -1,6 +1,6 @@
 import {EngineService} from '../engine/engine.service'
 import {UserService} from '../user'
-import {Injectable} from '@angular/core'
+import {inject, Injectable} from '@angular/core'
 import {interval, Subject} from 'rxjs'
 import type {Subscription} from 'rxjs'
 import {webSocket} from 'rxjs/webSocket'
@@ -19,6 +19,8 @@ export class SocketService {
   public messages: Subject<Message> = new Subject()
   public connected = false
 
+  private engineSvc = inject(EngineService)
+  private userSvc = inject(UserService)
   private connecting = false
   private socket: WebSocketSubject<unknown> = webSocket({
     url: config.url.websocket
@@ -26,11 +28,6 @@ export class SocketService {
   private posTimer: Subscription
   private lastSentPos = [new Vector3(), new Vector3()]
   private lastSentGesture: string = null
-
-  constructor(
-    private engineSvc: EngineService,
-    private userSvc: UserService
-  ) {}
 
   connect() {
     if (this.connected || this.connecting) {

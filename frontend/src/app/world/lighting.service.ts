@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core'
+import {inject, Injectable} from '@angular/core'
 import {AmbientLight, Color, DirectionalLight, Object3D} from 'three'
 import {EngineService} from '../engine/engine.service'
 
@@ -7,8 +7,9 @@ export class LightingService {
   private light: AmbientLight
   private dirLight: DirectionalLight
   private dirLightTargetObj: Object3D
+  private engineSvc = inject(EngineService)
 
-  constructor(private engineSvc: EngineService) {
+  constructor() {
     this.light = new AmbientLight(0xffffff, 2.5)
     this.light.position.z = 100
     this.engineSvc.addWorldObject(this.light)

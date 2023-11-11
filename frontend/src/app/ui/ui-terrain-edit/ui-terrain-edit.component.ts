@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, effect} from '@angular/core'
+import {ChangeDetectionStrategy, Component, effect, inject} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import {DecimalPipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
@@ -50,15 +50,16 @@ export class UiTerrainEditComponent {
     hole?: boolean
   }>
   public height = 0
+  private buildSvc = inject(BuildService)
 
-  constructor(private buildSvc: BuildService) {
+  constructor() {
     this.selectedCell = this.buildSvc.selectedCellSignal
     effect(() => {
       this.height = this.selectedCell().height
     })
   }
 
-  public trigger(event) {
+  public trigger(event: MouseEvent) {
     event.preventDefault()
   }
 }

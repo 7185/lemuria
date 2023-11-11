@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, Inject} from '@angular/core'
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core'
 import {FormsModule} from '@angular/forms'
 import {MatButtonModule} from '@angular/material/button'
 import {MAT_DIALOG_DATA, MatDialogModule} from '@angular/material/dialog'
@@ -27,12 +27,10 @@ export class UiTeleportComponent {
   public coordinates: string
   public name: string
 
-  constructor(
-    @Inject(MAT_DIALOG_DATA) public data: {type: number},
-    private teleportSvc: TeleportService,
-    private settings: SettingsService,
-    private world: WorldService
-  ) {}
+  public data: {type: number} = inject(MAT_DIALOG_DATA)
+  private teleportSvc = inject(TeleportService)
+  private settings = inject(SettingsService)
+  private world = inject(WorldService)
 
   go() {
     this.teleportSvc.teleport.set({

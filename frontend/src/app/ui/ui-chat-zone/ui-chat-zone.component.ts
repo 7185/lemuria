@@ -1,4 +1,9 @@
-import {ChangeDetectionStrategy, Component, ViewChild} from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  ViewChild
+} from '@angular/core'
 import {NgStyle} from '@angular/common'
 import {FormsModule} from '@angular/forms'
 import {MatButtonModule} from '@angular/material/button'
@@ -36,16 +41,13 @@ export class UiChatZoneComponent implements OnInit {
   @ViewChild(VirtualScrollerComponent)
   private virtualScroller: VirtualScrollerComponent
 
+  public socket = inject(SocketService)
+  public usrSvc = inject(UserService)
   public faComments = faComments
   public data = []
   public message = ''
   public chatActive = false
   public colors = {}
-
-  public constructor(
-    public socket: SocketService,
-    public usrSvc: UserService
-  ) {}
 
   public activeChat() {
     this.chatActive = !this.chatActive

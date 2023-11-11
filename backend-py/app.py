@@ -36,7 +36,7 @@ async def index():
 @app.route('/<path:path>')
 async def static_path(path):
     """Static files"""
-    return await send_from_directory('static', path)
+    return await send_from_directory(config['STATIC_PATH'], path)
 
 @app.websocket('/api/v1/ws')
 async def wsocket():

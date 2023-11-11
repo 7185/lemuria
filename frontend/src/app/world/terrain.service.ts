@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core'
+import {inject, Injectable} from '@angular/core'
 import {
   BufferAttribute,
   Color,
@@ -21,6 +21,9 @@ import {TERRAIN_PAGE_SIZE, Utils} from '../utils'
 export class TerrainService {
   public terrain: Group
   public water: Group
+  private engineSvc = inject(EngineService)
+  private httpSvc = inject(HttpService)
+  private objSvc = inject(ObjectService)
   private textureLoader = new TextureLoader()
   private terrainMaterials = []
   private waterBottomGeom: PlaneGeometry
@@ -29,12 +32,6 @@ export class TerrainService {
   private waterTopMaterials = []
   private worldId = 0
   private loadingPages = new Set()
-
-  constructor(
-    private engineSvc: EngineService,
-    private httpSvc: HttpService,
-    private objSvc: ObjectService
-  ) {}
 
   public setWater(water: {
     enabled?: boolean

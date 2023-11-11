@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core'
+import {inject, Injectable} from '@angular/core'
 import {fromEvent} from 'rxjs'
 import {filter, tap} from 'rxjs/operators'
 import {SettingsService} from '../settings/settings.service'
@@ -80,8 +80,9 @@ export class InputSystemService {
   ])
 
   private keyMap: Map<string, PressedKey>
+  private settings = inject(SettingsService)
 
-  constructor(private settings: SettingsService) {
+  constructor() {
     const savedKeyMap = this.settings.get('keymap')
     this.keyMap =
       savedKeyMap != null ? new Map(savedKeyMap) : new Map(this.defaultKeymap)

@@ -13,7 +13,7 @@ import {SocketService} from '../network/socket.service'
 import {AvatarAnimationService} from '../animation'
 import type {AvatarAnimationManager} from '../animation'
 import {HttpService} from '../network'
-import {Injectable, effect, signal} from '@angular/core'
+import {inject, Injectable, effect, signal} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import {config} from '../app.config'
 import {
@@ -54,6 +54,18 @@ export class WorldService {
   public skyWest: WritableSignal<string>
   public skyBottom: WritableSignal<string>
 
+  private engineSvc = inject(EngineService)
+  private lightingSvc = inject(LightingService)
+  private terrainSvc = inject(TerrainService)
+  private userSvc = inject(UserService)
+  private objSvc = inject(ObjectService)
+  private anmSvc = inject(AvatarAnimationService)
+  private httpSvc = inject(HttpService)
+  private settings = inject(SettingsService)
+  private socket = inject(SocketService)
+  private teleportSvc = inject(TeleportService)
+  private buildSvc = inject(BuildService)
+
   private worldName = 'Nowhere'
   private avatar: Group
   private lastChunk = null
@@ -70,19 +82,7 @@ export class WorldService {
   private uAvatarListener: Subscription
   private avatarListener: Subscription
 
-  constructor(
-    private engineSvc: EngineService,
-    private lightingSvc: LightingService,
-    private terrainSvc: TerrainService,
-    private userSvc: UserService,
-    private objSvc: ObjectService,
-    private anmSvc: AvatarAnimationService,
-    private httpSvc: HttpService,
-    private settings: SettingsService,
-    private socket: SocketService,
-    private teleportSvc: TeleportService,
-    private buildSvc: BuildService
-  ) {
+  constructor() {
     this.skyTop = signal(Utils.colorHexToStr(0))
     this.skyNorth = signal(Utils.colorHexToStr(0))
     this.skyEast = signal(Utils.colorHexToStr(0))
