@@ -1,4 +1,4 @@
-export const config: any = {
+export const environment = {
   url: {
     websocket: 'ws://localhost:8080/api/v1/ws',
     server: 'http://localhost:8080/api/v1',
@@ -26,5 +26,5 @@ export const config: any = {
       maxNbSteps: 30
     }
   },
-  debug: false
+  debug: true
 }

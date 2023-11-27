@@ -15,7 +15,7 @@ import type {AvatarAnimationManager} from '../animation'
 import {HttpService} from '../network'
 import {inject, Injectable, effect, signal} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
-import {config} from '../app.config'
+import {environment} from '../../environments/environment'
 import {
   Euler,
   Mesh,
@@ -70,14 +70,14 @@ export class WorldService {
   private avatar: Group
   private lastChunk = null
 
-  private chunkWidth: number = config.world.chunk.width // in cm
-  private chunkDepth: number = config.world.chunk.depth // in cm
+  private chunkWidth: number = environment.world.chunk.width // in cm
+  private chunkDepth: number = environment.world.chunk.depth // in cm
   private chunkMap: Map<number, Set<number>>
   private chunkLoadingLayout = []
-  private chunkLoadCircular: boolean = config.world.chunk.loadCircular
-  private chunkLoadRadius: number = config.world.chunk.loadRadius
+  private chunkLoadCircular: boolean = environment.world.chunk.loadCircular
+  private chunkLoadRadius: number = environment.world.chunk.loadRadius
 
-  private maxLodDistance: number = config.world.lod.maxDistance
+  private maxLodDistance: number = environment.world.lod.maxDistance
 
   private uAvatarListener: Subscription
   private avatarListener: Subscription
@@ -353,8 +353,7 @@ export class WorldService {
     if (skybox) {
       this.objSvc.loadProp(skybox, true).subscribe((s) => {
         const skyboxRwx = s.clone()
-        const box = new Box3()
-        box.setFromObject(skyboxRwx)
+        const box = new Box3().setFromObject(skyboxRwx)
         const center = box.getCenter(new Vector3())
         skyboxRwx.position.set(0, -center.y, 0)
         skyboxGroup.add(skyboxRwx)
@@ -391,8 +390,7 @@ export class WorldService {
         })
       }
     })
-    const box = new Box3()
-    box.setFromObject(g)
+    const box = new Box3().setFromObject(g)
     const center = box.getCenter(new Vector3())
     g.userData.box = {
       x: box.max.x - box.min.x,
@@ -416,7 +414,7 @@ export class WorldService {
     return g
   }
 
-  private setAvatar(
+  private async setAvatar(
     name: string,
     animationMgr: Promise<AvatarAnimationManager>,
     group: Group
@@ -426,19 +424,18 @@ export class WorldService {
       return
     }
     name = Utils.modelName(name)
-    this.objSvc.loadAvatar(name).subscribe((o) => {
+    this.objSvc.loadAvatar(name).subscribe(async (o) => {
       this.engineSvc.disposeMaterial(group)
       this.engineSvc.disposeGeometry(group)
       group.clear()
       o.rotation.copy(new Euler(0, Math.PI, 0))
       group.add(o.clone())
-      const box = new Box3()
-      box.setFromObject(group)
+      const box = new Box3().setFromObject(group)
       group.userData.height = box.max.y - box.min.y
       group.userData.offsetY = group.position.y - box.min.y
-      group.userData.animationPlayer = animationMgr.then((mgr) =>
-        mgr.spawnAnimationPlayer(group)
-      )
+      group.userData.animationPlayer = (
+        await animationMgr
+      ).spawnAnimationPlayer(group)
       if (group.name === 'avatar') {
         this.engineSvc.setCameraOffset(group.userData.height * 0.9)
         this.engineSvc.updateBoundingBox()
@@ -472,7 +469,7 @@ export class WorldService {
   // this method is to be called on each position change to update the state of chunks if needed
   private autoUpdateChunks(pos: Vector3) {
     const [chunkX, chunkZ] = this.getChunkTile(pos)
-    this.engineSvc.setChunkTile(chunkX, chunkZ)
+    this.engineSvc.currentChunk = [chunkX, chunkZ]
 
     // Do nothing if the current chunk didn't change or if we're nowhere
     if (

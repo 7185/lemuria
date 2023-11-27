@@ -1,4 +1,4 @@
-import {Injectable, effect} from '@angular/core'
+import {Injectable, effect, inject} from '@angular/core'
 import parseSequence, {FileType, getJointTag} from 'aw-sequence-parser'
 import {EngineService} from '../engine/engine.service'
 import {ObjectService} from '../world/object.service'
@@ -89,31 +89,32 @@ export class AvatarAnimationService {
     fflate
   }
   private frameRate = 60
+  private engineSvc = inject(EngineService)
+  private objSvc = inject(ObjectService)
 
-  constructor(
-    private engineSvc: EngineService,
-    private objSvc: ObjectService
-  ) {
+  constructor() {
     effect(() => {
       this.setFrameRate(this.engineSvc.maxFps())
     })
   }
 
-  public loadSequence(name: string, uri: string) {
-    if (this.sequences.get(name) !== undefined) {
+  public async loadSequence(name: string, uri: string) {
+    if (this.sequences.has(name)) {
       return this.sequences.get(name)
-    } else {
-      const promise = parseSequence(uri, this.sequenceParserOpts)
-        .then(async (seq: ParsedSequence) =>
-          this.toThreeAndInterpolate(seq, this.frameRate)
-        )
-        .catch((_) => {
-          // This sequence name is considered invalid, so keeping a null entry in the registry map
-          // ensures us the service won't try to load it each time it is referenced
-          this.sequences.set(name, null)
-        })
-      this.sequences.set(name, promise)
-      return promise
+    }
+    try {
+      const seq: ParsedSequence = await parseSequence(
+        uri,
+        this.sequenceParserOpts
+      )
+      const parsedSeq = this.interpolate(this.toThree(seq))
+      this.sequences.set(name, Promise.resolve(parsedSeq))
+      return parsedSeq
+    } catch (e) {
+      // This sequence name is considered invalid, so keeping a null entry in the registry map
+      // ensures the service won't try to load it each time it is referenced
+      this.sequences.set(name, null)
+      return null
     }
   }
 
@@ -123,21 +124,20 @@ export class AvatarAnimationService {
     explicit: Map<string, string>,
     extension = '.zip'
   ) {
-    if (this.avatarAnimationManagers.get(name) !== undefined) {
+    if (this.avatarAnimationManagers.has(name)) {
       return this.avatarAnimationManagers.get(name)
-    } else {
-      const mgrPromise = this.loadAvatarAnimationManager(
-        name,
-        implicit,
-        explicit,
-        extension
-      )
-      this.avatarAnimationManagers.set(name, mgrPromise)
-      return mgrPromise
     }
+    const mgrPromise = this.loadAvatarAnimationManager(
+      name,
+      implicit,
+      explicit,
+      extension
+    )
+    this.avatarAnimationManagers.set(name, mgrPromise)
+    return mgrPromise
   }
 
-  public setFrameRate(frameRate: number) {
+  public async setFrameRate(frameRate: number) {
     this.frameRate = frameRate
 
     if (!this.sequences) {
@@ -146,16 +146,15 @@ export class AvatarAnimationService {
 
     /* Update existing sequences */
     for (const entry of this.sequences) {
-      entry[1].then((seq) => {
-        if (seq.frameRate > frameRate) {
-          return
-        }
+      const seq = await entry[1]
+      if (seq.frameRate > frameRate) {
+        return
+      }
 
-        const newSeq = this.toThreeAndInterpolate(seq.original, frameRate)
-        seq.frames = newSeq.frames
-        seq.frameRate = newSeq.frameRate
-        seq.keyFrameIDs = newSeq.keyFrameIDs
-      })
+      const newSeq = this.interpolate(this.toThree(seq.original))
+      seq.frames = newSeq.frames
+      seq.frameRate = newSeq.frameRate
+      seq.keyFrameIDs = newSeq.keyFrameIDs
     }
   }
 
@@ -204,24 +203,15 @@ export class AvatarAnimationService {
     )
   }
 
-  private toThreeAndInterpolate(
-    sequence: ParsedSequence,
-    targetFrameRate = 30
-  ): ThreeSequence {
-    return this.interpolate(
-      this.maybeUpscale(this.toThree(sequence), targetFrameRate)
-    )
-  }
-
   private toThree(sequence: ParsedSequence): ThreeSequence {
-    const threeFrames: ThreeSequence['frames'] = []
     const keyFrameIDs: number[] = []
     const rootJointTag: number = getJointTag(sequence.rootJointName) || 1
     const nbFrames: number = sequence.totalNFrames
 
-    for (let i = 0; i < nbFrames; i++) {
-      threeFrames.push({joints: {}, location: new Vector3()})
-    }
+    const threeFrames: ThreeSequence['frames'] = Array.from(
+      {length: nbFrames},
+      () => ({joints: {}, location: new Vector3()})
+    )
 
     for (const [frameId, frame] of Object.entries(sequence.frames)) {
       if (frame === undefined) {
@@ -257,46 +247,36 @@ export class AvatarAnimationService {
     }
   }
 
-  private maybeUpscale(sequence: ThreeSequence, targetFrameRate: number) {
-    if (sequence.frameRate >= targetFrameRate) {
-      return sequence
+  private interpolate(sequence: ThreeSequence): ThreeSequence {
+    // Upscale if needed
+    if (sequence.frameRate < this.frameRate) {
+      const ratio = this.frameRate / sequence.frameRate
+      const threeFrames = Array.from(
+        {length: Math.floor(sequence.frames.length * ratio)},
+        () => ({joints: {}, location: new Vector3()})
+      )
+
+      const keyFrameIDs = sequence.keyFrameIDs.map((id) =>
+        Math.floor(id * ratio)
+      )
+      keyFrameIDs.forEach((id, index) => {
+        threeFrames[id] = sequence.frames[sequence.keyFrameIDs[index]]
+      })
+
+      sequence.frameRate = this.frameRate
+      sequence.frames = threeFrames
+      sequence.keyFrameIDs = keyFrameIDs
     }
 
-    const ratio = targetFrameRate / sequence.frameRate
-    const threeFrames = []
-    const keyFrameIDs = []
-
-    for (let i = 0; i < sequence.frames.length * ratio; i++) {
-      threeFrames.push({joints: {}, location: new Vector3()})
-    }
-
-    sequence.keyFrameIDs.forEach((id) => {
-      const newId = Math.floor(id * ratio)
-      keyFrameIDs.push(newId)
-      threeFrames[newId] = sequence.frames[id]
-    })
-
-    return {
-      original: sequence.original,
-      frameRate: targetFrameRate,
-      frames: threeFrames,
-      rootJointTag: sequence.rootJointTag,
-      keyFrameIDs
-    }
-  }
-
-  private interpolate(threeSeq: ThreeSequence): ThreeSequence {
     // Fill the gap between each key frame (if any)
-    const {keyFrameIDs} = threeSeq
-
-    for (let i = 0; i < keyFrameIDs.length - 1; i++) {
+    for (let i = 0; i < sequence.keyFrameIDs.length - 1; i++) {
       interpolateThreeFrames(
-        threeSeq.frames,
-        keyFrameIDs[i],
-        keyFrameIDs[i + 1]
+        sequence.frames,
+        sequence.keyFrameIDs[i],
+        sequence.keyFrameIDs[i + 1]
       )
     }
 
-    return threeSeq
+    return sequence
   }
 }

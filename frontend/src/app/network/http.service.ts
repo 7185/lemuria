@@ -4,13 +4,13 @@ import {Injectable} from '@angular/core'
 import {HttpClient, HttpHandler} from '@angular/common/http'
 import type {HttpResponse} from '@angular/common/http'
 import {Router} from '@angular/router'
-import {config} from '../app.config'
+import {environment} from '../../environments/environment'
 import {User} from '../user'
 import {catchError, tap, map} from 'rxjs/operators'
 
 @Injectable({providedIn: 'root'})
 export class HttpService extends HttpClient {
-  private baseUrl = config.url.server
+  private baseUrl = environment.url.server
   private userLogged: BehaviorSubject<User> = new BehaviorSubject<User>(
     new User()
   )

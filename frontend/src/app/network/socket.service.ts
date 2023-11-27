@@ -6,7 +6,7 @@ import type {Subscription} from 'rxjs'
 import {webSocket} from 'rxjs/webSocket'
 import type {WebSocketSubject} from 'rxjs/webSocket'
 import {Vector3} from 'three'
-import {config} from '../app.config'
+import {environment} from '../../environments/environment'
 
 interface Message {
   type: string
@@ -23,7 +23,7 @@ export class SocketService {
   private userSvc = inject(UserService)
   private connecting = false
   private socket: WebSocketSubject<unknown> = webSocket({
-    url: config.url.websocket
+    url: environment.url.websocket
   })
   private posTimer: Subscription
   private lastSentPos = [new Vector3(), new Vector3()]

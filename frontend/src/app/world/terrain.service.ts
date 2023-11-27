@@ -10,7 +10,11 @@ import {
   SRGBColorSpace,
   TextureLoader
 } from 'three'
-import {acceleratedRaycast} from 'three-mesh-bvh'
+import {
+  acceleratedRaycast,
+  computeBoundsTree,
+  disposeBoundsTree
+} from 'three-mesh-bvh'
 import {PlayerCollider} from '../engine/player-collider'
 import {EngineService} from '../engine/engine.service'
 import {ObjectService} from './object.service'
@@ -263,6 +267,8 @@ export class TerrainService {
         currTexture
       )
       geometry.computeVertexNormals()
+      geometry.computeBoundsTree = computeBoundsTree
+      geometry.disposeBoundsTree = disposeBoundsTree
 
       const terrainMesh = new Mesh(geometry, this.terrainMaterials)
       // Overwrite raycast to use BVH

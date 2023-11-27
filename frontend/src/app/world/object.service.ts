@@ -24,7 +24,7 @@ import RWXLoader, {
   signTag as SIGN_TAG
 } from 'three-rwx-loader'
 import * as fflate from 'fflate'
-import {config} from '../app.config'
+import {environment} from '../../environments/environment'
 import {TextCanvas, Utils} from '../utils'
 
 // can't be const (angular#25963)
@@ -280,7 +280,7 @@ export class ObjectService {
 
   makePicture(item: Group, url: string) {
     url = this.remoteUrl.exec(url)
-      ? `${config.url.imgProxy}${url}`
+      ? `${environment.url.imgProxy}${url}`
       : `${this.resPath()}/${url}`
     this.textureLoader.load(url, (picture) => {
       picture.colorSpace = SRGBColorSpace

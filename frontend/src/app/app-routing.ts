@@ -1,19 +1,18 @@
 import type {Routes} from '@angular/router'
-import {AuthGuard} from './auth/auth.guard.service'
+import {AuthGuard} from './auth/auth.guard'
 
 export const APP_ROUTES: Routes = [
   {
     path: 'login',
     title: 'Lemuria | Sign in',
-    loadComponent: () =>
-      import('./auth/auth.component').then((mod) => mod.AuthComponent)
+    loadComponent: async () =>
+      (await import('./auth/auth.component')).AuthComponent
   },
   {
     path: '',
     title: 'Lemuria',
     canActivate: [AuthGuard],
-    loadComponent: () =>
-      import('./ui/ui.component').then((mod) => mod.UiComponent)
+    loadComponent: async () => (await import('./ui/ui.component')).UiComponent
   },
   {
     path: '**',

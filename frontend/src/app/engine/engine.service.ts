@@ -33,15 +33,15 @@ import {ObjectAct, ObjectService} from '../world/object.service'
 import {PropAnimationService} from '../animation'
 import type {AvatarAnimationPlayer} from '../animation'
 import {PressedKey, InputSystemService} from './inputsystem.service'
-import {config} from '../app.config'
+import {environment} from '../../environments/environment'
 import {PlayerCollider} from './player-collider'
 import {DEG, TERRAIN_PAGE_SIZE, Utils} from '../utils'
 
-const playerBoxSide = config.world.collider.boxSide
-const playerClimbHeight = config.world.collider.climbHeight
-const playerGroundAdjust = config.world.collider.groundAdjust
-const playerMaxStepLength = config.world.collider.maxStepLength
-const playerMaxNbSteps = config.world.collider.maxNbSteps
+const playerBoxSide = environment.world.collider.boxSide
+const playerClimbHeight = environment.world.collider.climbHeight
+const playerGroundAdjust = environment.world.collider.groundAdjust
+const playerMaxStepLength = environment.world.collider.maxStepLength
+const playerMaxNbSteps = environment.world.collider.maxNbSteps
 
 // This defines which chunks (offset from the current chunk we sit in) we will
 // query for collisions for each player movement step
@@ -131,7 +131,7 @@ export class EngineService {
   private mouseIdle = 0
   private labelDesc: HTMLDivElement
 
-  private chunkTile = [0, 0]
+  private chunkTile: [number, number] = [0, 0]
 
   private keyActionMap = new Map([
     [PressedKey.moveFwd, ObjectAct.forward],
@@ -197,7 +197,8 @@ export class EngineService {
     this.renderer.shadowMap.enabled = false
     this.renderer.outputColorSpace = SRGBColorSpace
     this.renderer.autoClear = false
-    if (!config.debug) {
+    this.renderer.info.autoReset = false
+    if (!environment.debug) {
       this.renderer.debug.checkShaderErrors = false
     }
     this.labelRenderer = new CSS2DRenderer({element: this.labelZone})
@@ -292,7 +293,7 @@ export class EngineService {
     const {position} = this.player
     this.playerCollider = new PlayerCollider(boxHeight, position)
 
-    if (!config.debug) {
+    if (!environment.debug) {
       return
     }
 
@@ -364,6 +365,14 @@ export class EngineService {
 
   public get state(): string {
     return this.userState
+  }
+
+  public set currentChunk(tile: [number, number]) {
+    this.chunkTile = tile
+  }
+
+  public get currentChunk(): [number, number] {
+    return this.chunkTile
   }
 
   public updateFog(inWater = this.inWater()) {
@@ -565,8 +574,8 @@ export class EngineService {
     return this.usersNode.children as Group[]
   }
 
-  public getMemInfo() {
-    return this.renderer.info.memory
+  public getMemInfo(): [{geometries: number; textures: number}, number] {
+    return [this.renderer.info.memory, this.renderer.info.render.calls]
   }
 
   public animate(): void {
@@ -689,10 +698,6 @@ export class EngineService {
     return this.objectsNode.children as LOD[]
   }
 
-  public setChunkTile(chunkX: number, chunkZ: number) {
-    this.chunkTile = [chunkX, chunkZ]
-  }
-
   public resetChunkLODMap() {
     this.chunkLODMap.clear()
   }
@@ -701,7 +706,9 @@ export class EngineService {
     return nearestChunkPattern
       .map((offset) =>
         this.chunkLODMap.get(
-          `${this.chunkTile[0] + offset.x}_${this.chunkTile[1] + offset.z}`
+          `${this.currentChunk[0] + offset.x}_${
+            this.currentChunk[1] + offset.z
+          }`
         )
       )
       .filter((lod) => lod !== undefined)
@@ -747,6 +754,7 @@ export class EngineService {
     this.deltaSinceLastFrame = this.deltaFps
     this.deltaFps = (this.deltaFps % 1) / this.maxFps()
     this.renderer.clear()
+    this.renderer.info.reset()
     this.renderer.render(this.scene, this.activeCamera)
     this.labelRenderer.render(this.scene, this.activeCamera)
     // Render build scene last
@@ -1007,7 +1015,7 @@ export class EngineService {
     return true
   }
 
-  private updatePlayerPosition() {
+  private async updatePlayerPosition() {
     this.playerVelocity.y =
       this.playerOnFloor && !this.flyMode
         ? 0
@@ -1023,39 +1031,37 @@ export class EngineService {
     const oldPosition = this.player.position.clone()
     const newPosition = oldPosition.clone().add(deltaPosition)
 
-    this.avatar.userData.animationPlayer?.then(
-      (animation: AvatarAnimationPlayer) => {
-        const velocity = this.playerVelocity.length()
+    const animation: Promise<AvatarAnimationPlayer> =
+      this.avatar.userData.animationPlayer
+    const velocity = this.inputSysSvc.controls[PressedKey.moveBck]
+      ? -this.playerVelocity.length()
+      : this.playerVelocity.length()
 
-        this.userState = 'idle'
+    this.userState = 'idle'
 
-        if (this.inWater()) {
-          this.userState = Math.abs(velocity) > 0.5 ? 'swim' : 'float'
-        } else if (this.flyMode) {
-          this.userState = Math.abs(velocity) > 0.5 ? 'fly' : 'hover'
-        } else if (this.playerVelocity.y < 0) {
-          this.userState = 'fall'
-        } else if (Math.abs(velocity) > 5.5) {
-          this.userState = 'run'
-        } else if (Math.abs(velocity) > 0.1) {
-          this.userState = 'walk'
-        }
+    if (this.inWater()) {
+      this.userState = Math.abs(velocity) > 0.5 ? 'swim' : 'float'
+    } else if (this.flyMode) {
+      this.userState = Math.abs(velocity) > 0.5 ? 'fly' : 'hover'
+    } else if (this.playerVelocity.y < 0) {
+      this.userState = 'fall'
+    } else if (Math.abs(velocity) > 5.5) {
+      this.userState = 'run'
+    } else if (Math.abs(velocity) > 0.1) {
+      this.userState = 'walk'
+    }
 
-        const gestureVelocity = this.inputSysSvc.controls[PressedKey.moveBck]
-          ? -velocity
-          : velocity
-
-        // When applicable: reset gesture on completion
-        this.userGesture = animation.animate(
-          this.deltaSinceLastFrame,
-          this.userState,
-          this.userGesture,
-          gestureVelocity
-        )
-          ? null
-          : this.userGesture
-      }
-    )
+    // When applicable: reset gesture on completion
+    if (
+      (await animation)?.animate(
+        this.deltaSinceLastFrame,
+        this.userState,
+        this.userGesture,
+        velocity
+      )
+    ) {
+      this.userGesture = null
+    }
 
     if (!this.inputSysSvc.controls[PressedKey.clip] && this.playerCollider) {
       let deltaLength = deltaPosition.length()
@@ -1316,67 +1322,56 @@ export class EngineService {
     }
   }
 
-  private moveUsers() {
-    this.userSvc
-      .userList()
-      .filter((u) => this.usersNode.getObjectByName(u.id))
-      .forEach((u) => {
-        const user = this.usersNode.getObjectByName(u.id)
-        u.completion = Math.min(
-          1,
-          u.completion + this.deltaSinceLastFrame / 0.2
+  private async moveUsers() {
+    for (const u of this.userSvc.userList()) {
+      const user = this.usersNode.getObjectByName(u.id)
+      if (user == null) {
+        continue
+      }
+      u.completion = Math.min(1, u.completion + this.deltaSinceLastFrame / 0.2)
+      const previousPos = user.position.clone()
+      user.position.x = u.oldX + (u.x - u.oldX) * u.completion
+      user.position.y = u.oldY + (u.y - u.oldY) * u.completion
+      if (user.userData.offsetY != null) {
+        // when the avatar is not loaded yet, the position should not be corrected
+        user.position.y += user.userData.offsetY
+      }
+      user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
+      user.rotation.set(
+        u.oldRoll + Utils.shortestAngle(u.oldRoll, u.roll) * u.completion,
+        u.oldYaw + Utils.shortestAngle(u.oldYaw, u.yaw) * u.completion,
+        0,
+        'YZX'
+      )
+      const animation: Promise<AvatarAnimationPlayer> =
+        user.userData.animationPlayer
+      // Velocity is 0 if completion is done
+      const velocity =
+        u.completion < 1
+          ? previousPos.distanceTo(user.position) / this.deltaSinceLastFrame
+          : 0
+      // Disable gesture if animation is complete
+      if (
+        (await animation)?.animate(
+          this.deltaSinceLastFrame,
+          u.state,
+          u.gesture,
+          velocity
         )
-        const previousPos = user.position.clone()
-        user.position.x = u.oldX + (u.x - u.oldX) * u.completion
-        user.position.y = u.oldY + (u.y - u.oldY) * u.completion
-        if (user.userData.offsetY != null) {
-          // when the avatar is not loaded yet, the position should not be corrected
-          user.position.y += user.userData.offsetY
-        }
-        user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
-        user.rotation.set(
-          u.oldRoll + Utils.shortestAngle(u.oldRoll, u.roll) * u.completion,
-          u.oldYaw + Utils.shortestAngle(u.oldYaw, u.yaw) * u.completion,
-          0,
-          'YZX'
-        )
-        user.userData.animationPlayer?.then(
-          (animation: AvatarAnimationPlayer) => {
-            const velocity =
-              previousPos.distanceTo(user.position) / this.deltaSinceLastFrame
-            if (u.completion < 1) {
-              // When applicable: reset gesture on completion
-              u.gesture = animation.animate(
-                this.deltaSinceLastFrame,
-                u.state,
-                u.gesture,
-                velocity
-              )
-                ? null
-                : u.gesture
-            } else {
-              // Same here: reset gesture on completion
-              u.gesture = animation.animate(
-                this.deltaSinceLastFrame,
-                u.state,
-                u.gesture
-              )
-                ? null
-                : u.gesture
-            }
-          }
-        )
-        // Labels
-        const div = this.labelMap.get(user.name)
-        if (div == null) {
-          return
-        }
-        div.position.copy(user.position)
-        div.position.y +=
-          user.userData.height > 1.1
-            ? user.userData.height / 2
-            : user.userData.height
-      })
+      ) {
+        u.gesture = null
+      }
+      // Labels
+      const div = this.labelMap.get(user.name)
+      if (div == null) {
+        return
+      }
+      div.position.copy(user.position)
+      div.position.y +=
+        user.userData.height > 1.1
+          ? user.userData.height / 2
+          : user.userData.height
+    }
   }
 
   private rotateSprites() {

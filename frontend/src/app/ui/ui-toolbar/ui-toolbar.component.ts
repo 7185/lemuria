@@ -26,7 +26,7 @@ import {
 import type {AfterViewInit, OnInit} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import type {User} from '../../user'
-import {config} from '../../app.config'
+import {environment} from '../../../environments/environment'
 import {Vector3} from 'three'
 import {distinctUntilChanged, throttleTime} from 'rxjs'
 import {Utils} from '../../utils'
@@ -90,7 +90,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public faUsers = faUsers
   public faVideo = faVideo
 
-  public debug = config.debug
+  public debug = environment.debug
   public cameraType = 0
   public name = 'Anonymous'
   public home = {world: null, position: null, isNew: true}
@@ -99,10 +99,10 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   public avatarId = 0
   public userList: User[] = []
   public visibilityList = new Array(11).fill(40).map((n, i) => n + i * 20)
-  public visibility = config.world.lod.maxDistance
+  public visibility = environment.world.lod.maxDistance
   public strPos: string
   public strAlt: string
-  public strFps = '0 FPS'
+  public strFps = '0 FPS 0 draws'
   public strMem = '0 Geom. 0 Text.'
 
   public dialog = inject(MatDialog)
@@ -162,41 +162,39 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.http.logout().subscribe()
   }
 
-  public openSettings() {
-    import('../ui-settings/ui-settings.component').then(
-      ({UiSettingsComponent}) => {
-        this.dialog.open(UiSettingsComponent, {hasBackdrop: true})
-      }
+  public async openSettings() {
+    this.dialog.open(
+      (await import('../ui-settings/ui-settings.component'))
+        .UiSettingsComponent,
+      {hasBackdrop: true}
     )
   }
 
-  public openControls() {
-    import('../ui-controls/ui-controls.component').then(
-      ({UiControlsComponent}) => {
-        this.dialog.open(UiControlsComponent, {hasBackdrop: true})
-      }
+  public async openControls() {
+    this.dialog.open(
+      (await import('../ui-controls/ui-controls.component'))
+        .UiControlsComponent,
+      {hasBackdrop: true}
     )
   }
 
-  public openTeleport(type = 0) {
+  public async openTeleport(type = 0) {
     if (type === 1 && !this.socket.connected) {
       return
     }
-    import('../ui-teleport/ui-teleport.component').then(
-      ({UiTeleportComponent}) => {
-        this.dialog.open(UiTeleportComponent, {hasBackdrop: true, data: {type}})
-      }
+
+    this.dialog.open(
+      (await import('../ui-teleport/ui-teleport.component'))
+        .UiTeleportComponent,
+      {hasBackdrop: true, data: {type}}
     )
   }
 
-  public openWorldAttribs() {
-    import('../ui-world-attribs/ui-world-attribs.component').then(
-      ({UiWorldAttribsComponent}) => {
-        this.dialog.open(UiWorldAttribsComponent, {
-          hasBackdrop: true,
-          minWidth: 480
-        })
-      }
+  public async openWorldAttribs() {
+    this.dialog.open(
+      (await import('../ui-world-attribs/ui-world-attribs.component'))
+        .UiWorldAttribsComponent,
+      {hasBackdrop: true, minWidth: 480}
     )
   }
 
@@ -281,8 +279,8 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     if (this.debug) {
       this.engineSvc.fpsSub.pipe(throttleTime(1000)).subscribe((fps) => {
         const memInfo = this.engineSvc.getMemInfo()
-        this.strFps = `${fps} FPS`
-        this.strMem = `${memInfo.geometries} Geom. ${memInfo.textures} Text.`
+        this.strFps = `${fps} FPS ${memInfo[1]} draws`
+        this.strMem = `${memInfo[0].geometries} Geom. ${memInfo[0].textures} Text.`
       })
     }
   }

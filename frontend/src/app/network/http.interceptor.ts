@@ -3,10 +3,10 @@ import {HttpErrorResponse, HttpHeaders} from '@angular/common/http'
 import type {HttpInterceptorFn, HttpResponse} from '@angular/common/http'
 import {HttpService} from './http.service'
 import {EMPTY, throwError} from 'rxjs'
-import {config} from '../app.config'
+import {environment} from '../../environments/environment'
 import {catchError, mergeMap} from 'rxjs/operators'
 
-const authUrl = `${config.url.server}/auth`
+const authUrl = `${environment.url.server}/auth`
 
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const http: HttpService = inject(HttpService)
@@ -38,7 +38,7 @@ const renewCookie = (http: HttpService) => {
   http.expiration = Math.floor(new Date().getTime() / 1000) + 36000
   const headers = new HttpHeaders().set(
     'X-CSRF-TOKEN',
-    HttpService.getCookie(config.csrf.renew)
+    HttpService.getCookie(environment.csrf.renew)
   )
   return http.post(`${authUrl}/renew`, null, {headers}).pipe(
     catchError((refreshError: HttpResponse<unknown>) => {

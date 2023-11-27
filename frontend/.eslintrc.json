@@ -95,10 +95,7 @@
       ],
       "extends": [
         "plugin:@angular-eslint/template/recommended"
-      ],
-      "rules": {
-        "@angular-eslint/template/no-call-expression": "warn"
-      }
+      ]
     }
   ]
 }

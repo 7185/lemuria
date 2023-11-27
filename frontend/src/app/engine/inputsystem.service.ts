@@ -83,9 +83,7 @@ export class InputSystemService {
   private settings = inject(SettingsService)
 
   constructor() {
-    const savedKeyMap = this.settings.get('keymap')
-    this.keyMap =
-      savedKeyMap != null ? new Map(savedKeyMap) : new Map(this.defaultKeymap)
+    this.keyMap = new Map(this.settings.get('keymap') ?? this.defaultKeymap)
   }
 
   public clearKeys() {

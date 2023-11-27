@@ -1,11 +1,17 @@
 import {Vector3, Box3, Ray} from 'three'
 import type {Group, Mesh, Object3D, Triangle} from 'three'
 import {flattenGroup} from 'three-rwx-loader'
-import {MeshBVH, MeshBVHVisualizer} from 'three-mesh-bvh'
-import {config} from '../app.config'
+import {
+  MeshBVH,
+  MeshBVHVisualizer,
+  acceleratedRaycast,
+  computeBoundsTree,
+  disposeBoundsTree
+} from 'three-mesh-bvh'
+import {environment} from '../../environments/environment'
 
-const playerHalfSide = config.world.collider.boxSide / 2
-const playerClimbHeight = config.world.collider.climbHeight
+const playerHalfSide = environment.world.collider.boxSide / 2
+const playerClimbHeight = environment.world.collider.climbHeight
 
 export class PlayerCollider {
   public boxHeight: number
@@ -74,6 +80,9 @@ export class PlayerCollider {
       chunk.parent.visible = true
       return
     }
+    bvhMesh.geometry.computeBoundsTree = computeBoundsTree
+    bvhMesh.geometry.disposeBoundsTree = disposeBoundsTree
+    bvhMesh.raycast = acceleratedRaycast
     chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
       onProgress: (progress: number) => {
         chunk.parent.visible = progress === 1
@@ -93,7 +102,7 @@ export class PlayerCollider {
     }
     // Clone the geometry to avoid messed up faces
     terrainMesh.geometry.boundsTree = new MeshBVH(terrainMesh.geometry.clone())
-    if (!config.debug) {
+    if (!environment.debug) {
       return
     }
     // Display BVH
