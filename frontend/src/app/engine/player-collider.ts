@@ -8,6 +8,7 @@ import {
   computeBoundsTree,
   disposeBoundsTree
 } from 'three-mesh-bvh'
+import type {MeshBVHOptions} from 'three-mesh-bvh'
 import {environment} from '../../environments/environment'
 
 const playerHalfSide = environment.world.collider.boxSide / 2
@@ -100,8 +101,10 @@ export class PlayerCollider {
       terrainMesh.geometry.boundsTree = null
       return
     }
-    // Clone the geometry to avoid messed up faces
-    terrainMesh.geometry.boundsTree = new MeshBVH(terrainMesh.geometry.clone())
+    // Force indirect (experimental) to avoid messed up faces
+    terrainMesh.geometry.boundsTree = new MeshBVH(terrainMesh.geometry, {
+      indirect: true
+    } as MeshBVHOptions)
     if (!environment.debug) {
       return
     }

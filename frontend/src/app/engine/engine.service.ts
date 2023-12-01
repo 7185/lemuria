@@ -37,6 +37,16 @@ import {environment} from '../../environments/environment'
 import {PlayerCollider} from './player-collider'
 import {DEG, TERRAIN_PAGE_SIZE, Utils} from '../utils'
 
+// Don't update matrix for props that are out of visibility range to speed up
+// the render loop
+const _updateMatrixWorld = Object3D.prototype.updateMatrixWorld
+Object3D.prototype.updateMatrixWorld = function () {
+  if (this.name.endsWith('.rwx') && !this.parent.visible) {
+    return
+  }
+  _updateMatrixWorld.apply(this)
+}
+
 const playerBoxSide = environment.world.collider.boxSide
 const playerClimbHeight = environment.world.collider.climbHeight
 const playerGroundAdjust = environment.world.collider.groundAdjust
@@ -1147,10 +1157,11 @@ export class EngineService {
         case 'fire':
           fx = Math.random() * (1.2 - 0.8) + 0.8
           break
-        case 'pulse':
+        case 'pulse': {
           const power = (Date.now() / 1000) % 1
           fx = Math.sin(power * Math.PI)
           break
+        }
         case 'flash':
           fx = Math.random() > 0.02 ? 0 : 1
           break
