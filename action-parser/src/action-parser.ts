@@ -1,10 +1,5 @@
-import {
-  createToken,
-  Lexer,
-  CstParser,
-  TokenType,
-  ITokenConfig
-} from 'chevrotain'
+import {createToken, Lexer, CstParser} from 'chevrotain'
+import type {CstNode, ITokenConfig, TokenType} from 'chevrotain'
 
 // Tokens
 export const allTokens: TokenType[] = []
@@ -21,16 +16,22 @@ const Resource = addToken({
   // eslint-disable-next-line no-control-regex
   pattern: /[\u0000-\u0019\u0021-\u002B\u002D-\u003A\u003C-\uFFFF]+/
 })
+const Reset = addToken({name: 'Reset', pattern: /reset/i})
+const Loop = addToken({name: 'Loop', pattern: /loop/i})
 const Sign = addToken({name: 'Sign', pattern: /sign/i})
 const Color = addToken({name: 'Color', pattern: /color/i})
 const Bcolor = addToken({name: 'Bcolor', pattern: /bcolor/i})
 const Name = addToken({name: 'Name', pattern: /name/i})
 const Mask = addToken({name: 'Mask', pattern: /mask/i})
 const Tag = addToken({name: 'Tag', pattern: /tag/i})
+const Time = addToken({name: 'Time', pattern: /time/i})
+const Wait = addToken({name: 'Wait', pattern: /wait/i})
 const Update = addToken({name: 'Update', pattern: /update/i})
 const Examine = addToken({name: 'Examine', pattern: /examine/i})
 const Media = addToken({name: 'Media', pattern: /media/i})
+const Move = addToken({name: 'Move', pattern: /move/i})
 const Picture = addToken({name: 'Picture', pattern: /picture/i})
+const Rotate = addToken({name: 'Rotate', pattern: /rotate/i})
 const Solid = addToken({name: 'Solid', pattern: /solid/i})
 const Visible = addToken({name: 'Visible', pattern: /visible/i})
 const Teleport = addToken({name: 'Teleport', pattern: /teleport/i})
@@ -58,6 +59,7 @@ export class ActionParser extends CstParser {
   public colorCommand = this.RULE('colorCommand', () => {
     this.CONSUME(Color)
     this.CONSUME(Resource).image
+    this.OPTION(() => this.SUBRULE(this.nameParameter))
   })
 
   public examineCommand = this.RULE('examineCommand', () => {
@@ -75,10 +77,31 @@ export class ActionParser extends CstParser {
     this.CONSUME(Resource)
   })
 
+  public moveCommand = this.RULE('moveCommand', () => {
+    this.CONSUME(Move)
+    this.MANY(() => {
+      this.CONSUME(Resource)
+    })
+    this.OPTION(() => this.SUBRULE(this.moveArgs))
+  })
+
+  public rotateCommand = this.RULE('rotateCommand', () => {
+    this.CONSUME(Rotate)
+    this.MANY(() => {
+      this.CONSUME(Resource)
+    })
+    this.OPTION(() => this.SUBRULE(this.moveArgs))
+  })
+
+  public nameCommand = this.RULE('nameCommand', () => {
+    this.CONSUME(Name)
+    this.CONSUME(Resource)
+  })
+
   public pictureCommand = this.RULE('pictureCommand', () => {
     this.CONSUME(Picture)
     this.CONSUME(Resource)
-    this.OPTION1(() => this.SUBRULE(this.pictureArgs))
+    this.OPTION(() => this.SUBRULE(this.pictureArgs))
   })
 
   public solidCommand = this.RULE('solidCommand', () => {
@@ -99,7 +122,7 @@ export class ActionParser extends CstParser {
   public textureCommand = this.RULE('textureCommand', () => {
     this.CONSUME(Texture)
     this.CONSUME(Resource).image
-    this.OPTION1(() => this.SUBRULE(this.textureArgs))
+    this.OPTION(() => this.SUBRULE(this.textureArgs))
   })
 
   public colorParameter = this.RULE('colorParameter', () => {
@@ -132,65 +155,80 @@ export class ActionParser extends CstParser {
     this.CONSUME(Resource)
   })
 
+  public timeParameter = this.RULE('timeParameter', () => {
+    this.CONSUME(Time)
+    this.CONSUME(Equals)
+    this.CONSUME(Resource)
+  })
+
   public updateParameter = this.RULE('updateParameter', () => {
     this.CONSUME(Update)
     this.CONSUME(Equals)
     this.CONSUME(Resource)
   })
 
-  public pictureArgs = this.RULE('pictureArgs', () => {
-    const firstArg = this.OR([
-      {ALT: () => this.SUBRULE(this.nameParameter)},
-      {ALT: () => this.SUBRULE(this.updateParameter)}
-    ])
-    const args = [firstArg]
+  public waitParameter = this.RULE('waitParameter', () => {
+    this.CONSUME(Wait)
+    this.CONSUME(Equals)
+    this.CONSUME(Resource)
+  })
+
+  public moveArgs = this.RULE('moveArgs', () => {
+    const args: CstNode[] = []
     this.MANY(() => {
-      const nextArg = this.OR1([
-        {ALT: () => this.SUBRULE1(this.nameParameter)},
-        {ALT: () => this.SUBRULE1(this.updateParameter)}
+      const arg = this.OR([
+        {ALT: () => this.SUBRULE(this.timeParameter)},
+        {ALT: () => this.SUBRULE(this.waitParameter)},
+        {ALT: () => this.SUBRULE(this.nameParameter)},
+        {ALT: () => this.CONSUME(Loop)},
+        {ALT: () => this.CONSUME1(Reset)}
       ])
-      if (nextArg) {
-        args.push(nextArg)
+      if (arg) {
+        args.push(arg)
+      }
+    })
+    return args
+  })
+
+  public pictureArgs = this.RULE('pictureArgs', () => {
+    const args: CstNode[] = []
+    this.MANY(() => {
+      const arg = this.OR([
+        {ALT: () => this.SUBRULE(this.nameParameter)},
+        {ALT: () => this.SUBRULE(this.updateParameter)}
+      ])
+      if (arg) {
+        args.push(arg)
       }
     })
     return args
   })
 
   public signArgs = this.RULE('signArgs', () => {
-    const firstArg = this.OR([
-      {ALT: () => this.SUBRULE(this.colorParameter)},
-      {ALT: () => this.SUBRULE(this.bcolorParameter)},
-      {ALT: () => this.SUBRULE(this.nameParameter)}
-    ])
-    const args = [firstArg]
+    const args: CstNode[] = []
     this.MANY(() => {
-      const nextArg = this.OR1([
-        {ALT: () => this.SUBRULE1(this.colorParameter)},
-        {ALT: () => this.SUBRULE1(this.bcolorParameter)},
-        {ALT: () => this.SUBRULE1(this.nameParameter)}
+      const arg = this.OR([
+        {ALT: () => this.SUBRULE(this.colorParameter)},
+        {ALT: () => this.SUBRULE(this.bcolorParameter)},
+        {ALT: () => this.SUBRULE(this.nameParameter)}
       ])
-      if (nextArg) {
-        args.push(nextArg)
+      if (arg) {
+        args.push(arg)
       }
     })
     return args
   })
 
   public textureArgs = this.RULE('textureArgs', () => {
-    const firstArg = this.OR([
-      {ALT: () => this.SUBRULE(this.maskParameter)},
-      {ALT: () => this.SUBRULE(this.nameParameter)},
-      {ALT: () => this.SUBRULE(this.tagParameter)}
-    ])
-    const args = [firstArg]
+    const args: CstNode[] = []
     this.MANY(() => {
-      const nextArg = this.OR1([
-        {ALT: () => this.SUBRULE1(this.maskParameter)},
-        {ALT: () => this.SUBRULE1(this.nameParameter)},
-        {ALT: () => this.SUBRULE1(this.tagParameter)}
+      const arg = this.OR([
+        {ALT: () => this.SUBRULE(this.maskParameter)},
+        {ALT: () => this.SUBRULE(this.nameParameter)},
+        {ALT: () => this.SUBRULE(this.tagParameter)}
       ])
-      if (nextArg) {
-        args.push(nextArg)
+      if (arg) {
+        args.push(arg)
       }
     })
     return args
@@ -208,12 +246,15 @@ export class ActionParser extends CstParser {
       {ALT: () => this.SUBRULE(this.colorCommand)},
       {ALT: () => this.SUBRULE(this.examineCommand)},
       {ALT: () => this.SUBRULE(this.mediaCommand)},
+      {ALT: () => this.SUBRULE(this.moveCommand)},
+      {ALT: () => this.SUBRULE(this.nameCommand)},
       {ALT: () => this.SUBRULE(this.pictureCommand)},
+      {ALT: () => this.SUBRULE(this.rotateCommand)},
       {ALT: () => this.SUBRULE(this.signCommand)},
       {ALT: () => this.SUBRULE(this.solidCommand)},
-      {ALT: () => this.SUBRULE(this.visibleCommand)},
       {ALT: () => this.SUBRULE(this.teleportCommand)},
-      {ALT: () => this.SUBRULE(this.textureCommand)}
+      {ALT: () => this.SUBRULE(this.textureCommand)},
+      {ALT: () => this.SUBRULE(this.visibleCommand)}
     ])
   })
 

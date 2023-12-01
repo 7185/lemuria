@@ -1,18 +1,23 @@
-import {Lexer} from 'chevrotain'
+import {CstNode, IToken, Lexer} from 'chevrotain'
 import {colorStringToRGB} from './color-utils'
 import {ActionParser, allTokens} from './action-parser'
 import type {
   ActionCtx,
   ActionsCtx,
   BcolorParameterCtx,
+  BooleanCtx,
   ColorCommandCtx,
   ColorParameterCtx,
   CommandCtx,
   MaskParameterCtx,
   MediaCommandCtx,
+  MoveArgsCtx,
+  MoveCommandCtx,
+  NameCommandCtx,
   NameParameterCtx,
   PictureArgsCtx,
   PictureCommandCtx,
+  RotateCommandCtx,
   SignArgsCtx,
   SignCommandCtx,
   SolidCommandCtx,
@@ -20,9 +25,11 @@ import type {
   TeleportCommandCtx,
   TextureArgsCtx,
   TextureCommandCtx,
+  TimeParameterCtx,
   TriggerCtx,
   UpdateParameterCtx,
-  VisibleCommandCtx
+  VisibleCommandCtx,
+  WaitParameterCtx
 } from './action-models'
 
 const parserInstance = new ActionParser()
@@ -34,7 +41,7 @@ class ActionVisitor extends BaseActionVisitor {
     this.validateVisitor()
   }
 
-  boolean(ctx: any) {
+  boolean(ctx: BooleanCtx) {
     if (ctx.Enabled) {
       return true
     }
@@ -45,11 +52,16 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   colorCommand(ctx: ColorCommandCtx) {
-    const result = {
+    const result: any = {
       commandType: 'color',
       color: colorStringToRGB(
         ctx.Resource.map((identToken) => identToken.image)[0]
       )
+    }
+    if (ctx.nameParameter != null) {
+      result.targetName = (
+        ctx.nameParameter[0].children.Resource[0] as IToken
+      ).image
     }
     return result.color == null ? null : result
   }
@@ -64,6 +76,13 @@ class ActionVisitor extends BaseActionVisitor {
     return {
       commandType: 'media',
       resource: ctx.Resource.map((identToken) => identToken.image)[0]
+    }
+  }
+
+  nameCommand(ctx: NameCommandCtx) {
+    return {
+      commandType: 'name',
+      targetName: ctx.Resource.map((identToken) => identToken.image)[0]
     }
   }
 
@@ -126,6 +145,18 @@ class ActionVisitor extends BaseActionVisitor {
     return {[paramName]: paramValue}
   }
 
+  timeParameter(ctx: TimeParameterCtx) {
+    const paramName = ctx.Time[0].image
+    const paramValue = ctx.Resource[0].image
+    return {[paramName]: parseFloat(paramValue)}
+  }
+
+  waitParameter(ctx: WaitParameterCtx) {
+    const paramName = ctx.Wait[0].image
+    const paramValue = ctx.Resource[0].image
+    return {[paramName]: parseFloat(paramValue)}
+  }
+
   tagParameter(ctx: TagParameterCtx) {
     const paramName = ctx.Tag[0].image
     const paramValue = ctx.Resource[0].image
@@ -145,6 +176,26 @@ class ActionVisitor extends BaseActionVisitor {
     }
     if (ctx.updateParameter) {
       args.push(this.visit(ctx.updateParameter))
+    }
+    return args
+  }
+
+  moveArgs(ctx: MoveArgsCtx) {
+    const args = []
+    if (ctx.timeParameter) {
+      args.push(this.visit(ctx.timeParameter))
+    }
+    if (ctx.waitParameter) {
+      args.push(this.visit(ctx.waitParameter))
+    }
+    if (ctx.nameParameter) {
+      args.push(this.visit(ctx.nameParameter))
+    }
+    if (ctx.Loop) {
+      args.push({loop: true})
+    }
+    if (ctx.Reset) {
+      args.push({reset: true})
     }
     return args
   }
@@ -216,6 +267,66 @@ class ActionVisitor extends BaseActionVisitor {
     return res
   }
 
+  moveCommand(ctx: MoveCommandCtx) {
+    if (ctx.Resource == null) {
+      return {}
+    }
+
+    const res = {
+      commandType: 'move',
+      distance: {x: 0, y: 0, z: 0}
+    }
+
+    if (ctx.Resource.length === 1) {
+      res.distance.y = parseFloat(ctx.Resource[0].image)
+    } else if (ctx.Resource.length === 2) {
+      res.distance.x = parseFloat(ctx.Resource[0].image)
+      res.distance.y = parseFloat(ctx.Resource[1].image)
+    } else if (ctx.Resource.length === 3) {
+      res.distance.x = parseFloat(ctx.Resource[0].image)
+      res.distance.y = parseFloat(ctx.Resource[1].image)
+      res.distance.z = parseFloat(ctx.Resource[2].image)
+    }
+
+    const args = ctx.moveArgs?.map((arg: CstNode) => this.visit(arg))[0]
+    if (args != null) {
+      args.forEach((arg: object) => {
+        Object.assign(res, arg)
+      })
+    }
+    return res
+  }
+
+  rotateCommand(ctx: RotateCommandCtx) {
+    if (ctx.Resource == null) {
+      return {}
+    }
+
+    const res = {
+      commandType: 'rotate',
+      speed: {x: 0, y: 0, z: 0}
+    }
+
+    if (ctx.Resource.length === 1) {
+      res.speed.y = parseFloat(ctx.Resource[0].image)
+    } else if (ctx.Resource.length === 2) {
+      res.speed.x = parseFloat(ctx.Resource[0].image)
+      res.speed.y = parseFloat(ctx.Resource[1].image)
+    } else if (ctx.Resource.length === 3) {
+      res.speed.x = parseFloat(ctx.Resource[0].image)
+      res.speed.y = parseFloat(ctx.Resource[1].image)
+      res.speed.z = parseFloat(ctx.Resource[2].image)
+    }
+
+    const args = ctx.moveArgs?.map((arg: CstNode) => this.visit(arg))[0]
+    if (args != null) {
+      args.forEach((arg: object) => {
+        Object.assign(res, arg)
+      })
+    }
+    return res
+  }
+
   command(ctx: CommandCtx) {
     return this.visit(
       ctx.colorCommand ||
@@ -223,7 +334,10 @@ class ActionVisitor extends BaseActionVisitor {
         ctx.solidCommand ||
         ctx.visibleCommand ||
         ctx.mediaCommand ||
+        ctx.moveCommand ||
+        ctx.nameCommand ||
         ctx.pictureCommand ||
+        ctx.rotateCommand ||
         ctx.signCommand ||
         ctx.teleportCommand ||
         ctx.textureCommand
@@ -242,8 +356,14 @@ class ActionVisitor extends BaseActionVisitor {
     // Filter out duplicate commands of the same type, keeping only the last one
     const commandMap = new Map<string, any>()
     for (const command of commands) {
-      if (command != null) {
-        commandMap.set(command.commandType, command)
+      if (command != null && Object.keys(command).length) {
+        // If targetName is present, duplicate commands are allowed
+        // (except for the name command)
+        let key = command.commandType
+        if (key !== 'name' && command.targetName != null) {
+          key += command.targetName
+        }
+        commandMap.set(key, command)
       }
     }
     if (commandMap.size) {
@@ -279,7 +399,7 @@ export class Action {
   constructor() {
     this.visitor = new ActionVisitor()
     this.lexer = new Lexer(allTokens, {
-      ensureOptimizations: false,
+      ensureOptimizations: true,
       skipValidations: false
     })
   }

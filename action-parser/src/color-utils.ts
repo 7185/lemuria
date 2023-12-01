@@ -1,3 +1,11 @@
+const rgb = (red: number, green: number, blue: number) => {
+  return {
+    r: Math.max(0, Math.min(red, 255)),
+    g: Math.max(0, Math.min(green, 255)),
+    b: Math.max(0, Math.min(blue, 255))
+  }
+}
+
 const PRESET_COLORS = {
   aquamarine: rgb(112, 219, 147),
   black: rgb(0, 0, 0),
@@ -33,19 +41,11 @@ const PRESET_COLORS = {
   yellow: rgb(255, 255, 0)
 }
 
-function rgb(red: number, green: number, blue: number) {
-  return {
-    r: Math.max(0, Math.min(red, 255)),
-    g: Math.max(0, Math.min(green, 255)),
-    b: Math.max(0, Math.min(blue, 255))
-  }
-}
-
-export function colorStringToRGB(color: string) {
+export const colorStringToRGB = (color: string) => {
   if (color in PRESET_COLORS) {
     return PRESET_COLORS[color as keyof typeof PRESET_COLORS]
   }
-  const extractedHex = color.toLowerCase().match(/(^[a-f0-9]+)/)
+  const extractedHex = RegExp(/(^[a-f0-9]+)/).exec(color.toLowerCase())
   if (extractedHex) {
     // Get first hexadecimal string match & convert to number
     const colorValue = parseInt(extractedHex[0], 16)

@@ -1,6 +1,15 @@
 import {CstNode, IToken} from 'chevrotain'
 
+export interface BooleanCtx {
+  Enabled: IToken[]
+  Disabled: IToken[]
+}
 export interface ColorCommandCtx {
+  Resource: IToken[]
+  nameParameter?: CstNode[]
+}
+
+export interface NameCommandCtx {
   Resource: IToken[]
 }
 
@@ -8,9 +17,19 @@ export interface MediaCommandCtx {
   Resource: IToken[]
 }
 
+export interface MoveCommandCtx {
+  Resource: IToken[]
+  moveArgs?: CstNode[]
+}
+
 export interface PictureCommandCtx {
   Resource: IToken[]
   pictureArgs?: CstNode[]
+}
+
+export interface RotateCommandCtx {
+  Resource: IToken[]
+  moveArgs?: CstNode[]
 }
 
 export interface SignCommandCtx {
@@ -41,7 +60,10 @@ export interface CommandCtx {
   solidCommand: CstNode[]
   visibleCommand: CstNode[]
   mediaCommand: CstNode[]
+  moveCommand: CstNode[]
+  nameCommand: CstNode[]
   pictureCommand: CstNode[]
+  rotateCommand: CstNode[]
   signCommand: CstNode[]
   teleportCommand: CstNode[]
   textureCommand: CstNode[]
@@ -87,14 +109,32 @@ export interface TagParameterCtx {
   Resource: IToken[]
 }
 
+export interface TimeParameterCtx {
+  Time: IToken[]
+  Resource: IToken[]
+}
+
 export interface UpdateParameterCtx {
   Update: IToken[]
+  Resource: IToken[]
+}
+
+export interface WaitParameterCtx {
+  Wait: IToken[]
   Resource: IToken[]
 }
 
 export interface PictureArgsCtx {
   nameParameter?: CstNode[]
   updateParameter?: CstNode[]
+}
+
+export interface MoveArgsCtx {
+  waitParameter?: CstNode[]
+  timeParameter?: CstNode[]
+  nameParameter?: CstNode[]
+  Loop?: IToken[]
+  Reset?: IToken[]
 }
 export interface SignArgsCtx {
   colorParameter?: CstNode[]
