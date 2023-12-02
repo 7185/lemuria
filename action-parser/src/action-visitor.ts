@@ -4,11 +4,18 @@ import {ActionParser, allTokens} from './action-parser'
 import type {
   ActionCtx,
   ActionsCtx,
+  AngleParameterCtx,
   BcolorParameterCtx,
   BooleanCtx,
+  BrightnessParameterCtx,
   ColorCommandCtx,
   ColorParameterCtx,
   CommandCtx,
+  CoronaArgsCtx,
+  CoronaCommandCtx,
+  FxParameterCtx,
+  LightArgsCtx,
+  LightCommandCtx,
   MaskParameterCtx,
   MediaArgsCtx,
   MediaCommandCtx,
@@ -16,22 +23,29 @@ import type {
   MoveCommandCtx,
   NameCommandCtx,
   NameParameterCtx,
+  NoiseCommandCtx,
   PictureArgsCtx,
   PictureCommandCtx,
+  PitchParameterCtx,
   RadiusParameterCtx,
   RotateCommandCtx,
   SignArgsCtx,
   SignCommandCtx,
+  SizeParameterCtx,
   SolidCommandCtx,
+  SoundCommandCtx,
   TagParameterCtx,
   TeleportCommandCtx,
   TextureArgsCtx,
   TextureCommandCtx,
   TimeParameterCtx,
   TriggerCtx,
+  TypeParameterCtx,
   UpdateParameterCtx,
+  UrlCommandCtx,
   VisibleCommandCtx,
-  WaitParameterCtx
+  WaitParameterCtx,
+  WarpCommandCtx
 } from './action-models'
 
 const parserInstance = new ActionParser()
@@ -95,6 +109,60 @@ class ActionVisitor extends BaseActionVisitor {
     }
   }
 
+  warpCommand(ctx: WarpCommandCtx) {
+    return {
+      commandType: 'warp',
+      targetName: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
+    }
+  }
+
+  lightCommand(ctx: LightCommandCtx) {
+    const res = {
+      commandType: 'light'
+    }
+    const args = ctx.lightArgs?.map((arg) => this.visit(arg))[0]
+    if (args != null) {
+      args.forEach((arg: object) => {
+        Object.assign(res, arg)
+      })
+    }
+    return res
+  }
+
+  coronaCommand(ctx: CoronaCommandCtx) {
+    const res = {
+      commandType: 'corona',
+      resource: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
+    }
+    const args = ctx.coronaArgs?.map((arg) => this.visit(arg))[0]
+    if (args != null) {
+      args.forEach((arg: object) => {
+        Object.assign(res, arg)
+      })
+    }
+    return res
+  }
+
+  noiseCommand(ctx: NoiseCommandCtx) {
+    return {
+      commandType: 'noise',
+      targetName: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
+    }
+  }
+  soundCommand(ctx: SoundCommandCtx) {
+    return {
+      commandType: 'sound',
+      targetName: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
+    }
+  }
+
+  urlCommand(ctx: UrlCommandCtx) {
+    return {
+      commandType: 'url',
+      resource: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
+    }
+  }
+
   pictureCommand(ctx: PictureCommandCtx) {
     const res: object = {
       commandType: 'picture',
@@ -114,8 +182,19 @@ class ActionVisitor extends BaseActionVisitor {
       commandType: 'sign'
     }
     const args = ctx.signArgs?.map((arg) => this.visit(arg))[0]
-    let text = ctx.Resource?.map((identToken) => identToken.image)[0]
-    if (text != null) {
+    const resource = ctx.Resource?.map((identToken) => identToken.image)
+    if (resource != null) {
+      let text = ''
+      if (resource.length > 1) {
+        if (resource[0].startsWith('"')) {
+          text = resource.join(' ')
+        } else {
+          // invalid sign
+          return {}
+        }
+      } else {
+        text = resource[0]
+      }
       text = text.replace(/(^"|"$)/g, '')
       res = {
         commandType: 'sign',
@@ -165,8 +244,32 @@ class ActionVisitor extends BaseActionVisitor {
     return {[paramName]: parseFloat(paramValue)}
   }
 
+  angleParameter(ctx: AngleParameterCtx) {
+    const paramName = ctx.Angle[0].image
+    const paramValue = ctx.Resource[0].image
+    return {[paramName]: parseFloat(paramValue)}
+  }
+
+  brightnessParameter(ctx: BrightnessParameterCtx) {
+    const paramName = ctx.Brightness[0].image
+    const paramValue = ctx.Resource[0].image
+    return {[paramName]: parseFloat(paramValue)}
+  }
+
+  pitchParameter(ctx: PitchParameterCtx) {
+    const paramName = ctx.Pitch[0].image
+    const paramValue = ctx.Resource[0].image
+    return {[paramName]: parseFloat(paramValue)}
+  }
+
   radiusParameter(ctx: RadiusParameterCtx) {
     const paramName = ctx.Radius[0].image
+    const paramValue = ctx.Resource[0].image
+    return {[paramName]: parseFloat(paramValue)}
+  }
+
+  sizeParameter(ctx: SizeParameterCtx) {
+    const paramName = ctx.Size[0].image
     const paramValue = ctx.Resource[0].image
     return {[paramName]: parseFloat(paramValue)}
   }
@@ -177,10 +280,65 @@ class ActionVisitor extends BaseActionVisitor {
     return {[paramName]: paramValue}
   }
 
+  typeParameter(ctx: TypeParameterCtx) {
+    const paramName = ctx.Type[0].image
+    const paramValue = ctx.Resource[0].image
+    return {[paramName]: paramValue}
+  }
+
+  fxParameter(ctx: FxParameterCtx) {
+    const paramName = ctx.Fx[0].image
+    const paramValue = ctx.Resource[0].image
+    return {[paramName]: paramValue}
+  }
+
   updateParameter(ctx: UpdateParameterCtx) {
     const paramName = ctx.Update[0].image
     const paramValue = ctx.Resource[0].image
     return {[paramName]: parseInt(paramValue)}
+  }
+
+  coronaArgs(ctx: CoronaArgsCtx) {
+    const args = []
+    if (ctx.maskParameter) {
+      args.push(this.visit(ctx.maskParameter))
+    }
+    if (ctx.nameParameter) {
+      args.push(this.visit(ctx.nameParameter))
+    }
+    if (ctx.sizeParameter) {
+      args.push(this.visit(ctx.sizeParameter))
+    }
+    return args
+  }
+
+  lightArgs(ctx: LightArgsCtx) {
+    const args = []
+    if (ctx.angleParameter) {
+      args.push(this.visit(ctx.angleParameter))
+    }
+    if (ctx.brightnessParameter) {
+      args.push(this.visit(ctx.brightnessParameter))
+    }
+    if (ctx.colorParameter) {
+      args.push(this.visit(ctx.colorParameter))
+    }
+    if (ctx.fxParameter) {
+      args.push(this.visit(ctx.fxParameter))
+    }
+    if (ctx.nameParameter) {
+      args.push(this.visit(ctx.nameParameter))
+    }
+    if (ctx.radiusParameter) {
+      args.push(this.visit(ctx.radiusParameter))
+    }
+    if (ctx.timeParameter) {
+      args.push(this.visit(ctx.timeParameter))
+    }
+    if (ctx.typeParameter) {
+      args.push(this.visit(ctx.typeParameter))
+    }
+    return args
   }
 
   pictureArgs(ctx: PictureArgsCtx) {
@@ -217,10 +375,13 @@ class ActionVisitor extends BaseActionVisitor {
       args.push(this.visit(ctx.nameParameter))
     }
     if (ctx.Loop) {
-      args.push({loop: true})
+      args.push({loop: !ctx.Loop[0].image.startsWith('no')})
     }
     if (ctx.Reset) {
-      args.push({reset: true})
+      args.push({reset: !ctx.Reset[0].image.startsWith('no')})
+    }
+    if (ctx.Sync) {
+      args.push({sync: !ctx.Sync[0].image.startsWith('no')})
     }
     return args
   }
@@ -355,22 +516,31 @@ class ActionVisitor extends BaseActionVisitor {
   command(ctx: CommandCtx) {
     return this.visit(
       ctx.colorCommand ||
+        ctx.coronaCommand ||
         ctx.examineCommand ||
-        ctx.solidCommand ||
-        ctx.visibleCommand ||
+        ctx.lightCommand ||
         ctx.mediaCommand ||
         ctx.moveCommand ||
         ctx.nameCommand ||
+        ctx.noiseCommand ||
         ctx.pictureCommand ||
         ctx.rotateCommand ||
         ctx.signCommand ||
+        ctx.solidCommand ||
+        ctx.soundCommand ||
         ctx.teleportCommand ||
-        ctx.textureCommand
+        ctx.textureCommand ||
+        ctx.urlCommand ||
+        ctx.visibleCommand ||
+        ctx.warpCommand
     )
   }
 
   trigger(ctx: TriggerCtx) {
-    return (ctx.Create || ctx.Activate || ctx.Bump)[0].image.toLowerCase()
+    return (ctx.Create ||
+      ctx.Activate ||
+      ctx.Bump ||
+      ctx.Adone)[0].image.toLowerCase()
   }
 
   action(ctx: ActionCtx) {
