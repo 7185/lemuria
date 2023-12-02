@@ -10,6 +10,7 @@ import type {
   ColorParameterCtx,
   CommandCtx,
   MaskParameterCtx,
+  MediaArgsCtx,
   MediaCommandCtx,
   MoveArgsCtx,
   MoveCommandCtx,
@@ -17,6 +18,7 @@ import type {
   NameParameterCtx,
   PictureArgsCtx,
   PictureCommandCtx,
+  RadiusParameterCtx,
   RotateCommandCtx,
   SignArgsCtx,
   SignCommandCtx,
@@ -73,10 +75,17 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   mediaCommand(ctx: MediaCommandCtx) {
-    return {
+    const res: object = {
       commandType: 'media',
       resource: ctx.Resource.map((identToken) => identToken.image)[0]
     }
+    const args = ctx.mediaArgs?.map((arg) => this.visit(arg))[0]
+    if (args != null) {
+      args.forEach((arg: object) => {
+        Object.assign(res, arg)
+      })
+    }
+    return res
   }
 
   nameCommand(ctx: NameCommandCtx) {
@@ -134,9 +143,8 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   nameParameter(ctx: NameParameterCtx) {
-    const paramName = ctx.Name[0].image
     const paramValue = ctx.Resource[0].image
-    return {[paramName]: paramValue}
+    return {targetName: paramValue}
   }
 
   maskParameter(ctx: MaskParameterCtx) {
@@ -153,6 +161,12 @@ class ActionVisitor extends BaseActionVisitor {
 
   waitParameter(ctx: WaitParameterCtx) {
     const paramName = ctx.Wait[0].image
+    const paramValue = ctx.Resource[0].image
+    return {[paramName]: parseFloat(paramValue)}
+  }
+
+  radiusParameter(ctx: RadiusParameterCtx) {
+    const paramName = ctx.Radius[0].image
     const paramValue = ctx.Resource[0].image
     return {[paramName]: parseFloat(paramValue)}
   }
@@ -176,6 +190,17 @@ class ActionVisitor extends BaseActionVisitor {
     }
     if (ctx.updateParameter) {
       args.push(this.visit(ctx.updateParameter))
+    }
+    return args
+  }
+
+  mediaArgs(ctx: MediaArgsCtx) {
+    const args = []
+    if (ctx.radiusParameter) {
+      args.push(this.visit(ctx.radiusParameter))
+    }
+    if (ctx.nameParameter) {
+      args.push(this.visit(ctx.nameParameter))
     }
     return args
   }
@@ -379,8 +404,8 @@ class ActionVisitor extends BaseActionVisitor {
     // Filter out duplicate actions of the same type, keeping only the first one
     const actionsMap = new Map<string, any>()
     for (const action of actions) {
-      if (!actionsMap.has(action.type)) {
-        actionsMap.set(action.type, action)
+      if (!actionsMap.has(Object.keys(action)[0])) {
+        actionsMap.set(Object.keys(action)[0], action)
       }
     }
 

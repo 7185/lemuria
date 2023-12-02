@@ -15,6 +15,7 @@ export interface NameCommandCtx {
 
 export interface MediaCommandCtx {
   Resource: IToken[]
+  mediaArgs?: CstNode[]
 }
 
 export interface MoveCommandCtx {
@@ -104,6 +105,11 @@ export interface MaskParameterCtx {
   Resource: IToken[]
 }
 
+export interface RadiusParameterCtx {
+  Radius: IToken[]
+  Resource: IToken[]
+}
+
 export interface TagParameterCtx {
   Tag: IToken[]
   Resource: IToken[]
@@ -127,6 +133,11 @@ export interface WaitParameterCtx {
 export interface PictureArgsCtx {
   nameParameter?: CstNode[]
   updateParameter?: CstNode[]
+}
+
+export interface MediaArgsCtx {
+  nameParameter?: CstNode[]
+  radiusParameter?: CstNode[]
 }
 
 export interface MoveArgsCtx {

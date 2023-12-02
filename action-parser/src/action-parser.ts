@@ -23,6 +23,7 @@ const Color = addToken({name: 'Color', pattern: /color/i})
 const Bcolor = addToken({name: 'Bcolor', pattern: /bcolor/i})
 const Name = addToken({name: 'Name', pattern: /name/i})
 const Mask = addToken({name: 'Mask', pattern: /mask/i})
+const Radius = addToken({name: 'Radius', pattern: /radius/i})
 const Tag = addToken({name: 'Tag', pattern: /tag/i})
 const Time = addToken({name: 'Time', pattern: /time/i})
 const Wait = addToken({name: 'Wait', pattern: /wait/i})
@@ -75,6 +76,7 @@ export class ActionParser extends CstParser {
   public mediaCommand = this.RULE('mediaCommand', () => {
     this.CONSUME(Media)
     this.CONSUME(Resource)
+    this.OPTION(() => this.SUBRULE(this.mediaArgs))
   })
 
   public moveCommand = this.RULE('moveCommand', () => {
@@ -149,6 +151,12 @@ export class ActionParser extends CstParser {
     this.CONSUME(Resource)
   })
 
+  public radiusParameter = this.RULE('radiusParameter', () => {
+    this.CONSUME(Radius)
+    this.CONSUME(Equals)
+    this.CONSUME(Resource)
+  })
+
   public tagParameter = this.RULE('tagParameter', () => {
     this.CONSUME(Tag)
     this.CONSUME(Equals)
@@ -171,6 +179,20 @@ export class ActionParser extends CstParser {
     this.CONSUME(Wait)
     this.CONSUME(Equals)
     this.CONSUME(Resource)
+  })
+
+  public mediaArgs = this.RULE('mediaArgs', () => {
+    const args: CstNode[] = []
+    this.MANY(() => {
+      const arg = this.OR([
+        {ALT: () => this.SUBRULE(this.radiusParameter)},
+        {ALT: () => this.SUBRULE(this.nameParameter)}
+      ])
+      if (arg) {
+        args.push(arg)
+      }
+    })
+    return args
   })
 
   public moveArgs = this.RULE('moveArgs', () => {
