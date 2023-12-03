@@ -1,6 +1,6 @@
 # Lemuria - action-parser
 
-## WORK IN PROGRESS - FOR TESTING PURPOSE ONLY
+## This is still experimental!
 
 This library is a rewrite of [aw-action-parser](https://github.com/Heldroe/aw-action-parser) by David Guerrero.
 
@@ -42,3 +42,8 @@ The `parse()` function will then return an object looking like this:
   ]
 }
 ```
+
+## Limitations
+
+The parsing is very strict and there is still some commands missing (`animate`, `astart`, `adone`...). \
+Using keywords in arguments is not handled well for the moment (eg. `create sign "fist bump"` or `activate teleport teleport`).

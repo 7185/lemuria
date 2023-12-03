@@ -244,9 +244,9 @@ export class ObjectService {
       for (const cmd of result.activate) {
         item.userData.clickable = true
         if (cmd.commandType === 'teleport') {
-          item.userData.teleportClick = {...cmd.coordinates?.[0]}
+          item.userData.teleportClick = {...cmd.coordinates}
           item.userData.teleportClick.worldName =
-            cmd.worldName != null ? cmd.worldName[0] : null
+            cmd.worldName != null ? cmd.worldName : null
         }
       }
     }

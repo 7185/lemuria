@@ -145,11 +145,13 @@ export class ActionParser extends CstParser {
 
   public solidCommand = this.RULE('solidCommand', () => {
     this.CONSUME(Solid)
+    this.OPTION(() => this.CONSUME(Resource))
     this.SUBRULE(this.boolean)
   })
 
   public visibleCommand = this.RULE('visibleCommand', () => {
     this.CONSUME(Visible)
+    this.OPTION(() => this.CONSUME(Resource))
     this.SUBRULE(this.boolean)
   })
 

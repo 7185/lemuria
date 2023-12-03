@@ -73,10 +73,12 @@ export interface SoundCommandCtx {
 }
 
 export interface SolidCommandCtx {
+  Resource?: IToken[]
   boolean: CstNode[]
 }
 
 export interface VisibleCommandCtx {
+  Resource?: IToken[]
   boolean: CstNode[]
 }
 

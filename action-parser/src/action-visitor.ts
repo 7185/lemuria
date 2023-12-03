@@ -110,10 +110,89 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   warpCommand(ctx: WarpCommandCtx) {
-    return {
-      commandType: 'warp',
-      targetName: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
+    if (ctx.Resource == null || ctx.Resource.length < 2) {
+      return null
     }
+
+    const [coordA, coordB, coordC, coordD] = ctx.Resource.map(
+      (identToken: IToken) => identToken.image
+    )
+    const res = {
+      commandType: 'warp',
+      coordinates: {}
+    }
+
+    if (/^[+-]/.test(coordA) && /^[+-]/.test(coordB)) {
+      Object.assign(res.coordinates, {
+        coordinates: {
+          coordinateType: 'relative',
+          x: parseFloat(coordA),
+          y: parseFloat(coordB)
+        }
+      })
+    } else if (/[ns]$/i.test(coordA) && /[ew]$/i.test(coordB)) {
+      const signA = /n$/i.test(coordA) ? 1 : -1
+      const signB = /e$/i.test(coordA) ? 1 : -1
+
+      Object.assign(res.coordinates, {
+        coordinates: {
+          coordinateType: 'absolute',
+          NS: signA * parseFloat(coordA.slice(0, -1)),
+          EW: signB * parseFloat(coordB.slice(0, -1))
+        }
+      })
+    } else {
+      // invalid
+      return null
+    }
+    if (coordC != null) {
+      if (/a$/.test(coordC)) {
+        if (/^[+-]/.test(coordC)) {
+          Object.assign(res.coordinates, {
+            altitude: {
+              altitudeType: 'relative',
+              value: parseFloat(coordC.slice(0, -1))
+            }
+          })
+        } else {
+          Object.assign(res.coordinates, {
+            altitude: {
+              altitudeType: 'absolute',
+              value: parseFloat(coordC.slice(0, -1))
+            }
+          })
+        }
+      } else {
+        Object.assign(res.coordinates, {
+          direction: parseFloat(coordC)
+        })
+      }
+    }
+    if (coordD != null) {
+      if (/a$/.test(coordD)) {
+        if (/^[+-]/.test(coordD)) {
+          Object.assign(res.coordinates, {
+            altitude: {
+              altitudeType: 'relative',
+              value: parseFloat(coordD.slice(0, -1))
+            }
+          })
+        } else {
+          Object.assign(res.coordinates, {
+            altitude: {
+              altitudeType: 'absolute',
+              value: parseFloat(coordD.slice(0, -1))
+            }
+          })
+        }
+      } else {
+        Object.assign(res.coordinates, {
+          direction: parseFloat(coordD)
+        })
+      }
+    }
+
+    return res
   }
 
   lightCommand(ctx: LightCommandCtx) {
@@ -415,28 +494,131 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   solidCommand(ctx: SolidCommandCtx) {
-    return {
+    const res = {
       commandType: 'solid',
       value: this.visit(ctx.boolean)
     }
+    if (ctx.Resource != null) {
+      Object.assign(res, {
+        targetName: ctx.Resource.map((identToken) => identToken.image)[0]
+      })
+    }
+    return res
   }
 
   visibleCommand(ctx: VisibleCommandCtx) {
-    return {
+    const res = {
       commandType: 'visible',
       value: this.visit(ctx.boolean)
     }
+    if (ctx.Resource != null) {
+      Object.assign(res, {
+        targetName: ctx.Resource.map((identToken) => identToken.image)[0]
+      })
+    }
+    return res
   }
 
   teleportCommand(ctx: TeleportCommandCtx) {
-    const worldName = ctx.Resource.map((identToken) => identToken.image)[0]
-    if (/^\d/.test(worldName)) {
+    if (ctx.Resource == null) {
       return null
     }
-    return {
-      commandType: 'teleport',
-      worldName
+
+    const res: any = {
+      commandType: 'teleport'
     }
+
+    let [worldName, coordA, coordB, coordC, coordD] = ctx.Resource.map(
+      (identToken: IToken) => identToken.image
+    )
+    if (/^[+-\d]/.test(worldName)) {
+      // Relative teleport
+      coordD = coordC
+      coordC = coordB
+      coordB = coordA
+      coordA = worldName
+      worldName = 'nowhere'
+    } else {
+      Object.assign(res, {worldName})
+      if (coordA == null) {
+        // World name only
+        return res
+      }
+    }
+
+    res.coordinates = {}
+
+    if (/^[+-]/.test(coordA) && /^[+-]/.test(coordB)) {
+      Object.assign(res.coordinates, {
+        coordinates: {
+          coordinateType: 'relative',
+          x: parseFloat(coordA),
+          y: parseFloat(coordB)
+        }
+      })
+    } else if (/[ns]$/i.test(coordA) && /[ew]$/i.test(coordB)) {
+      const signA = /n$/i.test(coordA) ? 1 : -1
+      const signB = /e$/i.test(coordA) ? 1 : -1
+
+      Object.assign(res.coordinates, {
+        coordinates: {
+          coordinateType: 'absolute',
+          NS: signA * parseFloat(coordA.slice(0, -1)),
+          EW: signB * parseFloat(coordB.slice(0, -1))
+        }
+      })
+    } else {
+      // invalid
+      return null
+    }
+    if (coordC != null) {
+      if (/a$/.test(coordC)) {
+        if (/^[+-]/.test(coordC)) {
+          Object.assign(res.coordinates, {
+            altitude: {
+              altitudeType: 'relative',
+              value: parseFloat(coordC.slice(0, -1))
+            }
+          })
+        } else {
+          Object.assign(res.coordinates, {
+            altitude: {
+              altitudeType: 'absolute',
+              value: parseFloat(coordC.slice(0, -1))
+            }
+          })
+        }
+      } else {
+        Object.assign(res.coordinates, {
+          direction: parseFloat(coordC)
+        })
+      }
+    }
+    if (coordD != null) {
+      if (/a$/.test(coordD)) {
+        if (/^[+-]/.test(coordD)) {
+          Object.assign(res.coordinates, {
+            altitude: {
+              altitudeType: 'relative',
+              value: parseFloat(coordD.slice(0, -1))
+            }
+          })
+        } else {
+          Object.assign(res.coordinates, {
+            altitude: {
+              altitudeType: 'absolute',
+              value: parseFloat(coordD.slice(0, -1))
+            }
+          })
+        }
+      } else {
+        Object.assign(res.coordinates, {
+          direction: parseFloat(coordD)
+        })
+      }
+    }
+
+    return res
   }
 
   textureCommand(ctx: TextureCommandCtx) {
