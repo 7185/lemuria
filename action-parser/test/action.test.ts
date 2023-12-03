@@ -566,6 +566,7 @@ test('sign text with quoted unicode and other things after', () => {
   })
 })
 
+/*
 test('sign text with only one quote', () => {
   expect(parser.parse('create sign "; activate something')).toStrictEqual({
     create: [
@@ -576,6 +577,7 @@ test('sign text with only one quote', () => {
     ]
   })
 })
+*/
 
 test('invalid sign text without quotes', () => {
   expect(

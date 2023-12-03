@@ -10,53 +10,171 @@ const addToken = (tokenConfig: ITokenConfig) => {
   return token
 }
 
-// The order of TokenTypes in the lexer definition matters
+// The order of TokenTypes in the lexer definition is important
+// They are in fact sorted in the opposite order to their declaration
+
+// Special category token, created to handle keywords inside identifiers
 const Resource = addToken({
   name: 'Resource',
-  // eslint-disable-next-line no-control-regex
-  pattern: /[\u0000-\u0019\u0021-\u002B\u002D-\u003A\u003C-\uFFFF]+/
+  pattern: Lexer.NA
 })
-const Enabled = addToken({name: 'Enabled', pattern: /on|true|yes/i})
-const Disabled = addToken({name: 'Disabled', pattern: /off|false|no/i})
-const Reset = addToken({name: 'Reset', pattern: /(?:no)?reset/i})
-const Loop = addToken({name: 'Loop', pattern: /(?:no)?loop/i})
-const Sync = addToken({name: 'Sync', pattern: /(?:no)?sync/i})
-const Sign = addToken({name: 'Sign', pattern: /sign/i})
-const Color = addToken({name: 'Color', pattern: /color/i})
-const Bcolor = addToken({name: 'Bcolor', pattern: /bcolor/i})
-const Name = addToken({name: 'Name', pattern: /name/i})
-const Mask = addToken({name: 'Mask', pattern: /mask/i})
-const Light = addToken({name: 'Light', pattern: /light/i})
-const Corona = addToken({name: 'Corona', pattern: /corona/i})
-const Noise = addToken({name: 'Noise', pattern: /noise/i})
-const Sound = addToken({name: 'Sound', pattern: /sound/i})
-const Radius = addToken({name: 'Radius', pattern: /radius/i})
-const Size = addToken({name: 'Size', pattern: /size/i})
-const Tag = addToken({name: 'Tag', pattern: /tag/i})
-const Url = addToken({name: 'Url', pattern: /url/i})
-const Time = addToken({name: 'Time', pattern: /time/i})
-const Wait = addToken({name: 'Wait', pattern: /wait/i})
-const Update = addToken({name: 'Update', pattern: /update/i})
-const Type = addToken({name: 'Type', pattern: /type/i})
-const Brightness = addToken({name: 'Brightness', pattern: /brightness/i})
-const Fx = addToken({name: 'Fx', pattern: /fx/i})
-const Angle = addToken({name: 'Angle', pattern: /angle/i})
-const Pitch = addToken({name: 'Pitch', pattern: /pitch/i})
-const Examine = addToken({name: 'Examine', pattern: /examine/i})
-const Media = addToken({name: 'Media', pattern: /media/i})
-const Move = addToken({name: 'Move', pattern: /move/i})
-const Picture = addToken({name: 'Picture', pattern: /picture/i})
-const Rotate = addToken({name: 'Rotate', pattern: /rotate/i})
-const Solid = addToken({name: 'Solid', pattern: /solid/i})
-const Visible = addToken({name: 'Visible', pattern: /visible/i})
-const Teleport = addToken({name: 'Teleport', pattern: /teleport/i})
-const Warp = addToken({name: 'Warp', pattern: /warp/i})
-const Texture = addToken({name: 'Texture', pattern: /texture/i})
-const Adone = addToken({name: 'Adone', pattern: /adone/i})
-const Bump = addToken({name: 'Bump', pattern: /bump/i})
-const Activate = addToken({name: 'Activate', pattern: /activate/i})
-const Create = addToken({name: 'Create', pattern: /create/i})
-const Equals = addToken({name: 'Equals', pattern: /=/})
+
+// The Identifier isn't directly used (just like Whitespace)
+addToken({
+  name: 'Identifier',
+  // eslint-disable-next-line no-control-regex
+  pattern: /[\u0000-\u0019\u0021-\u002B\u002D-\u003A\u003C-\uFFFF]+/,
+  categories: [Resource]
+})
+const Enabled = addToken({
+  name: 'Enabled',
+  pattern: /on|true|yes/i,
+  categories: [Resource]
+})
+const Disabled = addToken({
+  name: 'Disabled',
+  pattern: /off|false|no/i,
+  categories: [Resource]
+})
+const Reset = addToken({
+  name: 'Reset',
+  pattern: /(?:no)?reset/i,
+  categories: [Resource]
+})
+const Loop = addToken({
+  name: 'Loop',
+  pattern: /(?:no)?loop/i,
+  categories: [Resource]
+})
+const Sync = addToken({
+  name: 'Sync',
+  pattern: /(?:no)?sync/i,
+  categories: [Resource]
+})
+const Sign = addToken({name: 'Sign', pattern: /sign/i, categories: [Resource]})
+const Color = addToken({
+  name: 'Color',
+  pattern: /color/i,
+  categories: [Resource]
+})
+const Bcolor = addToken({
+  name: 'Bcolor',
+  pattern: /bcolor/i,
+  categories: [Resource]
+})
+const Name = addToken({name: 'Name', pattern: /name/i, categories: [Resource]})
+const Mask = addToken({name: 'Mask', pattern: /mask/i, categories: [Resource]})
+const Light = addToken({
+  name: 'Light',
+  pattern: /light/i,
+  categories: [Resource]
+})
+const Corona = addToken({
+  name: 'Corona',
+  pattern: /corona/i,
+  categories: [Resource]
+})
+const Noise = addToken({
+  name: 'Noise',
+  pattern: /noise/i,
+  categories: [Resource]
+})
+const Sound = addToken({
+  name: 'Sound',
+  pattern: /sound/i,
+  categories: [Resource]
+})
+const Radius = addToken({
+  name: 'Radius',
+  pattern: /radius/i,
+  categories: [Resource]
+})
+const Size = addToken({name: 'Size', pattern: /size/i, categories: [Resource]})
+const Tag = addToken({name: 'Tag', pattern: /tag/i, categories: [Resource]})
+const Url = addToken({name: 'Url', pattern: /url/i, categories: [Resource]})
+const Time = addToken({name: 'Time', pattern: /time/i, categories: [Resource]})
+const Wait = addToken({name: 'Wait', pattern: /wait/i, categories: [Resource]})
+const Update = addToken({
+  name: 'Update',
+  pattern: /update/i,
+  categories: [Resource]
+})
+const Type = addToken({name: 'Type', pattern: /type/i, categories: [Resource]})
+const Brightness = addToken({
+  name: 'Brightness',
+  pattern: /brightness/i,
+  categories: [Resource]
+})
+const Fx = addToken({name: 'Fx', pattern: /fx/i, categories: [Resource]})
+const Angle = addToken({
+  name: 'Angle',
+  pattern: /angle/i,
+  categories: [Resource]
+})
+const Pitch = addToken({
+  name: 'Pitch',
+  pattern: /pitch/i,
+  categories: [Resource]
+})
+const Examine = addToken({
+  name: 'Examine',
+  pattern: /examine/i,
+  categories: [Resource]
+})
+const Media = addToken({
+  name: 'Media',
+  pattern: /media/i,
+  categories: [Resource]
+})
+const Move = addToken({name: 'Move', pattern: /move/i, categories: [Resource]})
+const Picture = addToken({
+  name: 'Picture',
+  pattern: /picture/i,
+  categories: [Resource]
+})
+const Rotate = addToken({
+  name: 'Rotate',
+  pattern: /rotate/i,
+  categories: [Resource]
+})
+const Solid = addToken({
+  name: 'Solid',
+  pattern: /solid/i,
+  categories: [Resource]
+})
+const Visible = addToken({
+  name: 'Visible',
+  pattern: /visible/i,
+  categories: [Resource]
+})
+const Teleport = addToken({
+  name: 'Teleport',
+  pattern: /teleport/i,
+  categories: [Resource]
+})
+const Warp = addToken({name: 'Warp', pattern: /warp/i, categories: [Resource]})
+const Texture = addToken({
+  name: 'Texture',
+  pattern: /texture/i,
+  categories: [Resource]
+})
+const Adone = addToken({
+  name: 'Adone',
+  pattern: /adone/i,
+  categories: [Resource]
+})
+const Bump = addToken({name: 'Bump', pattern: /bump/i, categories: [Resource]})
+const Activate = addToken({
+  name: 'Activate',
+  pattern: /activate/i,
+  categories: [Resource]
+})
+const Create = addToken({
+  name: 'Create',
+  pattern: /create/i,
+  categories: [Resource]
+})
+const Equals = addToken({name: 'Equals', pattern: /=/, categories: [Resource]})
 const Comma = addToken({name: 'Comma', pattern: /,/})
 const Semicolon = addToken({name: 'Semicolon', pattern: /;/})
 addToken({
@@ -83,8 +201,10 @@ export class ActionParser extends CstParser {
 
   public signCommand = this.RULE('signCommand', () => {
     this.CONSUME(Sign)
-    this.MANY(() => {
-      this.CONSUME(Resource)
+    this.MANY({
+      GATE: () =>
+        ['Name', 'Color', 'Bcolor'].indexOf(this.LA(1).tokenType.name) === -1,
+      DEF: () => this.CONSUME(Resource)
     })
     this.OPTION1(() => this.SUBRULE(this.signArgs))
   })
@@ -97,16 +217,18 @@ export class ActionParser extends CstParser {
 
   public moveCommand = this.RULE('moveCommand', () => {
     this.CONSUME(Move)
-    this.MANY(() => {
-      this.CONSUME(Resource)
+    this.AT_LEAST_ONE({
+      GATE: () => /[+-]?([0-9]*[.])?[0-9]+/.test(this.LA(1).image),
+      DEF: () => this.CONSUME(Resource)
     })
     this.OPTION(() => this.SUBRULE(this.moveArgs))
   })
 
   public rotateCommand = this.RULE('rotateCommand', () => {
     this.CONSUME(Rotate)
-    this.MANY(() => {
-      this.CONSUME(Resource)
+    this.AT_LEAST_ONE({
+      GATE: () => /[+-]?([0-9]*[.])?[0-9]+/.test(this.LA(1).image),
+      DEF: () => this.CONSUME(Resource)
     })
     this.OPTION(() => this.SUBRULE(this.moveArgs))
   })
@@ -145,19 +267,27 @@ export class ActionParser extends CstParser {
 
   public solidCommand = this.RULE('solidCommand', () => {
     this.CONSUME(Solid)
-    this.OPTION(() => this.CONSUME(Resource))
+    this.OPTION({
+      GATE: () =>
+        ['Enabled', 'Disabled'].indexOf(this.LA(2).tokenType.name) > -1,
+      DEF: () => this.CONSUME(Resource)
+    })
     this.SUBRULE(this.boolean)
   })
 
   public visibleCommand = this.RULE('visibleCommand', () => {
     this.CONSUME(Visible)
-    this.OPTION(() => this.CONSUME(Resource))
+    this.OPTION({
+      GATE: () =>
+        ['Enabled', 'Disabled'].indexOf(this.LA(2).tokenType.name) > -1,
+      DEF: () => this.CONSUME(Resource)
+    })
     this.SUBRULE(this.boolean)
   })
 
   public teleportCommand = this.RULE('teleportCommand', () => {
     this.CONSUME(Teleport)
-    this.MANY(() => {
+    this.AT_LEAST_ONE(() => {
       this.CONSUME(Resource)
     })
   })
@@ -169,7 +299,7 @@ export class ActionParser extends CstParser {
 
   public warpCommand = this.RULE('warpCommand', () => {
     this.CONSUME(Warp)
-    this.MANY(() => {
+    this.AT_LEAST_ONE(() => {
       this.CONSUME(Resource)
     })
   })

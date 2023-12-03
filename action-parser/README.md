@@ -1,7 +1,5 @@
 # Lemuria - action-parser
 
-## This is still experimental!
-
 This library is a rewrite of [aw-action-parser](https://github.com/Heldroe/aw-action-parser) by David Guerrero.
 
 It parses [ActiveWorlds object action strings](http://wiki.activeworlds.com/index.php?title=Object_scripting) (also known as **object scripting**) into a machine-friendly data model.
@@ -45,5 +43,5 @@ The `parse()` function will then return an object looking like this:
 
 ## Limitations
 
-The parsing is very strict and there is still some commands missing (`animate`, `astart`, `adone`...). \
-Using keywords in arguments is not handled well for the moment (eg. `create sign "fist bump"` or `activate teleport teleport`).
+The parsing is very strict (the whole parsing fails on invalid commands) and there is still some commands missing (`animate`, `astart`, `adone`...). \
+Some edge cases are not handled properly for the moment, especially on signs (eg. `create sign "; activate something`).
