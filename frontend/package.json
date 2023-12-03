@@ -10,9 +10,10 @@
     "build:watch": "ng build --configuration development --watch",
     "build:both": "npm run build && npm run build:prod",
     "format": "prettier --write \"src/**/*.ts\"",
-    "reset": "rm -rf .angular/ node_modules/ package-lock.json && npm install --save --legacy-peer-deps",
+    "reset": "rm -rf .angular/ node_modules/ package-lock.json && npm install --save",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "postinstall": "cd ../action-parser && npm ci"
   },
   "private": true,
   "dependencies": {
@@ -32,6 +33,7 @@
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
     "@iharbeck/ngx-virtual-scroller": "^17.0.0",
+    "@lemuria/action-parser": "file:../action-parser",
     "@tweenjs/tween.js": "^21.0.0",
     "aw-sequence-parser": "^0.4.0",
     "fflate": "^0.8.1",
@@ -66,5 +68,13 @@
     "prettier": "^3.1.0",
     "ts-node": "^10.9.1",
     "typescript": "~5.2.2"
+  },
+  "overrides": {
+    "aw-sequence-parser": {
+      "fflate": "^0.8.1"
+    },
+    "three-rwx-loader": {
+      "fflate": "^0.8.1"
+    }
   }
 }

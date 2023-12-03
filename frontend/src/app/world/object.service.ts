@@ -1,7 +1,7 @@
 import {forkJoin, Observable, Subject} from 'rxjs'
 import {computed, effect, inject, Injectable, signal} from '@angular/core'
 import {HttpService} from '../network'
-import {Action} from 'action-parser'
+import {Action} from '@lemuria/action-parser'
 import {
   Group,
   Mesh,
