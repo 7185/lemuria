@@ -44,7 +44,7 @@
     "@nestjs/schematics": "^10.0.3",
     "@nestjs/testing": "^10.2.10",
     "@types/jest": "^29.5.10",
-    "@types/node": "^18.19.1",
+    "@types/node": "^18.19.2",
     "@types/supertest": "^2.0.16",
     "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^6.13.1",

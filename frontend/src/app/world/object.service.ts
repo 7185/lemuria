@@ -65,7 +65,7 @@ export class ObjectService {
   private avatars: Map<string, Observable<Group>> = new Map()
   private geomCache: Map<string, BufferGeometry> = new Map()
   private textureLoader = new TextureLoader()
-  private remoteUrl = /.+\..+\/.+/g
+  private remoteUrl = /.+\..+\/.+/
   private animatedPictures = []
   private http = inject(HttpService)
 
@@ -279,7 +279,7 @@ export class ObjectService {
   }
 
   makePicture(item: Group, url: string) {
-    url = this.remoteUrl.exec(url)
+    url = this.remoteUrl.test(url)
       ? `${environment.url.imgProxy}${url}`
       : `${this.resPath()}/${url}`
     this.textureLoader.load(url, (picture) => {

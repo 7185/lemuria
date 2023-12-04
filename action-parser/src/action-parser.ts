@@ -28,153 +28,197 @@ addToken({
 })
 const Enabled = addToken({
   name: 'Enabled',
-  pattern: /on|true|yes/i,
+  pattern: /\b(?:on|true|yes)\b/i,
   categories: [Resource]
 })
 const Disabled = addToken({
   name: 'Disabled',
-  pattern: /off|false|no/i,
+  pattern: /\b(?:off|false|no)\b/i,
   categories: [Resource]
 })
 const Reset = addToken({
   name: 'Reset',
-  pattern: /(?:no)?reset/i,
+  pattern: /\b(?:no)?reset\b/i,
   categories: [Resource]
 })
 const Loop = addToken({
   name: 'Loop',
-  pattern: /(?:no)?loop/i,
+  pattern: /\b(?:no)?loop\b/i,
   categories: [Resource]
 })
 const Sync = addToken({
   name: 'Sync',
-  pattern: /(?:no)?sync/i,
+  pattern: /\b(?:no)?sync\b/i,
   categories: [Resource]
 })
-const Sign = addToken({name: 'Sign', pattern: /sign/i, categories: [Resource]})
+const Sign = addToken({
+  name: 'Sign',
+  pattern: /\bsign\b/i,
+  categories: [Resource]
+})
 const Color = addToken({
   name: 'Color',
-  pattern: /color/i,
+  pattern: /\bcolor\b/i,
   categories: [Resource]
 })
 const Bcolor = addToken({
   name: 'Bcolor',
-  pattern: /bcolor/i,
+  pattern: /\bbcolor\b/i,
   categories: [Resource]
 })
-const Name = addToken({name: 'Name', pattern: /name/i, categories: [Resource]})
-const Mask = addToken({name: 'Mask', pattern: /mask/i, categories: [Resource]})
+const Name = addToken({
+  name: 'Name',
+  pattern: /\bname\b/i,
+  categories: [Resource]
+})
+const Mask = addToken({
+  name: 'Mask',
+  pattern: /\bmask\b/i,
+  categories: [Resource]
+})
 const Light = addToken({
   name: 'Light',
-  pattern: /light/i,
+  pattern: /\blight\b/i,
   categories: [Resource]
 })
 const Corona = addToken({
   name: 'Corona',
-  pattern: /corona/i,
+  pattern: /\bcorona\b/i,
   categories: [Resource]
 })
 const Noise = addToken({
   name: 'Noise',
-  pattern: /noise/i,
+  pattern: /\bnoise\b/i,
   categories: [Resource]
 })
 const Sound = addToken({
   name: 'Sound',
-  pattern: /sound/i,
+  pattern: /\bsound\b/i,
   categories: [Resource]
 })
 const Radius = addToken({
   name: 'Radius',
-  pattern: /radius/i,
+  pattern: /\bradius\b/i,
   categories: [Resource]
 })
-const Size = addToken({name: 'Size', pattern: /size/i, categories: [Resource]})
-const Tag = addToken({name: 'Tag', pattern: /tag/i, categories: [Resource]})
-const Url = addToken({name: 'Url', pattern: /url/i, categories: [Resource]})
-const Time = addToken({name: 'Time', pattern: /time/i, categories: [Resource]})
-const Wait = addToken({name: 'Wait', pattern: /wait/i, categories: [Resource]})
+const Size = addToken({
+  name: 'Size',
+  pattern: /\bsize\b/i,
+  categories: [Resource]
+})
+const Tag = addToken({name: 'Tag', pattern: /\btag\b/i, categories: [Resource]})
+const Url = addToken({name: 'Url', pattern: /\burl\b/i, categories: [Resource]})
+const Time = addToken({
+  name: 'Time',
+  pattern: /\btime\b/i,
+  categories: [Resource]
+})
+const Wait = addToken({
+  name: 'Wait',
+  pattern: /\bwait\b/i,
+  categories: [Resource]
+})
 const Update = addToken({
   name: 'Update',
-  pattern: /update/i,
+  pattern: /\bupdate\b/i,
   categories: [Resource]
 })
-const Type = addToken({name: 'Type', pattern: /type/i, categories: [Resource]})
+const Type = addToken({
+  name: 'Type',
+  pattern: /\btype\b/i,
+  categories: [Resource]
+})
 const Brightness = addToken({
   name: 'Brightness',
-  pattern: /brightness/i,
+  pattern: /\bbrightness\b/i,
   categories: [Resource]
 })
-const Fx = addToken({name: 'Fx', pattern: /fx/i, categories: [Resource]})
+const Fx = addToken({name: 'Fx', pattern: /\bfx\b/i, categories: [Resource]})
 const Angle = addToken({
   name: 'Angle',
-  pattern: /angle/i,
+  pattern: /\bangle\b/i,
   categories: [Resource]
 })
 const Pitch = addToken({
   name: 'Pitch',
-  pattern: /pitch/i,
+  pattern: /\bpitch\b/i,
   categories: [Resource]
 })
 const Examine = addToken({
   name: 'Examine',
-  pattern: /examine/i,
+  pattern: /\bexamine\b/i,
   categories: [Resource]
 })
 const Media = addToken({
   name: 'Media',
-  pattern: /media/i,
+  pattern: /\bmedia\b/i,
   categories: [Resource]
 })
-const Move = addToken({name: 'Move', pattern: /move/i, categories: [Resource]})
+const Move = addToken({
+  name: 'Move',
+  pattern: /\bmove\b/i,
+  categories: [Resource]
+})
 const Picture = addToken({
   name: 'Picture',
-  pattern: /picture/i,
+  pattern: /\bpicture\b/i,
   categories: [Resource]
 })
 const Rotate = addToken({
   name: 'Rotate',
-  pattern: /rotate/i,
+  pattern: /\brotate\b/i,
   categories: [Resource]
 })
 const Solid = addToken({
   name: 'Solid',
-  pattern: /solid/i,
+  pattern: /\bsolid\b/i,
   categories: [Resource]
 })
 const Visible = addToken({
   name: 'Visible',
-  pattern: /visible/i,
+  pattern: /\bvisible\b/i,
   categories: [Resource]
 })
 const Teleport = addToken({
   name: 'Teleport',
-  pattern: /teleport/i,
+  pattern: /\bteleport\b/i,
   categories: [Resource]
 })
-const Warp = addToken({name: 'Warp', pattern: /warp/i, categories: [Resource]})
+const Warp = addToken({
+  name: 'Warp',
+  pattern: /\bwarp\b/i,
+  categories: [Resource]
+})
 const Texture = addToken({
   name: 'Texture',
-  pattern: /texture/i,
+  pattern: /\btexture\b/i,
   categories: [Resource]
 })
 const Adone = addToken({
   name: 'Adone',
-  pattern: /adone/i,
+  pattern: /\badone\b/i,
   categories: [Resource]
 })
-const Bump = addToken({name: 'Bump', pattern: /bump/i, categories: [Resource]})
+const Bump = addToken({
+  name: 'Bump',
+  pattern: /\bbump\b/i,
+  categories: [Resource]
+})
 const Activate = addToken({
   name: 'Activate',
-  pattern: /activate/i,
+  pattern: /\bactivate\b/i,
   categories: [Resource]
 })
 const Create = addToken({
   name: 'Create',
-  pattern: /create/i,
+  pattern: /\bcreate\b/i,
   categories: [Resource]
 })
-const Equals = addToken({name: 'Equals', pattern: /=/, categories: [Resource]})
+const Equals = addToken({
+  name: 'Equals',
+  pattern: /\b=\b/,
+  categories: [Resource]
+})
 const Comma = addToken({name: 'Comma', pattern: /,/})
 const Semicolon = addToken({name: 'Semicolon', pattern: /;/})
 addToken({
