@@ -58,27 +58,22 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   boolean(ctx: BooleanCtx) {
-    if (ctx.Enabled) {
-      return true
-    }
-    if (ctx.Disabled) {
-      return false
-    }
+    return !!ctx.Enabled
   }
 
   colorCommand(ctx: ColorCommandCtx) {
-    const result: any = {
+    const res = {
       commandType: 'color',
       color: colorStringToRGB(
         ctx.Resource.map((identToken) => identToken.image)[0]
       )
     }
     if (ctx.nameParameter != null) {
-      result.targetName = (
-        ctx.nameParameter[0].children.Resource[0] as IToken
-      ).image
+      Object.assign(res, {
+        targetName: (ctx.nameParameter[0].children.Resource[0] as IToken).image
+      })
     }
-    return result.color == null ? null : result
+    return res.color == null ? null : res
   }
 
   examineCommand() {
@@ -88,7 +83,7 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   mediaCommand(ctx: MediaCommandCtx) {
-    const res: object = {
+    const res = {
       commandType: 'media',
       resource: ctx.Resource.map((identToken) => identToken.image)[0]
     }
@@ -156,7 +151,7 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   pictureCommand(ctx: PictureCommandCtx) {
-    const res: object = {
+    const res = {
       commandType: 'picture',
       resource: ctx.Resource.map((identToken) => identToken.image)[0]
     }
@@ -170,7 +165,7 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   signCommand(ctx: SignCommandCtx) {
-    let res: object = {
+    const res = {
       commandType: 'sign'
     }
     const args = ctx.signArgs?.map((arg) => this.visit(arg))[0]
@@ -188,10 +183,7 @@ class ActionVisitor extends BaseActionVisitor {
         text = resource[0]
       }
       text = text.replace(/(^"|"$)/g, '')
-      res = {
-        commandType: 'sign',
-        text
-      }
+      Object.assign(res, {text})
     }
     if (args != null) {
       args.forEach((arg: object) => {
@@ -436,24 +428,19 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   teleportCommand(ctx: TeleportCommandCtx) {
-    if (ctx.Resource == null) {
-      return null
-    }
-
-    const res: any = {
+    const res = {
       commandType: 'teleport'
     }
+    const resource = ctx.Resource.map((identToken: IToken) => identToken.image)
+    const worldName = resource[0]
+    let [, coordA, coordB, coordC, coordD] = resource
 
-    let [worldName, coordA, coordB, coordC, coordD] = ctx.Resource.map(
-      (identToken: IToken) => identToken.image
-    )
     if (/^[+-\d]/.test(worldName)) {
       // Relative teleport
       coordD = coordC
       coordC = coordB
       coordB = coordA
       coordA = worldName
-      worldName = 'nowhere'
     } else {
       Object.assign(res, {worldName})
       if (coordA == null) {
@@ -472,8 +459,7 @@ class ActionVisitor extends BaseActionVisitor {
     }
 
     const res = {
-      commandType: 'warp',
-      coordinates: {}
+      commandType: 'warp'
     }
     const [coordA, coordB, coordC, coordD] = ctx.Resource.map(
       (identToken: IToken) => identToken.image
@@ -484,7 +470,7 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   textureCommand(ctx: TextureCommandCtx) {
-    const res: object = {
+    const res = {
       commandType: 'texture',
       texture: ctx.Resource.map((identToken) => identToken.image)[0]
     }
@@ -498,10 +484,6 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   moveCommand(ctx: MoveCommandCtx) {
-    if (ctx.Resource == null) {
-      return {}
-    }
-
     const res = {
       commandType: 'move',
       distance: {x: 0, y: 0, z: 0}
@@ -528,10 +510,6 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   rotateCommand(ctx: RotateCommandCtx) {
-    if (ctx.Resource == null) {
-      return {}
-    }
-
     const res = {
       commandType: 'rotate',
       speed: {x: 0, y: 0, z: 0}
@@ -590,10 +568,10 @@ class ActionVisitor extends BaseActionVisitor {
   action(ctx: ActionCtx) {
     const type = this.visit(ctx.trigger)
     const commands = ctx.command.map((command) => this.visit(command))
-    const result: any = {}
+    const result: Record<string, object[]> = {}
 
     // Filter out duplicate commands of the same type, keeping only the last one
-    const commandMap = new Map<string, any>()
+    const commandMap = new Map<string, object>()
     for (const command of commands) {
       if (command != null && Object.keys(command).length) {
         // If targetName is present, duplicate commands are allowed
@@ -616,7 +594,7 @@ class ActionVisitor extends BaseActionVisitor {
     const actions = ctx.action.map((action) => this.visit(action))
 
     // Filter out duplicate actions of the same type, keeping only the first one
-    const actionsMap = new Map<string, any>()
+    const actionsMap = new Map<string, object>()
     for (const action of actions) {
       if (!actionsMap.has(Object.keys(action)[0])) {
         actionsMap.set(Object.keys(action)[0], action)

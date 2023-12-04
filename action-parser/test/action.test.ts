@@ -752,7 +752,7 @@ test('teleport to another world', () => {
 })
 
 test('warp absolute', () => {
-  expect(parser.parse('bump warp -2.7S 2.2E -0.8a 270')).toStrictEqual({
+  expect(parser.parse('bump warp 2.7S 2.2E -0.8a 270')).toStrictEqual({
     bump: [
       {
         commandType: 'warp',
@@ -763,7 +763,7 @@ test('warp absolute', () => {
           },
           coordinates: {
             EW: 2.2,
-            NS: 2.7,
+            NS: -2.7,
             coordinateType: 'absolute'
           },
           direction: 270
@@ -792,4 +792,8 @@ test('warp relative', () => {
       }
     ]
   })
+})
+
+test('warp invalid coords', () => {
+  expect(parser.parse('bump warp +2')).toStrictEqual({})
 })

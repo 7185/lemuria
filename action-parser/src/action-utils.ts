@@ -101,7 +101,7 @@ export const visitCoords = (
     return
   }
   if (coordC != null) {
-    if (/a$/.test(coordC)) {
+    if (/a$/i.test(coordC)) {
       if (/^[+-]/.test(coordC)) {
         Object.assign(res.coordinates, {
           altitude: {
@@ -124,26 +124,9 @@ export const visitCoords = (
     }
   }
   if (coordD != null) {
-    if (/a$/.test(coordD)) {
-      if (/^[+-]/.test(coordD)) {
-        Object.assign(res.coordinates, {
-          altitude: {
-            altitudeType: 'relative',
-            value: parseFloat(coordD.slice(0, -1))
-          }
-        })
-      } else {
-        Object.assign(res.coordinates, {
-          altitude: {
-            altitudeType: 'absolute',
-            value: parseFloat(coordD.slice(0, -1))
-          }
-        })
-      }
-    } else {
-      Object.assign(res.coordinates, {
-        direction: parseFloat(coordD)
-      })
-    }
+    // Can only be direction
+    Object.assign(res.coordinates, {
+      direction: parseFloat(coordD)
+    })
   }
 }
