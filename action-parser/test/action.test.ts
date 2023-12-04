@@ -10,8 +10,67 @@ test('invalid string', () => {
   expect(parser.parse('foobar')).toStrictEqual({})
 })
 
-test('create color green', () => {
-  expect(parser.parse('create color green')).toStrictEqual({
+test('good string has empty debug information', () => {
+  expect(parser.debug('create color green;')).toStrictEqual('OK')
+})
+
+test('invalid string has debug information', () => {
+  expect(parser.debug('color red')).not.toStrictEqual('OK')
+})
+
+// Colors
+test('empty create color', () => {
+  expect(parser.parse('create color')).toStrictEqual({})
+})
+
+test('create color f', () => {
+  expect(parser.parse('create color f')).toStrictEqual({
+    create: [
+      {
+        commandType: 'color',
+        color: {r: 0, g: 0, b: 15}
+      }
+    ]
+  })
+})
+
+test('create color ff', () => {
+  expect(parser.parse('create color ff')).toStrictEqual({
+    create: [
+      {
+        commandType: 'color',
+        color: {r: 0, g: 0, b: 255}
+      }
+    ]
+  })
+})
+
+test('create color fff', () => {
+  expect(parser.parse('create color fff')).toStrictEqual({
+    create: [
+      {
+        commandType: 'color',
+        color: {r: 0, g: 15, b: 255}
+      }
+    ]
+  })
+})
+
+test('create long color', () => {
+  expect(
+    parser.parse('create color foobarbazaaaaaaaaaaaaaaaaaa')
+  ).toStrictEqual({
+    create: [
+      {
+        commandType: 'color',
+        color: {r: 0, g: 0, b: 15}
+      }
+    ]
+  })
+})
+
+test('create negative hex color', () => {
+  expect(parser.parse('create color F00FF00')).toStrictEqual({
     create: [
       {
         commandType: 'color',
@@ -21,8 +80,23 @@ test('create color green', () => {
   })
 })
 
-test('good string has empty debug information', () => {
-  expect(parser.debug('create color green;')).toStrictEqual('OK')
+test('create very long hex color', () => {
+  expect(parser.parse('create color 63FFFFFFFFFFFFFF9C')).toStrictEqual({
+    create: [
+      {
+        commandType: 'color',
+        color: {r: 255, g: 255, b: 255}
+      }
+    ]
+  })
+})
+
+test('invalid color results in no action', () => {
+  expect(parser.parse('create color poorchoice')).toStrictEqual({})
+})
+
+test('no color results in no action', () => {
+  expect(parser.parse('create color')).toStrictEqual({})
 })
 
 test('create color green', () => {
@@ -98,15 +172,16 @@ test('rotate with 1 number is about Y', () => {
 })
 
 test('rotate with 2 numbers is about X and Y', () => {
-  expect(parser.parse('create rotate 1 2')).toStrictEqual({
-    create: [
+  expect(parser.parse('bump rotate 1 2 name=no_z')).toStrictEqual({
+    bump: [
       {
         commandType: 'rotate',
         speed: {
           x: 1,
           y: 2,
           z: 0
-        }
+        },
+        targetName: 'no_z'
       }
     ]
   })
@@ -187,8 +262,33 @@ test('move with 3 numbers is about X, Y and Z', () => {
   })
 })
 
+test('create rotate & move with reset', () => {
+  expect(
+    parser.parse(
+      'create rotate 0 0 0 reset, move 0 0 2 loop reset time=5 wait=1 nosync'
+    )
+  ).toStrictEqual({
+    create: [
+      {
+        commandType: 'rotate',
+        speed: {x: 0, y: 0, z: 0},
+        reset: true
+      },
+      {
+        commandType: 'move',
+        distance: {x: 0, y: 0, z: 2},
+        loop: true,
+        reset: true,
+        sync: false,
+        time: 5,
+        wait: 1
+      }
+    ]
+  })
+})
+
 test('empty command does not return anything', () => {
-  expect(parser.parse('create rotate')).toStrictEqual({})
+  expect(parser.parse('create rotate, activate move')).toStrictEqual({})
 })
 
 test('examine command returns properly', () => {
@@ -224,7 +324,7 @@ test('multiple color with different names applies all', () => {
   })
 })
 
-// Solid booleans
+// Booleans
 test('create solid off', () => {
   expect(parser.parse('create solid off')).toStrictEqual({
     create: [
@@ -247,89 +347,24 @@ test('create solid false', () => {
   })
 })
 
-test('create solid no', () => {
-  expect(parser.parse('create solid no')).toStrictEqual({
+test('create solid <name> no', () => {
+  expect(parser.parse('create solid image no')).toStrictEqual({
     create: [
       {
         commandType: 'solid',
+        targetName: 'image',
         value: false
       }
     ]
   })
 })
 
-test('create solid on', () => {
-  expect(parser.parse('create solid on')).toStrictEqual({
-    create: [
-      {
-        commandType: 'solid',
-        value: true
-      }
-    ]
-  })
-})
-
-test('create solid true', () => {
-  expect(parser.parse('create solid true')).toStrictEqual({
-    create: [
-      {
-        commandType: 'solid',
-        value: true
-      }
-    ]
-  })
-})
-
-test('create solid yes', () => {
-  expect(parser.parse('create solid yes')).toStrictEqual({
-    create: [
-      {
-        commandType: 'solid',
-        value: true
-      }
-    ]
-  })
-})
-
-// Visible booleans
-test('create visible off', () => {
-  expect(parser.parse('create visible off')).toStrictEqual({
+test('create visible <name> on', () => {
+  expect(parser.parse('create visible image on')).toStrictEqual({
     create: [
       {
         commandType: 'visible',
-        value: false
-      }
-    ]
-  })
-})
-
-test('create visible false', () => {
-  expect(parser.parse('create visible false')).toStrictEqual({
-    create: [
-      {
-        commandType: 'visible',
-        value: false
-      }
-    ]
-  })
-})
-
-test('create visible no', () => {
-  expect(parser.parse('create visible no')).toStrictEqual({
-    create: [
-      {
-        commandType: 'visible',
-        value: false
-      }
-    ]
-  })
-})
-
-test('create visible on', () => {
-  expect(parser.parse('create visible on')).toStrictEqual({
-    create: [
-      {
-        commandType: 'visible',
+        targetName: 'image',
         value: true
       }
     ]
@@ -358,72 +393,16 @@ test('create visible yes', () => {
   })
 })
 
-// Colors
-test('empty create color', () => {
-  expect(parser.parse('create color')).toStrictEqual({})
-})
-
-test('create color f', () => {
-  expect(parser.parse('create color f')).toStrictEqual({
-    create: [
-      {
-        commandType: 'color',
-        color: {r: 0, g: 0, b: 15}
-      }
-    ]
-  })
-})
-
-test('create color ff', () => {
-  expect(parser.parse('create color ff')).toStrictEqual({
-    create: [
-      {
-        commandType: 'color',
-        color: {r: 0, g: 0, b: 255}
-      }
-    ]
-  })
-})
-
-test('create color fff', () => {
-  expect(parser.parse('create color fff')).toStrictEqual({
-    create: [
-      {
-        commandType: 'color',
-        color: {r: 0, g: 15, b: 255}
-      }
-    ]
-  })
-})
-
-test('create long color', () => {
-  expect(
-    parser.parse('create color foobarbazaaaaaaaaaaaaaaaaaa')
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'color',
-        color: {r: 0, g: 0, b: 15}
-      }
-    ]
-  })
-})
-
-test('invalid color results in no action', () => {
-  expect(parser.parse('create color poorchoice')).toStrictEqual({})
-})
-
-test('no color results in no action', () => {
-  expect(parser.parse('create color')).toStrictEqual({})
-})
-
 test('create texture with mask', () => {
-  expect(parser.parse('create texture fleurs19 mask=fleurs19m')).toStrictEqual({
+  expect(
+    parser.parse('create texture fleurs19 mask=fleurs19m name=textured')
+  ).toStrictEqual({
     create: [
       {
         commandType: 'texture',
         texture: 'fleurs19',
-        mask: 'fleurs19m'
+        mask: 'fleurs19m',
+        targetName: 'textured'
       }
     ]
   })
@@ -444,30 +423,6 @@ test('create texture with mask and tag', () => {
   })
 })
 
-test('create rotate & move with reset', () => {
-  expect(
-    parser.parse(
-      'create rotate 0 0 0 reset, move 0 0 2 loop reset time=5 wait=1'
-    )
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'rotate',
-        speed: {x: 0, y: 0, z: 0},
-        reset: true
-      },
-      {
-        commandType: 'move',
-        distance: {x: 0, y: 0, z: 2},
-        loop: true,
-        reset: true,
-        time: 5,
-        wait: 1
-      }
-    ]
-  })
-})
-
 test('empty create sign returns properly', () => {
   expect(parser.parse('create sign')).toStrictEqual({
     create: [
@@ -479,12 +434,15 @@ test('empty create sign returns properly', () => {
 })
 
 test('create sign with args', () => {
-  expect(parser.parse('create sign color=yellow bcolor=pink')).toStrictEqual({
+  expect(
+    parser.parse('create sign name=welcome color=yellow bcolor=pink')
+  ).toStrictEqual({
     create: [
       {
         color: {b: 0, g: 255, r: 255},
         bcolor: {b: 199, g: 110, r: 255},
-        commandType: 'sign'
+        commandType: 'sign',
+        targetName: 'welcome'
       }
     ]
   })
@@ -639,13 +597,97 @@ test('complex example', () => {
   })
 })
 
-test('picture with update', () => {
-  expect(parser.parse('create picture example.jpg update=500')).toStrictEqual({
+test('picture with update and name', () => {
+  expect(
+    parser.parse('create picture example.jpg update=500 name=image')
+  ).toStrictEqual({
     create: [
       {
         commandType: 'picture',
         resource: 'example.jpg',
+        targetName: 'image',
         update: 500
+      }
+    ]
+  })
+})
+
+test('activate noise', () => {
+  expect(
+    parser.parse('activate noise http://www.example.com/tchin.wav')
+  ).toStrictEqual({
+    activate: [
+      {
+        commandType: 'noise',
+        targetName: 'http://www.example.com/tchin.wav'
+      }
+    ]
+  })
+})
+
+test('create sound', () => {
+  expect(
+    parser.parse('create sound http://www.example.com/sound.mid')
+  ).toStrictEqual({
+    create: [
+      {
+        commandType: 'sound',
+        targetName: 'http://www.example.com/sound.mid'
+      }
+    ]
+  })
+})
+
+test('activate url', () => {
+  expect(
+    parser.parse('activate url mailto:webmaster@example.com')
+  ).toStrictEqual({
+    activate: [
+      {
+        commandType: 'url',
+        resource: 'mailto:webmaster@example.com'
+      }
+    ]
+  })
+})
+
+test('create corona with params', () => {
+  expect(
+    parser.parse('create corona corona20 size=10 mask=corona20m name=light')
+  ).toStrictEqual({
+    create: [
+      {
+        commandType: 'corona',
+        mask: 'corona20m',
+        resource: 'corona20',
+        size: 10,
+        targetName: 'light'
+      }
+    ]
+  })
+})
+
+test('create light', () => {
+  expect(
+    parser.parse(
+      'create light color=orange fx=blink time=2 name=light radius=10 type=spot angle=55 pitch=20'
+    )
+  ).toStrictEqual({
+    create: [
+      {
+        commandType: 'light',
+        angle: 55,
+        color: {
+          b: 0,
+          g: 127,
+          r: 255
+        },
+        fx: 'blink',
+        radius: 10,
+        pitch: 20,
+        time: 2,
+        type: 'spot',
+        targetName: 'light'
       }
     ]
   })
@@ -667,4 +709,87 @@ test.each(['français', 'a.b.c.', 'Mars123'])(
 
 test('world name cannot start with a digit', () => {
   expect(parser.parse('bump teleport 1abcd')).toStrictEqual({})
+})
+
+test('teleport within the current world', () => {
+  expect(parser.parse('activate teleport 12N 10.2W 180')).toStrictEqual({
+    activate: [
+      {
+        commandType: 'teleport',
+        coordinates: {
+          coordinates: {
+            coordinateType: 'absolute',
+            NS: 12,
+            EW: -10.2
+          },
+          direction: 180
+        }
+      }
+    ]
+  })
+})
+
+test('teleport to another world', () => {
+  expect(parser.parse('activate teleport teleport 1.2S .2E 0a')).toStrictEqual({
+    activate: [
+      {
+        commandType: 'teleport',
+        coordinates: {
+          altitude: {
+            altitudeType: 'absolute',
+            value: 0
+          },
+          coordinates: {
+            coordinateType: 'absolute',
+            NS: -1.2,
+            EW: 0.2
+          }
+        },
+        worldName: 'teleport'
+      }
+    ]
+  })
+})
+
+test('warp absolute', () => {
+  expect(parser.parse('bump warp -2.7S 2.2E -0.8a 270')).toStrictEqual({
+    bump: [
+      {
+        commandType: 'warp',
+        coordinates: {
+          altitude: {
+            altitudeType: 'relative',
+            value: -0.8
+          },
+          coordinates: {
+            EW: 2.2,
+            NS: 2.7,
+            coordinateType: 'absolute'
+          },
+          direction: 270
+        }
+      }
+    ]
+  })
+})
+
+test('warp relative', () => {
+  expect(parser.parse('bump warp +0 +0 +1a')).toStrictEqual({
+    bump: [
+      {
+        commandType: 'warp',
+        coordinates: {
+          altitude: {
+            altitudeType: 'relative',
+            value: 1
+          },
+          coordinates: {
+            coordinateType: 'relative',
+            x: 0,
+            y: 0
+          }
+        }
+      }
+    ]
+  })
 })

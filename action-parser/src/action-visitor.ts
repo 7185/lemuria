@@ -1,5 +1,5 @@
 import {CstNode, IToken, Lexer} from 'chevrotain'
-import {colorStringToRGB} from './color-utils'
+import {colorStringToRGB, visitCoords} from './action-utils'
 import {ActionParser, allTokens} from './action-parser'
 import type {
   ActionCtx,
@@ -64,7 +64,6 @@ class ActionVisitor extends BaseActionVisitor {
     if (ctx.Disabled) {
       return false
     }
-    return null
   }
 
   colorCommand(ctx: ColorCommandCtx) {
@@ -107,92 +106,6 @@ class ActionVisitor extends BaseActionVisitor {
       commandType: 'name',
       targetName: ctx.Resource.map((identToken) => identToken.image)[0]
     }
-  }
-
-  warpCommand(ctx: WarpCommandCtx) {
-    if (ctx.Resource == null || ctx.Resource.length < 2) {
-      return null
-    }
-
-    const [coordA, coordB, coordC, coordD] = ctx.Resource.map(
-      (identToken: IToken) => identToken.image
-    )
-    const res = {
-      commandType: 'warp',
-      coordinates: {}
-    }
-
-    if (/^[+-]/.test(coordA) && /^[+-]/.test(coordB)) {
-      Object.assign(res.coordinates, {
-        coordinates: {
-          coordinateType: 'relative',
-          x: parseFloat(coordA),
-          y: parseFloat(coordB)
-        }
-      })
-    } else if (/[ns]$/i.test(coordA) && /[ew]$/i.test(coordB)) {
-      const signA = /n$/i.test(coordA) ? 1 : -1
-      const signB = /e$/i.test(coordA) ? 1 : -1
-
-      Object.assign(res.coordinates, {
-        coordinates: {
-          coordinateType: 'absolute',
-          NS: signA * parseFloat(coordA.slice(0, -1)),
-          EW: signB * parseFloat(coordB.slice(0, -1))
-        }
-      })
-    } else {
-      // invalid
-      return null
-    }
-    if (coordC != null) {
-      if (/a$/.test(coordC)) {
-        if (/^[+-]/.test(coordC)) {
-          Object.assign(res.coordinates, {
-            altitude: {
-              altitudeType: 'relative',
-              value: parseFloat(coordC.slice(0, -1))
-            }
-          })
-        } else {
-          Object.assign(res.coordinates, {
-            altitude: {
-              altitudeType: 'absolute',
-              value: parseFloat(coordC.slice(0, -1))
-            }
-          })
-        }
-      } else {
-        Object.assign(res.coordinates, {
-          direction: parseFloat(coordC)
-        })
-      }
-    }
-    if (coordD != null) {
-      if (/a$/.test(coordD)) {
-        if (/^[+-]/.test(coordD)) {
-          Object.assign(res.coordinates, {
-            altitude: {
-              altitudeType: 'relative',
-              value: parseFloat(coordD.slice(0, -1))
-            }
-          })
-        } else {
-          Object.assign(res.coordinates, {
-            altitude: {
-              altitudeType: 'absolute',
-              value: parseFloat(coordD.slice(0, -1))
-            }
-          })
-        }
-      } else {
-        Object.assign(res.coordinates, {
-          direction: parseFloat(coordD)
-        })
-      }
-    }
-
-    return res
   }
 
   lightCommand(ctx: LightCommandCtx) {
@@ -408,6 +321,9 @@ class ActionVisitor extends BaseActionVisitor {
     if (ctx.nameParameter) {
       args.push(this.visit(ctx.nameParameter))
     }
+    if (ctx.pitchParameter) {
+      args.push(this.visit(ctx.pitchParameter))
+    }
     if (ctx.radiusParameter) {
       args.push(this.visit(ctx.radiusParameter))
     }
@@ -545,78 +461,24 @@ class ActionVisitor extends BaseActionVisitor {
         return res
       }
     }
+    visitCoords(res, coordA, coordB, coordC, coordD)
 
-    res.coordinates = {}
+    return res
+  }
 
-    if (/^[+-]/.test(coordA) && /^[+-]/.test(coordB)) {
-      Object.assign(res.coordinates, {
-        coordinates: {
-          coordinateType: 'relative',
-          x: parseFloat(coordA),
-          y: parseFloat(coordB)
-        }
-      })
-    } else if (/[ns]$/i.test(coordA) && /[ew]$/i.test(coordB)) {
-      const signA = /n$/i.test(coordA) ? 1 : -1
-      const signB = /e$/i.test(coordA) ? 1 : -1
-
-      Object.assign(res.coordinates, {
-        coordinates: {
-          coordinateType: 'absolute',
-          NS: signA * parseFloat(coordA.slice(0, -1)),
-          EW: signB * parseFloat(coordB.slice(0, -1))
-        }
-      })
-    } else {
-      // invalid
+  warpCommand(ctx: WarpCommandCtx) {
+    if (ctx.Resource == null || ctx.Resource.length < 2) {
       return null
     }
-    if (coordC != null) {
-      if (/a$/.test(coordC)) {
-        if (/^[+-]/.test(coordC)) {
-          Object.assign(res.coordinates, {
-            altitude: {
-              altitudeType: 'relative',
-              value: parseFloat(coordC.slice(0, -1))
-            }
-          })
-        } else {
-          Object.assign(res.coordinates, {
-            altitude: {
-              altitudeType: 'absolute',
-              value: parseFloat(coordC.slice(0, -1))
-            }
-          })
-        }
-      } else {
-        Object.assign(res.coordinates, {
-          direction: parseFloat(coordC)
-        })
-      }
+
+    const res = {
+      commandType: 'warp',
+      coordinates: {}
     }
-    if (coordD != null) {
-      if (/a$/.test(coordD)) {
-        if (/^[+-]/.test(coordD)) {
-          Object.assign(res.coordinates, {
-            altitude: {
-              altitudeType: 'relative',
-              value: parseFloat(coordD.slice(0, -1))
-            }
-          })
-        } else {
-          Object.assign(res.coordinates, {
-            altitude: {
-              altitudeType: 'absolute',
-              value: parseFloat(coordD.slice(0, -1))
-            }
-          })
-        }
-      } else {
-        Object.assign(res.coordinates, {
-          direction: parseFloat(coordD)
-        })
-      }
-    }
+    const [coordA, coordB, coordC, coordD] = ctx.Resource.map(
+      (identToken: IToken) => identToken.image
+    )
+    visitCoords(res, coordA, coordB, coordC, coordD)
 
     return res
   }

@@ -206,6 +206,7 @@ export interface LightArgsCtx {
   colorParameter?: CstNode[]
   fxParameter?: CstNode[]
   nameParameter?: CstNode[]
+  pitchParameter?: CstNode[]
   radiusParameter?: CstNode[]
   timeParameter?: CstNode[]
   typeParameter?: CstNode[]
