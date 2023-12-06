@@ -67,7 +67,18 @@ export const colorStringToRGB = (color: string) => {
 }
 
 export const visitCoords = (
-  res: {commandType?: string; coordinates?: object},
+  res: {
+    commandType?: string
+    coordinates?: {
+      direction?: number
+      type?: string
+      x?: number
+      y?: number
+      ns?: number
+      ew?: number
+      altitude?: number
+    }
+  },
   coordA: string,
   coordB: string,
   coordC: string,
@@ -76,24 +87,16 @@ export const visitCoords = (
   res.coordinates = {}
 
   if (/^[+-]/.test(coordA) && /^[+-]/.test(coordB)) {
-    Object.assign(res.coordinates, {
-      coordinates: {
-        coordinateType: 'relative',
-        x: parseFloat(coordA),
-        y: parseFloat(coordB)
-      }
-    })
+    res.coordinates.type = 'relative'
+    res.coordinates.x = parseFloat(coordA)
+    res.coordinates.y = parseFloat(coordB)
   } else if (/[ns]$/i.test(coordA) && /[ew]$/i.test(coordB)) {
     const signA = /n$/i.test(coordA) ? 1 : -1
     const signB = /e$/i.test(coordB) ? 1 : -1
 
-    Object.assign(res.coordinates, {
-      coordinates: {
-        coordinateType: 'absolute',
-        NS: signA * parseFloat(coordA.slice(0, -1)),
-        EW: signB * parseFloat(coordB.slice(0, -1))
-      }
-    })
+    res.coordinates.type = 'absolute'
+    res.coordinates.ns = signA * parseFloat(coordA.slice(0, -1))
+    res.coordinates.ew = signB * parseFloat(coordB.slice(0, -1))
   } else {
     // Invalid, delete all keys
     delete res.commandType
@@ -102,31 +105,33 @@ export const visitCoords = (
   }
   if (coordC != null) {
     if (/a$/i.test(coordC)) {
-      if (/^[+-]/.test(coordC)) {
-        Object.assign(res.coordinates, {
-          altitude: {
-            altitudeType: 'relative',
-            value: parseFloat(coordC.slice(0, -1))
-          }
-        })
-      } else {
-        Object.assign(res.coordinates, {
-          altitude: {
-            altitudeType: 'absolute',
-            value: parseFloat(coordC.slice(0, -1))
-          }
-        })
+      res.coordinates.altitude = parseFloat(coordC.slice(0, -1))
+
+      // Fourth value can only be direction at this point
+      if (coordD != null) {
+        res.coordinates.direction = parseFloat(coordD)
+
+        // But invalid if types are not the same
+        if (
+          (/^[+-]/.test(coordD) && res.coordinates.type === 'absolute') ||
+          (!/^[+-]/.test(coordD) && res.coordinates.type === 'relative')
+        ) {
+          delete res.commandType
+          delete res.coordinates
+        }
       }
     } else {
-      Object.assign(res.coordinates, {
-        direction: parseFloat(coordC)
-      })
+      // No altitude, so third value is direction
+      res.coordinates.direction = parseFloat(coordC)
+
+      // But invalid if types are not the same
+      if (
+        (/^[+-]/.test(coordC) && res.coordinates.type === 'absolute') ||
+        (!/^[+-]/.test(coordC) && res.coordinates.type === 'relative')
+      ) {
+        delete res.commandType
+        delete res.coordinates
+      }
     }
-  }
-  if (coordD != null) {
-    // Can only be direction
-    Object.assign(res.coordinates, {
-      direction: parseFloat(coordD)
-    })
   }
 }

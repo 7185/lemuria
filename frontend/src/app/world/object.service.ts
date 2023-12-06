@@ -245,8 +245,7 @@ export class ObjectService {
         item.userData.clickable = true
         if (cmd.commandType === 'teleport') {
           item.userData.teleportClick = {...cmd.coordinates}
-          item.userData.teleportClick.worldName =
-            cmd.worldName != null ? cmd.worldName : null
+          item.userData.teleportClick.worldName = cmd.worldName ?? null
         }
       }
     }

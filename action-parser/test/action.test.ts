@@ -717,11 +717,9 @@ test('teleport within the current world', () => {
       {
         commandType: 'teleport',
         coordinates: {
-          coordinates: {
-            coordinateType: 'absolute',
-            NS: 12,
-            EW: -10.2
-          },
+          type: 'absolute',
+          ns: 12,
+          ew: -10.2,
           direction: 180
         }
       }
@@ -735,20 +733,19 @@ test('teleport to another world', () => {
       {
         commandType: 'teleport',
         coordinates: {
-          altitude: {
-            altitudeType: 'absolute',
-            value: 0
-          },
-          coordinates: {
-            coordinateType: 'absolute',
-            NS: -1.2,
-            EW: 0.2
-          }
+          altitude: 0,
+          type: 'absolute',
+          ns: -1.2,
+          ew: 0.2
         },
         worldName: 'teleport'
       }
     ]
   })
+})
+
+test('teleport coords types mismatch', () => {
+  expect(parser.parse('bump teleport 2N 3E +90, warp +0 +1 -2a 270')).toStrictEqual({})
 })
 
 test('warp absolute', () => {
@@ -757,15 +754,10 @@ test('warp absolute', () => {
       {
         commandType: 'warp',
         coordinates: {
-          altitude: {
-            altitudeType: 'relative',
-            value: -0.8
-          },
-          coordinates: {
-            EW: 2.2,
-            NS: -2.7,
-            coordinateType: 'absolute'
-          },
+          altitude: -0.8,
+          ew: 2.2,
+          ns: -2.7,
+          type: 'absolute',
           direction: 270
         }
       }
@@ -779,15 +771,10 @@ test('warp relative', () => {
       {
         commandType: 'warp',
         coordinates: {
-          altitude: {
-            altitudeType: 'relative',
-            value: 1
-          },
-          coordinates: {
-            coordinateType: 'relative',
-            x: 0,
-            y: 0
-          }
+          altitude: 1,
+          type: 'relative',
+          x: 0,
+          y: 0
         }
       }
     ]
