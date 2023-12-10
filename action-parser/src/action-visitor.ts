@@ -194,13 +194,13 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   colorParameter(ctx: ColorParameterCtx) {
-    const paramName = ctx.Color[0].image
+    const paramName = ctx.Color[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: colorStringToRGB(paramValue)}
   }
 
   bcolorParameter(ctx: BcolorParameterCtx) {
-    const paramName = ctx.Bcolor[0].image
+    const paramName = ctx.Bcolor[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: colorStringToRGB(paramValue)}
   }
@@ -211,73 +211,73 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   maskParameter(ctx: MaskParameterCtx) {
-    const paramName = ctx.Mask[0].image
+    const paramName = ctx.Mask[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: paramValue}
   }
 
   timeParameter(ctx: TimeParameterCtx) {
-    const paramName = ctx.Time[0].image
+    const paramName = ctx.Time[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: parseFloat(paramValue)}
   }
 
   waitParameter(ctx: WaitParameterCtx) {
-    const paramName = ctx.Wait[0].image
+    const paramName = ctx.Wait[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: parseFloat(paramValue)}
   }
 
   angleParameter(ctx: AngleParameterCtx) {
-    const paramName = ctx.Angle[0].image
+    const paramName = ctx.Angle[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: parseFloat(paramValue)}
   }
 
   brightnessParameter(ctx: BrightnessParameterCtx) {
-    const paramName = ctx.Brightness[0].image
+    const paramName = ctx.Brightness[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: parseFloat(paramValue)}
   }
 
   pitchParameter(ctx: PitchParameterCtx) {
-    const paramName = ctx.Pitch[0].image
+    const paramName = ctx.Pitch[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: parseFloat(paramValue)}
   }
 
   radiusParameter(ctx: RadiusParameterCtx) {
-    const paramName = ctx.Radius[0].image
+    const paramName = ctx.Radius[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: parseFloat(paramValue)}
   }
 
   sizeParameter(ctx: SizeParameterCtx) {
-    const paramName = ctx.Size[0].image
+    const paramName = ctx.Size[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: parseFloat(paramValue)}
   }
 
   tagParameter(ctx: TagParameterCtx) {
-    const paramName = ctx.Tag[0].image
+    const paramName = ctx.Tag[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: paramValue}
   }
 
   typeParameter(ctx: TypeParameterCtx) {
-    const paramName = ctx.Type[0].image
+    const paramName = ctx.Type[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: paramValue}
   }
 
   fxParameter(ctx: FxParameterCtx) {
-    const paramName = ctx.Fx[0].image
+    const paramName = ctx.Fx[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: paramValue}
   }
 
   updateParameter(ctx: UpdateParameterCtx) {
-    const paramName = ctx.Update[0].image
+    const paramName = ctx.Update[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: parseInt(paramValue)}
   }
@@ -362,13 +362,13 @@ class ActionVisitor extends BaseActionVisitor {
       args.push(this.visit(ctx.nameParameter))
     }
     if (ctx.Loop) {
-      args.push({loop: !ctx.Loop[0].image.startsWith('no')})
+      args.push({loop: !ctx.Loop[0].image.toLowerCase().startsWith('no')})
     }
     if (ctx.Reset) {
-      args.push({reset: !ctx.Reset[0].image.startsWith('no')})
+      args.push({reset: !ctx.Reset[0].image.toLowerCase().startsWith('no')})
     }
     if (ctx.Sync) {
-      args.push({sync: !ctx.Sync[0].image.startsWith('no')})
+      args.push({sync: !ctx.Sync[0].image.toLowerCase().startsWith('no')})
     }
     return args
   }

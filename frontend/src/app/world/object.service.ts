@@ -1,8 +1,9 @@
-import {forkJoin, Observable, Subject} from 'rxjs'
+import {forkJoin, mergeMap, Observable, Subject, tap} from 'rxjs'
 import {computed, effect, inject, Injectable, signal} from '@angular/core'
 import {HttpService} from '../network'
 import {Action} from '@lemuria/action-parser'
 import {
+  AdditiveBlending,
   Group,
   Mesh,
   BufferAttribute,
@@ -17,7 +18,7 @@ import {
   Sprite,
   SpriteMaterial
 } from 'three'
-import type {MeshPhongMaterial, Object3D} from 'three'
+import type {MeshPhongMaterial, Object3D, Texture} from 'three'
 import RWXLoader, {
   RWXMaterialManager,
   pictureTag as PICTURE_TAG,
@@ -26,6 +27,7 @@ import RWXLoader, {
 import * as fflate from 'fflate'
 import {environment} from '../../environments/environment'
 import {TextCanvas, Utils} from '../utils'
+import {SettingsService} from '../settings/settings.service'
 
 // can't be const (angular#25963)
 export enum ObjectAct {
@@ -67,7 +69,10 @@ export class ObjectService {
   private textureLoader = new TextureLoader()
   private remoteUrl = /.+\..+\/.+/
   private animatedPictures = []
+  private archiveApiQueue = new Subject<{item: Group; url: string}>()
+  private maxParallelApiCalls = 30
   private http = inject(HttpService)
+  private settings = inject(SettingsService)
 
   constructor() {
     const unknownGeometry = new BufferGeometry()
@@ -109,6 +114,13 @@ export class ObjectService {
         .setPath(this.rwxPath())
         .setResourcePath(this.resPath())
     })
+
+    this.archiveApiQueue
+      .asObservable()
+      .pipe(
+        mergeMap((data) => this.archivedPicture(data), this.maxParallelApiCalls)
+      )
+      .subscribe()
   }
 
   loadAvatars() {
@@ -152,11 +164,13 @@ export class ObjectService {
             const color = result.create.find((c) => c.commandType === 'light')
               ?.color || {r: 255, g: 255, b: 255}
             this.textureLoader.load(textureUrl, (texture) => {
+              texture.colorSpace = SRGBColorSpace
               const corona = new Sprite(
                 new SpriteMaterial({
                   map: texture,
                   alphaMap: texture,
                   color: Utils.rgbToHex(color.r, color.g, color.b),
+                  blending: AdditiveBlending,
                   sizeAttenuation: false,
                   depthTest: false
                 })
@@ -242,10 +256,13 @@ export class ObjectService {
     }
     if (result.activate != null) {
       for (const cmd of result.activate) {
-        item.userData.clickable = true
+        item.userData.activate = {}
         if (cmd.commandType === 'teleport') {
-          item.userData.teleportClick = {...cmd.coordinates}
-          item.userData.teleportClick.worldName = cmd.worldName ?? null
+          item.userData.activate.teleport = {...cmd.coordinates}
+          item.userData.activate.teleport.worldName = cmd.worldName ?? null
+        }
+        if (cmd.commandType === 'url') {
+          item.userData.activate.url = {address: cmd.resource}
         }
       }
     }
@@ -277,44 +294,111 @@ export class ObjectService {
     }
   }
 
-  makePicture(item: Group, url: string) {
-    url = this.remoteUrl.test(url)
-      ? `${environment.url.imgProxy}${url}`
-      : `${this.resPath()}/${url}`
-    this.textureLoader.load(url, (picture) => {
-      picture.colorSpace = SRGBColorSpace
-      picture.wrapS = RepeatWrapping
-      picture.wrapT = RepeatWrapping
-      item.traverse((child: Object3D) => {
-        if (child instanceof Mesh) {
-          const newMaterials = []
-          newMaterials.push(...child.material)
-          if (item.userData.taggedMaterials[PICTURE_TAG]) {
-            for (const i of item.userData.taggedMaterials[PICTURE_TAG]) {
-              newMaterials[i] = child.material[i].clone()
-              newMaterials[i].color = new Color(1, 1, 1)
-              newMaterials[i].map = picture
-              const {width, height} = picture.image
-              if (height > width && height % width === 0) {
-                // Animated picture
-                const yTiles = height / width
-                const yHeight = width / height
-                newMaterials[i].userData.rwx.animation = {
-                  yTiles,
-                  yHeight,
-                  step: 0
-                }
-                picture.offset.y = 1 - yHeight
-                picture.repeat.set(1, yHeight)
-                this.animatedPictures.push(newMaterials[i])
-              }
-              newMaterials[i].needsUpdate = true
-            }
-          }
-          child.material = newMaterials
-          child.material.needsUpdate = true
+  /**
+   * Try to load a picture to apply
+   * @param item Prop
+   * @param url Url string from parsed action
+   * @param fallbackArchive If true and no picture is found,
+   * try to look for an archived version
+   */
+  makePicture(item: Group, url: string, fallbackArchive = true) {
+    let remote = ''
+    if (this.remoteUrl.test(url)) {
+      remote = url
+      url = `${environment.url.imgProxy}${url}`
+    } else {
+      url = `${this.resPath()}/${url}`
+    }
+    this.textureLoader.load(
+      url,
+      (picture) => this.pictureToProp(item, picture),
+      null,
+      () => {
+        // Error, usually 404
+        if (
+          remote &&
+          fallbackArchive &&
+          this.settings.get('archivedPictures')
+        ) {
+          // Send to archive queue
+          this.archiveApiQueue.next({item, url: remote})
+        }
+      }
+    )
+  }
+
+  /**
+   * Load an archived image from the queue
+   * @param data The prop and image url from the queue
+   * @returns an observable for the request
+   */
+  private archivedPicture(data: {item: Group; url: string}) {
+    const url = environment.url.corsProxy.replace(
+      '$1',
+      encodeURI(
+        environment.url.imgArchive
+          .replace('$1', data.url)
+          .replace(
+            '$2',
+            new Date(data.item.userData.date * 1000)
+              .toISOString()
+              .substring(0, 10)
+              .replaceAll('-', '')
+          )
+      )
+    )
+    return this.http.get(url).pipe(
+      tap((res: {mementos?: {closest?: {uri: string[]}}}) => {
+        if (res?.mementos?.closest?.uri) {
+          // No fallback this time since we're already loading an archived picture
+          this.makePicture(
+            data.item,
+            res.mementos.closest.uri[0].replace('/http', 'im_/http'),
+            false
+          )
         }
       })
+    )
+  }
+
+  /**
+   * Applies a picture texture to a prop
+   * @param item Prop
+   * @param picture Image
+   */
+  private pictureToProp(item: Group, picture: Texture) {
+    picture.colorSpace = SRGBColorSpace
+    picture.wrapS = RepeatWrapping
+    picture.wrapT = RepeatWrapping
+    item.traverse((child: Object3D) => {
+      if (child instanceof Mesh) {
+        const newMaterials = []
+        newMaterials.push(...child.material)
+        if (item.userData.taggedMaterials[PICTURE_TAG]) {
+          for (const i of item.userData.taggedMaterials[PICTURE_TAG]) {
+            newMaterials[i] = child.material[i].clone()
+            newMaterials[i].color = new Color(1, 1, 1)
+            newMaterials[i].map = picture
+            const {width, height} = picture.image
+            if (height > width && height % width === 0) {
+              // Animated picture
+              const yTiles = height / width
+              const yHeight = width / height
+              newMaterials[i].userData.rwx.animation = {
+                yTiles,
+                yHeight,
+                step: 0
+              }
+              picture.offset.y = 1 - yHeight
+              picture.repeat.set(1, yHeight)
+              this.animatedPictures.push(newMaterials[i])
+            }
+            newMaterials[i].needsUpdate = true
+          }
+        }
+        child.material = newMaterials
+        child.material.needsUpdate = true
+      }
     })
   }
 

@@ -1,5 +1,5 @@
 import {createToken, Lexer, CstParser} from 'chevrotain'
-import type {CstNode, ITokenConfig, TokenType} from 'chevrotain'
+import type {CstNode, IParserConfig, ITokenConfig, TokenType} from 'chevrotain'
 
 // Tokens
 export const allTokens: TokenType[] = []
@@ -228,8 +228,8 @@ addToken({
 })
 
 export class ActionParser extends CstParser {
-  constructor() {
-    super(allTokens)
+  constructor(config?: IParserConfig) {
+    super(allTokens, config)
     this.performSelfAnalysis()
   }
 
@@ -301,6 +301,7 @@ export class ActionParser extends CstParser {
   public soundCommand = this.RULE('soundCommand', () => {
     this.CONSUME(Sound)
     this.CONSUME(Resource)
+    this.OPTION(() => this.SUBRULE(this.nameParameter))
   })
 
   public pictureCommand = this.RULE('pictureCommand', () => {

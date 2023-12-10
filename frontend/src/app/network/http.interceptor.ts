@@ -22,7 +22,7 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
         err instanceof HttpErrorResponse &&
         (err.status === 0 || err.status === 502)
       ) {
-        console.log('Connection lost')
+        return EMPTY
       }
       return throwError(() => err)
     })

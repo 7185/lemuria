@@ -650,7 +650,7 @@ export class EngineService {
         this.mouseIdle++
         document.body.style.cursor = 'default'
         const item = this.pointedItem().obj
-        if (item != null && item.userData?.clickable === true) {
+        if (item?.userData?.activate != null) {
           document.body.style.cursor = 'pointer'
         }
         if (this.mouseIdle >= 10) {
@@ -833,11 +833,16 @@ export class EngineService {
       return
     }
     const item = this.pointedItem().obj
-    if (item?.userData?.clickable && item?.userData?.teleportClick != null) {
-      if (item.userData.teleportClick.type == null) {
+    const activate = item?.userData?.activate
+    if (activate == null) {
+      return
+    }
+
+    if (activate.teleport != null) {
+      if (activate.teleport.type == null) {
         // No coords, send user to world entry point
         this.teleportSvc.teleport.set({
-          world: item.userData.teleportClick.worldName,
+          world: activate.teleport.worldName,
           position: null,
           isNew: true
         })
@@ -845,30 +850,37 @@ export class EngineService {
 
       let newX: number, newZ: number
       let newY = 0
-      let newYaw = item.userData.teleportClick?.direction || 0
+      let newYaw = activate.teleport?.direction || 0
 
-      if (item.userData.teleportClick.altitude != null) {
-        if (item.userData.teleportClick.type === 'absolute') {
-          newY = item.userData.teleportClick.altitude * 10
+      if (activate.teleport.altitude != null) {
+        if (activate.teleport.type === 'absolute') {
+          newY = activate.teleport.altitude * 10
         } else {
-          newY =
-            this.player.position.y + item.userData.teleportClick.altitude * 10
+          newY = this.player.position.y + activate.teleport.altitude * 10
         }
       }
-      if (item.userData.teleportClick.type === 'absolute') {
-        newX = item.userData.teleportClick.ew * -10
-        newZ = item.userData.teleportClick.ns * 10
+      if (activate.teleport.type === 'absolute') {
+        newX = activate.teleport.ew * -10
+        newZ = activate.teleport.ns * 10
       } else {
         newYaw += this.yaw
-        newX = this.player.position.x + item.userData.teleportClick.x * -10
-        newZ = this.player.position.z + item.userData.teleportClick.y * 10
+        newX = this.player.position.x + activate.teleport.x * -10
+        newZ = this.player.position.z + activate.teleport.y * 10
       }
       this.teleportSvc.teleport.set({
-        world: item.userData.teleportClick.worldName,
+        world: activate.teleport.worldName,
         // Don't send 0 if coordinates are null (world entry point)
         position: Utils.posToString(new Vector3(newX, newY, newZ), newYaw),
         isNew: true
       })
+    }
+
+    if (activate.url != null) {
+      Object.assign(document.createElement('a'), {
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        href: activate.url.address
+      }).click()
     }
   }
 

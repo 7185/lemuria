@@ -1,5 +1,6 @@
 <h1 mat-dialog-title>Settings</h1>
 <mat-dialog-content>
+  <mat-checkbox [(ngModel)]="archivedPictures">Find forgotten pictures</mat-checkbox>
   <mat-form-field appearance="outline">
     <mat-label>Maximum FPS</mat-label>
     <input matInput type='text' minlength="1" pattern="[0-9]*" [(ngModel)]="maxFps">

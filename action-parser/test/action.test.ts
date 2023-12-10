@@ -745,7 +745,9 @@ test('teleport to another world', () => {
 })
 
 test('teleport coords types mismatch', () => {
-  expect(parser.parse('bump teleport 2N 3E +90, warp +0 +1 -2a 270')).toStrictEqual({})
+  expect(
+    parser.parse('bump teleport 2N 3E +90, warp +0 +1 -2a 270')
+  ).toStrictEqual({})
 })
 
 test('warp absolute', () => {

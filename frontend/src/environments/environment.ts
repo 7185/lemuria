@@ -2,7 +2,9 @@ export const environment = {
   url: {
     websocket: 'wss://lemuria.7185.fr/api/v1/ws',
     server: 'https://lemuria.7185.fr/api/v1',
-    imgProxy: 'https://images.weserv.nl/?url='
+    imgProxy: 'https://images.weserv.nl/?url=',
+    imgArchive: 'http://timetravel.mementoweb.org/api/json/$2/$1',
+    corsProxy: 'https://corsproxy.io/?$1'
   },
   csrf: {
     access: 'lemuria_csrf_access',
