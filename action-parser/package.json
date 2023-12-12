@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc --build",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "node --import tsx --test --experimental-test-coverage test/action.test.ts",
+    "test:watch": "node --import tsx --test --watch test/action.test.ts",
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "format": "prettier --write \"**/*.{t,cj}s\""
   },
@@ -15,14 +16,12 @@
     "chevrotain": "^11.0.3"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.12",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.56.0",
-    "jest": "^29.7.0",
-    "prettier": "^3.2.5",
-    "ts-jest": "^29.1.2",
+    "prettier": "^3.2.4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.6.2",
     "typescript": "^5.3.3"
   }
 }

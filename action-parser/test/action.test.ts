@@ -1,30 +1,33 @@
+import assert from 'node:assert'
+import {test} from 'node:test'
+
 import {Action} from '../src'
 
 const parser = new Action()
 
 test('empty string', () => {
-  expect(parser.parse('')).toStrictEqual({})
+  assert.deepStrictEqual(parser.parse(''), {})
 })
 
 test('invalid string', () => {
-  expect(parser.parse('foobar')).toStrictEqual({})
+  assert.deepStrictEqual(parser.parse('foobar'), {})
 })
 
 test('good string has empty debug information', () => {
-  expect(parser.debug('create color green;')).toStrictEqual('OK')
+  assert.deepStrictEqual(parser.debug('create color green;'), 'OK')
 })
 
 test('invalid string has debug information', () => {
-  expect(parser.debug('color red')).not.toStrictEqual('OK')
+  assert.notDeepStrictEqual(parser.debug('color red'), 'OK')
 })
 
 // Colors
 test('empty create color', () => {
-  expect(parser.parse('create color')).toStrictEqual({})
+  assert.deepStrictEqual(parser.parse('create color'), {})
 })
 
 test('create color f', () => {
-  expect(parser.parse('create color f')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create color f'), {
     create: [
       {
         commandType: 'color',
@@ -35,7 +38,7 @@ test('create color f', () => {
 })
 
 test('create color ff', () => {
-  expect(parser.parse('create color ff')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create color ff'), {
     create: [
       {
         commandType: 'color',
@@ -46,7 +49,7 @@ test('create color ff', () => {
 })
 
 test('create color fff', () => {
-  expect(parser.parse('create color fff')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create color fff'), {
     create: [
       {
         commandType: 'color',
@@ -57,20 +60,21 @@ test('create color fff', () => {
 })
 
 test('create long color', () => {
-  expect(
-    parser.parse('create color foobarbazaaaaaaaaaaaaaaaaaa')
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'color',
-        color: {r: 0, g: 0, b: 15}
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('create color foobarbazaaaaaaaaaaaaaaaaaa'),
+    {
+      create: [
+        {
+          commandType: 'color',
+          color: {r: 0, g: 0, b: 15}
+        }
+      ]
+    }
+  )
 })
 
 test('create hex color with negative values', () => {
-  expect(parser.parse('create color 2DFDC1C34')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create color 2DFDC1C34'), {
     create: [
       {
         commandType: 'color',
@@ -81,7 +85,7 @@ test('create hex color with negative values', () => {
 })
 
 test('create very long hex color', () => {
-  expect(parser.parse('create color 63FFFFFFFFFFFFFF9C')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create color 63FFFFFFFFFFFFFF9C'), {
     create: [
       {
         commandType: 'color',
@@ -92,15 +96,15 @@ test('create very long hex color', () => {
 })
 
 test('invalid color results in no action', () => {
-  expect(parser.parse('create color poorchoice')).toStrictEqual({})
+  assert.deepStrictEqual(parser.parse('create color poorchoice'), {})
 })
 
 test('no color results in no action', () => {
-  expect(parser.parse('create color')).toStrictEqual({})
+  assert.deepStrictEqual(parser.parse('create color'), {})
 })
 
 test('create color green', () => {
-  expect(parser.parse('create color green')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create color green'), {
     create: [
       {
         commandType: 'color',
@@ -111,7 +115,7 @@ test('create color green', () => {
 })
 
 test('whitespace and semicolons do not matter', () => {
-  expect(parser.parse('create   color        abcdef;;;;;;')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create   color        abcdef;;;;;;'), {
     create: [
       {
         commandType: 'color',
@@ -122,20 +126,21 @@ test('whitespace and semicolons do not matter', () => {
 })
 
 test('multiple color applies last only', () => {
-  expect(
-    parser.parse('create color green, color red, color blue')
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'color',
-        color: {r: 0, g: 0, b: 255}
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('create color green, color red, color blue'),
+    {
+      create: [
+        {
+          commandType: 'color',
+          color: {r: 0, g: 0, b: 255}
+        }
+      ]
+    }
+  )
 })
 
 test('multiple names applies last only', () => {
-  expect(parser.parse('create name foo, name bar, name baz')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create name foo, name bar, name baz'), {
     create: [
       {
         commandType: 'name',
@@ -146,7 +151,7 @@ test('multiple names applies last only', () => {
 })
 
 test('multiple create applies first only', () => {
-  expect(parser.parse('create color green; create color red')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create color green; create color red'), {
     create: [
       {
         commandType: 'color',
@@ -157,7 +162,7 @@ test('multiple create applies first only', () => {
 })
 
 test('rotate with 1 number is about Y', () => {
-  expect(parser.parse('create rotate 1')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create rotate 1'), {
     create: [
       {
         commandType: 'rotate',
@@ -172,7 +177,7 @@ test('rotate with 1 number is about Y', () => {
 })
 
 test('rotate with 2 numbers is about X and Y', () => {
-  expect(parser.parse('bump rotate 1 2 name=no_z')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('bump rotate 1 2 name=no_z'), {
     bump: [
       {
         commandType: 'rotate',
@@ -188,7 +193,7 @@ test('rotate with 2 numbers is about X and Y', () => {
 })
 
 test('rotate with 3 numbers is about X, Y and Z', () => {
-  expect(parser.parse('create rotate 1 2 3')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create rotate 1 2 3'), {
     create: [
       {
         commandType: 'rotate',
@@ -203,7 +208,7 @@ test('rotate with 3 numbers is about X, Y and Z', () => {
 })
 
 test('rotate can handle funny floats', () => {
-  expect(parser.parse('create rotate -.234 234.903 -12.093')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create rotate -.234 234.903 -12.093'), {
     create: [
       {
         commandType: 'rotate',
@@ -218,7 +223,7 @@ test('rotate can handle funny floats', () => {
 })
 
 test('move with 1 number is about Y', () => {
-  expect(parser.parse('create move 1')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create move 1'), {
     create: [
       {
         commandType: 'move',
@@ -233,7 +238,7 @@ test('move with 1 number is about Y', () => {
 })
 
 test('move with 2 numbers is about X and Y', () => {
-  expect(parser.parse('create move 1 2')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create move 1 2'), {
     create: [
       {
         commandType: 'move',
@@ -248,7 +253,7 @@ test('move with 2 numbers is about X and Y', () => {
 })
 
 test('move with 3 numbers is about X, Y and Z', () => {
-  expect(parser.parse('create move 1 2 3')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create move 1 2 3'), {
     create: [
       {
         commandType: 'move',
@@ -263,36 +268,37 @@ test('move with 3 numbers is about X, Y and Z', () => {
 })
 
 test('create rotate & move with reset', () => {
-  expect(
+  assert.deepStrictEqual(
     parser.parse(
       'create rotate 0 0 0 reset, move 0 0 2 loop reset time=5 wait=1 nosync'
-    )
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'rotate',
-        speed: {x: 0, y: 0, z: 0},
-        reset: true
-      },
-      {
-        commandType: 'move',
-        distance: {x: 0, y: 0, z: 2},
-        loop: true,
-        reset: true,
-        sync: false,
-        time: 5,
-        wait: 1
-      }
-    ]
-  })
+    ),
+    {
+      create: [
+        {
+          commandType: 'rotate',
+          speed: {x: 0, y: 0, z: 0},
+          reset: true
+        },
+        {
+          commandType: 'move',
+          distance: {x: 0, y: 0, z: 2},
+          loop: true,
+          reset: true,
+          sync: false,
+          time: 5,
+          wait: 1
+        }
+      ]
+    }
+  )
 })
 
 test('empty command does not return anything', () => {
-  expect(parser.parse('create rotate, activate move')).toStrictEqual({})
+  assert.deepStrictEqual(parser.parse('create rotate, activate move'), {})
 })
 
 test('examine command returns properly', () => {
-  expect(parser.parse('create examine')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create examine'), {
     create: [
       {
         commandType: 'examine'
@@ -302,31 +308,32 @@ test('examine command returns properly', () => {
 })
 
 test('multiple color with different names applies all', () => {
-  expect(
-    parser.parse('create color green, color red name=foo, color blue name=bar')
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'color',
-        color: {r: 0, g: 255, b: 0}
-      },
-      {
-        commandType: 'color',
-        color: {r: 255, g: 0, b: 0},
-        targetName: 'foo'
-      },
-      {
-        commandType: 'color',
-        color: {r: 0, g: 0, b: 255},
-        targetName: 'bar'
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('create color green, color red name=foo, color blue name=bar'),
+    {
+      create: [
+        {
+          commandType: 'color',
+          color: {r: 0, g: 255, b: 0}
+        },
+        {
+          commandType: 'color',
+          color: {r: 255, g: 0, b: 0},
+          targetName: 'foo'
+        },
+        {
+          commandType: 'color',
+          color: {r: 0, g: 0, b: 255},
+          targetName: 'bar'
+        }
+      ]
+    }
+  )
 })
 
 // Booleans
 test('create solid off', () => {
-  expect(parser.parse('create solid off')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create solid off'), {
     create: [
       {
         commandType: 'solid',
@@ -337,7 +344,7 @@ test('create solid off', () => {
 })
 
 test('create solid false', () => {
-  expect(parser.parse('create solid false')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create solid false'), {
     create: [
       {
         commandType: 'solid',
@@ -348,7 +355,7 @@ test('create solid false', () => {
 })
 
 test('create solid <name> no', () => {
-  expect(parser.parse('create solid image no')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create solid image no'), {
     create: [
       {
         commandType: 'solid',
@@ -360,7 +367,7 @@ test('create solid <name> no', () => {
 })
 
 test('create visible <name> on', () => {
-  expect(parser.parse('create visible image on')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create visible image on'), {
     create: [
       {
         commandType: 'visible',
@@ -372,7 +379,7 @@ test('create visible <name> on', () => {
 })
 
 test('create visible true', () => {
-  expect(parser.parse('create visible true')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create visible true'), {
     create: [
       {
         commandType: 'visible',
@@ -383,7 +390,7 @@ test('create visible true', () => {
 })
 
 test('create visible yes', () => {
-  expect(parser.parse('create visible yes')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create visible yes'), {
     create: [
       {
         commandType: 'visible',
@@ -394,37 +401,39 @@ test('create visible yes', () => {
 })
 
 test('create texture with mask', () => {
-  expect(
-    parser.parse('create texture fleurs19 mask=fleurs19m name=textured')
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'texture',
-        texture: 'fleurs19',
-        mask: 'fleurs19m',
-        targetName: 'textured'
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('create texture fleurs19 mask=fleurs19m name=textured'),
+    {
+      create: [
+        {
+          commandType: 'texture',
+          texture: 'fleurs19',
+          mask: 'fleurs19m',
+          targetName: 'textured'
+        }
+      ]
+    }
+  )
 })
 
 test('create texture with mask and tag', () => {
-  expect(
-    parser.parse('create texture fleurs19 mask=fleurs19m tag=abcd')
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'texture',
-        texture: 'fleurs19',
-        mask: 'fleurs19m',
-        tag: 'abcd'
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('create texture fleurs19 mask=fleurs19m tag=abcd'),
+    {
+      create: [
+        {
+          commandType: 'texture',
+          texture: 'fleurs19',
+          mask: 'fleurs19m',
+          tag: 'abcd'
+        }
+      ]
+    }
+  )
 })
 
 test('empty create sign returns properly', () => {
-  expect(parser.parse('create sign')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create sign'), {
     create: [
       {
         commandType: 'sign'
@@ -434,35 +443,37 @@ test('empty create sign returns properly', () => {
 })
 
 test('create sign with args', () => {
-  expect(
-    parser.parse('create sign name=welcome color=yellow bcolor=pink')
-  ).toStrictEqual({
-    create: [
-      {
-        color: {b: 0, g: 255, r: 255},
-        bcolor: {b: 199, g: 110, r: 255},
-        commandType: 'sign',
-        targetName: 'welcome'
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('create sign name=welcome color=yellow bcolor=pink'),
+    {
+      create: [
+        {
+          color: {b: 0, g: 255, r: 255},
+          bcolor: {b: 199, g: 110, r: 255},
+          commandType: 'sign',
+          targetName: 'welcome'
+        }
+      ]
+    }
+  )
 })
 
 test('create picture', () => {
-  expect(
-    parser.parse('create picture http://www.example.com/sample.jpg')
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'picture',
-        resource: 'http://www.example.com/sample.jpg'
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('create picture http://www.example.com/sample.jpg'),
+    {
+      create: [
+        {
+          commandType: 'picture',
+          resource: 'http://www.example.com/sample.jpg'
+        }
+      ]
+    }
+  )
 })
 
 test('sign text with quotes', () => {
-  expect(parser.parse('create sign "i am the sign text"')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create sign "i am the sign text"'), {
     create: [
       {
         commandType: 'sign',
@@ -473,7 +484,7 @@ test('sign text with quotes', () => {
 })
 
 test('sign text without quotes', () => {
-  expect(parser.parse('create sign i_am_the_sign_text')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create sign i_am_the_sign_text'), {
     create: [
       {
         commandType: 'sign',
@@ -484,7 +495,7 @@ test('sign text without quotes', () => {
 })
 
 test('sign text with unquoted unicode', () => {
-  expect(parser.parse('create sign 🙃')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create sign 🙃'), {
     create: [
       {
         commandType: 'sign',
@@ -495,7 +506,7 @@ test('sign text with unquoted unicode', () => {
 })
 
 test('sign text with quoted unicode', () => {
-  expect(parser.parse('create sign "こんにちは!"')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create sign "こんにちは!"'), {
     create: [
       {
         commandType: 'sign',
@@ -506,27 +517,28 @@ test('sign text with quoted unicode', () => {
 })
 
 test('sign text with quoted unicode and other things after', () => {
-  expect(
-    parser.parse('create sign "こんにちは!"; activate sign 🙃')
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'sign',
-        text: 'こんにちは!'
-      }
-    ],
-    activate: [
-      {
-        commandType: 'sign',
-        text: '🙃'
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('create sign "こんにちは!"; activate sign 🙃'),
+    {
+      create: [
+        {
+          commandType: 'sign',
+          text: 'こんにちは!'
+        }
+      ],
+      activate: [
+        {
+          commandType: 'sign',
+          text: '🙃'
+        }
+      ]
+    }
+  )
 })
 
 /*
 test('sign text with only one quote', () => {
-  expect(parser.parse('create sign "; activate something')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('create sign "; activate something'), {
     create: [
       {
         commandType: 'sign',
@@ -538,164 +550,170 @@ test('sign text with only one quote', () => {
 */
 
 test('invalid sign text without quotes', () => {
-  expect(
-    parser.parse('create sign i am the sign text, light brightness=1')
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'light',
-        brightness: 1
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('create sign i am the sign text, light brightness=1'),
+    {
+      create: [
+        {
+          commandType: 'light',
+          brightness: 1
+        }
+      ]
+    }
+  )
 })
 
 test('complex example', () => {
-  expect(
+  assert.deepStrictEqual(
     parser.parse(
       'create sign bcolor=white color=black;activate sign Rickrolled bcolor=white color=black, media http://127.0.0.1/music/spam/rickroll/Never_gonna_give_you_up.mp3 name=Mplayer radius=1000'
-    )
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'sign',
-        bcolor: {
-          r: 255,
-          g: 255,
-          b: 255
-        },
-        color: {
-          r: 0,
-          g: 0,
-          b: 0
+    ),
+    {
+      create: [
+        {
+          commandType: 'sign',
+          bcolor: {
+            r: 255,
+            g: 255,
+            b: 255
+          },
+          color: {
+            r: 0,
+            g: 0,
+            b: 0
+          }
         }
-      }
-    ],
-    activate: [
-      {
-        commandType: 'sign',
-        text: 'Rickrolled',
-        bcolor: {
-          r: 255,
-          g: 255,
-          b: 255
+      ],
+      activate: [
+        {
+          commandType: 'sign',
+          text: 'Rickrolled',
+          bcolor: {
+            r: 255,
+            g: 255,
+            b: 255
+          },
+          color: {
+            r: 0,
+            g: 0,
+            b: 0
+          }
         },
-        color: {
-          r: 0,
-          g: 0,
-          b: 0
+        {
+          commandType: 'media',
+          radius: 1000,
+          url: 'http://127.0.0.1/music/spam/rickroll/Never_gonna_give_you_up.mp3',
+          targetName: 'Mplayer'
         }
-      },
-      {
-        commandType: 'media',
-        radius: 1000,
-        url: 'http://127.0.0.1/music/spam/rickroll/Never_gonna_give_you_up.mp3',
-        targetName: 'Mplayer'
-      }
-    ]
-  })
+      ]
+    }
+  )
 })
 
 test('picture with update and name', () => {
-  expect(
-    parser.parse('create picture example.jpg update=500 name=image')
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'picture',
-        resource: 'example.jpg',
-        targetName: 'image',
-        update: 500
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('create picture example.jpg update=500 name=image'),
+    {
+      create: [
+        {
+          commandType: 'picture',
+          resource: 'example.jpg',
+          targetName: 'image',
+          update: 500
+        }
+      ]
+    }
+  )
 })
 
 test('activate noise', () => {
-  expect(
-    parser.parse('activate noise http://www.example.com/tchin.wav')
-  ).toStrictEqual({
-    activate: [
-      {
-        commandType: 'noise',
-        resource: 'http://www.example.com/tchin.wav'
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('activate noise http://www.example.com/tchin.wav'),
+    {
+      activate: [
+        {
+          commandType: 'noise',
+          resource: 'http://www.example.com/tchin.wav'
+        }
+      ]
+    }
+  )
 })
 
 test('create sound', () => {
-  expect(
-    parser.parse('create sound http://www.example.com/sound.mid')
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'sound',
-        resource: 'http://www.example.com/sound.mid'
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('create sound http://www.example.com/sound.mid'),
+    {
+      create: [
+        {
+          commandType: 'sound',
+          resource: 'http://www.example.com/sound.mid'
+        }
+      ]
+    }
+  )
 })
 
 test('activate url', () => {
-  expect(
-    parser.parse('activate url mailto:webmaster@example.com')
-  ).toStrictEqual({
-    activate: [
-      {
-        commandType: 'url',
-        resource: 'mailto:webmaster@example.com'
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('activate url mailto:webmaster@example.com'),
+    {
+      activate: [
+        {
+          commandType: 'url',
+          resource: 'mailto:webmaster@example.com'
+        }
+      ]
+    }
+  )
 })
 
 test('create corona with params', () => {
-  expect(
-    parser.parse('create corona corona20 size=10 mask=corona20m name=light')
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'corona',
-        mask: 'corona20m',
-        resource: 'corona20',
-        size: 10,
-        targetName: 'light'
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('create corona corona20 size=10 mask=corona20m name=light'),
+    {
+      create: [
+        {
+          commandType: 'corona',
+          mask: 'corona20m',
+          resource: 'corona20',
+          size: 10,
+          targetName: 'light'
+        }
+      ]
+    }
+  )
 })
 
 test('create light', () => {
-  expect(
+  assert.deepStrictEqual(
     parser.parse(
       'create light color=orange fx=blink time=2 name=light radius=10 type=spot angle=55 pitch=20'
-    )
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'light',
-        angle: 55,
-        color: {
-          b: 0,
-          g: 127,
-          r: 255
-        },
-        fx: 'blink',
-        radius: 10,
-        pitch: 20,
-        time: 2,
-        type: 'spot',
-        targetName: 'light'
-      }
-    ]
-  })
+    ),
+    {
+      create: [
+        {
+          commandType: 'light',
+          angle: 55,
+          color: {
+            b: 0,
+            g: 127,
+            r: 255
+          },
+          fx: 'blink',
+          radius: 10,
+          pitch: 20,
+          time: 2,
+          type: 'spot',
+          targetName: 'light'
+        }
+      ]
+    }
+  )
 })
-
-test.each(['français', 'a.b.c.', 'Mars123'])(
-  'simple world name check (%p)',
-  (testWorldName) => {
-    expect(parser.parse(`bump teleport ${testWorldName}`)).toStrictEqual({
+;['français', 'a.b.c.', 'Mars123'].forEach((testWorldName) => {
+  test(`simple world name check (${testWorldName})`, () => {
+    assert.deepStrictEqual(parser.parse(`bump teleport ${testWorldName}`), {
       bump: [
         {
           commandType: 'teleport',
@@ -703,15 +721,15 @@ test.each(['français', 'a.b.c.', 'Mars123'])(
         }
       ]
     })
-  }
-)
+  })
+})
 
 test('world name cannot start with a digit', () => {
-  expect(parser.parse('bump teleport 1abcd')).toStrictEqual({})
+  assert.deepStrictEqual(parser.parse('bump teleport 1abcd'), {})
 })
 
 test('teleport within the current world', () => {
-  expect(parser.parse('activate teleport 12N 10.2W 180')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('activate teleport 12N 10.2W 180'), {
     activate: [
       {
         commandType: 'teleport',
@@ -727,32 +745,36 @@ test('teleport within the current world', () => {
 })
 
 test('teleport to another world', () => {
-  expect(parser.parse('activate teleport teleport 1.2S .2E 0a')).toStrictEqual({
-    activate: [
-      {
-        commandType: 'teleport',
-        coordinates: {
-          altitude: 0,
-          type: 'absolute',
-          ns: -1.2,
-          ew: 0.2
-        },
-        worldName: 'teleport'
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('activate teleport teleport 1.2S .2E 0a'),
+    {
+      activate: [
+        {
+          commandType: 'teleport',
+          coordinates: {
+            altitude: 0,
+            type: 'absolute',
+            ns: -1.2,
+            ew: 0.2
+          },
+          worldName: 'teleport'
+        }
+      ]
+    }
+  )
 })
 
 test('teleport coords types mismatch', () => {
-  expect(
+  assert.deepStrictEqual(
     parser.parse(
       'bump teleport 2N 3E +90, warp +0 +1 -2a 270; activate teleport 2N 3E +1.0a -90'
-    )
-  ).toStrictEqual({})
+    ),
+    {}
+  )
 })
 
 test('warp absolute', () => {
-  expect(parser.parse('bump warp 2.7S 2.2E -0.8a 270')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('bump warp 2.7S 2.2E -0.8a 270'), {
     bump: [
       {
         commandType: 'warp',
@@ -769,7 +791,7 @@ test('warp absolute', () => {
 })
 
 test('warp relative', () => {
-  expect(parser.parse('bump warp +0 +0 +1a')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('bump warp +0 +0 +1a'), {
     bump: [
       {
         commandType: 'warp',
@@ -785,7 +807,7 @@ test('warp relative', () => {
 })
 
 test('warp no altitude', () => {
-  expect(parser.parse('activate warp 2S 3W')).toStrictEqual({
+  assert.deepStrictEqual(parser.parse('activate warp 2S 3W'), {
     activate: [
       {
         commandType: 'warp',
@@ -800,98 +822,203 @@ test('warp no altitude', () => {
 })
 
 test('warp invalid coords', () => {
-  expect(parser.parse('bump warp +2')).toStrictEqual({})
+  assert.deepStrictEqual(parser.parse('bump warp +2'), {})
 })
 
 test('animate and astop followed by astart', () => {
-  expect(
+  assert.deepStrictEqual(
     parser.parse(
       'create animate tag=dummy mask me jump 5 9 100 1 2 3 4 5 4 3 2 1, astop; activate astart me off'
-    )
-  ).toStrictEqual({
-    activate: [
-      {
-        commandType: 'astart',
-        targetName: 'me',
-        loop: false
-      }
-    ],
-    create: [
-      {
-        commandType: 'animate',
-        tag: 'dummy',
-        mask: true,
-        targetName: 'me',
-        animation: 'jump',
-        imageCount: 5,
-        frameCount: 9,
-        frameDelay: 100,
-        frameList: [1, 2, 3, 4, 5, 4, 3, 2, 1]
-      },
-      {
-        commandType: 'astop'
-      }
-    ]
-  })
+    ),
+    {
+      activate: [
+        {
+          commandType: 'astart',
+          targetName: 'me',
+          loop: false
+        }
+      ],
+      create: [
+        {
+          commandType: 'animate',
+          tag: 'dummy',
+          mask: true,
+          targetName: 'me',
+          animation: 'jump',
+          imageCount: 5,
+          frameCount: 9,
+          frameDelay: 100,
+          frameList: [1, 2, 3, 4, 5, 4, 3, 2, 1]
+        },
+        {
+          commandType: 'astop'
+        }
+      ]
+    }
+  )
 })
 
 test('animate with astart, astop and adone', () => {
-  expect(
+  assert.deepStrictEqual(
     parser.parse(
       'create animate me jump 5 5 200, astop; activate astart; adone noise oeo.wav'
-    )
-  ).toStrictEqual({
-    create: [
-      {
-        commandType: 'animate',
-        targetName: 'me',
-        animation: 'jump',
-        mask: false,
-        imageCount: 5,
-        frameCount: 5,
-        frameDelay: 200,
-        frameList: []
-      },
-      {
-        commandType: 'astop'
-      }
-    ],
-    activate: [
-      {
-        commandType: 'astart'
-      }
-    ],
-    adone: [
-      {
-        commandType: 'noise',
-        resource: 'oeo.wav'
-      }
-    ]
-  })
+    ),
+    {
+      create: [
+        {
+          commandType: 'animate',
+          targetName: 'me',
+          animation: 'jump',
+          mask: false,
+          imageCount: 5,
+          frameCount: 5,
+          frameDelay: 200,
+          frameList: []
+        },
+        {
+          commandType: 'astop'
+        }
+      ],
+      activate: [
+        {
+          commandType: 'astart'
+        }
+      ],
+      adone: [
+        {
+          commandType: 'noise',
+          resource: 'oeo.wav'
+        }
+      ]
+    }
+  )
 })
 
 test('animate not enough params', () => {
-  expect(parser.parse('create animate nomask me jump 1 1')).toStrictEqual({})
+  assert.deepStrictEqual(parser.parse('create animate nomask me jump 1 1'), {})
 })
 
 test('animate param of wrong type', () => {
-  expect(
-    parser.parse('create animate nomask me jump 1 1 0 wrong')
-  ).toStrictEqual({})
+  assert.deepStrictEqual(
+    parser.parse('create animate nomask me jump 1 1 0 wrong'),
+    {}
+  )
 })
 
 test('astart and astop on remote props', () => {
-  expect(parser.parse('activate astart testa yes, astop testb')).toStrictEqual({
-    activate: [
-      {
-        commandType: 'astart',
-        targetName: 'testa',
-        loop: true
-      },
-      {
-        commandType: 'astop',
-        targetName: 'testb'
-      }
-    ]
-  })
+  assert.deepStrictEqual(
+    parser.parse('activate astart testa yes, astop testb'),
+    {
+      activate: [
+        {
+          commandType: 'astart',
+          targetName: 'testa',
+          loop: true
+        },
+        {
+          commandType: 'astop',
+          targetName: 'testb'
+        }
+      ]
+    }
+  )
+})
+
+test('animate and astop followed by astart', () => {
+  assert.deepStrictEqual(
+    parser.parse(
+      'create animate tag=dummy mask me jump 5 9 100 1 2 3 4 5 4 3 2 1, astop; activate astart me off'
+    ),
+    {
+      activate: [
+        {
+          commandType: 'astart',
+          targetName: 'me',
+          loop: false
+        }
+      ],
+      create: [
+        {
+          commandType: 'animate',
+          tag: 'dummy',
+          mask: true,
+          targetName: 'me',
+          animation: 'jump',
+          imageCount: 5,
+          frameCount: 9,
+          frameDelay: 100,
+          frameList: [1, 2, 3, 4, 5, 4, 3, 2, 1]
+        },
+        {
+          commandType: 'astop'
+        }
+      ]
+    }
+  )
+})
+
+test('animate with astart, astop and adone', () => {
+  assert.deepStrictEqual(
+    parser.parse(
+      'create animate me jump 5 5 200, astop; activate astart; adone noise oeo.wav'
+    ),
+    {
+      create: [
+        {
+          commandType: 'animate',
+          targetName: 'me',
+          animation: 'jump',
+          mask: false,
+          imageCount: 5,
+          frameCount: 5,
+          frameDelay: 200,
+          frameList: []
+        },
+        {
+          commandType: 'astop'
+        }
+      ],
+      activate: [
+        {
+          commandType: 'astart'
+        }
+      ],
+      adone: [
+        {
+          commandType: 'noise',
+          resource: 'oeo.wav'
+        }
+      ]
+    }
+  )
+})
+
+test('animate not enough params', () => {
+  assert.deepStrictEqual(parser.parse('create animate nomask me jump 1 1'), {})
+})
+
+test('animate param of wrong type', () => {
+  assert.deepStrictEqual(
+    parser.parse('create animate nomask me jump 1 1 0 wrong'),
+    {}
+  )
+})
+
+test('astart and astop on remote props', () => {
+  assert.deepStrictEqual(
+    parser.parse('activate astart testa yes, astop testb'),
+    {
+      activate: [
+        {
+          commandType: 'astart',
+          targetName: 'testa',
+          loop: true
+        },
+        {
+          commandType: 'astop',
+          targetName: 'testb'
+        }
+      ]
+    }
+  )
 })

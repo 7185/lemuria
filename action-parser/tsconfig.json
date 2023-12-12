@@ -6,6 +6,7 @@
     "moduleResolution": "bundler",
     "esModuleInterop": true,
     "strict": true,
+    "sourceMap": true,
     "allowImportingTsExtensions": false
   }
 }
