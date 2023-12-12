@@ -1,5 +1,6 @@
 import {Test, TestingModule} from '@nestjs/testing'
 import {HttpModule} from '@nestjs/axios'
+import {CACHE_MANAGER} from '@nestjs/cache-manager'
 import {ProxyService} from './proxy.service'
 
 describe('ProxyService', () => {
@@ -8,7 +9,7 @@ describe('ProxyService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [HttpModule],
-      providers: [ProxyService]
+      providers: [ProxyService, {provide: CACHE_MANAGER, useFactory: jest.fn()}]
     }).compile()
 
     service = module.get<ProxyService>(ProxyService)

@@ -1,5 +1,6 @@
 import {Controller, Get, Query, Res} from '@nestjs/common'
 import type {FastifyReply} from 'fastify'
+import {from, mergeMap} from 'rxjs'
 import {ProxyService} from './proxy.service'
 
 @Controller('/api/v1/proxy')
@@ -15,7 +16,20 @@ export class ProxyController {
     },
     @Res() res: FastifyReply
   ) {
-    return res.status(404).send({})
+    from(this.proxyService.archive(query.url, query.date))
+      .pipe(mergeMap((archiveResult) => archiveResult))
+      .subscribe({
+        next: (url) => {
+          if (Object.keys(url)) {
+            res.status(200).send(url)
+          } else {
+            res.status(404).send({})
+          }
+        },
+        error: () => {
+          res.status(404).send({})
+        }
+      })
   }
 
   @Get('url')

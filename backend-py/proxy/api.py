@@ -17,8 +17,7 @@ async def img_archive():
 
     # Don't use the date in the cache key
     if (out := cache.get(f"U-{url}")) is not None:
-        return {'url': out}, 200
-
+        return ({'url': out}, 200) if out else ({}, 404)
     async with httpx.AsyncClient() as client:
         try:
             res = await client.get(
@@ -34,7 +33,10 @@ async def img_archive():
                 cache.set(f"U-{url}", out)
                 return {'url': out}, 200
             except Exception:
+                cache.set(f"U-{url}", "")
                 return {}, 404
+        else:
+            cache.set(f"U-{url}", "")
 
     return {}, 404
 
