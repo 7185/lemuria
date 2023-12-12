@@ -7,6 +7,7 @@ import tomllib
 from quart import Quart, render_template, websocket, request, send_from_directory
 from quart_jwt_extended import JWTManager, decode_token
 from flask_caching import Cache
+from proxy.api import api_proxy
 from user.api import api_auth
 from user.model import authorized_users
 from world.api import api_world
@@ -71,6 +72,7 @@ async def redirect(_):
 
 app.register_blueprint(api_auth)
 app.register_blueprint(api_world)
+app.register_blueprint(api_proxy)
 
 if __name__ == "__main__":
     app.run(host='localhost', port=8080)

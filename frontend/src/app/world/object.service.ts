@@ -1,4 +1,12 @@
-import {forkJoin, mergeMap, Observable, Subject, tap} from 'rxjs'
+import {
+  catchError,
+  forkJoin,
+  mergeMap,
+  Observable,
+  of,
+  Subject,
+  tap
+} from 'rxjs'
 import {computed, effect, inject, Injectable, signal} from '@angular/core'
 import {HttpService} from '../network'
 import {Action} from '@lemuria/action-parser'
@@ -70,7 +78,7 @@ export class ObjectService {
   private remoteUrl = /.+\..+\/.+/
   private animatedPictures = []
   private archiveApiQueue = new Subject<{item: Group; url: string}>()
-  private maxParallelApiCalls = 30
+  private maxParallelApiCalls = 3
   private http = inject(HttpService)
   private settings = inject(SettingsService)
 
@@ -118,7 +126,10 @@ export class ObjectService {
     this.archiveApiQueue
       .asObservable()
       .pipe(
-        mergeMap((data) => this.archivedPicture(data), this.maxParallelApiCalls)
+        mergeMap(
+          (data) => this.archivedPicture(data).pipe(catchError(() => of())),
+          this.maxParallelApiCalls
+        )
       )
       .subscribe()
   }
@@ -333,29 +344,20 @@ export class ObjectService {
    * @returns an observable for the request
    */
   private archivedPicture(data: {item: Group; url: string}) {
-    const url = environment.url.corsProxy.replace(
-      '$1',
-      encodeURI(
-        environment.url.imgArchive
-          .replace('$1', data.url)
-          .replace(
-            '$2',
-            new Date(data.item.userData.date * 1000)
-              .toISOString()
-              .substring(0, 10)
-              .replaceAll('-', '')
-          )
+    const url = environment.url.imgArchive
+      .replace('$1', data.url)
+      .replace(
+        '$2',
+        new Date(data.item.userData.date * 1000)
+          .toISOString()
+          .substring(0, 10)
+          .replaceAll('-', '')
       )
-    )
     return this.http.get(url).pipe(
-      tap((res: {mementos?: {closest?: {uri: string[]}}}) => {
-        if (res?.mementos?.closest?.uri) {
+      tap((res: {url?: string}) => {
+        if (res?.url != null) {
           // No fallback this time since we're already loading an archived picture
-          this.makePicture(
-            data.item,
-            res.mementos.closest.uri[0].replace('/http', 'im_/http'),
-            false
-          )
+          this.makePicture(data.item, res.url, false)
         }
       })
     )

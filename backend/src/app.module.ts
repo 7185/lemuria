@@ -6,6 +6,7 @@ import {AppController} from './app.controller'
 import {AppService} from './app.service'
 import {WsGateway} from './ws/ws.gateway'
 import {join} from 'path'
+import {ProxyModule} from './proxy/proxy.module'
 import {UserModule} from './user/user.module'
 import {WorldModule} from './world/world.module'
 import {config} from './app.config'
@@ -20,6 +21,7 @@ import {config} from './app.config'
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'static', 'browser')
     }),
+    ProxyModule,
     UserModule,
     WorldModule
   ],
