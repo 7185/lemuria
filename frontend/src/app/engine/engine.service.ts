@@ -9,14 +9,12 @@ import {
   Raycaster,
   Scene,
   Group,
-  BoxGeometry,
   Vector2,
   Vector3,
   WebGLRenderer,
   Object3D,
   Spherical,
   Mesh,
-  MeshBasicMaterial,
   SRGBColorSpace,
   Color,
   PointLight
@@ -25,7 +23,7 @@ import {
   CSS2DObject,
   CSS2DRenderer
 } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
-import type {DirectionalLight, LOD, Sprite, Triangle} from 'three'
+import type {DirectionalLight, LOD, Sprite} from 'three'
 import {BuildService} from './build.service'
 import {TeleportService} from './teleport.service'
 import {UserService} from '../user'
@@ -35,7 +33,8 @@ import type {AvatarAnimationPlayer} from '../animation'
 import {PressedKey, InputSystemService} from './inputsystem.service'
 import {environment} from '../../environments/environment'
 import {PlayerCollider} from './player-collider'
-import {DEG, TERRAIN_PAGE_SIZE, Utils} from '../utils'
+import {DEG, Utils} from '../utils'
+import {Player} from './player'
 
 // Don't update matrix for props that are out of visibility range to speed up
 // the render loop
@@ -46,12 +45,6 @@ Object3D.prototype.updateMatrixWorld = function () {
   }
   _updateMatrixWorld.apply(this)
 }
-
-const playerBoxSide = environment.world.collider.boxSide
-const playerClimbHeight = environment.world.collider.climbHeight
-const playerGroundAdjust = environment.world.collider.groundAdjust
-const playerMaxStepLength = environment.world.collider.maxStepLength
-const playerMaxNbSteps = environment.world.collider.maxNbSteps
 
 // This defines which chunks (offset from the current chunk we sit in) we will
 // query for collisions for each player movement step
@@ -100,24 +93,13 @@ export class EngineService {
   private thirdFrontCamera: PerspectiveCamera
   private activeCamera: PerspectiveCamera
   private lodCamera: PerspectiveCamera
-  private player: Object3D
   private scene: Scene
   private buildScene: Scene
   private dirLight: DirectionalLight
   private fog = new Fog(0)
-  private avatar: Group
   private skybox: Group
-  private flyMode = false
-  private inWater = signal(false)
-  private userState = 'idle'
-  private userGesture: string = null
   private hoveredObject: Group
-
-  private playerCollider: PlayerCollider
-  private playerColliderBox: Group
-  private boxMaterial: MeshBasicMaterial
-  private playerVelocity = new Vector3()
-  private playerOnFloor = true
+  private player = new Player()
 
   private frameId: number = null
   private deltaFps = 0
@@ -169,7 +151,7 @@ export class EngineService {
       this.refreshLights(this.maxLights())
     })
     effect(() => {
-      this.updateFog(this.inWater())
+      this.updateFog(this.player.inWater())
     })
   }
 
@@ -217,9 +199,7 @@ export class EngineService {
     this.scene = new Scene()
     this.buildScene = new Scene()
 
-    this.player = new Object3D()
-    this.player.rotation.order = 'YXZ'
-    this.worldNode.add(this.player)
+    this.worldNode.add(this.player.entity)
 
     this.camera = new PerspectiveCamera(
       50,
@@ -231,7 +211,7 @@ export class EngineService {
     this.camera.position.y = 0
     this.lodCamera = this.camera.clone()
     this.scene.add(this.lodCamera)
-    this.player.attach(this.camera)
+    this.player.entity.attach(this.camera)
 
     this.thirdCamera = new PerspectiveCamera(
       50,
@@ -300,8 +280,7 @@ export class EngineService {
 
   public updateBoundingBox() {
     const boxHeight = this.camera.position.y * 1.11
-    const {position} = this.player
-    this.playerCollider = new PlayerCollider(boxHeight, position)
+    this.player.resetCollider(boxHeight)
 
     if (!environment.debug) {
       return
@@ -313,43 +292,8 @@ export class EngineService {
       this.disposeMaterial(item as Group)
       this.worldNode.remove(item)
     }
-    const boxPos = new Vector3(0, boxHeight / 2, 0).add(position)
-    const boundingBox = new Group()
-    boundingBox.name = 'boundingBox'
-    const mainBoxGeometry = new BoxGeometry(
-      playerBoxSide,
-      boxHeight,
-      playerBoxSide
-    )
-    const topBoxGeometry = new BoxGeometry(
-      playerBoxSide,
-      boxHeight - playerClimbHeight,
-      playerBoxSide
-    )
-    const bottomBoxGeometry = new BoxGeometry(
-      playerBoxSide,
-      playerClimbHeight,
-      playerBoxSide
-    )
-    this.boxMaterial = new MeshBasicMaterial({
-      color: 0x00ff00,
-      wireframe: true
-    })
-
-    const materials = Array(6).fill(this.boxMaterial)
-    const mainBox = new Mesh(mainBoxGeometry, materials)
-    const topBox = new Mesh(topBoxGeometry, materials)
-    const bottomBox = new Mesh(bottomBoxGeometry, materials)
-
-    topBox.position.set(0, (boxHeight - (boxHeight - playerClimbHeight)) / 2, 0)
-    bottomBox.position.set(0, (playerClimbHeight - boxHeight) / 2, 0)
-    boundingBox.add(mainBox, topBox, bottomBox)
-    boundingBox.position.set(boxPos.x, boxPos.y, boxPos.z)
-    boundingBox.userData.mainBox = mainBox
-    boundingBox.userData.topBox = topBox
-    boundingBox.userData.bottomBox = bottomBox
-    this.playerColliderBox = boundingBox
-    this.worldNode.add(boundingBox)
+    this.player.createBoundingBox(boxHeight)
+    this.worldNode.add(this.player.colliderBox)
   }
 
   public get position(): [Vector3, Vector3] {
@@ -366,15 +310,15 @@ export class EngineService {
   }
 
   public set gesture(gesture: string) {
-    this.userGesture = gesture
+    this.player.gesture = gesture
   }
 
   public get gesture(): string {
-    return this.userGesture
+    return this.player.gesture
   }
 
   public get state(): string {
-    return this.userState
+    return this.player.state
   }
 
   public set currentChunk(tile: [number, number]) {
@@ -385,7 +329,7 @@ export class EngineService {
     return this.chunkTile
   }
 
-  public updateFog(inWater = this.inWater()) {
+  public updateFog(inWater = this.player.inWater()) {
     if (inWater) {
       this.fog.color = new Color(this.water?.userData?.color ?? 0x00ffff)
       this.fog.near = 0
@@ -400,16 +344,12 @@ export class EngineService {
     }
   }
 
-  public attachCam(group: Group) {
-    this.avatar = group
-    this.avatar.visible = this.activeCamera !== this.camera
-    this.player.attach(this.avatar)
+  public get avatar(): Group {
+    return this.player.avatar
   }
 
   public setCameraOffset(offset: number) {
     this.camera.position.y = offset
-    this.avatar.position.y =
-      this.player.position.y + this.avatar.userData.offsetY
   }
 
   public addChunk(chunk: LOD) {
@@ -683,25 +623,15 @@ export class EngineService {
     } else if (this.activeCamera === this.thirdFrontCamera) {
       this.activeCamera = this.camera
     }
-    this.avatar.visible = this.activeCamera !== this.camera
+    this.player.avatar.visible = this.activeCamera !== this.camera
   }
 
   public setPlayerPos(pos: Vector3 | string, yaw = 0): void {
-    if (this.player == null || pos == null) {
-      return
-    }
-    if (typeof pos === 'string') {
-      const yawMatch = /\s(\d+)$/.exec(pos)
-      yaw = yawMatch ? parseInt(yawMatch[1], 10) : 0
-      pos = Utils.stringToPos(pos)
-    }
-    this.player.position.copy(pos)
-    this.setPlayerYaw(yaw)
-    this.updateBoundingBox()
+    this.player.setPos(pos, yaw)
   }
 
   public setPlayerYaw(yaw: number) {
-    this.player.rotation.y = Utils.radNormalized(yaw * DEG + Math.PI)
+    this.player.setYaw(yaw)
   }
 
   public getLODs(): LOD[] {
@@ -897,247 +827,6 @@ export class EngineService {
     }
   }
 
-  private stepPlayerPosition(
-    oldPosition: Vector3,
-    delta: Vector3,
-    originalDelta: Vector3
-  ): boolean {
-    const newPosition = oldPosition.clone().add(delta)
-
-    this.playerCollider.copyPos(newPosition)
-    this.boxMaterial?.color.setHex(0x00ff00)
-
-    let climbHeight = null
-    let minHeight = null
-    let boxCollision = false
-    let feetCollision = false
-    // Terrain is not being checked for collision yet
-    let checkTerrain = 0
-
-    this.playerOnFloor = false
-
-    const intersectsTriangle = (tri: Triangle) => {
-      // Check if the triangle is intersecting the boundingBox and later adjust the
-      // boundingBox position if it is.
-
-      const collision = this.playerCollider.topBoxIntersectsTriangle(tri)
-      const rayIntersectionPoint =
-        this.playerCollider.raysIntersectTriangle(tri)
-
-      feetCollision = this.playerCollider.bottomBoxIntersectsTriangle(tri)
-
-      if (collision) {
-        boxCollision = true
-        this.boxMaterial?.color.setHex(0xff0000)
-      }
-
-      if (
-        rayIntersectionPoint != null &&
-        // Add terrain offset if needed
-        rayIntersectionPoint.y + checkTerrain * this.terrain.position.y >
-          newPosition.y
-      ) {
-        this.boxMaterial?.color.setHex(0xffff00)
-
-        if (climbHeight == null || climbHeight < rayIntersectionPoint.y) {
-          climbHeight = rayIntersectionPoint.y
-        }
-
-        if (minHeight == null || minHeight < rayIntersectionPoint.y) {
-          minHeight = rayIntersectionPoint.y
-        }
-      }
-    }
-
-    // We expect maximum 9 LODs to be available to test collision: the one the player
-    // stands in and the 8 neighbouring ones (sides and corners)
-    for (const lod of this.getNearestChunks()) {
-      const lodOffset = lod.position
-      this.playerCollider.translate(lodOffset.negate())
-      this.playerCollider.checkBoundsTree(
-        lod.userData.boundsTree,
-        intersectsTriangle
-      )
-      this.playerCollider.translate(lodOffset.negate())
-    }
-
-    // Since the pages are centered, we need to add an offset
-    const centerOffset = (TERRAIN_PAGE_SIZE * 10) / 2
-    const pageX: number = Math.floor(
-      (newPosition.x + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
-    )
-    const pageZ: number = Math.floor(
-      (newPosition.z + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
-    )
-    const terrainPage = this.terrain?.getObjectByName(
-      `${pageX}_${pageZ}`
-    ) as Mesh
-
-    if (climbHeight == null && terrainPage != null) {
-      // Terrain is now being checked for collision
-      checkTerrain = 1
-      const pageOffset = terrainPage.position
-        .clone()
-        .setY(this.terrain.position.y)
-      this.playerCollider.translate(pageOffset.negate())
-      this.playerCollider.checkBoundsTree(
-        terrainPage.geometry.boundsTree,
-        intersectsTriangle
-      )
-      this.playerCollider.translate(pageOffset.negate())
-    }
-
-    if (boxCollision) {
-      this.playerVelocity.set(0, 0, 0)
-      this.playerCollider.copyPos(oldPosition)
-      this.player.position.copy(oldPosition)
-      return false
-    }
-
-    if (this.playerVelocity.y <= 0 && climbHeight !== null) {
-      // Player is on floor
-      this.playerVelocity.setY(0)
-      // Add terrain offset if needed
-      climbHeight += checkTerrain * this.terrain.position.y
-      newPosition.setY(climbHeight - playerGroundAdjust)
-      this.playerOnFloor = true
-      this.flyMode = false
-    }
-
-    if (
-      this.playerVelocity.y > 0 &&
-      minHeight !== null &&
-      climbHeight !== minHeight
-    ) {
-      // Player hits the ceiling
-      this.playerVelocity.setY(0)
-      newPosition.setY(minHeight - playerGroundAdjust)
-    }
-
-    if (
-      climbHeight === null &&
-      feetCollision &&
-      newPosition.y + playerGroundAdjust < oldPosition.y
-    ) {
-      // Prevent the player from falling in a small gap
-      this.playerVelocity.setY(0)
-      newPosition.setY(oldPosition.y)
-    }
-
-    if (feetCollision) {
-      this.flyMode = false
-      if (originalDelta.y < 0) {
-        originalDelta.setY(0)
-      }
-    }
-
-    this.playerCollider.copyPos(newPosition)
-    this.player.position.copy(newPosition)
-
-    return true
-  }
-
-  private async updatePlayerPosition() {
-    this.playerVelocity.y =
-      this.playerOnFloor && !this.flyMode
-        ? 0
-        : this.deltaSinceLastFrame * 0.01 + this.playerVelocity.y
-
-    this.player.updateMatrixWorld()
-
-    const boxHeight: number = this.playerCollider?.boxHeight
-
-    const deltaPosition = this.playerVelocity
-      .clone()
-      .multiplyScalar(this.deltaSinceLastFrame)
-    const oldPosition = this.player.position.clone()
-    const newPosition = oldPosition.clone().add(deltaPosition)
-
-    const animation: Promise<AvatarAnimationPlayer> =
-      this.avatar.userData.animationPlayer
-    const velocity = this.inputSysSvc.controls[PressedKey.moveBck]
-      ? -this.playerVelocity.length()
-      : this.playerVelocity.length()
-
-    this.userState = 'idle'
-
-    if (this.inWater()) {
-      this.userState = Math.abs(velocity) > 0.5 ? 'swim' : 'float'
-    } else if (this.flyMode) {
-      this.userState = Math.abs(velocity) > 0.5 ? 'fly' : 'hover'
-    } else if (this.playerVelocity.y < 0) {
-      this.userState = 'fall'
-    } else if (Math.abs(velocity) > 5.5) {
-      this.userState = 'run'
-    } else if (Math.abs(velocity) > 0.1) {
-      this.userState = 'walk'
-    }
-
-    // When applicable: reset gesture on completion
-    if (
-      (await animation)?.animate(
-        this.deltaSinceLastFrame,
-        this.userState,
-        this.userGesture,
-        velocity
-      )
-    ) {
-      this.userGesture = null
-    }
-
-    if (!this.inputSysSvc.controls[PressedKey.clip] && this.playerCollider) {
-      let deltaLength = deltaPosition.length()
-
-      for (let i = 0; deltaLength > 0 && i < playerMaxNbSteps; i++) {
-        // Do not proceed in steps longer than the dimensions on the colliding box
-        // Interpolate the movement by moving step by step, stop if we collide with something, continue otherwise
-        const deltaScalar = Math.min(playerMaxStepLength, deltaLength)
-        const nextDelta = deltaPosition
-          .clone()
-          .normalize()
-          .multiplyScalar(deltaScalar)
-        deltaLength -= playerMaxStepLength
-        if (
-          !this.stepPlayerPosition(
-            this.player.position.clone(),
-            nextDelta,
-            deltaPosition
-          )
-        ) {
-          break
-        }
-      }
-    } else {
-      this.player.position.copy(newPosition)
-    }
-
-    this.playerCollider?.copyPos(this.player.position)
-    this.playerColliderBox?.position.set(
-      this.player.position.x,
-      this.player.position.y + boxHeight / 2,
-      this.player.position.z
-    )
-
-    if (this.player.position.y < -350) {
-      this.playerVelocity.set(0, 0, 0)
-      this.player.position.y = 0
-    }
-
-    this.inWater.set(
-      this.water != null && this.water.position.y >= this.cameraPosition.y
-    )
-
-    if (
-      Math.abs(this.playerPosition().x - this.player.position.x) > 1e-3 ||
-      Math.abs(this.playerPosition().y - this.player.position.y) > 1e-3 ||
-      Math.abs(this.playerPosition().z - this.player.position.z) > 1e-3
-    ) {
-      this.playerPosition.set(this.player.position.clone())
-      this.rotateSprites()
-      this.updateLODs()
-    }
-  }
-
   private updatePointLights() {
     const seen = []
     this.litObjects.forEach((obj) => {
@@ -1199,13 +888,13 @@ export class EngineService {
     let rotSteps = 1.5 * this.deltaSinceLastFrame
     const reverse = this.activeCamera === this.thirdFrontCamera ? -1 : 1
     if (this.inputSysSvc.controls[PressedKey.run]) {
-      movSteps = this.flyMode
+      movSteps = this.player.isFlying
         ? 72 * this.deltaSinceLastFrame
         : 24 * this.deltaSinceLastFrame
       rotSteps *= 3
     }
     if (this.inputSysSvc.controls[PressedKey.moveFwd]) {
-      this.playerVelocity.add(
+      this.player.velocity.add(
         new Vector3(
           reverse * this.cameraDirection.x,
           0,
@@ -1214,7 +903,7 @@ export class EngineService {
       )
     }
     if (this.inputSysSvc.controls[PressedKey.moveBck]) {
-      this.playerVelocity.add(
+      this.player.velocity.add(
         new Vector3(
           reverse * -this.cameraDirection.x,
           0,
@@ -1224,7 +913,7 @@ export class EngineService {
     }
     if (this.inputSysSvc.controls[PressedKey.turnLft]) {
       if (this.inputSysSvc.controls[PressedKey.clip]) {
-        this.playerVelocity.add(
+        this.player.velocity.add(
           new Vector3(
             reverse * this.cameraDirection.z,
             0,
@@ -1240,7 +929,7 @@ export class EngineService {
     }
     if (this.inputSysSvc.controls[PressedKey.turnRgt]) {
       if (this.inputSysSvc.controls[PressedKey.clip]) {
-        this.playerVelocity.add(
+        this.player.velocity.add(
           new Vector3(
             reverse * -this.cameraDirection.z,
             0,
@@ -1255,7 +944,7 @@ export class EngineService {
       this.rotateSprites()
     }
     if (this.inputSysSvc.controls[PressedKey.moveLft]) {
-      this.playerVelocity.add(
+      this.player.velocity.add(
         new Vector3(
           reverse * this.cameraDirection.z,
           0,
@@ -1264,7 +953,7 @@ export class EngineService {
       )
     }
     if (this.inputSysSvc.controls[PressedKey.moveRgt]) {
-      this.playerVelocity.add(
+      this.player.velocity.add(
         new Vector3(
           reverse * -this.cameraDirection.z,
           0,
@@ -1285,26 +974,45 @@ export class EngineService {
       this.player.rotation.x -= rotSteps
     }
     if (this.inputSysSvc.controls[PressedKey.moveUp]) {
-      this.flyMode = true
-      this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(movSteps))
+      this.player.isFlying = true
+      this.player.velocity.add(new Vector3(0, 1, 0).multiplyScalar(movSteps))
     }
     if (this.inputSysSvc.controls[PressedKey.moveDwn]) {
-      this.flyMode = true
-      this.playerVelocity.add(new Vector3(0, 1, 0).multiplyScalar(-movSteps))
+      this.player.isFlying = true
+      this.player.velocity.add(new Vector3(0, 1, 0).multiplyScalar(-movSteps))
     }
-    if (this.inputSysSvc.controls[PressedKey.jmp] && this.playerOnFloor) {
-      this.player.position.setY(this.player.position.y + playerClimbHeight)
+    if (this.inputSysSvc.controls[PressedKey.jmp] && this.player.isOnFloor) {
+      this.player.position.setY(this.player.position.y + Player.CLIMB_HEIGHT)
     }
     const damping = Math.exp(-3 * this.deltaSinceLastFrame) - 1
-    if (this.playerOnFloor) {
-      this.playerVelocity.addScaledVector(this.playerVelocity, damping)
-    } else if (!this.flyMode && !this.inputSysSvc.controls[PressedKey.clip]) {
-      this.playerVelocity.y -= 30 * this.deltaSinceLastFrame
+    if (this.player.isOnFloor) {
+      this.player.velocity.addScaledVector(this.player.velocity, damping)
+    } else if (
+      !this.player.isFlying &&
+      !this.inputSysSvc.controls[PressedKey.clip]
+    ) {
+      this.player.velocity.y -= 30 * this.deltaSinceLastFrame
     } else {
-      this.playerVelocity.addScaledVector(this.playerVelocity, damping)
+      this.player.velocity.addScaledVector(this.player.velocity, damping)
     }
 
-    this.updatePlayerPosition()
+    this.player.updatePosition(
+      this.deltaSinceLastFrame,
+      this.getNearestChunks(),
+      this.terrain
+    )
+    if (
+      Math.abs(this.playerPosition().x - this.player.position.x) > 1e-3 ||
+      Math.abs(this.playerPosition().y - this.player.position.y) > 1e-3 ||
+      Math.abs(this.playerPosition().z - this.player.position.z) > 1e-3
+    ) {
+      this.playerPosition.set(this.player.position.clone())
+      this.rotateSprites()
+      this.updateLODs()
+    }
+    this.player.inWater.set(
+      this.water != null && this.water.position.y >= this.cameraPosition.y
+    )
     this.activeCamera.getWorldPosition(this.cameraPosition)
 
     this.skybox.position.copy(this.player.position)

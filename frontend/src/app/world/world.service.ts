@@ -67,7 +67,6 @@ export class WorldService {
   private buildSvc = inject(BuildService)
 
   private worldName = 'Nowhere'
-  private avatar: Group
   private lastChunk = null
 
   private chunkWidth: number = environment.world.chunk.width // in cm
@@ -158,9 +157,9 @@ export class WorldService {
 
     // For extra comfort: we can sort each chunk in the layout based on there distance to the center,
     // this ought to make the client load and display nearest chunks first
-    this.chunkLoadingLayout.sort((c0, c1) => {
-      const d0 = c0[0] * c0[0] + c0[1] * c0[1]
-      const d1 = c1[0] * c1[0] + c1[1] * c1[1]
+    this.chunkLoadingLayout.sort(([x0, z0], [x1, z1]) => {
+      const d0 = x0 * x0 + z0 * z0
+      const d1 = x1 * x1 + z1 * z1
       return d0 - d1
     })
 
@@ -222,10 +221,6 @@ export class WorldService {
   public initWorld() {
     this.destroyWorld()
 
-    this.avatar = new Group()
-    this.avatar.name = 'avatar'
-    this.engineSvc.attachCam(this.avatar)
-
     // listeners
     // other avatars
     this.uAvatarListener = this.userSvc.avatarChanged.subscribe((u) => {
@@ -251,7 +246,11 @@ export class WorldService {
           avatarEntry.implicit,
           avatarEntry.explicit
         )
-      this.setAvatar(avatarEntry.geometry, animationManager, this.avatar)
+      this.setAvatar(
+        avatarEntry.geometry,
+        animationManager,
+        this.engineSvc.avatar
+      )
       const savedAvatars = this.settings.get('avatar')
       const avatarMap =
         savedAvatars != null
@@ -425,20 +424,21 @@ export class WorldService {
     }
     name = Utils.modelName(name)
     this.objSvc.loadAvatar(name).subscribe(async (o) => {
+      o.rotation.copy(new Euler(0, Math.PI, 0))
+      group.position.y = group.parent.position.y
       this.engineSvc.disposeMaterial(group)
       this.engineSvc.disposeGeometry(group)
-      group.clear()
-      o.rotation.copy(new Euler(0, Math.PI, 0))
-      group.add(o.clone())
+      group.clear().add(o.clone())
       const box = new Box3().setFromObject(group)
       group.userData.height = box.max.y - box.min.y
-      group.userData.offsetY = group.position.y - box.min.y
+      group.userData.offsetY = group.parent.position.y - box.min.y
       group.userData.animationPlayer = (
         await animationMgr
       ).spawnAnimationPlayer(group)
       if (group.name === 'avatar') {
         this.engineSvc.setCameraOffset(group.userData.height * 0.9)
         this.engineSvc.updateBoundingBox()
+        group.position.y = group.parent.position.y + group.userData.offsetY
       } else {
         const user = this.userSvc.getUser(group.name)
         group.position.y = user.y + group.userData.offsetY
@@ -630,6 +630,7 @@ export class WorldService {
     // Load a few chunks on world initialization
     this.autoUpdateChunks(entryPoint)
     this.engineSvc.setPlayerPos(entryPoint, entryYaw)
+    this.engineSvc.updateBoundingBox()
   }
 
   /**
@@ -710,7 +711,7 @@ export class WorldService {
       enabled: world.light.fog.enabled
     }
 
-    this.objSvc.loadAvatars().subscribe((list) => {
+    this.objSvc.loadAvatarList().subscribe((list) => {
       this.avatarList = list
       // Set first avatar on self
       const savedAvatars = this.settings.get('avatar')

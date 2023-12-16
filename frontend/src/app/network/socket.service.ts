@@ -28,6 +28,7 @@ export class SocketService {
   private posTimer: Subscription
   private lastSentPos = [new Vector3(), new Vector3()]
   private lastSentGesture: string = null
+  private lastSentState: string = null
 
   connect() {
     if (this.connected || this.connecting) {
@@ -51,7 +52,7 @@ export class SocketService {
     })
     this.posTimer = interval(200).subscribe(() => {
       const pos: [Vector3, Vector3] = [new Vector3(), new Vector3()]
-      const {gesture} = this.engineSvc
+      const {gesture, state} = this.engineSvc
 
       for (const [i, vec] of this.engineSvc.position.entries()) {
         pos[i].fromArray(vec.toArray().map((v) => +v.toFixed(2)))
@@ -60,20 +61,22 @@ export class SocketService {
       if (
         !this.lastSentPos[0].equals(pos[0]) ||
         !this.lastSentPos[1].equals(pos[1]) ||
-        gesture !== this.lastSentGesture
+        gesture !== this.lastSentGesture ||
+        state !== this.lastSentState
       ) {
         this.sendMessage({
           type: 'pos',
           data: {
             pos: pos[0],
             ori: pos[1],
-            state: this.engineSvc.state,
+            state,
             gesture
           }
         })
         this.lastSentPos[0].copy(pos[0])
         this.lastSentPos[1].copy(pos[1])
         this.lastSentGesture = gesture
+        this.lastSentState = state
       }
     })
   }

@@ -1,4 +1,4 @@
-FROM node:16-alpine AS frontend
+FROM node:20-alpine AS frontend
 WORKDIR /front
 COPY frontend/package.json frontend/package-lock.json frontend/angular.json frontend/tsconfig.json /front/
 RUN npm ci
@@ -22,7 +22,7 @@ COPY --from=frontend /static /app/static
 VOLUME ["/app/app.db", "/app/dumps"]
 USER nobody
 
-FROM node:18-alpine AS backend
+FROM node:20-alpine AS backend
 RUN apk add --update --no-cache build-base
 EXPOSE 8080
 WORKDIR /app

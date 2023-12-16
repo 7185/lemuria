@@ -134,7 +134,7 @@ export class ObjectService {
       .subscribe()
   }
 
-  loadAvatars() {
+  loadAvatarList() {
     return this.http.avatars(this.path())
   }
 
