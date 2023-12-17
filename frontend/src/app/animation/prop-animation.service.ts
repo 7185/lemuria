@@ -10,7 +10,7 @@ export const Z_AXIS = new Vector3(0, 0, 1)
 @Injectable({providedIn: 'root'})
 export class PropAnimationService {
   public moveItem(item: Group, delta: number) {
-    const moveData = item.userData.move
+    const moveData = item.userData.animation.move
     if (moveData == null) {
       return
     }
@@ -37,6 +37,13 @@ export class PropAnimationService {
           // If looping is not enabled, set the completion to 1 to indicate the move is finished
           moveData.completion = 1
         }
+        if (moveData.reset && moveData.direction === -1) {
+          // Reset the item's position to the original position
+          item.position.copy(
+            new Vector3().add(moveData.orig).sub(item.parent.parent.position)
+          )
+          moveData.direction = 1
+        }
       }
     } else if (moveData.direction === -1) {
       // If the way back is done and direction is -1 (indicating the way back)
@@ -46,16 +53,10 @@ export class PropAnimationService {
         moveData.completion = 0
         // Add a wait time before starting the next forward movement
         moveData.waiting = moveData.wait
-      }
-    } else if (moveData.reset) {
-      // If no way back, all is done
-      // Reset the item's position to the original position
-      item.position.copy(moveData.orig)
-      if (moveData.loop) {
-        // If looping is enabled, reset the completion for the next forward movement
-        moveData.completion = 0
-        // Add a wait time before starting the next forward movement
-        moveData.waiting = moveData.wait
+        // The item should be back to it's initial position
+        item.position.copy(
+          new Vector3().add(moveData.orig).sub(item.parent.parent.position)
+        )
       }
     } else {
       // Way back is starting
@@ -67,8 +68,8 @@ export class PropAnimationService {
     }
   }
 
-  public rotateIem(item: Group, delta: number) {
-    const rotateData = item.userData.rotate
+  public rotateItem(item: Group, delta: number) {
+    const rotateData = item.userData.animation.rotate
     if (rotateData == null) {
       return
     }
@@ -89,24 +90,26 @@ export class PropAnimationService {
         X_AXIS,
         rotateData.speed.x * RPM * delta * rotateData.direction
       )
+      // Update the rotation completion based on the provided time
+      rotateData.completion += delta / rotateData.time
       // Check if rotation has completed (completion >= 1)
-      if (rotateData.time && rotateData.completion >= 1) {
-        if (rotateData.loop) {
-          // If looping is enabled, reset the completion and handle resetting or waiting based on the reset flag
-          rotateData.completion = 0
-          if (rotateData.reset) {
-            // Reset the rotation to the original rotation
+      if (rotateData.completion >= 1) {
+        rotateData.completion = 0
+        if (rotateData.reset) {
+          // Reset the rotation to the original rotation
+          item.rotation.copy(rotateData.orig)
+        } else {
+          if (!rotateData.loop && rotateData.direction < 0) {
+            // No loop and way back is finished so all is done
             item.rotation.copy(rotateData.orig)
-          } else {
-            // Add a wait time before starting the next rotation
-            rotateData.waiting = rotateData.wait
-            // Reverse the rotation direction for the next rotation
-            rotateData.direction *= -1
+            item.userData.animation.rotate = undefined
+            return
           }
+          // Add a wait time before starting the next rotation
+          rotateData.waiting = rotateData.wait
+          // Reverse the rotation direction for the next rotation
+          rotateData.direction *= -1
         }
-      } else {
-        // Update the rotation completion based on the provided time
-        rotateData.completion += delta / rotateData.time
       }
     }
   }

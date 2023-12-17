@@ -448,10 +448,13 @@ export class EngineService {
     if (group.userData.rwx?.axisAlignment !== 'none') {
       this.sprites.delete(group)
     }
-    if (group.userData.rotate != null || group.userData.move != null) {
+    if (
+      group.userData.animation?.rotate != null ||
+      group.userData.animation?.move != null
+    ) {
       this.animatedObjects.delete(group)
     }
-    if (group.userData.light != null) {
+    if (group.userData.create?.light != null) {
       this.litObjects.delete(group)
     }
     this.disposeMaterial(group)
@@ -658,10 +661,13 @@ export class EngineService {
     if (group.userData.rwx?.axisAlignment !== 'none') {
       this.sprites.add(group)
     }
-    if (group.userData.rotate != null || group.userData.move != null) {
+    if (
+      group.userData.animation?.rotate != null ||
+      group.userData.animation?.move != null
+    ) {
       this.animatedObjects.add(group)
     }
-    if (group.userData.light != null) {
+    if (group.userData.create?.light != null) {
       this.litObjects.add(group)
     }
   }
@@ -812,6 +818,24 @@ export class EngineService {
         href: activate.url.address
       }).click()
     }
+
+    if (activate.move || activate.rotate) {
+      item.userData.animation = {
+        ...(activate.move && {move: JSON.parse(JSON.stringify(activate.move))}),
+        ...(activate.rotate && {
+          rotate: JSON.parse(JSON.stringify(activate.rotate))
+        })
+      }
+      if (activate.move) {
+        item.position.copy(
+          new Vector3().add(activate.move.orig).sub(item.parent.parent.position)
+        )
+      }
+      if (activate.rotate) {
+        item.rotation.copy(activate.rotate.orig)
+      }
+      this.handleSpecialObject(item)
+    }
   }
 
   private rightClick(event: MouseEvent) {
@@ -854,7 +878,7 @@ export class EngineService {
         return
       }
       let fx = 1
-      switch (prop.obj.userData.light?.fx) {
+      switch (prop.obj.userData.create.light?.fx) {
         case 'fire':
           fx = Math.random() * (1.2 - 0.8) + 0.8
           break
@@ -872,13 +896,14 @@ export class EngineService {
         default:
           break
       }
-      if (prop.obj.userData.corona?.visible) {
-        prop.obj.userData.corona.material.opacity = fx
+      if (prop.obj.userData.create?.corona?.visible) {
+        prop.obj.userData.create.corona.material.opacity = fx
       }
       light.position.set(prop.pos.x, prop.pos.y, prop.pos.z)
-      light.color.set(prop.obj.userData.light.color)
-      light.intensity = 2.5 * fx * (prop.obj.userData.light.brightness || 0.5)
-      light.distance = prop.obj.userData.light.radius || 10
+      light.color.set(prop.obj.userData.create.light.color)
+      light.intensity =
+        2.5 * fx * (prop.obj.userData.create.light.brightness || 0.5)
+      light.distance = prop.obj.userData.create.light.radius || 10
     })
   }
 
@@ -1048,7 +1073,7 @@ export class EngineService {
   private animateItems() {
     for (const item of this.animatedObjects) {
       this.propAnimSvc.moveItem(item, this.deltaSinceLastFrame)
-      this.propAnimSvc.rotateIem(item, this.deltaSinceLastFrame)
+      this.propAnimSvc.rotateItem(item, this.deltaSinceLastFrame)
       item.updateMatrix()
     }
   }
@@ -1107,7 +1132,7 @@ export class EngineService {
 
   private rotateSprites() {
     for (const item of this.sprites) {
-      item.rotation.y = this.player.rotation.y
+      item.rotation.set(0, this.player.rotation.y, 0)
       item.updateMatrix()
     }
   }

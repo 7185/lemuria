@@ -72,7 +72,7 @@ export class PlayerCollider {
     // Regenerate boundsTree for associated LOD
     const bvhMesh = flattenGroup(
       chunk,
-      (mesh: Mesh) => mesh.userData?.notSolid !== true
+      (mesh: Mesh) => mesh.userData?.create?.notSolid !== true
     )
 
     // If the mesh is empty (no faces): we don't need a bounds tree

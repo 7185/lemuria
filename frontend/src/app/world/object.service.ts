@@ -143,17 +143,16 @@ export class ObjectService {
     let texturing = null
     const result = this.actionParser.parse(item.userData.act)
     if (result.create != null) {
-      for (const cmd of result.create) {
-        if (cmd.commandType === 'texture' || cmd.commandType === 'color') {
-          textured = true
-        }
-      }
+      item.userData.create = {}
+      textured = result.create.some(
+        (cmd) => cmd.commandType === 'texture' || cmd.commandType === 'color'
+      )
       for (const cmd of result.create) {
         if (cmd.commandType === 'solid') {
-          item.userData.notSolid = !cmd.value
+          item.userData.create.notSolid = !cmd.value
         }
         if (cmd.commandType === 'light') {
-          item.userData.light = {
+          item.userData.create.light = {
             color: cmd?.color
               ? Utils.rgbToHex(cmd.color.r, cmd.color.g, cmd.color.b)
               : 0xffffff,
@@ -163,15 +162,17 @@ export class ObjectService {
           }
         }
         if (cmd.commandType === 'corona') {
-          item.userData.corona = {
+          item.userData.create.corona = {
             texture: cmd?.resource,
             size: cmd?.size
           }
-          if (item.userData.corona.texture != null) {
+          if (item.userData.create.corona.texture != null) {
             const textureUrl = `${this.resPath()}/${
-              item.userData.corona.texture
-            }${item.userData.corona.texture.endsWith('.jpg') ? '' : '.jpg'}`
-            const size = item.userData.corona?.size / 100 || 1
+              item.userData.create.corona.texture
+            }${
+              item.userData.create.corona.texture.endsWith('.jpg') ? '' : '.jpg'
+            }`
+            const size = item.userData.create.corona?.size / 100 || 1
             const color = result.create.find((c) => c.commandType === 'light')
               ?.color || {r: 255, g: 255, b: 255}
             this.textureLoader.load(textureUrl, (texture) => {
@@ -194,7 +195,7 @@ export class ObjectService {
                 item.userData.boxCenter.y,
                 item.userData.boxCenter.z
               )
-              item.userData.corona = corona
+              item.userData.create.corona = corona
               item.add(corona)
             })
           }
@@ -238,7 +239,10 @@ export class ObjectService {
           }
         }
         if (cmd.commandType === 'move') {
-          item.userData.move = {
+          if (item.userData.animation == null) {
+            item.userData.animation = {}
+          }
+          item.userData.animation.move = {
             distance: cmd.distance,
             time: cmd.time || 1,
             loop: cmd.loop || false,
@@ -251,7 +255,10 @@ export class ObjectService {
           }
         }
         if (cmd.commandType === 'rotate') {
-          item.userData.rotate = {
+          if (item.userData.animation == null) {
+            item.userData.animation = {}
+          }
+          item.userData.animation.rotate = {
             speed: cmd.speed,
             time: cmd.time || null,
             loop: cmd.loop || false,
@@ -266,14 +273,40 @@ export class ObjectService {
       }
     }
     if (result.activate != null) {
+      item.userData.activate = {}
       for (const cmd of result.activate) {
-        item.userData.activate = {}
         if (cmd.commandType === 'teleport') {
           item.userData.activate.teleport = {...cmd.coordinates}
           item.userData.activate.teleport.worldName = cmd.worldName ?? null
         }
         if (cmd.commandType === 'url') {
           item.userData.activate.url = {address: cmd.resource}
+        }
+        if (cmd.commandType === 'move') {
+          item.userData.activate.move = {
+            distance: cmd.distance,
+            time: cmd.time || 1,
+            loop: cmd.loop || false,
+            reset: cmd.reset || false,
+            wait: cmd.wait || 0,
+            waiting: 0,
+            completion: 0,
+            direction: 1,
+            orig: item.position.clone()
+          }
+        }
+        if (cmd.commandType === 'rotate') {
+          item.userData.activate.rotate = {
+            speed: cmd.speed,
+            time: cmd.time || null,
+            loop: cmd.loop || false,
+            reset: cmd.reset || false,
+            wait: cmd.wait || 0,
+            waiting: 0,
+            completion: 0,
+            direction: 1,
+            orig: item.rotation.clone()
+          }
         }
       }
     }

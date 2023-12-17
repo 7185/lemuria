@@ -546,8 +546,8 @@ export class WorldService {
             mergeMap((item: Object3D) => {
               const chunkOffset = new Vector3(chunkPos.x, 0, chunkPos.z)
               item.position.sub(chunkOffset)
-              if (item.userData.move !== undefined) {
-                item.userData.move.orig.sub(chunkOffset)
+              if (item.userData.create?.move != null) {
+                item.userData.create.move.orig.sub(chunkOffset)
               }
               item.updateMatrix()
               return of(item)
