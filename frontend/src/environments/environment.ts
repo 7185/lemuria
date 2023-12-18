@@ -21,7 +21,7 @@ export const environment = {
     },
     collider: {
       boxSide: 0.5,
-      climbHeight: 0.55,
+      climbHeight: 0.6,
       groundAdjust: 0.00001,
       maxStepLength: 0.2,
       maxNbSteps: 30

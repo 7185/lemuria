@@ -404,6 +404,8 @@ export class WorldService {
       (rot.z * DEG) / 10,
       'YZX'
     )
+    g.userData.posOrig = g.position.clone()
+    g.userData.rotOrig = g.rotation.clone()
 
     if (act && g.userData?.isError !== true) {
       this.objSvc.execActions(g)
@@ -546,9 +548,6 @@ export class WorldService {
             mergeMap((item: Object3D) => {
               const chunkOffset = new Vector3(chunkPos.x, 0, chunkPos.z)
               item.position.sub(chunkOffset)
-              if (item.userData.create?.move != null) {
-                item.userData.create.move.orig.sub(chunkOffset)
-              }
               item.updateMatrix()
               return of(item)
             }), // Adjust position of objects based on the center of the chunk

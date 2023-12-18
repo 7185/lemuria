@@ -151,6 +151,9 @@ export class ObjectService {
         if (cmd.commandType === 'solid') {
           item.userData.create.notSolid = !cmd.value
         }
+        if (cmd.commandType === 'name') {
+          item.userData.name = cmd.targetName
+        }
         if (cmd.commandType === 'light') {
           item.userData.create.light = {
             color: cmd?.color
@@ -242,7 +245,7 @@ export class ObjectService {
           if (item.userData.animation == null) {
             item.userData.animation = {}
           }
-          item.userData.animation.move = {
+          item.userData.create.move = {
             distance: cmd.distance,
             time: cmd.time || 1,
             loop: cmd.loop || false,
@@ -251,14 +254,19 @@ export class ObjectService {
             waiting: 0,
             completion: 0,
             direction: 1,
-            orig: item.position.clone()
+            targetName: cmd.targetName
+          }
+          if (cmd.targetName == null) {
+            item.userData.animation.move = JSON.parse(
+              JSON.stringify(item.userData.create.move)
+            )
           }
         }
         if (cmd.commandType === 'rotate') {
           if (item.userData.animation == null) {
             item.userData.animation = {}
           }
-          item.userData.animation.rotate = {
+          item.userData.create.rotate = {
             speed: cmd.speed,
             time: cmd.time || null,
             loop: cmd.loop || false,
@@ -267,7 +275,12 @@ export class ObjectService {
             waiting: 0,
             completion: 0,
             direction: 1,
-            orig: item.rotation.clone()
+            targetName: cmd.targetName
+          }
+          if (cmd.targetName == null) {
+            item.userData.animation.rotate = JSON.parse(
+              JSON.stringify(item.userData.create.rotate)
+            )
           }
         }
       }
@@ -283,7 +296,8 @@ export class ObjectService {
           item.userData.activate.url = {address: cmd.resource}
         }
         if (cmd.commandType === 'move') {
-          item.userData.activate.move = {
+          item.userData.activate.move = item.userData.activate.move || []
+          item.userData.activate.move.push({
             distance: cmd.distance,
             time: cmd.time || 1,
             loop: cmd.loop || false,
@@ -292,11 +306,12 @@ export class ObjectService {
             waiting: 0,
             completion: 0,
             direction: 1,
-            orig: item.position.clone()
-          }
+            targetName: cmd.targetName
+          })
         }
         if (cmd.commandType === 'rotate') {
-          item.userData.activate.rotate = {
+          item.userData.activate.rotate = item.userData.activate.rotate || []
+          item.userData.activate.rotate.push({
             speed: cmd.speed,
             time: cmd.time || null,
             loop: cmd.loop || false,
@@ -305,8 +320,8 @@ export class ObjectService {
             waiting: 0,
             completion: 0,
             direction: 1,
-            orig: item.rotation.clone()
-          }
+            targetName: cmd.targetName
+          })
         }
       }
     }

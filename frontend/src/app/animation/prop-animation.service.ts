@@ -35,7 +35,9 @@ export class PropAnimationService {
       if (moveData.reset) {
         // Reset the position to the original position
         item.position.copy(
-          new Vector3().add(moveData.orig).sub(item.parent.parent.position)
+          new Vector3()
+            .add(item.userData.posOrig)
+            .sub(item.parent.parent.position)
         )
       }
 
@@ -47,7 +49,9 @@ export class PropAnimationService {
         }
         // Move is complete for this loop so we can force the initial position back to avoid drifting issues
         item.position.copy(
-          new Vector3().add(moveData.orig).sub(item.parent.parent.position)
+          new Vector3()
+            .add(item.userData.posOrig)
+            .sub(item.parent.parent.position)
         )
       }
       // Switch direction
@@ -87,7 +91,7 @@ export class PropAnimationService {
       rotateData.completion = 0
       if (rotateData.reset) {
         // Reset the rotation to the original rotation
-        item.rotation.copy(rotateData.orig)
+        item.rotation.copy(item.userData.rotOrig)
       }
       if (rotateData.time) {
         // Add a wait time before starting the next rotation

@@ -46,6 +46,16 @@ Object3D.prototype.updateMatrixWorld = function () {
   _updateMatrixWorld.apply(this)
 }
 
+const getObjectsByUserData = (scene: Object3D, name: string, value: string) => {
+  const objs = []
+  scene.traverse((node) => {
+    if (node.userData[name] === value) {
+      objs.push(node)
+    }
+  })
+  return objs
+}
+
 // This defines which chunks (offset from the current chunk we sit in) we will
 // query for collisions for each player movement step
 const nearestChunkPattern = [
@@ -820,19 +830,56 @@ export class EngineService {
     }
 
     if (activate.move || activate.rotate) {
-      item.userData.animation = {
-        ...(activate.move && {move: JSON.parse(JSON.stringify(activate.move))}),
-        ...(activate.rotate && {
-          rotate: JSON.parse(JSON.stringify(activate.rotate))
-        })
+      item.userData.animation = {}
+      if (activate?.move != null) {
+        for (const move of activate.move) {
+          if (move.targetName == null) {
+            item.userData.animation.move = JSON.parse(JSON.stringify(move))
+            // Reset on click
+            item.position.copy(
+              new Vector3()
+                .add(item.userData.posOrig)
+                .sub(item.parent.parent.position)
+            )
+          } else {
+            getObjectsByUserData(
+              this.objectsNode,
+              'name',
+              move.targetName
+            ).forEach((prop: Group) => {
+              prop.userData.animation = prop.userData.animation || {}
+              prop.userData.animation.move = JSON.parse(JSON.stringify(move))
+              prop.position.copy(
+                new Vector3()
+                  .add(prop.userData.posOrig)
+                  .sub(prop.parent.parent.position)
+              )
+              this.handleSpecialObject(prop)
+            })
+          }
+        }
       }
-      if (activate.move) {
-        item.position.copy(
-          new Vector3().add(activate.move.orig).sub(item.parent.parent.position)
-        )
-      }
-      if (activate.rotate) {
-        item.rotation.copy(activate.rotate.orig)
+      if (activate?.rotate != null) {
+        for (const rotate of activate.rotate) {
+          if (rotate.targetName == null) {
+            item.userData.animation.rotate = JSON.parse(JSON.stringify(rotate))
+            // Reset on click
+            item.rotation.copy(item.userData.rotOrig)
+          } else {
+            getObjectsByUserData(
+              this.objectsNode,
+              'name',
+              rotate.targetName
+            ).forEach((prop: Group) => {
+              prop.userData.animation = prop.userData.animation || {}
+              prop.userData.animation.rotate = JSON.parse(
+                JSON.stringify(rotate)
+              )
+              prop.rotation.copy(prop.userData.rotOrig)
+              this.handleSpecialObject(prop)
+            })
+          }
+        }
       }
       this.handleSpecialObject(item)
     }

@@ -28,24 +28,28 @@ export class TeleportService {
       this.lastTeleportIndex = this.currentTeleportIndex
       this.currentTeleportIndex++
       this.teleportHistory.push({world, position})
-    } else {
-      this.teleportHistory[this.lastTeleportIndex] = {world, position}
+      return
     }
+    this.teleportHistory[this.lastTeleportIndex] = {world, position}
   }
 
   teleportBack() {
-    if (this.currentTeleportIndex > 0) {
-      this.lastTeleportIndex = this.currentTeleportIndex
-      this.currentTeleportIndex--
-      this.teleport.set(this.teleportHistory[this.currentTeleportIndex])
+    if (this.currentTeleportIndex <= 0) {
+      return
     }
+
+    this.lastTeleportIndex = this.currentTeleportIndex
+    this.currentTeleportIndex--
+    this.teleport.set(this.teleportHistory[this.currentTeleportIndex])
   }
 
   teleportNext() {
-    if (this.currentTeleportIndex < this.teleportHistory.length - 1) {
-      this.lastTeleportIndex = this.currentTeleportIndex
-      this.currentTeleportIndex++
-      this.teleport.set(this.teleportHistory[this.currentTeleportIndex])
+    if (this.currentTeleportIndex >= this.teleportHistory.length - 1) {
+      return
     }
+
+    this.lastTeleportIndex = this.currentTeleportIndex
+    this.currentTeleportIndex++
+    this.teleport.set(this.teleportHistory[this.currentTeleportIndex])
   }
 }
