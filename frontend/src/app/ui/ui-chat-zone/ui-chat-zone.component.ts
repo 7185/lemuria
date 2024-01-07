@@ -34,7 +34,7 @@ import {UserService} from '../../user'
   ],
   selector: 'app-ui-chat-zone',
   templateUrl: './ui-chat-zone.component.html',
-  styleUrls: ['./ui-chat-zone.component.scss'],
+  styleUrl: './ui-chat-zone.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiChatZoneComponent implements OnInit {

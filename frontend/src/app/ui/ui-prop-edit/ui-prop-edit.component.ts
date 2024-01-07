@@ -37,7 +37,7 @@ import {
   ],
   selector: 'app-ui-prop-edit',
   templateUrl: './ui-prop-edit.component.html',
-  styleUrls: ['./ui-prop-edit.component.scss'],
+  styleUrl: './ui-prop-edit.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiPropEditComponent {

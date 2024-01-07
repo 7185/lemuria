@@ -25,7 +25,7 @@ import {LightingService} from 'src/app/world/lighting.service'
   ],
   selector: 'app-ui-world-attribs',
   templateUrl: './ui-world-attribs.component.html',
-  styleUrls: ['./ui-world-attribs.component.scss'],
+  styleUrl: './ui-world-attribs.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiWorldAttribsComponent {

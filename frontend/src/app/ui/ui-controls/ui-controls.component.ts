@@ -16,7 +16,7 @@ import {Subject, takeUntil, take, timeout} from 'rxjs'
   imports: [NgClass, MatButtonModule, MatDialogModule],
   selector: 'app-ui-controls',
   templateUrl: './ui-controls.component.html',
-  styleUrls: ['./ui-controls.component.scss'],
+  styleUrl: './ui-controls.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiControlsComponent implements OnInit {

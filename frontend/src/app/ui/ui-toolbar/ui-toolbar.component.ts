@@ -65,7 +65,7 @@ import {
   ],
   selector: 'app-ui-toolbar',
   templateUrl: './ui-toolbar.component.html',
-  styleUrls: ['./ui-toolbar.component.scss'],
+  styleUrl: './ui-toolbar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiToolbarComponent implements OnInit, AfterViewInit {
@@ -200,7 +200,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
 
   public toggleCamera(): void {
     this.cameraType = (this.cameraType + 1) % 3
-    this.engineSvc.toggleCamera()
+    this.settings.set('camera', this.cameraType)
   }
 
   public joinUser(userId: string) {
@@ -247,6 +247,8 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
         isNew: true
       }
       this.teleports.set(this.settings.get('teleports') || [])
+      this.cameraType = this.settings.get('camera') || 0
+      this.engineSvc.setCamera(this.cameraType)
       this.cdRef.detectChanges()
     })
   }

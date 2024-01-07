@@ -134,27 +134,35 @@ export class ObjectService {
       .subscribe()
   }
 
-  loadAvatarList() {
+  public loadAvatarList() {
     return this.http.avatars(this.path())
   }
 
-  public execActions(item: Group) {
-    let textured = false
-    let texturing = null
+  public parseActions(item: Group) {
     const result = this.actionParser.parse(item.userData.act)
     if (result.create != null) {
-      item.userData.create = {}
-      textured = result.create.some(
-        (cmd) => cmd.commandType === 'texture' || cmd.commandType === 'color'
-      )
-      for (const cmd of result.create) {
-        if (cmd.commandType === 'solid') {
+      this.parseCreate(item, result)
+    }
+    if (result.activate != null) {
+      this.parseActivate(item, result)
+    }
+  }
+
+  private parseCreate(item: Group, result: any) {
+    const textured = result.create.some(
+      (cmd) => cmd.commandType === 'texture' || cmd.commandType === 'color'
+    )
+    let texturing = null
+    item.userData.create = {}
+    for (const cmd of result.create) {
+      switch (cmd.commandType) {
+        case 'solid':
           item.userData.create.notSolid = !cmd.value
-        }
-        if (cmd.commandType === 'name') {
+          break
+        case 'name':
           item.userData.name = cmd.targetName
-        }
-        if (cmd.commandType === 'light') {
+          break
+        case 'light':
           item.userData.create.light = {
             color: cmd?.color
               ? Utils.rgbToHex(cmd.color.r, cmd.color.g, cmd.color.b)
@@ -163,8 +171,8 @@ export class ObjectService {
             radius: cmd?.radius,
             fx: cmd?.fx
           }
-        }
-        if (cmd.commandType === 'corona') {
+          break
+        case 'corona':
           item.userData.create.corona = {
             texture: cmd?.resource,
             size: cmd?.size
@@ -202,8 +210,8 @@ export class ObjectService {
               item.add(corona)
             })
           }
-        }
-        if (cmd.commandType === 'visible') {
+          break
+        case 'visible':
           item.traverse((child: Object3D) => {
             if (child instanceof Mesh) {
               child.material.forEach((m: MeshPhongMaterial, i: number) => {
@@ -216,9 +224,11 @@ export class ObjectService {
               })
             }
           })
-        } else if (cmd.commandType === 'color') {
+          break
+        case 'color':
           this.applyTexture(item, null, null, cmd.color)
-        } else if (cmd.commandType === 'texture') {
+          break
+        case 'texture':
           if (cmd.texture) {
             cmd.texture =
               cmd.texture.lastIndexOf('.') !== -1
@@ -232,16 +242,18 @@ export class ObjectService {
             }
           }
           texturing = this.applyTexture(item, cmd.texture, cmd.mask)
-        }
-        if (!textured) {
-          if (cmd.commandType === 'sign') {
+          break
+        case 'sign':
+          if (!textured) {
             this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
           }
-          if (cmd.commandType === 'picture') {
+          break
+        case 'picture':
+          if (!textured) {
             this.makePicture(item, cmd.resource)
           }
-        }
-        if (cmd.commandType === 'move') {
+          break
+        case 'move':
           if (item.userData.animation == null) {
             item.userData.animation = {}
           }
@@ -261,8 +273,8 @@ export class ObjectService {
               JSON.stringify(item.userData.create.move)
             )
           }
-        }
-        if (cmd.commandType === 'rotate') {
+          break
+        case 'rotate':
           if (item.userData.animation == null) {
             item.userData.animation = {}
           }
@@ -282,47 +294,9 @@ export class ObjectService {
               JSON.stringify(item.userData.create.rotate)
             )
           }
-        }
-      }
-    }
-    if (result.activate != null) {
-      item.userData.activate = {}
-      for (const cmd of result.activate) {
-        if (cmd.commandType === 'teleport') {
-          item.userData.activate.teleport = {...cmd.coordinates}
-          item.userData.activate.teleport.worldName = cmd.worldName ?? null
-        }
-        if (cmd.commandType === 'url') {
-          item.userData.activate.url = {address: cmd.resource}
-        }
-        if (cmd.commandType === 'move') {
-          item.userData.activate.move = item.userData.activate.move || []
-          item.userData.activate.move.push({
-            distance: cmd.distance,
-            time: cmd.time || 1,
-            loop: cmd.loop || false,
-            reset: cmd.reset || false,
-            wait: cmd.wait || 0,
-            waiting: 0,
-            completion: 0,
-            direction: 1,
-            targetName: cmd.targetName
-          })
-        }
-        if (cmd.commandType === 'rotate') {
-          item.userData.activate.rotate = item.userData.activate.rotate || []
-          item.userData.activate.rotate.push({
-            speed: cmd.speed,
-            time: cmd.time || null,
-            loop: cmd.loop || false,
-            reset: cmd.reset || false,
-            wait: cmd.wait || 0,
-            waiting: 0,
-            completion: 0,
-            direction: 1,
-            targetName: cmd.targetName
-          })
-        }
+          break
+        default:
+          break
       }
     }
     if (!textured) {
@@ -353,6 +327,51 @@ export class ObjectService {
     }
   }
 
+  private parseActivate(item: Group, result: any) {
+    item.userData.activate = {}
+    for (const cmd of result.activate) {
+      switch (cmd.commandType) {
+        case 'teleport':
+          item.userData.activate.teleport = {...cmd.coordinates}
+          item.userData.activate.teleport.worldName = cmd.worldName ?? null
+          break
+        case 'url':
+          item.userData.activate.url = {address: cmd.resource}
+          break
+        case 'move':
+          item.userData.activate.move = item.userData.activate.move || []
+          item.userData.activate.move.push({
+            distance: cmd.distance,
+            time: cmd.time || 1,
+            loop: cmd.loop || false,
+            reset: cmd.reset || false,
+            wait: cmd.wait || 0,
+            waiting: 0,
+            completion: 0,
+            direction: 1,
+            targetName: cmd.targetName
+          })
+          break
+        case 'rotate':
+          item.userData.activate.rotate = item.userData.activate.rotate || []
+          item.userData.activate.rotate.push({
+            speed: cmd.speed,
+            time: cmd.time || null,
+            loop: cmd.loop || false,
+            reset: cmd.reset || false,
+            wait: cmd.wait || 0,
+            waiting: 0,
+            completion: 0,
+            direction: 1,
+            targetName: cmd.targetName
+          })
+          break
+        default:
+          break
+      }
+    }
+  }
+
   /**
    * Try to load a picture to apply
    * @param item Prop
@@ -360,7 +379,7 @@ export class ObjectService {
    * @param fallbackArchive If true and no picture is found,
    * try to look for an archived version
    */
-  makePicture(item: Group, url: string, fallbackArchive = true) {
+  private makePicture(item: Group, url: string, fallbackArchive = true) {
     let remote = ''
     if (this.remoteUrl.test(url)) {
       remote = url
@@ -452,7 +471,7 @@ export class ObjectService {
     })
   }
 
-  makeSign(
+  private makeSign(
     item: Group,
     text: string,
     color: {r: number; g: number; b: number},
@@ -493,7 +512,7 @@ export class ObjectService {
     })
   }
 
-  applyTexture(
+  private applyTexture(
     item: Group,
     textureName: string = null,
     maskName: string = null,
@@ -538,15 +557,15 @@ export class ObjectService {
     return forkJoin(promises)
   }
 
-  loadProp(name: string, basic = false): Observable<Group> {
+  public loadProp(name: string, basic = false): Observable<Group> {
     return this.loadObject(name, this.objects, basic ? 'basic' : 'prop')
   }
 
-  loadAvatar(name: string): Observable<Group> {
+  public loadAvatar(name: string): Observable<Group> {
     return this.loadObject(name, this.avatars, 'avatar')
   }
 
-  cleanCache() {
+  public cleanCache() {
     this.objects.clear()
     this.avatars.clear()
     this.animatedPictures.length = 0

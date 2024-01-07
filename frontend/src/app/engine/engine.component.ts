@@ -13,7 +13,7 @@ import {WorldService} from '../world/world.service'
   standalone: true,
   selector: 'app-engine',
   templateUrl: './engine.component.html',
-  styleUrls: ['./engine.component.scss'],
+  styleUrl: './engine.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {

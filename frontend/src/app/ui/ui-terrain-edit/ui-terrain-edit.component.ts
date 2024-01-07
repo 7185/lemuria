@@ -33,7 +33,7 @@ import {
   ],
   selector: 'app-ui-terrain-edit',
   templateUrl: './ui-terrain-edit.component.html',
-  styleUrls: ['./ui-terrain-edit.component.scss'],
+  styleUrl: './ui-terrain-edit.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiTerrainEditComponent {

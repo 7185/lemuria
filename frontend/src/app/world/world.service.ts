@@ -408,7 +408,7 @@ export class WorldService {
     g.userData.rotOrig = g.rotation.clone()
 
     if (act && g.userData?.isError !== true) {
-      this.objSvc.execActions(g)
+      this.objSvc.parseActions(g)
     }
 
     g.updateMatrix()
@@ -427,20 +427,21 @@ export class WorldService {
     name = Utils.modelName(name)
     this.objSvc.loadAvatar(name).subscribe(async (o) => {
       o.rotation.copy(new Euler(0, Math.PI, 0))
+      group.parent.updateMatrixWorld()
       group.position.y = group.parent.position.y
       this.engineSvc.disposeMaterial(group)
       this.engineSvc.disposeGeometry(group)
       group.clear().add(o.clone())
       const box = new Box3().setFromObject(group)
       group.userData.height = box.max.y - box.min.y
-      group.userData.offsetY = group.parent.position.y - box.min.y
+      group.userData.offsetY = group.position.y - box.min.y
       group.userData.animationPlayer = (
         await animationMgr
       ).spawnAnimationPlayer(group)
       if (group.name === 'avatar') {
         this.engineSvc.setCameraOffset(group.userData.height * 0.9)
         this.engineSvc.updateBoundingBox()
-        group.position.y = group.parent.position.y + group.userData.offsetY
+        group.position.y += group.userData.offsetY
       } else {
         const user = this.userSvc.getUser(group.name)
         group.position.y = user.y + group.userData.offsetY

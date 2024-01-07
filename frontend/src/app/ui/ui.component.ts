@@ -17,7 +17,7 @@ import {BuildService} from '../engine/build.service'
     UiTerrainEditComponent
   ],
   selector: 'app-ui',
-  styleUrls: ['./ui.component.scss'],
+  styleUrl: './ui.component.scss',
   templateUrl: './ui.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

@@ -628,13 +628,19 @@ export class EngineService {
     })
   }
 
-  public toggleCamera() {
-    if (this.activeCamera === this.camera) {
-      this.activeCamera = this.thirdCamera
-    } else if (this.activeCamera === this.thirdCamera) {
-      this.activeCamera = this.thirdFrontCamera
-    } else if (this.activeCamera === this.thirdFrontCamera) {
-      this.activeCamera = this.camera
+  public setCamera(cameraType: number) {
+    switch (cameraType) {
+      case 0:
+        this.activeCamera = this.camera
+        break
+      case 1:
+        this.activeCamera = this.thirdCamera
+        break
+      case 2:
+        this.activeCamera = this.thirdFrontCamera
+        break
+      default:
+        break
     }
     this.player.avatar.visible = this.activeCamera !== this.camera
   }

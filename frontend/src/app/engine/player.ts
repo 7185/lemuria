@@ -27,7 +27,7 @@ export class Player {
   public state = 'idle'
   public gesture: string = null
   public isFlying = false
-  public isOnFloor: boolean
+  public isOnFloor = true
   public inWater = signal(false)
   public collider: PlayerCollider
   public colliderBox: Group
@@ -149,7 +149,7 @@ export class Player {
       this.state = Math.abs(velocity) > 0.5 ? 'swim' : 'float'
     } else if (this.isFlying) {
       this.state = Math.abs(velocity) > 0.5 ? 'fly' : 'hover'
-    } else if (this.velocity.y < 0) {
+    } else if (this.velocity.y < -10 && !this.isOnFloor) {
       this.state = 'fall'
     } else if (Math.abs(velocity) > 5.5) {
       this.state = 'run'
@@ -222,8 +222,6 @@ export class Player {
     let feetCollision = false
     // Terrain is not being checked for collision yet
     let checkTerrain = 0
-
-    this.isOnFloor = false
 
     const intersectsTriangle = (tri: Triangle) => {
       // Check if the triangle is intersecting the boundingBox and later adjust the
@@ -303,6 +301,8 @@ export class Player {
       newPosition.setY(climbHeight - Player.GROUND_ADJUST)
       this.isOnFloor = true
       this.isFlying = false
+    } else {
+      this.isOnFloor = false
     }
 
     if (

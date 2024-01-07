@@ -19,7 +19,7 @@ import {WorldService} from '../../world/world.service'
   ],
   selector: 'app-ui-teleport',
   templateUrl: './ui-teleport.component.html',
-  styleUrls: ['./ui-teleport.component.scss'],
+  styleUrl: './ui-teleport.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiTeleportComponent {

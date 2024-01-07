@@ -21,7 +21,7 @@ import {SettingsService} from '../../settings/settings.service'
   ],
   selector: 'app-ui-settings',
   templateUrl: './ui-settings.component.html',
-  styleUrls: ['./ui-settings.component.scss'],
+  styleUrl: './ui-settings.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiSettingsComponent implements OnInit {
