@@ -89,20 +89,23 @@ export class PropAnimationService {
     // Check if rotation has completed (completion >= 1)
     if (rotateData.completion >= 1) {
       rotateData.completion = 0
-      if (rotateData.reset) {
+      if (rotateData.reset || rotateData.direction === -1) {
         // Reset the rotation to the original rotation
         item.rotation.copy(item.userData.rotOrig)
       }
       if (rotateData.time) {
         // Add a wait time before starting the next rotation
         rotateData.waiting = rotateData.wait
-        if (rotateData.loop || rotateData.wait) {
-          // Reverse the rotation direction for the next rotation
-          rotateData.direction *= -1
+        if (!rotateData.loop && rotateData.direction === -1) {
+          // No loop and the way back is done, so the rotation is over
+          item.userData.animation.rotate = undefined
           return
         }
-        // No loop nor wait, so the rotation is over
-        item.userData.animation.rotate = undefined
+        // Loop and/or way back is starting
+        if (!rotateData.reset) {
+          // Reverse the rotation direction for the next rotation
+          rotateData.direction *= -1
+        }
       }
     }
   }
