@@ -10,14 +10,9 @@ import {
   SRGBColorSpace,
   TextureLoader
 } from 'three'
-import {
-  acceleratedRaycast,
-  computeBoundsTree,
-  disposeBoundsTree
-} from 'three-mesh-bvh'
 import {PlayerCollider} from '../engine/player-collider'
 import {EngineService} from '../engine/engine.service'
-import {ObjectService} from './object.service'
+import {PropService} from './prop.service'
 import {HttpService} from '../network'
 import {TERRAIN_PAGE_SIZE, Utils} from '../utils'
 
@@ -27,7 +22,7 @@ export class TerrainService {
   public water: Group
   private engineSvc = inject(EngineService)
   private httpSvc = inject(HttpService)
-  private objSvc = inject(ObjectService)
+  private propSvc = inject(PropService)
   private textureLoader = new TextureLoader()
   private terrainMaterials = []
   private waterBottomGeom: PlaneGeometry
@@ -94,7 +89,7 @@ export class TerrainService {
 
     if (water?.texture_bottom) {
       const bottomTexture = this.textureLoader.load(
-        `${this.objSvc.path()}/textures/${water.texture_bottom}.jpg`
+        `${this.propSvc.path()}/textures/${water.texture_bottom}.jpg`
       )
       bottomTexture.colorSpace = SRGBColorSpace
       bottomTexture.wrapS = RepeatWrapping
@@ -105,7 +100,7 @@ export class TerrainService {
 
     if (water?.texture_top) {
       const topTexture = this.textureLoader.load(
-        `${this.objSvc.path()}/textures/${water.texture_top}.jpg`
+        `${this.propSvc.path()}/textures/${water.texture_top}.jpg`
       )
       topTexture.colorSpace = SRGBColorSpace
       topTexture.wrapS = RepeatWrapping
@@ -143,7 +138,7 @@ export class TerrainService {
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 64; j++) {
         const terrainTexture = this.textureLoader.load(
-          `${this.objSvc.path()}/textures/terrain${j}.jpg`
+          `${this.propSvc.path()}/textures/terrain${j}.jpg`
         )
         terrainTexture.colorSpace = SRGBColorSpace
         terrainTexture.wrapS = RepeatWrapping
@@ -267,12 +262,8 @@ export class TerrainService {
         currTexture
       )
       geometry.computeVertexNormals()
-      geometry.computeBoundsTree = computeBoundsTree
-      geometry.disposeBoundsTree = disposeBoundsTree
 
       const terrainMesh = new Mesh(geometry, this.terrainMaterials)
-      // Overwrite raycast to use BVH
-      terrainMesh.raycast = acceleratedRaycast
       terrainMesh.name = `${xPage}_${zPage}`
       terrainMesh.position.set(
         xPage * TERRAIN_PAGE_SIZE * 10,

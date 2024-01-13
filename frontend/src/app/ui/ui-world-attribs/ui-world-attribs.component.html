@@ -2,7 +2,7 @@
   World features
 </h1>
 <mat-dialog-content class="mat-typography">
-  <mat-tab-group>
+  <mat-tab-group dynamicHeight>
     <mat-tab label="Ground">
       <div class="tab-content">
         <mat-checkbox [ngModel]="terrain()" (ngModelChange)="terrain.set($event)">Enable Terrain</mat-checkbox>

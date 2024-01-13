@@ -7,7 +7,8 @@ import {MatButtonModule} from '@angular/material/button'
 import {MatInputModule} from '@angular/material/input'
 import {MatFormFieldModule} from '@angular/material/form-field'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
-import {ObjectService, ObjectAct} from '../../world/object.service'
+import {PropService} from '../../world/prop.service'
+import type {PropAct} from '../../world/prop.service'
 import {BuildService} from '../../engine/build.service'
 import {
   faArrowDown,
@@ -53,7 +54,6 @@ export class UiPropEditComponent {
   public faRotate = faRotate
   public faTrashCan = faTrashCan
 
-  public objectAct = ObjectAct
   public selectedProp: WritableSignal<{
     name?: string
     desc?: string
@@ -62,15 +62,15 @@ export class UiPropEditComponent {
   }>
 
   private buildSvc = inject(BuildService)
-  private objSvc = inject(ObjectService)
+  private propSvc = inject(PropService)
 
   public constructor() {
     this.selectedProp = this.buildSvc.selectedPropSignal
   }
 
-  public trigger(event: MouseEvent, action: number) {
+  public trigger(event: MouseEvent, action: PropAct) {
     if (event.button === 0) {
-      this.objSvc.objectAction.next(action)
+      this.propSvc.propAction.next(action)
     }
     event.preventDefault()
   }

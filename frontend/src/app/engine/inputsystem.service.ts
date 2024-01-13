@@ -3,31 +3,36 @@ import {fromEvent} from 'rxjs'
 import {filter, tap} from 'rxjs/operators'
 import {SettingsService} from '../settings/settings.service'
 
-export const enum PressedKey {
-  nop = 0,
-  moveFwd,
-  moveBck,
-  turnLft,
-  turnRgt,
-  moveLft,
-  moveRgt,
-  moveUp,
-  moveDwn,
-  lookUp,
-  lookDwn,
-  run,
-  clip,
-  side,
-  jmp,
-  cpy,
-  del,
-  esc,
-  len
-}
+const pressedKeys = [
+  'nop',
+  'moveFwd',
+  'moveBck',
+  'turnLft',
+  'turnRgt',
+  'moveLft',
+  'moveRgt',
+  'moveUp',
+  'moveDwn',
+  'lookUp',
+  'lookDwn',
+  'run',
+  'clip',
+  'side',
+  'jmp',
+  'cpy',
+  'del',
+  'esc'
+] as const
+export type PressedKey = (typeof pressedKeys)[number]
 
 @Injectable({providedIn: 'root'})
 export class InputSystemService {
-  public controls: boolean[] = Array(PressedKey.len).fill(false)
+  public controls: Record<PressedKey, boolean> = pressedKeys.reduce(
+    (acc, value) => {
+      return {...acc, [value]: false}
+    },
+    {} as Record<PressedKey, boolean>
+  )
   public keyUpEvent = fromEvent(window, 'keyup').pipe(
     filter(
       (e: KeyboardEvent) =>
@@ -49,34 +54,34 @@ export class InputSystemService {
     })
   )
 
-  private readonly defaultKeymap = new Map([
-    ['ArrowUp', PressedKey.moveFwd],
-    ['KeyW', PressedKey.moveFwd],
-    ['ArrowDown', PressedKey.moveBck],
-    ['KeyS', PressedKey.moveBck],
-    ['ArrowLeft', PressedKey.turnLft],
-    ['KeyQ', PressedKey.turnLft],
-    ['ArrowRight', PressedKey.turnRgt],
-    ['KeyE', PressedKey.turnRgt],
-    ['KeyA', PressedKey.moveLft],
-    ['KeyD', PressedKey.moveRgt],
-    ['PageUp', PressedKey.lookUp],
-    ['PageDown', PressedKey.lookDwn],
-    ['NumpadAdd', PressedKey.moveUp],
-    ['NumpadSubtract', PressedKey.moveDwn],
-    //['NumpadDivide', PressedKey.divide],
-    //['NumpadMultiply', PressedKey.multiply],
-    //['Home', PressedKey.home],
-    //['End', PressedKey.end],
-    ['ShiftLeft', PressedKey.clip],
-    ['ShiftRight', PressedKey.clip],
-    ['ControlLeft', PressedKey.run],
-    ['ControlRight', PressedKey.run],
-    ['Numpad0', PressedKey.jmp],
-    ['Space', PressedKey.jmp],
-    ['Escape', PressedKey.esc],
-    ['Insert', PressedKey.cpy],
-    ['Delete', PressedKey.del]
+  private readonly defaultKeymap: Map<string, PressedKey> = new Map([
+    ['ArrowUp', 'moveFwd'],
+    ['KeyW', 'moveFwd'],
+    ['ArrowDown', 'moveBck'],
+    ['KeyS', 'moveBck'],
+    ['ArrowLeft', 'turnLft'],
+    ['KeyQ', 'turnLft'],
+    ['ArrowRight', 'turnRgt'],
+    ['KeyE', 'turnRgt'],
+    ['KeyA', 'moveLft'],
+    ['KeyD', 'moveRgt'],
+    ['PageUp', 'lookUp'],
+    ['PageDown', 'lookDwn'],
+    ['NumpadAdd', 'moveUp'],
+    ['NumpadSubtract', 'moveDwn'],
+    //['NumpadDivide', 'divide'],
+    //['NumpadMultiply', 'multiply'],
+    //['Home', 'home'],
+    //['End', 'end'],
+    ['ShiftLeft', 'clip'],
+    ['ShiftRight', 'clip'],
+    ['ControlLeft', 'run'],
+    ['ControlRight', 'run'],
+    ['Numpad0', 'jmp'],
+    ['Space', 'jmp'],
+    ['Escape', 'esc'],
+    ['Insert', 'cpy'],
+    ['Delete', 'del']
   ])
 
   private keyMap: Map<string, PressedKey>

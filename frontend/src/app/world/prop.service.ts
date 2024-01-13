@@ -37,31 +37,31 @@ import {environment} from '../../environments/environment'
 import {TextCanvas, Utils} from '../utils'
 import {SettingsService} from '../settings/settings.service'
 
-// can't be const (angular#25963)
-export enum ObjectAct {
-  nop = 0,
-  forward,
-  backward,
-  left,
-  right,
-  up,
-  down,
-  rotX,
-  rotnX,
-  rotY,
-  rotnY,
-  rotZ,
-  rotnZ,
-  copy,
-  delete,
-  rotReset,
-  snapGrid,
-  deselect
-}
+const propActs = [
+  'nop',
+  'forward',
+  'backward',
+  'left',
+  'right',
+  'up',
+  'down',
+  'rotX',
+  'rotnX',
+  'rotY',
+  'rotnY',
+  'rotZ',
+  'rotnZ',
+  'copy',
+  'delete',
+  'rotReset',
+  'snapGrid',
+  'deselect'
+] as const
+export type PropAct = (typeof propActs)[number]
 
 @Injectable({providedIn: 'root'})
-export class ObjectService {
-  public objectAction = new Subject<ObjectAct>()
+export class PropService {
+  public propAction = new Subject<PropAct>()
   public path = signal('')
   private rwxPath = computed(() => `${this.path()}/rwx`)
   private resPath = computed(() => `${this.path()}/textures`)
@@ -585,6 +585,13 @@ export class ObjectService {
     }
   }
 
+  /**
+   * Loads a prop or an avatar
+   * @param name Name of the model
+   * @param objectCache Cache to be used
+   * @param loaderType Type of the loader
+   * @returns
+   */
   private loadObject(
     name: string,
     objectCache: Map<string, Observable<Group>>,

@@ -1,13 +1,7 @@
 import {Vector3, Box3, Ray} from 'three'
 import type {Group, Mesh, Object3D, Triangle} from 'three'
 import {flattenGroup} from 'three-rwx-loader'
-import {
-  MeshBVH,
-  MeshBVHVisualizer,
-  acceleratedRaycast,
-  computeBoundsTree,
-  disposeBoundsTree
-} from 'three-mesh-bvh'
+import {MeshBVH, MeshBVHVisualizer} from 'three-mesh-bvh'
 import type {MeshBVHOptions} from 'three-mesh-bvh'
 import {environment} from '../../environments/environment'
 
@@ -81,9 +75,6 @@ export class PlayerCollider {
       chunk.parent.visible = true
       return
     }
-    bvhMesh.geometry.computeBoundsTree = computeBoundsTree
-    bvhMesh.geometry.disposeBoundsTree = disposeBoundsTree
-    bvhMesh.raycast = acceleratedRaycast
     chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
       onProgress: (progress: number) => {
         chunk.parent.visible = progress === 1

@@ -13,8 +13,8 @@ import {
 } from 'three'
 import type {Object3D, Material, Mesh} from 'three'
 import {PlayerCollider} from './player-collider'
-import {ObjectAct} from '../world/object.service'
-import {PressedKey, InputSystemService} from './inputsystem.service'
+import type {PropAct} from '../world/prop.service'
+import {InputSystemService} from './inputsystem.service'
 import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils'
 
 @Injectable({
@@ -94,12 +94,8 @@ export class BuildService {
     this.propSelection = null
   }
 
-  public moveProp(
-    action: ObjectAct,
-    cameraDirection: Vector3,
-    buildNode: Group
-  ) {
-    if (action === ObjectAct.deselect) {
+  public moveProp(action: PropAct, cameraDirection: Vector3, buildNode: Group) {
+    if (action === 'deselect') {
       this.deselectProp(buildNode)
       return
     }
@@ -107,10 +103,10 @@ export class BuildService {
       this.selectedProp.userData.rwx?.axisAlignment === 'none'
     let moveStep = 0.5
     let rotStep = Math.PI / 12
-    if (this.inputSysSvc.controls[PressedKey.clip]) {
+    if (this.inputSysSvc.controls['clip']) {
       moveStep = 0.05
       rotStep = Math.PI / 120
-      if (this.inputSysSvc.controls[PressedKey.run]) {
+      if (this.inputSysSvc.controls['run']) {
         moveStep = 0.01
         rotStep = Math.PI / 180
       }
@@ -122,83 +118,83 @@ export class BuildService {
       v.z = Math.sign(cameraDirection.z)
     }
     switch (action) {
-      case ObjectAct.up: {
+      case 'up': {
         this.selectedProp.position.add(new Vector3(0, moveStep, 0))
         this.updatePropSelectionBox()
         break
       }
-      case ObjectAct.down: {
+      case 'down': {
         this.selectedProp.position.add(new Vector3(0, -moveStep, 0))
         this.updatePropSelectionBox()
         break
       }
-      case ObjectAct.forward: {
+      case 'forward': {
         this.selectedProp.position.add(v.multiplyScalar(moveStep))
         this.updatePropSelectionBox()
         break
       }
-      case ObjectAct.backward: {
+      case 'backward': {
         this.selectedProp.position.add(v.multiplyScalar(-moveStep))
         this.updatePropSelectionBox()
         break
       }
-      case ObjectAct.left: {
+      case 'left': {
         this.selectedProp.position.add(
           new Vector3(v.z * moveStep, 0, v.x * -moveStep)
         )
         this.updatePropSelectionBox()
         break
       }
-      case ObjectAct.right: {
+      case 'right': {
         this.selectedProp.position.add(
           new Vector3(v.z * -moveStep, 0, v.x * moveStep)
         )
         this.updatePropSelectionBox()
         break
       }
-      case ObjectAct.rotY: {
+      case 'rotY': {
         if (allowRotation) {
           this.selectedProp.rotateOnAxis(Y_AXIS, rotStep)
           this.updatePropSelectionBox()
         }
         break
       }
-      case ObjectAct.rotnY: {
+      case 'rotnY': {
         if (allowRotation) {
           this.selectedProp.rotateOnAxis(Y_AXIS, -rotStep)
           this.updatePropSelectionBox()
         }
         break
       }
-      case ObjectAct.rotX: {
+      case 'rotX': {
         if (allowRotation) {
           this.selectedProp.rotateOnAxis(X_AXIS, rotStep)
           this.updatePropSelectionBox()
         }
         break
       }
-      case ObjectAct.rotnX: {
+      case 'rotnX': {
         if (allowRotation) {
           this.selectedProp.rotateOnAxis(X_AXIS, -rotStep)
           this.updatePropSelectionBox()
         }
         break
       }
-      case ObjectAct.rotZ: {
+      case 'rotZ': {
         if (allowRotation) {
           this.selectedProp.rotateOnAxis(Z_AXIS, rotStep)
           this.updatePropSelectionBox()
         }
         break
       }
-      case ObjectAct.rotnZ: {
+      case 'rotnZ': {
         if (allowRotation) {
           this.selectedProp.rotateOnAxis(Z_AXIS, -rotStep)
           this.updatePropSelectionBox()
         }
         break
       }
-      case ObjectAct.snapGrid: {
+      case 'snapGrid': {
         this.selectedProp.position.set(
           Math.round(this.selectedProp.position.x * 2) / 2,
           Math.round(this.selectedProp.position.y * 2) / 2,
@@ -207,14 +203,14 @@ export class BuildService {
         this.updatePropSelectionBox()
         break
       }
-      case ObjectAct.rotReset: {
+      case 'rotReset': {
         if (allowRotation) {
           this.selectedProp.rotation.set(0, 0, 0)
           this.updatePropSelectionBox()
         }
         break
       }
-      case ObjectAct.copy: {
+      case 'copy': {
         const {parent} = this.selectedProp
         this.selectedProp = this.selectedProp.clone()
         this.selectedProp.position.add(v.multiplyScalar(moveStep))

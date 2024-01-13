@@ -1,7 +1,8 @@
 import {NgClass} from '@angular/common'
 import {MatButtonModule} from '@angular/material/button'
 import {MatDialogModule} from '@angular/material/dialog'
-import {InputSystemService, PressedKey} from '../../engine/inputsystem.service'
+import type {PressedKey} from '../../engine/inputsystem.service'
+import {InputSystemService} from '../../engine/inputsystem.service'
 import type {OnInit} from '@angular/core'
 import {
   ChangeDetectionStrategy,
@@ -21,20 +22,20 @@ import {Subject, takeUntil, take, timeout} from 'rxjs'
 })
 export class UiControlsComponent implements OnInit {
   public controlsLabels: [string, PressedKey][] = [
-    ['Move Forward', PressedKey.moveFwd],
-    ['Move Backward', PressedKey.moveBck],
-    ['Turn Left', PressedKey.turnLft],
-    ['Turn Right', PressedKey.turnRgt],
-    ['Move Left', PressedKey.moveLft],
-    ['Move Right', PressedKey.moveRgt],
-    ['Sidestep', PressedKey.side],
-    ['Run', PressedKey.run],
-    ['Jump', PressedKey.jmp],
-    ['Move Up (Fly)', PressedKey.moveUp],
-    ['Move Down', PressedKey.moveDwn],
-    ['Look Up', PressedKey.lookUp],
-    ['Look Down', PressedKey.lookDwn],
-    ['Pass Through', PressedKey.clip]
+    ['Move Forward', 'moveFwd'],
+    ['Move Backward', 'moveBck'],
+    ['Turn Left', 'turnLft'],
+    ['Turn Right', 'turnRgt'],
+    ['Move Left', 'moveLft'],
+    ['Move Right', 'moveRgt'],
+    ['Sidestep', 'side'],
+    ['Run', 'run'],
+    ['Jump', 'jmp'],
+    ['Move Up (Fly)', 'moveUp'],
+    ['Move Down', 'moveDwn'],
+    ['Look Up', 'lookUp'],
+    ['Look Down', 'lookDwn'],
+    ['Pass Through', 'clip']
   ]
 
   public controlsKeymap = Array(this.controlsLabels.length).fill([null, null])

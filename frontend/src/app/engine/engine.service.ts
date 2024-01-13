@@ -1,7 +1,8 @@
 import {BehaviorSubject, fromEvent, Subject, timer} from 'rxjs'
-import {effect, Injectable, NgZone, inject, signal} from '@angular/core'
+import {effect, Injectable, inject, signal} from '@angular/core'
 import type {ElementRef} from '@angular/core'
 import {
+  BufferGeometry,
   Cache,
   Clock,
   Fog,
@@ -27,14 +28,26 @@ import type {DirectionalLight, LOD, Sprite} from 'three'
 import {BuildService} from './build.service'
 import {TeleportService} from './teleport.service'
 import {UserService} from '../user'
-import {ObjectAct, ObjectService} from '../world/object.service'
+import type {PropAct} from '../world/prop.service'
+import {PropService} from '../world/prop.service'
 import {PropAnimationService} from '../animation'
 import type {AvatarAnimationPlayer} from '../animation'
-import {PressedKey, InputSystemService} from './inputsystem.service'
+import type {PressedKey} from './inputsystem.service'
+import {InputSystemService} from './inputsystem.service'
 import {environment} from '../../environments/environment'
 import {PlayerCollider} from './player-collider'
 import {DEG, Utils} from '../utils'
 import {Player} from './player'
+import {
+  acceleratedRaycast,
+  computeBoundsTree,
+  disposeBoundsTree
+} from 'three-mesh-bvh'
+
+// Faster raycasting using BVH
+BufferGeometry.prototype.computeBoundsTree = computeBoundsTree
+BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree
+Mesh.prototype.raycast = acceleratedRaycast
 
 // Don't update matrix for props that are out of visibility range to speed up
 // the render loop
@@ -80,10 +93,9 @@ export class EngineService {
   public playerPosition = signal(new Vector3())
   public worldFog = {color: 0x00007f, near: 0, far: 120, enabled: false}
 
-  private ngZone = inject(NgZone)
   private userSvc = inject(UserService)
   private inputSysSvc = inject(InputSystemService)
-  private objSvc = inject(ObjectService)
+  private propSvc = inject(PropService)
   private buildSvc = inject(BuildService)
   private propAnimSvc = inject(PropAnimationService)
   private teleportSvc = inject(TeleportService)
@@ -105,6 +117,7 @@ export class EngineService {
   private lodCamera: PerspectiveCamera
   private scene: Scene
   private buildScene: Scene
+  private labelScene: Scene
   private dirLight: DirectionalLight
   private fog = new Fog(0)
   private skybox: Group
@@ -135,24 +148,24 @@ export class EngineService {
 
   private chunkTile: [number, number] = [0, 0]
 
-  private keyActionMap = new Map([
-    [PressedKey.moveFwd, ObjectAct.forward],
-    [PressedKey.turnRgt, ObjectAct.right],
-    [PressedKey.moveRgt, ObjectAct.right],
-    [PressedKey.moveBck, ObjectAct.backward],
-    [PressedKey.turnLft, ObjectAct.left],
-    [PressedKey.moveLft, ObjectAct.left],
-    [PressedKey.lookUp, ObjectAct.rotY],
-    [PressedKey.lookDwn, ObjectAct.rotnY],
-    [PressedKey.moveUp, ObjectAct.up],
-    [PressedKey.moveDwn, ObjectAct.down],
-    // [PressedKey.divide, ObjectAct.rotX],
-    // [PressedKey.multiply, ObjectAct.rotnX],
-    // [PressedKey.home, ObjectAct.rotZ],
-    // [PressedKey.end, ObjectAct.rotnZ],
-    [PressedKey.esc, ObjectAct.deselect],
-    [PressedKey.cpy, ObjectAct.copy],
-    [PressedKey.del, ObjectAct.delete]
+  private keyActionMap: Map<PressedKey, PropAct> = new Map([
+    ['moveFwd', 'forward'],
+    ['turnRgt', 'right'],
+    ['moveRgt', 'right'],
+    ['moveBck', 'backward'],
+    ['turnLft', 'left'],
+    ['moveLft', 'left'],
+    ['lookUp', 'rotY'],
+    ['lookDwn', 'rotnY'],
+    ['moveUp', 'up'],
+    ['moveDwn', 'down'],
+    // ['divide', 'rotX'],
+    // ['multiply', 'rotnX'],
+    // ['home', 'rotZ'],
+    // ['end', 'rotnZ'],
+    ['esc', 'deselect'],
+    ['cpy', 'copy'],
+    ['del', 'delete']
   ])
 
   public constructor() {
@@ -208,6 +221,7 @@ export class EngineService {
 
     this.scene = new Scene()
     this.buildScene = new Scene()
+    this.labelScene = new Scene()
 
     this.worldNode.add(this.player.entity)
 
@@ -413,7 +427,7 @@ export class EngineService {
 
     const label = new CSS2DObject(div)
     this.labelMap.set(group.name, label)
-    this.scene.add(label)
+    this.labelScene.add(label)
     this.usersNode.add(group)
   }
 
@@ -526,7 +540,7 @@ export class EngineService {
   public removeUser(group: Group) {
     const label = this.labelMap.get(group.name)
     if (label != null) {
-      this.scene.remove(label)
+      this.labelScene.remove(label)
     }
     this.disposeMaterial(group)
     this.disposeGeometry(group)
@@ -542,89 +556,84 @@ export class EngineService {
   }
 
   public animate(): void {
-    // We have to run this outside angular zones,
-    // because it could trigger heavy changeDetection cycles.
-    this.ngZone.runOutsideAngular(() => {
-      this.clock = new Clock(true)
-      if (document.readyState !== 'loading') {
-        this.render()
+    this.clock = new Clock(true)
+    if (document.readyState !== 'loading') {
+      this.render()
+    } else {
+      fromEvent(window, 'DOMContentLoaded').subscribe(() => this.render())
+    }
+    fromEvent(window, 'resize').subscribe(() => this.resize())
+    fromEvent(window, 'visibilitychange').subscribe(() => {
+      if (document.visibilityState === 'visible') {
+        this.clock.start()
       } else {
-        fromEvent(window, 'DOMContentLoaded').subscribe(() => this.render())
+        this.clock.stop()
       }
-      fromEvent(window, 'resize').subscribe(() => this.resize())
-      fromEvent(window, 'visibilitychange').subscribe(() => {
-        if (document.visibilityState === 'visible') {
-          this.clock.start()
-        } else {
-          this.clock.stop()
-        }
-      })
-      fromEvent(this.canvas, 'contextmenu').subscribe((e: MouseEvent) =>
-        this.rightClick(e)
-      )
-      fromEvent(this.canvas, 'mousemove').subscribe((e: MouseEvent) => {
-        this.mouseIdle = 0
-        this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1
-        this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1
-      })
-      fromEvent(this.canvas, 'mousedown').subscribe((e: MouseEvent) => {
-        if (e.button === 0) {
-          this.leftClick(e)
-        }
-      })
-      this.inputSysSvc.keyDownEvent.subscribe((k) => {
-        // reset tooltip
-        this.mouseIdle = 0
-        this.labelDesc.style.display = 'none'
-        this.hoveredObject = null
-        if (this.buildSvc.buildMode) {
-          const act =
-            this.keyActionMap.get(this.inputSysSvc.getKey(k.code)) ||
-            ObjectAct.nop
-          this.objSvc.objectAction.next(act)
-        }
-      })
-      this.inputSysSvc.keyUpEvent.subscribe(() => {
-        this.mouseIdle = 0
-      })
-      this.objSvc.objectAction.subscribe((act) => {
-        if (!this.buildSvc.buildMode) {
-          return
-        }
-        if (act === ObjectAct.delete) {
-          // Remove prop from scene and do nothing else
-          this.removeObject(this.buildSvc.selectedProp)
-          return
-        }
-        // Handle prop moving and duplication
-        this.buildSvc.moveProp(act, this.cameraDirection, this.buildNode)
-      })
-      timer(0, 100).subscribe(() => {
-        this.mouseIdle++
-        document.body.style.cursor = 'default'
-        const item = this.pointedItem().obj
-        if (item?.userData?.activate != null) {
-          document.body.style.cursor = 'pointer'
-        }
-        if (this.mouseIdle >= 10) {
-          if (item !== this.hoveredObject) {
-            this.labelDesc.style.display = 'none'
-            this.hoveredObject = item
-            if (item?.userData?.desc) {
-              this.labelDesc.style.display = 'block'
-              this.labelDesc.innerHTML = item.userData.desc.replace(
-                /[\u0000-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u00FF]/g,
-                (c: string) => '&#' + `000${c.charCodeAt(0)}`.slice(-4) + ';'
-              )
-              this.labelDesc.style.left =
-                ((this.mouse.x + 1) / 2) * window.innerWidth + 'px'
-              this.labelDesc.style.top =
-                (-(this.mouse.y - 1) / 2) * window.innerHeight + 'px'
-            }
+    })
+    fromEvent(this.canvas, 'contextmenu').subscribe((e: MouseEvent) =>
+      this.rightClick(e)
+    )
+    fromEvent(this.canvas, 'mousemove').subscribe((e: MouseEvent) => {
+      this.mouseIdle = 0
+      this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1
+      this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1
+    })
+    fromEvent(this.canvas, 'mousedown').subscribe((e: MouseEvent) => {
+      if (e.button === 0) {
+        this.leftClick(e)
+      }
+    })
+    this.inputSysSvc.keyDownEvent.subscribe((k) => {
+      // reset tooltip
+      this.mouseIdle = 0
+      this.labelDesc.style.display = 'none'
+      this.hoveredObject = null
+      if (this.buildSvc.buildMode) {
+        const act =
+          this.keyActionMap.get(this.inputSysSvc.getKey(k.code)) || 'nop'
+        this.propSvc.propAction.next(act)
+      }
+    })
+    this.inputSysSvc.keyUpEvent.subscribe(() => {
+      this.mouseIdle = 0
+    })
+    this.propSvc.propAction.subscribe((act: PropAct) => {
+      if (!this.buildSvc.buildMode) {
+        return
+      }
+      if (act === 'delete') {
+        // Remove prop from scene and do nothing else
+        this.removeObject(this.buildSvc.selectedProp)
+        return
+      }
+      // Handle prop moving and duplication
+      this.buildSvc.moveProp(act, this.cameraDirection, this.buildNode)
+    })
+    timer(0, 100).subscribe(() => {
+      this.mouseIdle++
+      document.body.style.cursor = 'default'
+      const item = this.pointedItem().obj
+      if (item?.userData?.activate != null) {
+        document.body.style.cursor = 'pointer'
+      }
+      if (this.mouseIdle >= 10) {
+        if (item !== this.hoveredObject) {
+          this.labelDesc.style.display = 'none'
+          this.hoveredObject = item
+          if (item?.userData?.desc) {
+            this.labelDesc.style.display = 'block'
+            this.labelDesc.innerHTML = item.userData.desc.replace(
+              /[\u0000-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u00FF]/g,
+              (c: string) => '&#' + `000${c.charCodeAt(0)}`.slice(-4) + ';'
+            )
+            this.labelDesc.style.left =
+              ((this.mouse.x + 1) / 2) * window.innerWidth + 'px'
+            this.labelDesc.style.top =
+              (-(this.mouse.y - 1) / 2) * window.innerHeight + 'px'
           }
-          this.mouseIdle = 5
         }
-      })
+        this.mouseIdle = 5
+      }
     })
   }
 
@@ -718,7 +727,7 @@ export class EngineService {
     this.renderer.clear()
     this.renderer.info.reset()
     this.renderer.render(this.scene, this.activeCamera)
-    this.labelRenderer.render(this.scene, this.activeCamera)
+    this.labelRenderer.render(this.labelScene, this.activeCamera)
     // Render build scene last
     this.renderer.clearDepth()
     this.renderer.render(this.buildScene, this.activeCamera)
@@ -965,13 +974,13 @@ export class EngineService {
     let movSteps = 12 * this.deltaSinceLastFrame
     let rotSteps = 1.5 * this.deltaSinceLastFrame
     const reverse = this.activeCamera === this.thirdFrontCamera ? -1 : 1
-    if (this.inputSysSvc.controls[PressedKey.run]) {
+    if (this.inputSysSvc.controls['run']) {
       movSteps = this.player.isFlying
         ? 72 * this.deltaSinceLastFrame
         : 24 * this.deltaSinceLastFrame
       rotSteps *= 3
     }
-    if (this.inputSysSvc.controls[PressedKey.moveFwd]) {
+    if (this.inputSysSvc.controls['moveFwd']) {
       this.player.velocity.add(
         new Vector3(
           reverse * this.cameraDirection.x,
@@ -980,7 +989,7 @@ export class EngineService {
         ).multiplyScalar(movSteps)
       )
     }
-    if (this.inputSysSvc.controls[PressedKey.moveBck]) {
+    if (this.inputSysSvc.controls['moveBck']) {
       this.player.velocity.add(
         new Vector3(
           reverse * -this.cameraDirection.x,
@@ -989,8 +998,8 @@ export class EngineService {
         ).multiplyScalar(movSteps)
       )
     }
-    if (this.inputSysSvc.controls[PressedKey.turnLft]) {
-      if (this.inputSysSvc.controls[PressedKey.clip]) {
+    if (this.inputSysSvc.controls['turnLft']) {
+      if (this.inputSysSvc.controls['clip']) {
         this.player.velocity.add(
           new Vector3(
             reverse * this.cameraDirection.z,
@@ -1005,8 +1014,8 @@ export class EngineService {
       }
       this.rotateSprites()
     }
-    if (this.inputSysSvc.controls[PressedKey.turnRgt]) {
-      if (this.inputSysSvc.controls[PressedKey.clip]) {
+    if (this.inputSysSvc.controls['turnRgt']) {
+      if (this.inputSysSvc.controls['clip']) {
         this.player.velocity.add(
           new Vector3(
             reverse * -this.cameraDirection.z,
@@ -1021,7 +1030,7 @@ export class EngineService {
       }
       this.rotateSprites()
     }
-    if (this.inputSysSvc.controls[PressedKey.moveLft]) {
+    if (this.inputSysSvc.controls['moveLft']) {
       this.player.velocity.add(
         new Vector3(
           reverse * this.cameraDirection.z,
@@ -1030,7 +1039,7 @@ export class EngineService {
         ).multiplyScalar(movSteps)
       )
     }
-    if (this.inputSysSvc.controls[PressedKey.moveRgt]) {
+    if (this.inputSysSvc.controls['moveRgt']) {
       this.player.velocity.add(
         new Vector3(
           reverse * -this.cameraDirection.z,
@@ -1040,35 +1049,32 @@ export class EngineService {
       )
     }
     if (
-      this.inputSysSvc.controls[PressedKey.lookUp] &&
+      this.inputSysSvc.controls['lookUp'] &&
       this.player.rotation.x < Math.PI / 2
     ) {
       this.player.rotation.x += rotSteps
     }
     if (
-      this.inputSysSvc.controls[PressedKey.lookDwn] &&
+      this.inputSysSvc.controls['lookDwn'] &&
       this.player.rotation.x > -Math.PI / 2
     ) {
       this.player.rotation.x -= rotSteps
     }
-    if (this.inputSysSvc.controls[PressedKey.moveUp]) {
+    if (this.inputSysSvc.controls['moveUp']) {
       this.player.isFlying = true
       this.player.velocity.add(new Vector3(0, 1, 0).multiplyScalar(movSteps))
     }
-    if (this.inputSysSvc.controls[PressedKey.moveDwn]) {
+    if (this.inputSysSvc.controls['moveDwn']) {
       this.player.isFlying = true
       this.player.velocity.add(new Vector3(0, 1, 0).multiplyScalar(-movSteps))
     }
-    if (this.inputSysSvc.controls[PressedKey.jmp] && this.player.isOnFloor) {
+    if (this.inputSysSvc.controls['jmp'] && this.player.isOnFloor) {
       this.player.position.setY(this.player.position.y + Player.CLIMB_HEIGHT)
     }
     const damping = Math.exp(-3 * this.deltaSinceLastFrame) - 1
     if (this.player.isOnFloor) {
       this.player.velocity.addScaledVector(this.player.velocity, damping)
-    } else if (
-      !this.player.isFlying &&
-      !this.inputSysSvc.controls[PressedKey.clip]
-    ) {
+    } else if (!this.player.isFlying && !this.inputSysSvc.controls['clip']) {
       this.player.velocity.y -= 30 * this.deltaSinceLastFrame
     } else {
       this.player.velocity.addScaledVector(this.player.velocity, damping)
@@ -1203,7 +1209,9 @@ export class EngineService {
     const ignoreList = [corona, corona.parent]
     const intersects = this.raycaster
       .intersectObjects(
-        this.objectsNode.children.concat(this.terrain ?? []),
+        this.objectsNode.children
+          .filter((obj) => obj.parent.visible)
+          .concat(this.terrain ?? []),
         true
       )
       .filter((intersect) => !ignoreList.includes(intersect.object))

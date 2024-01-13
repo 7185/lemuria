@@ -1,77 +1,77 @@
 <div id="build-zone" cdkDrag [class.d-none]="selectedProp().name === undefined">
   <hr cdkDragHandle/>
   <div class="buttons">
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.copy)" title="Duplicate">
+    <button mat-icon-button type="button" (click)="trigger($event, 'copy')" title="Duplicate">
       <fa-icon [icon]="faClone" class="text-yellow" [fixedWidth]="true"/>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.snapGrid)" title="Snap to Grid">
+    <button mat-icon-button type="button" (click)="trigger($event, 'snapGrid')" title="Snap to Grid">
       <fa-icon [icon]="faBorderNone" [fixedWidth]="true"/>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.forward)" title="Move forward">
+    <button mat-icon-button type="button" (click)="trigger($event, 'forward')" title="Move forward">
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faRoad" class="text-gray" [fixedWidth]="true"/>
         <fa-icon class="text-cyan" [icon]="faArrowUp" transform="shrink-6 up-8"/>
       </fa-layers>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.backward)" title="Move back">
+    <button mat-icon-button type="button" (click)="trigger($event, 'backward')" title="Move back">
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faRoad" class="text-gray" [fixedWidth]="true"/>
         <fa-icon class="text-cyan" [icon]="faArrowDown" transform="shrink-3 down-8"/>
       </fa-layers>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.left)" title="Move left">
+    <button mat-icon-button type="button" (click)="trigger($event, 'left')" title="Move left">
       <fa-icon [icon]="faArrowLeft" class="text-cyan" [fixedWidth]="true"/>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.right)" title="Move right">
+    <button mat-icon-button type="button" (click)="trigger($event, 'right')" title="Move right">
       <fa-icon [icon]="faArrowRight" class="text-cyan" [fixedWidth]="true"/>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.up)" title="Move up">
+    <button mat-icon-button type="button" (click)="trigger($event, 'up')" title="Move up">
       <fa-icon [icon]="faArrowUp" class="text-cyan" [fixedWidth]="true"/>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.down)" title="Move down">
+    <button mat-icon-button type="button" (click)="trigger($event, 'down')" title="Move down">
       <fa-icon [icon]="faArrowDown" class="text-cyan" [fixedWidth]="true"/>
     </button>
     <br/>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.delete)" title="Delete">
+    <button mat-icon-button type="button" (click)="trigger($event, 'delete')" title="Delete">
       <fa-icon [icon]="faTrashCan" class="text-red" [fixedWidth]="true"/>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.rotReset)" title="Reset Rotation">
+    <button mat-icon-button type="button" (click)="trigger($event, 'rotReset')" title="Reset Rotation">
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faRotate" [fixedWidth]="true"/>
         <fa-layers-text content="0" transform="shrink-2 right-8 down-6" class="fw-bold text-gray"/>
       </fa-layers>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.rotnX)" title="Tilt -X axis">
+    <button mat-icon-button type="button" (click)="trigger($event, 'rotnX')" title="Tilt -X axis">
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"/>
         <fa-layers-text content="X" transform="shrink-2 right-8 down-6" class="fw-bold text-red"/>
       </fa-layers>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.rotX)" title="Tilt +X axis">
+    <button mat-icon-button type="button" (click)="trigger($event, 'rotX')" title="Tilt +X axis">
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"/>
         <fa-layers-text content="X" transform="shrink-2 left-8 down-6" class="fw-bold text-red"/>
       </fa-layers>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.rotnY)" title="Turn left">
+    <button mat-icon-button type="button" (click)="trigger($event, 'rotnY')" title="Turn left">
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"/>
         <fa-layers-text content="Y" transform="shrink-2 right-8 down-6" class="fw-bold text-green"/>
       </fa-layers>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.rotY)" title="Turn right">
+    <button mat-icon-button type="button" (click)="trigger($event, 'rotY')" title="Turn right">
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"/>
         <fa-layers-text content="Y" transform="shrink-2 left-8 down-6" class="fw-bold text-green"/>
       </fa-layers>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.rotnZ)" title="Roll -Z axis">
+    <button mat-icon-button type="button" (click)="trigger($event, 'rotnZ')" title="Roll -Z axis">
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true"/>
         <fa-layers-text content="Z" transform="shrink-2 right-8 down-6" class="fw-bold text-blue"/>
       </fa-layers>
     </button>
-    <button mat-icon-button type="button" (click)="trigger($event, objectAct.rotZ)" title="Roll +Z axis">
+    <button mat-icon-button type="button" (click)="trigger($event, 'rotZ')" title="Roll +Z axis">
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true"/>
         <fa-layers-text content="Z" transform="shrink-2 left-8 down-6" class="fw-bold text-blue"/>

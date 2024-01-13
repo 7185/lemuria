@@ -8,7 +8,8 @@ import {EngineService} from '../engine/engine.service'
 import {TerrainService} from './terrain.service'
 import {TeleportService} from '../engine/teleport.service'
 import {PlayerCollider} from '../engine/player-collider'
-import {ObjectService, ObjectAct} from './object.service'
+import type {PropAct} from './prop.service'
+import {PropService} from './prop.service'
 import {SocketService} from '../network/socket.service'
 import {AvatarAnimationService} from '../animation'
 import type {AvatarAnimationManager} from '../animation'
@@ -58,7 +59,7 @@ export class WorldService {
   private lightingSvc = inject(LightingService)
   private terrainSvc = inject(TerrainService)
   private userSvc = inject(UserService)
-  private objSvc = inject(ObjectService)
+  private propSvc = inject(PropService)
   private anmSvc = inject(AvatarAnimationService)
   private httpSvc = inject(HttpService)
   private settings = inject(SettingsService)
@@ -139,7 +140,7 @@ export class WorldService {
     // Register texture animator to the engine
     effect(() => {
       if (this.engineSvc.texturesAnimation() > 0) {
-        this.objSvc.texturesNextFrame()
+        this.propSvc.texturesNextFrame()
       }
     })
 
@@ -200,17 +201,17 @@ export class WorldService {
     })
 
     // Register object chunk updater to the engine
-    this.objSvc.objectAction.subscribe((action: ObjectAct) => {
+    this.propSvc.propAction.subscribe((action: PropAct) => {
       if (
         [
-          ObjectAct.up,
-          ObjectAct.down,
-          ObjectAct.forward,
-          ObjectAct.backward,
-          ObjectAct.left,
-          ObjectAct.right,
-          ObjectAct.snapGrid,
-          ObjectAct.copy
+          'up',
+          'down',
+          'forward',
+          'backward',
+          'left',
+          'right',
+          'snapGrid',
+          'copy'
         ].includes(action)
       ) {
         this.setObjectChunk(this.buildSvc.selectedProp)
@@ -350,7 +351,7 @@ export class WorldService {
     skyboxGroup.add(oct)
 
     if (skybox) {
-      this.objSvc.loadProp(skybox, true).subscribe((s) => {
+      this.propSvc.loadProp(skybox, true).subscribe((s) => {
         const skyboxRwx = s.clone()
         const box = new Box3().setFromObject(skyboxRwx)
         const center = box.getCenter(new Vector3())
@@ -376,7 +377,7 @@ export class WorldService {
     act = null
   ): Promise<Object3D> {
     item = Utils.modelName(item)
-    const g = await firstValueFrom(this.objSvc.loadProp(item))
+    const g = await firstValueFrom(this.propSvc.loadProp(item))
     g.name = item
     g.userData.id = id
     g.userData.date = date
@@ -408,7 +409,7 @@ export class WorldService {
     g.userData.rotOrig = g.rotation.clone()
 
     if (act && g.userData?.isError !== true) {
-      this.objSvc.parseActions(g)
+      this.propSvc.parseActions(g)
     }
 
     g.updateMatrix()
@@ -425,7 +426,7 @@ export class WorldService {
       return
     }
     name = Utils.modelName(name)
-    this.objSvc.loadAvatar(name).subscribe(async (o) => {
+    this.propSvc.loadAvatar(name).subscribe(async (o) => {
       o.rotation.copy(new Euler(0, Math.PI, 0))
       group.parent.updateMatrixWorld()
       group.position.y = group.parent.position.y
@@ -655,9 +656,9 @@ export class WorldService {
     this.worldId = world.id
     this.worldName = world.name
     this.engineSvc.clearObjects()
-    this.objSvc.cleanCache()
+    this.propSvc.cleanCache()
     this.anmSvc.cleanCache()
-    this.objSvc.path.set(world.path)
+    this.propSvc.path.set(world.path)
     this.terrainSvc.setTerrain(world?.terrain, world.id)
     this.terrainSvc.setWater(world?.water)
     this.skybox.set(world.sky.skybox)
@@ -711,7 +712,7 @@ export class WorldService {
       enabled: world.light.fog.enabled
     }
 
-    this.objSvc.loadAvatarList().subscribe((list) => {
+    this.propSvc.loadAvatarList().subscribe((list) => {
       this.avatarList = list
       // Set first avatar on self
       const savedAvatars = this.settings.get('avatar')

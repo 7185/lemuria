@@ -1,7 +1,7 @@
 import {Injectable, effect, inject} from '@angular/core'
 import parseSequence, {FileType, getJointTag} from 'aw-sequence-parser'
 import {EngineService} from '../engine/engine.service'
-import {ObjectService} from '../world/object.service'
+import {PropService} from '../world/prop.service'
 import {AvatarAnimationManager} from './avatar-animation.manager'
 import {Quaternion, Vector3} from 'three'
 import * as fflate from 'fflate'
@@ -90,7 +90,7 @@ export class AvatarAnimationService {
   }
   private frameRate = 60
   private engineSvc = inject(EngineService)
-  private objSvc = inject(ObjectService)
+  private propSvc = inject(PropService)
 
   constructor() {
     effect(() => {
@@ -176,7 +176,7 @@ export class AvatarAnimationService {
       try {
         const seq = await this.loadSequence(
           filename,
-          `${this.objSvc.path()}/seqs/${filename}${extension}`
+          `${this.propSvc.path()}/seqs/${filename}${extension}`
         )
         implicitSequences.set(key, seq)
       } catch (e) {
@@ -188,7 +188,7 @@ export class AvatarAnimationService {
       try {
         const seq = await this.loadSequence(
           filename,
-          `${this.objSvc.path()}/seqs/${filename}${extension}`
+          `${this.propSvc.path()}/seqs/${filename}${extension}`
         )
         explicitSequences.set(key, seq)
       } catch (e) {

@@ -12,7 +12,7 @@ import {DEG, TERRAIN_PAGE_SIZE, Utils} from '../utils'
 import {environment} from '../../environments/environment'
 import {inject, signal} from '@angular/core'
 import type {AvatarAnimationPlayer} from '../animation'
-import {InputSystemService, PressedKey} from './inputsystem.service'
+import {InputSystemService} from './inputsystem.service'
 
 export class Player {
   static BOX_SIDE = environment.world.collider.boxSide
@@ -139,7 +139,7 @@ export class Player {
 
     const animation: Promise<AvatarAnimationPlayer> =
       this.avatar.userData.animationPlayer
-    const velocity = this.inputSysSvc.controls[PressedKey.moveBck]
+    const velocity = this.inputSysSvc.controls['moveBck']
       ? -this.velocity.length()
       : this.velocity.length()
 
@@ -169,7 +169,7 @@ export class Player {
       this.gesture = null
     }
 
-    if (!this.inputSysSvc.controls[PressedKey.clip] && this.collider) {
+    if (!this.inputSysSvc.controls['clip'] && this.collider) {
       let deltaLength = deltaPosition.length()
 
       for (let i = 0; deltaLength > 0 && i < Player.MAX_NB_STEPS; i++) {
