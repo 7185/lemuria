@@ -679,7 +679,7 @@ export class EngineService {
           }`
         )
       )
-      .filter((lod) => lod !== undefined)
+      .filter((lod) => lod !== undefined) as LOD[]
   }
 
   private handleSpecialObject(group: Group) {

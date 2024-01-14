@@ -33,7 +33,7 @@ export class InputSystemService {
     },
     {} as Record<PressedKey, boolean>
   )
-  public keyUpEvent = fromEvent(window, 'keyup').pipe(
+  public keyUpEvent = fromEvent<KeyboardEvent>(window, 'keyup').pipe(
     filter(
       (e: KeyboardEvent) =>
         ['INPUT', 'TEXTAREA'].indexOf((e.target as HTMLElement).nodeName) === -1
@@ -43,7 +43,7 @@ export class InputSystemService {
       e.preventDefault()
     })
   )
-  public keyDownEvent = fromEvent(window, 'keydown').pipe(
+  public keyDownEvent = fromEvent<KeyboardEvent>(window, 'keydown').pipe(
     filter(
       (e: KeyboardEvent) =>
         ['INPUT', 'TEXTAREA'].indexOf((e.target as HTMLElement).nodeName) === -1

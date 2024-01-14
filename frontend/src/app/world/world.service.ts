@@ -39,7 +39,6 @@ export class WorldService {
   public avatarList: {
     name: string
     geometry: string
-    animationMgr: Promise<AvatarAnimationManager>
     implicit: Map<string, string>
     explicit: Map<string, string>
   }[] = []
@@ -72,7 +71,7 @@ export class WorldService {
 
   private chunkWidth: number = environment.world.chunk.width // in cm
   private chunkDepth: number = environment.world.chunk.depth // in cm
-  private chunkMap: Map<number, Set<number>>
+  private chunkMap = new Map<number, Set<number>>()
   private chunkLoadingLayout = []
   private chunkLoadCircular: boolean = environment.world.chunk.loadCircular
   private chunkLoadRadius: number = environment.world.chunk.loadRadius
@@ -318,7 +317,7 @@ export class WorldService {
     ]
 
     const colors = ['north', 'east', 'south', 'west', 'top', 'bottom']
-      .flatMap((attr: string) => skyColors[attr])
+      .flatMap((attr) => skyColors[attr])
       .map((c: number) => SRGBToLinear(c / 255))
 
     octGeom.setAttribute(
@@ -364,7 +363,7 @@ export class WorldService {
 
   private resetChunks() {
     this.lastChunk = null
-    this.chunkMap = new Map<number, Set<number>>()
+    this.chunkMap.clear()
   }
 
   private async loadItem(
@@ -619,7 +618,7 @@ export class WorldService {
    *
    * @param entry Teleport string
    */
-  private teleport(entry: string) {
+  private teleport(entry: string | null) {
     const entryPoint = new Vector3()
     let entryYaw = 0
     if (entry) {

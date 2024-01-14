@@ -210,7 +210,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   }
 
   public compassClick(north: boolean) {
-    this.engineSvc.setPlayerYaw(!north && 180)
+    this.engineSvc.setPlayerYaw((!north && 180) || 0)
     return false
   }
 

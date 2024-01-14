@@ -12,7 +12,7 @@ export interface AvatarSequences {
 }
 
 export interface ThreeSequence {
-  original: ParsedSequence
+  original: ParsedSequence | null
   frames: {joints: Record<string, Quaternion>; location: Vector3}[]
   frameRate: number
   rootJointTag: number
@@ -79,7 +79,7 @@ export const interpolateThreeFrames = (
 
 @Injectable({providedIn: 'root'})
 export class AvatarAnimationService {
-  private sequences: Map<string, Promise<ThreeSequence>> = new Map()
+  private sequences: Map<string, Promise<ThreeSequence> | null> = new Map()
   private avatarAnimationManagers: Map<
     string,
     Promise<AvatarAnimationManager>
@@ -169,8 +169,8 @@ export class AvatarAnimationService {
     explicit: Map<string, string>,
     extension: string
   ) {
-    const implicitSequences = new Map<string, ThreeSequence>()
-    const explicitSequences = new Map<string, ThreeSequence>()
+    const implicitSequences = new Map<string, ThreeSequence | null>()
+    const explicitSequences = new Map<string, ThreeSequence | null>()
 
     for (const [key, filename] of implicit) {
       try {

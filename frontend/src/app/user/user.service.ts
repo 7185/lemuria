@@ -18,7 +18,7 @@ export class UserService {
   }
 
   public getUser(id: string) {
-    return this.userList().find((user) => user.id === id)
+    return this.userList().find((user) => user.id === id) ?? new User()
   }
 
   clearList() {
@@ -56,7 +56,7 @@ export class UserService {
     userId: string,
     postion: [Vector3, Vector3],
     state = 'idle',
-    gesture: string = null
+    gesture: string | null = null
   ) {
     const u = this.getUser(userId)
     if (u == null) {

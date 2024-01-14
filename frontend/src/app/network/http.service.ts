@@ -14,14 +14,13 @@ export class HttpService extends HttpClient {
   private userLogged: BehaviorSubject<User> = new BehaviorSubject<User>(
     new User()
   )
-  private mExpiration: number
+  private mExpiration = parseInt(localStorage.getItem('expiration') ?? '0', 10)
 
   constructor(
     private httpHandler: HttpHandler,
     private router: Router
   ) {
     super(httpHandler)
-    this.mExpiration = parseInt(localStorage.getItem('expiration'), 10) || 0
   }
 
   get expiration(): number {
@@ -86,7 +85,12 @@ export class HttpService extends HttpClient {
   }
 
   public avatars(path: string) {
-    const list = []
+    const list: {
+      name: string
+      geometry: string
+      implicit: Map<string, string>
+      explicit: Map<string, string>
+    }[] = []
     let readImp = false
     let readExp = false
     return this.get(`${path}/avatars/avatars.dat`, {responseType: 'text'}).pipe(
@@ -135,12 +139,12 @@ export class HttpService extends HttpClient {
 
   public props(
     worldId: number,
-    minX: number,
-    maxX: number,
-    minY: number,
-    maxY: number,
-    minZ: number,
-    maxZ: number
+    minX: number | null,
+    maxX: number | null,
+    minY: number | null,
+    maxY: number | null,
+    minZ: number | null,
+    maxZ: number | null
   ) {
     // Craft params for props GET request
     const opts: {

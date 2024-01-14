@@ -22,7 +22,7 @@ import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils'
 })
 export class BuildService {
   public buildMode = false
-  public selectedProp: Group
+  public selectedProp: Group | null = null
   public selectedCellSignal: WritableSignal<{
     height?: number
     texture?: number
@@ -34,10 +34,10 @@ export class BuildService {
     act?: string
     date?: number
   }> = signal({})
-  private axesHelper: AxesHelper
-  private cellSelection: Group
-  private propSelection: Group
-  private propSelectionBox: LineSegments
+  private axesHelper: AxesHelper | null = null
+  private cellSelection: Group | null = null
+  private propSelection: Group | null = null
+  private propSelectionBox: LineSegments | null = null
   private inputSysSvc = inject(InputSystemService)
 
   public selectProp(item: Group, buildNode: Group) {
@@ -87,7 +87,7 @@ export class BuildService {
     this.selectedPropSignal.set({})
     this.propSelectionBox.geometry.dispose()
     ;(this.propSelectionBox.material as Material).dispose()
-    this.axesHelper.dispose()
+    this.axesHelper?.dispose()
     buildNode.remove(this.propSelection)
     this.propSelectionBox = null
     this.axesHelper = null
@@ -279,6 +279,10 @@ export class BuildService {
     const seIndex = faceIndex % 2 === 0 ? faceIndex : faceIndex - 1
     const nwIndex = faceIndex % 2 !== 0 ? faceIndex : faceIndex + 1
     const index = (terrainPage as Mesh).geometry.getIndex()
+
+    if (index == null) {
+      return
+    }
 
     const cellSE = localPos
       .clone()

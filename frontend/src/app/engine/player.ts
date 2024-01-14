@@ -25,7 +25,7 @@ export class Player {
 
   public avatar: Group
   public state = 'idle'
-  public gesture: string = null
+  public gesture: string | null = null
   public isFlying = false
   public isOnFloor = true
   public inWater = signal(false)

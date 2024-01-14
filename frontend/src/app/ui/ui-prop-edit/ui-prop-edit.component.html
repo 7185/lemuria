@@ -93,7 +93,7 @@
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>Date</mat-label>
-      <input matInput type="text" [ngModel]="selectedProp().date * 1000 | date:'EEE MMM d, y h:mm a'" readonly>
+      <input matInput type="text" [ngModel]="selectedProp().date ?? 0 * 1000 | date:'EEE MMM d, y h:mm a'" readonly>
     </mat-form-field>
   </div>
 </div>

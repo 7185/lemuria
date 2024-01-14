@@ -77,6 +77,6 @@ export class UserController {
       sameSite: config.cookie.sameSite,
       path: config.cookie.accessPath
     })
-    return res.status(200).send(user)
+    return res.status(200).send({id: user.id, name: user.name})
   }
 }

@@ -39,13 +39,12 @@ export class UiControlsComponent implements OnInit {
   ]
 
   public controlsKeymap = Array(this.controlsLabels.length).fill([null, null])
-
-  public activeKey = [null, null]
+  public activeKey: [number | null, number | null] = [null, null]
 
   private inputSysSvc = inject(InputSystemService)
   private cdRef = inject(ChangeDetectorRef)
-  private cancel: Subject<boolean>
-  private oldKey: string
+  private cancel: Subject<boolean> | null = null
+  private oldKey = 'nop'
 
   setKey(key: number, pos: number) {
     if (this.cancel != null) {
@@ -92,7 +91,7 @@ export class UiControlsComponent implements OnInit {
   getKeymap() {
     this.controlsKeymap = []
     for (const l of this.controlsLabels) {
-      const newKeys = [null, null]
+      const newKeys: [string | null, string | null] = [null, null]
       let i = 0
       for (const k of this.inputSysSvc.getKeyMap()) {
         // only 2 values allowed

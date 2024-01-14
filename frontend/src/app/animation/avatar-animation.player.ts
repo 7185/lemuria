@@ -17,10 +17,10 @@ const transitionDuration = 0.1
 export class AvatarAnimationPlayer {
   private avatarView = {}
   private currentState: AnimationEntry = {name: 'idle', velocityMultiplier: 1}
-  private currentStepState: StepState = null
+  private currentStepState: StepState | null = null
   private lastPlayedFrame = this.makeNullFrame()
-  private currentTransition: ThreeSequence = null
-  private currentGesture: string = null
+  private currentTransition: ThreeSequence | null = null
+  private currentGesture: string | null = null
 
   constructor(
     private avatarAnimationManager: AvatarAnimationManager,
@@ -61,7 +61,7 @@ export class AvatarAnimationPlayer {
   public animate(
     deltaSecond: number,
     state = 'idle',
-    gesture: string = null,
+    gesture: string | null = null,
     velocity = 0
   ): boolean {
     // Choose which state to move in based on the velocity
@@ -208,14 +208,13 @@ export class AvatarAnimationPlayer {
 
   private findBestAnimation(
     animationList: AnimationEntry[]
-  ): [ThreeSequence, number] {
-    let threeSequence: ThreeSequence = null
+  ): [ThreeSequence | null, number | null] {
+    let threeSequence: ThreeSequence | null = null
 
     // Iterate of each proposed animation
     for (const entry of animationList) {
-      threeSequence = this.avatarAnimationManager.implicitSequences.get(
-        entry.name
-      )
+      threeSequence =
+        this.avatarAnimationManager.implicitSequences.get(entry.name) ?? null
 
       if (threeSequence) {
         // If some sequence was found: return it right away

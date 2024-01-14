@@ -16,7 +16,7 @@ export class User {
   completion? = 1
   avatar? = 0
   state? = 'idle'
-  gesture? = null
+  gesture?: string | null = null
   world? = 0
   constructor(params: User = {}) {
     Object.assign(this, params)
