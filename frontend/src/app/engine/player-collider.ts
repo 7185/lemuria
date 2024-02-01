@@ -1,7 +1,7 @@
 import {Vector3, Box3, Ray} from 'three'
 import type {Group, Mesh, Object3D, Triangle} from 'three'
 import {flattenGroup} from 'three-rwx-loader'
-import {MeshBVH, MeshBVHVisualizer} from 'three-mesh-bvh'
+import {MeshBVH, MeshBVHHelper} from 'three-mesh-bvh'
 import type {MeshBVHOptions} from 'three-mesh-bvh'
 import {environment} from '../../environments/environment'
 
@@ -103,7 +103,7 @@ export class PlayerCollider {
     if (terrainMesh.userData.bvhHelper != null) {
       terrainMesh.userData.bvhHelper.update()
     } else {
-      terrainMesh.userData.bvhHelper = new MeshBVHVisualizer(terrainMesh, 20)
+      terrainMesh.userData.bvhHelper = new MeshBVHHelper(terrainMesh, 20)
       terrainMesh.parent.add(terrainMesh.userData.bvhHelper)
     }
   }

@@ -193,9 +193,8 @@ export class HttpService extends HttpClient {
   }
 
   private hasExpired(): boolean {
-    if (this.expiration === 0) {
-      return true
-    }
-    return Math.floor(new Date().getTime() / 1000) >= this.expiration
+    return (
+      this.expiration === 0 || Math.floor(Date.now() / 1000) >= this.expiration
+    )
   }
 }
