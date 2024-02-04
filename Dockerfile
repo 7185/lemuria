@@ -1,7 +1,9 @@
 FROM node:20-alpine AS frontend
 WORKDIR /front
+COPY action-parser/package.json action-parser/package-lock.json action-parser/tsconfig.json /action-parser/
 COPY frontend/package.json frontend/package-lock.json frontend/angular.json frontend/tsconfig.json /front/
 RUN npm ci
+COPY action-parser/src /action-parser/src
 COPY frontend/src /front/src
 RUN npm run build:prod
 
@@ -15,6 +17,7 @@ CMD ["hypercorn", "--config", "hypercorn.toml", "app:app"]
 RUN python -m venv /venv
 ENV PATH=/venv/bin:${PATH}
 COPY backend-py/requirements.txt /app/
+COPY backend/prisma/schema.prisma /backend/prisma/schema.prisma
 RUN pip install --no-cache-dir -r requirements.txt && \
     prisma generate --schema ../backend/prisma/schema.prisma --generator client-py
 COPY backend-py /app/

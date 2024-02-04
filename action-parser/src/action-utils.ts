@@ -52,16 +52,15 @@ export const colorStringToRGB = (color: string) => {
     if (colorValue > BigInt('18446744073709551615')) {
       // AW considers everything white at this point
       return rgb(255, 255, 255)
-    } else {
-      const red = (colorValue >> 16) % 256
-      const green = (colorValue >> 8) % 256
-      const blue = (colorValue >> 0) % 256
-      return rgb(
-        red < 0 ? red + 256 : red,
-        green < 0 ? green + 256 : green,
-        blue < 0 ? blue + 256 : blue
-      )
     }
+    const red = (colorValue >> 16) % 256
+    const green = (colorValue >> 8) % 256
+    const blue = (colorValue >> 0) % 256
+    return rgb(
+      red < 0 ? red + 256 : red,
+      green < 0 ? green + 256 : green,
+      blue < 0 ? blue + 256 : blue
+    )
   }
   return null
 }
@@ -103,35 +102,40 @@ export const visitCoords = (
     delete res.coordinates
     return
   }
-  if (coordC != null) {
-    if (/a$/i.test(coordC)) {
-      res.coordinates.altitude = parseFloat(coordC.slice(0, -1))
 
-      // Fourth value can only be direction at this point
-      if (coordD != null) {
-        res.coordinates.direction = parseFloat(coordD)
+  if (coordC == null) {
+    // No more values
+    return
+  }
 
-        // But invalid if types are not the same
-        if (
-          (/^[+-]/.test(coordD) && res.coordinates.type === 'absolute') ||
-          (!/^[+-]/.test(coordD) && res.coordinates.type === 'relative')
-        ) {
-          delete res.commandType
-          delete res.coordinates
-        }
-      }
-    } else {
-      // No altitude, so third value is direction
-      res.coordinates.direction = parseFloat(coordC)
+  if (/a$/i.test(coordC)) {
+    res.coordinates.altitude = parseFloat(coordC.slice(0, -1))
+
+    // Fourth value can only be direction at this point
+    if (coordD != null) {
+      res.coordinates.direction = parseFloat(coordD)
 
       // But invalid if types are not the same
       if (
-        (/^[+-]/.test(coordC) && res.coordinates.type === 'absolute') ||
-        (!/^[+-]/.test(coordC) && res.coordinates.type === 'relative')
+        (/^[+-]/.test(coordD) && res.coordinates.type === 'absolute') ||
+        (!/^[+-]/.test(coordD) && res.coordinates.type === 'relative')
       ) {
         delete res.commandType
         delete res.coordinates
       }
     }
+
+    return
+  }
+  // No altitude, so third value is direction
+  res.coordinates.direction = parseFloat(coordC)
+
+  // But invalid if types are not the same
+  if (
+    (/^[+-]/.test(coordC) && res.coordinates.type === 'absolute') ||
+    (!/^[+-]/.test(coordC) && res.coordinates.type === 'relative')
+  ) {
+    delete res.commandType
+    delete res.coordinates
   }
 }

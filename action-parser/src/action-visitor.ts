@@ -173,12 +173,11 @@ class ActionVisitor extends BaseActionVisitor {
     if (resource != null) {
       let text = ''
       if (resource.length > 1) {
-        if (resource[0].startsWith('"')) {
-          text = resource.join(' ')
-        } else {
+        if (!resource[0].startsWith('"')) {
           // invalid sign
           return {}
         }
+        text = resource.join(' ')
       } else {
         text = resource[0]
       }

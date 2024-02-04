@@ -33,7 +33,7 @@ export class UserService {
     for (const u of list) {
       // Still update world for listed users
       const existingUser = this.getUser(u.id)
-      if (existingUser) {
+      if (existingUser.id) {
         existingUser.world = u.world
         continue
       }

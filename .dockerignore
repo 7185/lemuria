@@ -1,5 +1,7 @@
 .angular
 .git
+action-parser/coverage
+action-parser/node_modules
 frontend/node_modules
 backend/*.db
 backend/coverage
