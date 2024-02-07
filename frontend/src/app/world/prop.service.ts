@@ -24,7 +24,8 @@ import {
   Color,
   RepeatWrapping,
   Sprite,
-  SpriteMaterial
+  SpriteMaterial,
+  Vector3
 } from 'three'
 import type {MeshPhongMaterial, Object3D, Texture} from 'three'
 import RWXLoader, {
@@ -36,6 +37,8 @@ import * as fflate from 'fflate'
 import {environment} from '../../environments/environment'
 import {TextCanvas, Utils} from '../utils'
 import {SettingsService} from '../settings/settings.service'
+import {TeleportService} from '../engine/teleport.service'
+import {AudioService} from '../engine/audio.service'
 
 const propActs = [
   'nop',
@@ -65,6 +68,7 @@ export class PropService {
   public path = signal('')
   private rwxPath = computed(() => `${this.path()}/rwx`)
   private resPath = computed(() => `${this.path()}/textures`)
+  private audioPath = computed(() => `${this.path()}/sounds`)
   private unknown: Group
   private rwxPropLoader = new RWXLoader(new LoadingManager())
   private rwxAvatarLoader = new RWXLoader(new LoadingManager())
@@ -81,6 +85,8 @@ export class PropService {
   private maxParallelApiCalls = 3
   private http = inject(HttpService)
   private settings = inject(SettingsService)
+  private teleportSvc = inject(TeleportService)
+  private audioSvc = inject(AudioService)
 
   constructor() {
     const unknownGeometry = new BufferGeometry()
@@ -148,6 +154,28 @@ export class PropService {
     }
   }
 
+  /**
+   * Called on every prop whenever their chunk becomes visible
+   */
+  public showProp(item: Group) {
+    if (item.userData.create?.notVisible) {
+      item.traverse((child: Object3D) => {
+        if (child instanceof Mesh) {
+          child.material.forEach((m: MeshPhongMaterial, i: number) => {
+            // Clone in order to not hide shared materials
+            child.material[i] = m.clone()
+            // Keep the material from the loader (not serializable)
+            child.material[i].userData.rwx.material = m.userData.rwx.material
+            child.material[i].visible = false
+          })
+        }
+      })
+    }
+    if (item.userData.create?.noise) {
+      this.makeNoise(item.userData.create.noise)
+    }
+  }
+
   private parseCreate(item: Group, result: any) {
     const textured = result.create.some(
       (cmd) => cmd.commandType === 'texture' || cmd.commandType === 'color'
@@ -161,6 +189,12 @@ export class PropService {
           break
         case 'name':
           item.userData.name = cmd.targetName
+          break
+        case 'noise':
+          item.userData.create.noise = cmd.resource
+          break
+        case 'sound':
+          item.userData.create.sound = cmd.resource
           break
         case 'light':
           item.userData.create.light = {
@@ -212,18 +246,7 @@ export class PropService {
           }
           break
         case 'visible':
-          item.traverse((child: Object3D) => {
-            if (child instanceof Mesh) {
-              child.material.forEach((m: MeshPhongMaterial, i: number) => {
-                // Clone in order to not hide shared materials
-                child.material[i] = m.clone()
-                // Keep the material from the loader (not serializable)
-                child.material[i].userData.rwx.material =
-                  m.userData.rwx.material
-                child.material[i].visible = cmd.value
-              })
-            }
-          })
+          item.userData.create.notVisible = !cmd.value
           break
         case 'color':
           this.applyTexture(item, null, null, cmd.color)
@@ -338,6 +361,12 @@ export class PropService {
         case 'url':
           item.userData.activate.url = {address: cmd.resource}
           break
+        case 'noise':
+          item.userData.activate.noise = {url: cmd.resource}
+          break
+        case 'sound':
+          item.userData.activate.sound = {url: cmd.resource}
+          break
         case 'move':
           item.userData.activate.move = item.userData.activate.move || []
           item.userData.activate.move.push({
@@ -383,7 +412,7 @@ export class PropService {
     let remote = ''
     if (this.remoteUrl.test(url)) {
       remote = url
-      url = `${environment.url.imgProxy}${url}`
+      url = `${environment.url.mediaProxy}${url}`
     } else {
       url = `${this.resPath()}/${url}`
     }
@@ -555,6 +584,81 @@ export class PropService {
       }
     })
     return forkJoin(promises)
+  }
+
+  public makeNoise(url: string) {
+    if (this.remoteUrl.test(url)) {
+      url = `${environment.url.mediaProxy}${url}`
+    } else {
+      url = `${this.audioPath()}/${url}`
+    }
+    this.audioSvc.playNoise(url)
+  }
+
+  public openUrl(url: string) {
+    Object.assign(document.createElement('a'), {
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      href: url
+    }).click()
+  }
+
+  /**
+   * Teleport the player according to the teleport data
+   * @param teleport Parsed teleport data
+   * @param playerPosition Current player position
+   * @param playerYaw Current player yaw
+   * @returns
+   */
+  public teleportPlayer(
+    teleport: {
+      type?: string
+      worldName?: string
+      direction?: number
+      altitude?: number
+      ew?: number
+      ns?: number
+      x?: number
+      y?: number
+    },
+    playerPosition: Vector3,
+    playerYaw: number
+  ) {
+    if (teleport.type == null) {
+      // No coords, send user to world entry point
+      this.teleportSvc.teleport.set({
+        world: teleport.worldName,
+        position: null,
+        isNew: true
+      })
+      return
+    }
+
+    let newX: number, newZ: number
+    let newY = 0
+    let newYaw = teleport?.direction || 0
+
+    if (teleport.altitude != null) {
+      if (teleport.type === 'absolute') {
+        newY = teleport.altitude * 10
+      } else {
+        newY = playerPosition.y + teleport.altitude * 10
+      }
+    }
+    if (teleport.type === 'absolute') {
+      newX = teleport.ew * -10
+      newZ = teleport.ns * 10
+    } else {
+      newYaw += playerYaw
+      newX = playerPosition.x + teleport.x * -10
+      newZ = playerPosition.z + teleport.y * 10
+    }
+    this.teleportSvc.teleport.set({
+      world: teleport.worldName,
+      // Don't send 0 if coordinates are null (world entry point)
+      position: Utils.posToString(new Vector3(newX, newY, newZ), newYaw),
+      isNew: true
+    })
   }
 
   public loadProp(name: string, basic = false): Observable<Group> {

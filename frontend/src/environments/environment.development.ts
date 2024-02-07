@@ -2,7 +2,7 @@ export const environment = {
   url: {
     websocket: 'ws://localhost:8080/api/v1/ws',
     server: 'http://localhost:8080/api/v1',
-    imgProxy: 'http://localhost:8080/api/v1/proxy/url?url=',
+    mediaProxy: 'http://localhost:8080/api/v1/proxy/url?url=',
     imgArchive: 'http://localhost:8080/api/v1/proxy/archive?url=$1&date=$2'
   },
   csrf: {

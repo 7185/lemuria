@@ -133,13 +133,13 @@ class ActionVisitor extends BaseActionVisitor {
   noiseCommand(ctx: NoiseCommandCtx) {
     return {
       commandType: 'noise',
-      targetName: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
+      resource: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
     }
   }
   soundCommand(ctx: SoundCommandCtx) {
     return {
       commandType: 'sound',
-      targetName: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
+      resource: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
     }
   }
 

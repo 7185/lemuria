@@ -406,6 +406,9 @@ export class WorldService {
     )
     g.userData.posOrig = g.position.clone()
     g.userData.rotOrig = g.rotation.clone()
+    g.userData.onShow = () => {
+      this.propSvc.showProp(g)
+    }
 
     if (act && g.userData?.isError !== true) {
       this.propSvc.parseActions(g)

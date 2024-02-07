@@ -2,7 +2,7 @@ export const environment = {
   url: {
     websocket: 'wss://lemuria.7185.fr/api/v1/ws',
     server: 'https://lemuria.7185.fr/api/v1',
-    imgProxy: 'https://lemuria.7185.fr/api/v1/proxy/url?url=',
+    mediaProxy: 'https://lemuria.7185.fr/api/v1/proxy/url?url=',
     imgArchive: 'https://lemuria.7185.fr/api/v1/proxy/archive?url=$1&date=$2'
   },
   csrf: {

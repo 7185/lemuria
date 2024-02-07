@@ -33,7 +33,7 @@ export class ProxyController {
   }
 
   @Get('url')
-  async imgProxy(
+  async mediaProxy(
     @Query()
     query: {
       url: string

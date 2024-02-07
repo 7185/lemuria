@@ -619,7 +619,7 @@ test('activate noise', () => {
     activate: [
       {
         commandType: 'noise',
-        targetName: 'http://www.example.com/tchin.wav'
+        resource: 'http://www.example.com/tchin.wav'
       }
     ]
   })
@@ -632,7 +632,7 @@ test('create sound', () => {
     create: [
       {
         commandType: 'sound',
-        targetName: 'http://www.example.com/sound.mid'
+        resource: 'http://www.example.com/sound.mid'
       }
     ]
   })

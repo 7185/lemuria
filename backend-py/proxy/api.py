@@ -42,7 +42,7 @@ async def img_archive():
 
 
 @api_proxy.get('/url')
-async def img_proxy():
+async def media_proxy():
     """Proxy image"""
     url = request.args.get("url")
 

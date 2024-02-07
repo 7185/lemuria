@@ -36,7 +36,7 @@
     "@lemuria/action-parser": "file:../action-parser",
     "@tweenjs/tween.js": "^23.1.1",
     "aw-sequence-parser": "^0.4.0",
-    "fflate": "^0.8.1",
+    "fflate": "^0.8.2",
     "linkify-string": "^4.1.3",
     "linkifyjs": "^4.1.3",
     "rxjs": "^7.8.1",
@@ -73,10 +73,10 @@
       "@tweenjs/tween.js": "^23.1.1"
     },
     "aw-sequence-parser": {
-      "fflate": "^0.8.1"
+      "fflate": "^0.8.2"
     },
     "three-rwx-loader": {
-      "fflate": "^0.8.1"
+      "fflate": "^0.8.2"
     }
   }
 }

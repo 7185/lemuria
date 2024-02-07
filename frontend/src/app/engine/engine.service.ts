@@ -25,8 +25,8 @@ import {
   CSS2DRenderer
 } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import type {DirectionalLight, LOD, Sprite} from 'three'
+import {AudioService} from './audio.service'
 import {BuildService} from './build.service'
-import {TeleportService} from './teleport.service'
 import {UserService} from '../user'
 import type {PropAct} from '../world/prop.service'
 import {PropService} from '../world/prop.service'
@@ -95,10 +95,10 @@ export class EngineService {
 
   private userSvc = inject(UserService)
   private inputSysSvc = inject(InputSystemService)
+  private audioSvc = inject(AudioService)
   private propSvc = inject(PropService)
   private buildSvc = inject(BuildService)
   private propAnimSvc = inject(PropAnimationService)
-  private teleportSvc = inject(TeleportService)
 
   private terrain: Group
   private water: Group
@@ -141,6 +141,7 @@ export class EngineService {
   private sprites: Set<Group> = new Set()
   private animatedObjects: Set<Group> = new Set()
   private litObjects: Set<Group> = new Set()
+  private sonicObjects: Set<Group> = new Set()
   private pointLights: PointLight[] = []
 
   private mouseIdle = 0
@@ -260,6 +261,8 @@ export class EngineService {
     this.thirdFrontCamera.rotation.y = Math.PI
     this.camera.attach(this.thirdFrontCamera)
 
+    this.audioSvc.addListener(this.camera)
+
     this.activeCamera = this.camera
 
     this.skybox = new Group()
@@ -286,6 +289,8 @@ export class EngineService {
     // Turn off the lights
     this.litObjects.clear()
     this.updatePointLights()
+    this.sonicObjects.clear()
+    this.updateSound()
   }
 
   public clearScene() {
@@ -382,9 +387,12 @@ export class EngineService {
 
     // Update levels of the LOD so the chunk doesn't get visible right from the start
     chunk.update(this.activeCamera)
-
-    for (const child of chunk.levels[0].object.children) {
-      this.handleSpecialObject(child as Group)
+    if (chunk.getCurrentLevel() === 0) {
+      // New chunk is actually visible
+      chunk.levels[0].object.children.forEach((child: Group) => {
+        this.handleSpecialObject(child)
+        child.userData.onShow()
+      })
     }
 
     this.chunkLODMap.set(
@@ -480,6 +488,9 @@ export class EngineService {
     }
     if (group.userData.create?.light != null) {
       this.litObjects.delete(group)
+    }
+    if (group.userData.create?.sound != null) {
+      this.sonicObjects.delete(group)
     }
     this.disposeMaterial(group)
     this.disposeGeometry(group)
@@ -670,7 +681,7 @@ export class EngineService {
     this.chunkLODMap.clear()
   }
 
-  public getNearestChunks() {
+  public getNearestChunks(): LOD[] {
     return nearestChunkPattern
       .map((offset) =>
         this.chunkLODMap.get(
@@ -679,7 +690,7 @@ export class EngineService {
           }`
         )
       )
-      .filter((lod) => lod !== undefined) as LOD[]
+      .filter((lod) => lod !== undefined)
   }
 
   private handleSpecialObject(group: Group) {
@@ -695,6 +706,9 @@ export class EngineService {
     if (group.userData.create?.light != null) {
       this.litObjects.add(group)
     }
+    if (group.userData.create?.sound != null) {
+      this.sonicObjects.add(group)
+    }
   }
 
   private updateLODs() {
@@ -709,7 +723,15 @@ export class EngineService {
     this.lodCamera.updateMatrix()
 
     for (const lod of this.objectsNode.children as LOD[]) {
+      const oldLevel = lod.getCurrentLevel()
       lod.update(this.lodCamera)
+      const newLevel = lod.getCurrentLevel()
+      if (oldLevel !== newLevel && newLevel === 0) {
+        // We display a previously hidden chunk
+        lod.levels[0].object.children.forEach((child: Mesh) => {
+          child.userData.onShow()
+        })
+      }
     }
   }
 
@@ -743,6 +765,7 @@ export class EngineService {
       this.moveCamera()
       this.animateItems()
       this.updatePointLights()
+      this.updateSound()
     }
 
     this.moveUsers()
@@ -800,48 +823,19 @@ export class EngineService {
     }
 
     if (activate.teleport != null) {
-      if (activate.teleport.type == null) {
-        // No coords, send user to world entry point
-        this.teleportSvc.teleport.set({
-          world: activate.teleport.worldName,
-          position: null,
-          isNew: true
-        })
-      }
-
-      let newX: number, newZ: number
-      let newY = 0
-      let newYaw = activate.teleport?.direction || 0
-
-      if (activate.teleport.altitude != null) {
-        if (activate.teleport.type === 'absolute') {
-          newY = activate.teleport.altitude * 10
-        } else {
-          newY = this.player.position.y + activate.teleport.altitude * 10
-        }
-      }
-      if (activate.teleport.type === 'absolute') {
-        newX = activate.teleport.ew * -10
-        newZ = activate.teleport.ns * 10
-      } else {
-        newYaw += this.yaw
-        newX = this.player.position.x + activate.teleport.x * -10
-        newZ = this.player.position.z + activate.teleport.y * 10
-      }
-      this.teleportSvc.teleport.set({
-        world: activate.teleport.worldName,
-        // Don't send 0 if coordinates are null (world entry point)
-        position: Utils.posToString(new Vector3(newX, newY, newZ), newYaw),
-        isNew: true
-      })
+      this.propSvc.teleportPlayer(
+        activate.teleport,
+        this.player.position,
+        this.yaw
+      )
     }
 
     if (activate.url != null) {
-      Object.assign(document.createElement('a'), {
-        target: '_blank',
-        rel: 'noopener noreferrer',
-        href: activate.url.address
-      }).click()
+      this.propSvc.openUrl(activate.url.address)
+    }
+
+    if (activate.noise != null) {
+      this.propSvc.makeNoise(activate.noise.url)
     }
 
     if (activate.move || activate.rotate) {
@@ -913,12 +907,36 @@ export class EngineService {
     }
   }
 
+  private updateSound() {
+    const heard = []
+    this.sonicObjects.forEach((obj) => {
+      if (!obj.parent.visible) {
+        return
+      }
+      const objPos = obj.position.clone().add(obj.parent.parent.position)
+      heard.push({
+        dist: this.player.position.distanceToSquared(objPos),
+        obj: obj,
+        pos: objPos
+      })
+    })
+    heard.sort((a, b) => a.dist - b.dist)
+    if (heard.length) {
+      this.audioSvc.playSound(
+        heard[0].obj.userData.create.sound,
+        Math.max(0, 1 - Math.sqrt(heard[0].dist) / 200)
+      )
+    } else {
+      this.audioSvc.stopSound()
+    }
+  }
+
   private updatePointLights() {
     const seen = []
     this.litObjects.forEach((obj) => {
       const objPos = obj.position.clone().add(obj.parent.parent.position)
       seen.push({
-        dist: this.player.position.distanceTo(objPos),
+        dist: this.player.position.distanceToSquared(objPos),
         obj: obj,
         pos: objPos
       })
