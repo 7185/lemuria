@@ -406,12 +406,16 @@ export class WorldService {
     )
     g.userData.posOrig = g.position.clone()
     g.userData.rotOrig = g.rotation.clone()
-    g.userData.onShow = () => {
-      this.propSvc.showProp(g)
-    }
-
     if (act && g.userData?.isError !== true) {
       this.propSvc.parseActions(g)
+    }
+    g.userData.onShow = (shown: () => void) => {
+      this.propSvc.showProp(g)
+      shown()
+    }
+    g.userData.onHide = (hidden: () => void) => {
+      this.propSvc.hideProp(g)
+      hidden()
     }
 
     g.updateMatrix()

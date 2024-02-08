@@ -384,24 +384,12 @@ export class EngineService {
   public addChunk(chunk: LOD) {
     chunk.matrixAutoUpdate = false
     this.objectsNode.add(chunk)
-
-    // Update levels of the LOD so the chunk doesn't get visible right from the start
-    chunk.update(this.activeCamera)
-    if (chunk.getCurrentLevel() === 0) {
-      // New chunk is actually visible
-      chunk.levels[0].object.children.forEach((child: Group) => {
-        this.handleSpecialObject(child)
-        child.userData.onShow()
-      })
-    }
-
+    chunk.updateMatrix()
+    this.updateLODs(chunk)
     this.chunkLODMap.set(
       `${chunk.userData.world.chunk.x}_${chunk.userData.world.chunk.z}`,
       chunk
     )
-
-    chunk.updateMatrix()
-    this.updateLODs()
   }
 
   public setChunksDistance(meters: number) {
@@ -477,21 +465,7 @@ export class EngineService {
     if (group === this.buildSvc.selectedProp) {
       this.buildSvc.deselectProp(this.buildNode)
     }
-    if (group.userData.rwx?.axisAlignment !== 'none') {
-      this.sprites.delete(group)
-    }
-    if (
-      group.userData.animation?.rotate != null ||
-      group.userData.animation?.move != null
-    ) {
-      this.animatedObjects.delete(group)
-    }
-    if (group.userData.create?.light != null) {
-      this.litObjects.delete(group)
-    }
-    if (group.userData.create?.sound != null) {
-      this.sonicObjects.delete(group)
-    }
+    this.handleHiddenProp(group)
     this.disposeMaterial(group)
     this.disposeGeometry(group)
 
@@ -693,7 +667,22 @@ export class EngineService {
       .filter((lod) => lod !== undefined)
   }
 
-  private handleSpecialObject(group: Group) {
+  private handleHiddenProp(group: Group) {
+    if (this.sprites.has(group)) {
+      this.sprites.delete(group)
+    }
+    if (this.animatedObjects.has(group)) {
+      this.animatedObjects.delete(group)
+    }
+    if (this.litObjects.has(group)) {
+      this.litObjects.delete(group)
+    }
+    if (this.sonicObjects.has(group)) {
+      this.sonicObjects.delete(group)
+    }
+  }
+
+  private handleShownProp(group: Group) {
     if (group.userData.rwx?.axisAlignment !== 'none') {
       this.sprites.add(group)
     }
@@ -703,15 +692,19 @@ export class EngineService {
     ) {
       this.animatedObjects.add(group)
     }
-    if (group.userData.create?.light != null) {
+    if (group.userData.light != null) {
       this.litObjects.add(group)
     }
-    if (group.userData.create?.sound != null) {
+    if (group.userData.sound != null) {
       this.sonicObjects.add(group)
     }
   }
 
-  private updateLODs() {
+  /**
+   * Update LODs
+   * @param newChunk Optional parameter if the chunk is new
+   */
+  private updateLODs(newChunk: LOD = null) {
     // We trick the LOD into acting like the camera is always on the ground,
     // this avoids having chunks disappearing if we get too high/far on the Y axis
     this.lodCamera.position.set(
@@ -726,10 +719,23 @@ export class EngineService {
       const oldLevel = lod.getCurrentLevel()
       lod.update(this.lodCamera)
       const newLevel = lod.getCurrentLevel()
-      if (oldLevel !== newLevel && newLevel === 0) {
+
+      if (oldLevel === newLevel && lod != newChunk) {
+        continue
+      }
+      if (newLevel === 0) {
         // We display a previously hidden chunk
-        lod.levels[0].object.children.forEach((child: Mesh) => {
-          child.userData.onShow()
+        lod.levels[0].object.children.forEach((child: Group) => {
+          child.userData.onShow(() => {
+            this.handleShownProp(child)
+          })
+        })
+      } else {
+        // The chunk is being hidden
+        lod.levels[0].object.children.forEach((child: Group) => {
+          child.userData.onHide(() => {
+            this.handleHiddenProp(child)
+          })
         })
       }
     }
@@ -863,7 +869,7 @@ export class EngineService {
                   .add(prop.userData.posOrig)
                   .sub(prop.parent.parent.position)
               )
-              this.handleSpecialObject(prop)
+              this.handleShownProp(prop)
             })
           }
         }
@@ -885,12 +891,12 @@ export class EngineService {
                 JSON.stringify(rotate)
               )
               prop.rotation.copy(prop.userData.rotOrig)
-              this.handleSpecialObject(prop)
+              this.handleShownProp(prop)
             })
           }
         }
       }
-      this.handleSpecialObject(item)
+      this.handleShownProp(item)
     }
   }
 
@@ -923,7 +929,7 @@ export class EngineService {
     heard.sort((a, b) => a.dist - b.dist)
     if (heard.length) {
       this.audioSvc.playSound(
-        heard[0].obj.userData.create.sound,
+        heard[0].obj.userData.sound,
         Math.max(0, 1 - Math.sqrt(heard[0].dist) / 200)
       )
     } else {
@@ -958,7 +964,7 @@ export class EngineService {
         return
       }
       let fx = 1
-      switch (prop.obj.userData.create.light?.fx) {
+      switch (prop.obj.userData.light?.fx) {
         case 'fire':
           fx = Math.random() * (1.2 - 0.8) + 0.8
           break
@@ -976,14 +982,13 @@ export class EngineService {
         default:
           break
       }
-      if (prop.obj.userData.create?.corona?.visible) {
-        prop.obj.userData.create.corona.material.opacity = fx
+      if (prop.obj.userData.coronaObj?.visible) {
+        prop.obj.userData.coronaObj.material.opacity = fx
       }
       light.position.set(prop.pos.x, prop.pos.y, prop.pos.z)
-      light.color.set(prop.obj.userData.create.light.color)
-      light.intensity =
-        2.5 * fx * (prop.obj.userData.create.light.brightness || 0.5)
-      light.distance = prop.obj.userData.create.light.radius || 10
+      light.color.set(prop.obj.userData.light?.color ?? 0xffffff)
+      light.intensity = 2.5 * fx * (prop.obj.userData.light?.brightness ?? 0.5)
+      light.distance = prop.obj.userData.light?.radius ?? 10
     })
   }
 

@@ -155,10 +155,25 @@ export class PropService {
   }
 
   /**
+   * Called whenever the prop chunk is no longer visible
+   * @param item
+   */
+  public hideProp(item: Group) {
+    if (item.userData.light != null) {
+      delete item.userData.light
+    }
+  }
+
+  /**
    * Called on every prop whenever their chunk becomes visible
+   * @param item
    */
   public showProp(item: Group) {
-    if (item.userData.create?.notVisible) {
+    const create = item?.userData?.create
+    if (create == null) {
+      return
+    }
+    if (create.notVisible) {
       item.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           child.material.forEach((m: MeshPhongMaterial, i: number) => {
@@ -171,8 +186,42 @@ export class PropService {
         }
       })
     }
-    if (item.userData.create?.noise) {
+    if (create.noise != null) {
       this.makeNoise(item.userData.create.noise)
+    }
+    if (create.sound != null) {
+      item.userData.sound = item.userData.create.sound
+    }
+    if (create.light != null) {
+      item.userData.light = JSON.parse(JSON.stringify(create.light))
+    }
+    if (create.corona != null) {
+      item.userData.corona = JSON.parse(JSON.stringify(create.corona))
+      this.makeCorona(item)
+    }
+    if (create.move != null) {
+      for (const move of create.move) {
+        if (move.targetName == null) {
+          item.userData.animation = {}
+          item.userData.animation.move = JSON.parse(JSON.stringify(move))
+          // Reset on show
+          item.position.copy(
+            new Vector3()
+              .add(item.userData.posOrig)
+              .sub(item.parent.parent.position)
+          )
+        }
+      }
+    }
+    if (create.rotate != null) {
+      for (const rotate of create.rotate) {
+        if (rotate.targetName == null) {
+          item.userData.animation = {}
+          item.userData.animation.rotate = JSON.parse(JSON.stringify(rotate))
+          // Reset on show
+          item.rotation.copy(item.userData.rotOrig)
+        }
+      }
     }
   }
 
@@ -211,38 +260,15 @@ export class PropService {
             texture: cmd?.resource,
             size: cmd?.size
           }
-          if (item.userData.create.corona.texture != null) {
-            const textureUrl = `${this.resPath()}/${
-              item.userData.create.corona.texture
-            }${
-              item.userData.create.corona.texture.endsWith('.jpg') ? '' : '.jpg'
-            }`
-            const size = item.userData.create.corona?.size / 100 || 1
-            const color = result.create.find((c) => c.commandType === 'light')
-              ?.color || {r: 255, g: 255, b: 255}
-            this.textureLoader.load(textureUrl, (texture) => {
-              texture.colorSpace = SRGBColorSpace
-              const corona = new Sprite(
-                new SpriteMaterial({
-                  map: texture,
-                  alphaMap: texture,
-                  color: Utils.rgbToHex(color.r, color.g, color.b),
-                  blending: AdditiveBlending,
-                  sizeAttenuation: false,
-                  depthTest: false
-                })
-              )
-              corona.name = 'corona'
-              corona.visible = false
-              corona.scale.set(size, size, size)
-              corona.position.set(
-                item.userData.boxCenter.x,
-                item.userData.boxCenter.y,
-                item.userData.boxCenter.z
-              )
-              item.userData.create.corona = corona
-              item.add(corona)
-            })
+          if (item.userData.create.light != null) {
+            item.userData.light = JSON.parse(
+              JSON.stringify(item.userData.create.light)
+            )
+          }
+          if (item.userData.create.corona != null) {
+            item.userData.corona = JSON.parse(
+              JSON.stringify(item.userData.create.corona)
+            )
           }
           break
         case 'visible':
@@ -277,10 +303,8 @@ export class PropService {
           }
           break
         case 'move':
-          if (item.userData.animation == null) {
-            item.userData.animation = {}
-          }
-          item.userData.create.move = {
+          item.userData.create.move = item.userData.create.move || []
+          item.userData.create.move.push({
             distance: cmd.distance,
             time: cmd.time || 1,
             loop: cmd.loop || false,
@@ -290,18 +314,11 @@ export class PropService {
             completion: 0,
             direction: 1,
             targetName: cmd.targetName
-          }
-          if (cmd.targetName == null) {
-            item.userData.animation.move = JSON.parse(
-              JSON.stringify(item.userData.create.move)
-            )
-          }
+          })
           break
         case 'rotate':
-          if (item.userData.animation == null) {
-            item.userData.animation = {}
-          }
-          item.userData.create.rotate = {
+          item.userData.create.rotate = item.userData.create.rotate || []
+          item.userData.create.rotate.push({
             speed: cmd.speed,
             time: cmd.time || null,
             loop: cmd.loop || false,
@@ -311,12 +328,7 @@ export class PropService {
             completion: 0,
             direction: 1,
             targetName: cmd.targetName
-          }
-          if (cmd.targetName == null) {
-            item.userData.animation.rotate = JSON.parse(
-              JSON.stringify(item.userData.create.rotate)
-            )
-          }
+          })
           break
         default:
           break
@@ -584,6 +596,45 @@ export class PropService {
       }
     })
     return forkJoin(promises)
+  }
+
+  public makeCorona(item: Group) {
+    // Create only once
+    if (
+      item.userData.corona.texture == null ||
+      item.userData.coronaObj != null
+    ) {
+      return
+    }
+
+    const textureUrl = `${this.resPath()}/${
+      item.userData.corona.texture
+    }${item.userData.corona.texture.endsWith('.jpg') ? '' : '.jpg'}`
+    const size = item.userData.corona?.size / 100 || 1
+    const color = item.userData.light?.color ?? 0xffffff
+    this.textureLoader.load(textureUrl, (texture) => {
+      texture.colorSpace = SRGBColorSpace
+      const corona = new Sprite(
+        new SpriteMaterial({
+          map: texture,
+          alphaMap: texture,
+          color: color,
+          blending: AdditiveBlending,
+          sizeAttenuation: false,
+          depthTest: false
+        })
+      )
+      corona.name = 'corona'
+      corona.visible = false
+      corona.scale.set(size, size, size)
+      corona.position.set(
+        item.userData.boxCenter.x,
+        item.userData.boxCenter.y,
+        item.userData.boxCenter.z
+      )
+      item.userData.coronaObj = corona
+      item.add(corona)
+    })
   }
 
   public makeNoise(url: string) {
