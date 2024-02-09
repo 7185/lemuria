@@ -5,6 +5,9 @@ import type {
   ActionCtx,
   ActionsCtx,
   AngleParameterCtx,
+  AnimateCommandCtx,
+  AstartCommandCtx,
+  AstopCommandCtx,
   BcolorParameterCtx,
   BooleanCtx,
   BrightnessParameterCtx,
@@ -59,6 +62,39 @@ class ActionVisitor extends BaseActionVisitor {
 
   boolean(ctx: BooleanCtx) {
     return !!ctx.Enabled
+  }
+
+  animateCommand(ctx: AnimateCommandCtx) {
+    const res = {
+      commandType: 'animate',
+      mask: false // default
+    }
+    if (ctx.Mask != null) {
+      res.mask = true
+    }
+    if (ctx.tagParameter) {
+      Object.assign(res, this.visit(ctx.tagParameter))
+    }
+    const params = ctx.Resource.map((identToken) => identToken.image)
+    if (params.length < 5) {
+      return {}
+    }
+    Object.assign(res, {
+      targetName: params.shift(),
+      animation: params.shift()
+    })
+    for (const value of params) {
+      if (!/^\d+$/.test(value)) {
+        return {}
+      }
+    }
+    Object.assign(res, {
+      imageCount: parseInt(params.shift() as string),
+      frameCount: parseInt(params.shift() as string),
+      frameDelay: parseInt(params.shift() as string),
+      frameList: params.map((f: string) => parseInt(f))
+    })
+    return res
   }
 
   colorCommand(ctx: ColorCommandCtx) {
@@ -400,6 +436,35 @@ class ActionVisitor extends BaseActionVisitor {
     return args
   }
 
+  astartCommand(ctx: AstartCommandCtx) {
+    const res = {
+      commandType: 'astart'
+    }
+    if (ctx.Resource != null) {
+      Object.assign(res, {
+        targetName: ctx.Resource.map((identToken) => identToken.image)[0]
+      })
+    }
+    if (ctx.boolean != null) {
+      Object.assign(res, {
+        loop: this.visit(ctx.boolean)
+      })
+    }
+    return res
+  }
+
+  astopCommand(ctx: AstopCommandCtx) {
+    const res = {
+      commandType: 'astop'
+    }
+    if (ctx.Resource != null) {
+      Object.assign(res, {
+        targetName: ctx.Resource.map((identToken) => identToken.image)[0]
+      })
+    }
+    return res
+  }
+
   solidCommand(ctx: SolidCommandCtx) {
     const res = {
       commandType: 'solid',
@@ -536,7 +601,10 @@ class ActionVisitor extends BaseActionVisitor {
 
   command(ctx: CommandCtx) {
     return this.visit(
-      ctx.colorCommand ||
+      ctx.animateCommand ||
+        ctx.astartCommand ||
+        ctx.astopCommand ||
+        ctx.colorCommand ||
         ctx.coronaCommand ||
         ctx.examineCommand ||
         ctx.lightCommand ||

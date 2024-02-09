@@ -4,6 +4,14 @@ export interface BooleanCtx {
   Enabled: IToken[]
   Disabled: IToken[]
 }
+
+export interface AnimateCommandCtx {
+  Resource: IToken[]
+  Mask?: IToken[]
+  Nomask?: IToken[]
+  tagParameter?: CstNode[]
+}
+
 export interface ColorCommandCtx {
   Resource: IToken[]
   nameParameter?: CstNode[]
@@ -72,6 +80,15 @@ export interface SoundCommandCtx {
   Resource: IToken[]
 }
 
+export interface AstartCommandCtx {
+  Resource?: IToken[]
+  boolean: CstNode[]
+}
+
+export interface AstopCommandCtx {
+  Resource?: IToken[]
+}
+
 export interface SolidCommandCtx {
   Resource?: IToken[]
   boolean: CstNode[]
@@ -83,6 +100,9 @@ export interface VisibleCommandCtx {
 }
 
 export interface CommandCtx {
+  animateCommand: CstNode[]
+  astartCommand: CstNode[]
+  astopCommand: CstNode[]
   colorCommand: CstNode[]
   coronaCommand: CstNode[]
   examineCommand: CstNode[]

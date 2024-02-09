@@ -76,6 +76,11 @@ const Mask = addToken({
   pattern: /\bmask\b/i,
   categories: [Resource]
 })
+const Nomask = addToken({
+  name: 'Nomask',
+  pattern: /\bnomask\b/i,
+  categories: [Resource]
+})
 const Light = addToken({
   name: 'Light',
   pattern: /\blight\b/i,
@@ -137,6 +142,21 @@ const Fx = addToken({name: 'Fx', pattern: /\bfx\b/i, categories: [Resource]})
 const Angle = addToken({
   name: 'Angle',
   pattern: /\bangle\b/i,
+  categories: [Resource]
+})
+const Animate = addToken({
+  name: 'Animate',
+  pattern: /\banimate\b/i,
+  categories: [Resource]
+})
+const Astart = addToken({
+  name: 'Astart',
+  pattern: /\bastart\b/i,
+  categories: [Resource]
+})
+const Astop = addToken({
+  name: 'Astop',
+  pattern: /\bastop\b/i,
   categories: [Resource]
 })
 const Pitch = addToken({
@@ -233,6 +253,20 @@ export class ActionParser extends CstParser {
     this.performSelfAnalysis()
   }
 
+  public animateCommand = this.RULE('animateCommand', () => {
+    this.CONSUME(Animate)
+    this.OPTION(() => this.SUBRULE(this.tagParameter))
+    this.OPTION1(() => {
+      this.OR([
+        {ALT: () => this.CONSUME(Nomask)},
+        {ALT: () => this.CONSUME(Mask)}
+      ])
+    })
+    this.AT_LEAST_ONE(() => {
+      this.CONSUME(Resource)
+    })
+  })
+
   public colorCommand = this.RULE('colorCommand', () => {
     this.CONSUME(Color)
     this.CONSUME(Resource)
@@ -308,6 +342,21 @@ export class ActionParser extends CstParser {
     this.CONSUME(Picture)
     this.CONSUME(Resource)
     this.OPTION(() => this.SUBRULE(this.pictureArgs))
+  })
+
+  public astartCommand = this.RULE('astartCommand', () => {
+    this.CONSUME(Astart)
+    this.OPTION({
+      GATE: () =>
+        ['Enabled', 'Disabled'].indexOf(this.LA(2).tokenType.name) > -1,
+      DEF: () => this.CONSUME(Resource)
+    })
+    this.OPTION1(() => this.SUBRULE(this.boolean))
+  })
+
+  public astopCommand = this.RULE('astopCommand', () => {
+    this.CONSUME(Astop)
+    this.OPTION(() => this.CONSUME(Resource))
   })
 
   public solidCommand = this.RULE('solidCommand', () => {
@@ -566,6 +615,9 @@ export class ActionParser extends CstParser {
 
   public command = this.RULE('command', () => {
     this.OR([
+      {ALT: () => this.SUBRULE(this.animateCommand)},
+      {ALT: () => this.SUBRULE(this.astartCommand)},
+      {ALT: () => this.SUBRULE(this.astopCommand)},
       {ALT: () => this.SUBRULE(this.colorCommand)},
       {ALT: () => this.SUBRULE(this.coronaCommand)},
       {ALT: () => this.SUBRULE(this.examineCommand)},

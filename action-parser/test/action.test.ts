@@ -69,12 +69,12 @@ test('create long color', () => {
   })
 })
 
-test('create negative hex color', () => {
-  expect(parser.parse('create color F00FF00')).toStrictEqual({
+test('create hex color with negative values', () => {
+  expect(parser.parse('create color 2DFDC1C34')).toStrictEqual({
     create: [
       {
         commandType: 'color',
-        color: {r: 0, g: 255, b: 0}
+        color: {r: 220, g: 28, b: 52}
       }
     ]
   })
@@ -746,7 +746,9 @@ test('teleport to another world', () => {
 
 test('teleport coords types mismatch', () => {
   expect(
-    parser.parse('bump teleport 2N 3E +90, warp +0 +1 -2a 270')
+    parser.parse(
+      'bump teleport 2N 3E +90, warp +0 +1 -2a 270; activate teleport 2N 3E +1.0a -90'
+    )
   ).toStrictEqual({})
 })
 
@@ -783,6 +785,113 @@ test('warp relative', () => {
   })
 })
 
+test('warp no altitude', () => {
+  expect(parser.parse('activate warp 2S 3W')).toStrictEqual({
+    activate: [
+      {
+        commandType: 'warp',
+        coordinates: {
+          type: 'absolute',
+          ew: -3,
+          ns: -2
+        }
+      }
+    ]
+  })
+})
+
 test('warp invalid coords', () => {
   expect(parser.parse('bump warp +2')).toStrictEqual({})
+})
+
+test('animate and astop followed by astart', () => {
+  expect(
+    parser.parse(
+      'create animate tag=dummy mask me jump 5 9 100 1 2 3 4 5 4 3 2 1, astop; activate astart off'
+    )
+  ).toStrictEqual({
+    activate: [
+      {
+        commandType: 'astart',
+        loop: false
+      }
+    ],
+    create: [
+      {
+        commandType: 'animate',
+        tag: 'dummy',
+        mask: true,
+        targetName: 'me',
+        animation: 'jump',
+        imageCount: 5,
+        frameCount: 9,
+        frameDelay: 100,
+        frameList: [1, 2, 3, 4, 5, 4, 3, 2, 1]
+      },
+      {
+        commandType: 'astop'
+      }
+    ]
+  })
+})
+
+test('animate with astart, astop and adone', () => {
+  expect(
+    parser.parse(
+      'create animate me jump 5 5 200, astop; activate astart; adone noise oeo.wav'
+    )
+  ).toStrictEqual({
+    create: [
+      {
+        commandType: 'animate',
+        targetName: 'me',
+        animation: 'jump',
+        mask: false,
+        imageCount: 5,
+        frameCount: 5,
+        frameDelay: 200,
+        frameList: []
+      },
+      {
+        commandType: 'astop'
+      }
+    ],
+    activate: [
+      {
+        commandType: 'astart'
+      }
+    ],
+    adone: [
+      {
+        commandType: 'noise',
+        resource: 'oeo.wav'
+      }
+    ]
+  })
+})
+
+test('animate not enough params', () => {
+  expect(parser.parse('create animate nomask me jump 1 1')).toStrictEqual({})
+})
+
+test('animate param of wrong type', () => {
+  expect(
+    parser.parse('create animate nomask me jump 1 1 0 wrong')
+  ).toStrictEqual({})
+})
+
+test('astart and astop on remote props', () => {
+  expect(parser.parse('activate astart testa yes, astop testb')).toStrictEqual({
+    activate: [
+      {
+        commandType: 'astart',
+        targetName: 'testa',
+        loop: true
+      },
+      {
+        commandType: 'astop',
+        targetName: 'testb'
+      }
+    ]
+  })
 })

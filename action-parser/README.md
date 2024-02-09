@@ -43,5 +43,5 @@ The `parse()` function will then return an object looking like this:
 
 ## Limitations
 
-The parsing is very strict (the whole parsing fails on invalid commands) and there is still some commands missing (`animate`, `astart`, `adone`...). \
+The parsing is very strict (the whole parsing fails on invalid commands) and some commands might be missing. \
 Some edge cases are not handled properly for the moment, especially on signs (eg. `create sign "; activate something`).
