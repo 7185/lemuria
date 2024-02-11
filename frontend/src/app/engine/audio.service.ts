@@ -1,33 +1,31 @@
 import {Injectable} from '@angular/core'
-import {Audio, AudioListener, AudioLoader} from 'three'
+import {Audio, AudioListener} from 'three'
 
 @Injectable({
   providedIn: 'root'
 })
 export class AudioService {
   private audioListener = new AudioListener()
-  private audioLoader = new AudioLoader()
   private bgAudio = new Audio(this.audioListener)
   private audio = new Audio(this.audioListener)
-  private bgUrl = ''
+  public bgUrl = ''
 
   public addListener(camera) {
     camera.add(this.audioListener)
   }
 
-  public playSound(url: string, volume: number) {
-    if (url === this.bgUrl) {
+  public setSoundVolume(volume: number) {
+    if (this.bgAudio.isPlaying) {
       this.bgAudio.setVolume(volume)
-      return
     }
+  }
+
+  public playSound(buffer: AudioBuffer, url: string, volume: number) {
     this.stopSound()
-    this.bgUrl = url
-    this.audioLoader.load(url, (buffer) => {
-      this.bgAudio.setBuffer(buffer)
-      this.bgAudio.setLoop(true)
-      this.bgAudio.setVolume(volume)
-      this.bgAudio.play()
-    })
+    this.bgAudio.setBuffer(buffer)
+    this.bgAudio.setLoop(true)
+    this.bgAudio.setVolume(volume)
+    this.bgAudio.play()
   }
 
   public stopSound() {
@@ -37,15 +35,13 @@ export class AudioService {
     }
   }
 
-  public playNoise(url: string) {
+  public playNoise(buffer: AudioBuffer) {
     if (this.audio.isPlaying) {
       return
     }
-    this.audioLoader.load(url, (buffer) => {
-      this.audio.setBuffer(buffer)
-      this.audio.setLoop(false)
-      this.audio.setVolume(1)
-      this.audio.play()
-    })
+    this.audio.setBuffer(buffer)
+    this.audio.setLoop(false)
+    this.audio.setVolume(1)
+    this.audio.play()
   }
 }

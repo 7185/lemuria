@@ -1,5 +1,6 @@
 import {
   catchError,
+  EMPTY,
   forkJoin,
   mergeMap,
   Observable,
@@ -12,6 +13,7 @@ import {HttpService} from '../network'
 import {Action} from '@lemuria/action-parser'
 import {
   AdditiveBlending,
+  AudioLoader,
   Group,
   Mesh,
   BufferAttribute,
@@ -78,10 +80,16 @@ export class PropService {
   private objects: Map<string, Observable<Group>> = new Map()
   private avatars: Map<string, Observable<Group>> = new Map()
   private geomCache: Map<string, BufferGeometry> = new Map()
+  private audioLoader = new AudioLoader()
   private textureLoader = new TextureLoader()
   private remoteUrl = /.+\..+\/.+/
   private animatedPictures = []
-  private archiveApiQueue = new Subject<{item: Group; url: string}>()
+  private archiveApiQueue = new Subject<{
+    item: Group
+    url: string
+    type: string
+    volume?: number
+  }>()
   private maxParallelApiCalls = 3
   private http = inject(HttpService)
   private settings = inject(SettingsService)
@@ -133,7 +141,7 @@ export class PropService {
       .asObservable()
       .pipe(
         mergeMap(
-          (data) => this.archivedPicture(data).pipe(catchError(() => of())),
+          (data) => this.archivedMedia(data).pipe(catchError(() => of())),
           this.maxParallelApiCalls
         )
       )
@@ -253,7 +261,7 @@ export class PropService {
       }
     }
     if (action.noise != null) {
-      this.makeNoise(action.noise.url)
+      this.makeNoise(item, action.noise.url)
     }
     if (action.sound != null) {
       item.userData.sound = action.sound.url
@@ -468,25 +476,26 @@ export class PropService {
       null,
       () => {
         // Error, usually 404
-        if (
-          remote &&
-          fallbackArchive &&
-          this.settings.get('archivedPictures')
-        ) {
+        if (remote && fallbackArchive && this.settings.get('archivedMedia')) {
           // Send to archive queue
-          this.archiveApiQueue.next({item, url: remote})
+          this.archiveApiQueue.next({item, url: remote, type: 'picture'})
         }
       }
     )
   }
 
   /**
-   * Load an archived image from the queue
-   * @param data The prop and image url from the queue
+   * Load an archived media from the queue
+   * @param data The prop and media url from the queue
    * @returns an observable for the request
    */
-  private archivedPicture(data: {item: Group; url: string}) {
-    const url = environment.url.imgArchive
+  private archivedMedia(data: {
+    item: Group
+    url: string
+    volume?: number
+    type: string
+  }) {
+    const url = environment.url.mediaArchive
       .replace('$1', data.url)
       .replace(
         '$2',
@@ -495,14 +504,39 @@ export class PropService {
           .substring(0, 10)
           .replaceAll('-', '')
       )
-    return this.http.get(url).pipe(
-      tap((res: {url?: string}) => {
-        if (res?.url != null) {
-          // No fallback this time since we're already loading an archived picture
-          this.makePicture(data.item, res.url, false)
-        }
-      })
-    )
+    switch (data.type) {
+      case 'picture':
+        return this.http.get(url).pipe(
+          tap((res: {url?: string}) => {
+            if (res?.url != null) {
+              // No fallback this time since we're already loading an archived picture
+              this.makePicture(data.item, res.url, false)
+            }
+          })
+        )
+      case 'noise':
+        return this.http.get(url).pipe(
+          tap((res: {url?: string}) => {
+            if (res?.url != null) {
+              // No fallback this time since we're already loading an archived noise
+              this.makeNoise(data.item, res.url, false)
+            }
+          })
+        )
+      case 'sound':
+        return this.http.get(url).pipe(
+          tap((res: {url?: string}) => {
+            if (res?.url != null) {
+              // We reset the bgUrl in order to treat the archive like a new sound
+              this.audioSvc.bgUrl = ''
+              // No fallback this time since we're already loading an archived sound
+              this.makeSound(data.item, res.url, data.volume, false)
+            }
+          })
+        )
+      default:
+        return EMPTY
+    }
   }
 
   /**
@@ -711,13 +745,60 @@ export class PropService {
     })
   }
 
-  private makeNoise(url: string) {
+  private makeNoise(item: Group, url: string, fallbackArchive = true) {
+    let remote = ''
     if (this.remoteUrl.test(url)) {
+      remote = url
       url = `${environment.url.mediaProxy}${url}`
     } else {
       url = `${this.audioPath()}/${url}`
     }
-    this.audioSvc.playNoise(url)
+    this.audioLoader.load(
+      url,
+      (noise) => this.audioSvc.playNoise(noise),
+      null,
+      () => {
+        // Error, usually 404
+        if (remote && fallbackArchive && this.settings.get('archivedMedia')) {
+          // Send to archive queue
+          this.archiveApiQueue.next({item, url: remote, type: 'noise'})
+        }
+      }
+    )
+  }
+
+  public makeSound(
+    item: Group,
+    url: string,
+    volume: number,
+    fallbackArchive = true
+  ) {
+    if (this.audioSvc.bgUrl === item.userData.sound) {
+      // Sound didn't change, don't load it again
+      this.audioSvc.setSoundVolume(volume)
+      return
+    }
+    let remote = ''
+    if (this.remoteUrl.test(url)) {
+      remote = url
+      url = `${environment.url.mediaProxy}${url}`
+    } else {
+      url = `${this.audioPath()}/${url}`
+    }
+    // This sound might not be working, but we still store it to keep track of it
+    this.audioSvc.bgUrl = item.userData.sound
+    this.audioLoader.load(
+      url,
+      (sound) => this.audioSvc.playSound(sound, url, volume),
+      null,
+      () => {
+        // Error, usually 404
+        if (remote && fallbackArchive && this.settings.get('archivedMedia')) {
+          // Send to archive queue
+          this.archiveApiQueue.next({item, url: remote, volume, type: 'sound'})
+        }
+      }
+    )
   }
 
   private openUrl(url: string) {

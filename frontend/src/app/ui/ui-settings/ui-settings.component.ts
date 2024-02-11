@@ -27,7 +27,7 @@ import {SettingsService} from '../../settings/settings.service'
 export class UiSettingsComponent implements OnInit {
   public maxFps: number
   public maxLights: number
-  public archivedPictures = false
+  public archivedMedia = false
   public dialogRef = inject(MatDialogRef<UiSettingsComponent>)
   private engineSvc = inject(EngineService)
   private settings = inject(SettingsService)
@@ -42,12 +42,12 @@ export class UiSettingsComponent implements OnInit {
   save() {
     this.engineSvc.maxFps.set(this.maxFps)
     this.engineSvc.maxLights.set(this.maxLights)
-    this.settings.set('archivedPictures', this.archivedPictures)
+    this.settings.set('archivedMedia', this.archivedMedia)
   }
 
   ngOnInit(): void {
     this.settings.updated.subscribe(() => {
-      this.archivedPictures = this.settings.get('archivedPictures')
+      this.archivedMedia = this.settings.get('archivedMedia')
     })
   }
 }

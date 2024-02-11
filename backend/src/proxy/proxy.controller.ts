@@ -8,7 +8,7 @@ export class ProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @Get('archive')
-  async imgArchive(
+  async mediaArchive(
     @Query()
     query: {
       url: string

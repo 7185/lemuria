@@ -863,7 +863,8 @@ export class EngineService {
     })
     heard.sort((a, b) => a.dist - b.dist)
     if (heard.length) {
-      this.audioSvc.playSound(
+      this.propSvc.makeSound(
+        heard[0].obj,
         heard[0].obj.userData.sound,
         Math.max(0, 1 - Math.sqrt(heard[0].dist) / 200)
       )

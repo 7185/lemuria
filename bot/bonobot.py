@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from datetime import datetime
 from math import atan2, pi
 from random import randint
 import trio
@@ -50,13 +51,13 @@ class Bonobot(Bot):
         await self.send_position()
 
     async def on_user_join(self, msg: str) -> None:
-        print(f"* {msg} joined")
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] * {msg} joined")
 
-    async def on_user_part(self, msg:str) -> None:
-        print(f"* {msg} left")
+    async def on_user_part(self, msg: str) -> None:
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] * {msg} left")
 
     async def on_msg(self, user: str, msg: str) -> None:
-        print(f"<{user}> {msg}")
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] <{user}> {msg}")
 
         # Return early if the message is from the bot itself
         if user == self.name:

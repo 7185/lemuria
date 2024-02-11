@@ -3,7 +3,7 @@ export const environment = {
     websocket: 'ws://localhost:8080/api/v1/ws',
     server: 'http://localhost:8080/api/v1',
     mediaProxy: 'http://localhost:8080/api/v1/proxy/url?url=',
-    imgArchive: 'http://localhost:8080/api/v1/proxy/archive?url=$1&date=$2'
+    mediaArchive: 'http://localhost:8080/api/v1/proxy/archive?url=$1&date=$2'
   },
   csrf: {
     access: 'lemuria_csrf_access',

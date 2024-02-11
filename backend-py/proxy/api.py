@@ -8,8 +8,8 @@ api_proxy = Blueprint('api_proxy', __name__, url_prefix='/api/v1/proxy')
 
 
 @api_proxy.get('/archive')
-async def img_archive():
-    """Get image from archive"""
+async def media_archive():
+    """Get media file from archive"""
 
     cache = current_app.cache
     url = request.args.get("url")
@@ -43,7 +43,7 @@ async def img_archive():
 
 @api_proxy.get('/url')
 async def media_proxy():
-    """Proxy image"""
+    """Proxy media file"""
     url = request.args.get("url")
 
     async with httpx.AsyncClient() as client:
