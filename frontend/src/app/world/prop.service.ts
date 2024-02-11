@@ -209,30 +209,58 @@ export class PropService {
     if (action.name != null) {
       item.userData.name = action.name
     }
-    if (action.notVisible) {
-      item.traverse((child: Object3D) => {
-        if (child instanceof Mesh) {
-          child.material.forEach((m: MeshPhongMaterial, i: number) => {
-            // Clone in order to not hide shared materials
-            child.material[i] = m.clone()
-            // Keep the material from the loader (not serializable)
-            child.material[i].userData.rwx.material = m.userData.rwx.material
-            child.material[i].visible = false
+    if (action.visible != null) {
+      for (const visible of action.visible) {
+        if (visible.targetName == null) {
+          item.userData.notVisible = !(visible.value ?? true)
+          item.traverse((child: Object3D) => {
+            if (child instanceof Mesh) {
+              child.material.forEach((m: MeshPhongMaterial, i: number) => {
+                // Clone in order to not hide shared materials
+                child.material[i] = m.clone()
+                // Keep the material from the loader (not serializable)
+                child.material[i].userData.rwx.material =
+                  m.userData.rwx.material
+                child.material[i].visible = !item.userData.notVisible
+              })
+            }
+          })
+          item.userData.onUpdate()
+        } else {
+          Utils.getObjectsByUserData(
+            item.parent.parent.parent,
+            'name',
+            visible.targetName
+          ).forEach((prop: Group) => {
+            prop.userData.notVisible = !(visible.value ?? true)
+            prop.traverse((child: Object3D) => {
+              if (child instanceof Mesh) {
+                child.material.forEach((m: MeshPhongMaterial, i: number) => {
+                  // Clone in order to not hide shared materials
+                  child.material[i] = m.clone()
+                  // Keep the material from the loader (not serializable)
+                  child.material[i].userData.rwx.material =
+                    m.userData.rwx.material
+                  child.material[i].visible = !prop.userData.notVisible
+                })
+              }
+            })
+            prop.userData.onUpdate()
           })
         }
-      })
+      }
     }
-    if (action.color != null && !action.notVisible) {
+    if (action.color != null) {
       this.applyTexture(item, null, null, action.color)
     }
-    if (action.texture != null && !action.notVisible) {
+    if (action.texture != null) {
       item.userData.texturing = this.applyTexture(
         item,
         action.texture.texture,
         action.texture.mask
       )
     }
-    if (action.picture != null && !action.notVisible) {
+    if (action.picture != null) {
       if (item.userData.texturing) {
         item.userData.texturing.subscribe(() =>
           this.makePicture(item, action.picture.url)
@@ -241,7 +269,7 @@ export class PropService {
         this.makePicture(item, action.picture.url)
       }
     }
-    if (action.sign != null && !action.notVisible) {
+    if (action.sign != null) {
       if (item.userData.texturing) {
         item.userData.texturing.subscribe(() =>
           this.makeSign(
@@ -267,12 +295,39 @@ export class PropService {
       item.userData.sound = action.sound.url
     }
     if (action.light != null) {
-      item.userData.light = JSON.parse(JSON.stringify(action.light))
+      for (const light of action.light) {
+        if (light.targetName == null) {
+          item.userData.light = JSON.parse(JSON.stringify(light))
+        } else {
+          Utils.getObjectsByUserData(
+            item.parent.parent.parent,
+            'name',
+            light.targetName
+          ).forEach((prop: Group) => {
+            prop.userData.light = JSON.parse(JSON.stringify(light))
+            prop.userData.onUpdate()
+          })
+        }
+      }
     }
     if (action.corona != null) {
       // Should ALWAYS be checked after light
-      item.userData.corona = JSON.parse(JSON.stringify(action.corona))
-      this.makeCorona(item)
+      for (const corona of action.corona) {
+        if (corona.targetName == null) {
+          item.userData.corona = JSON.parse(JSON.stringify(corona))
+          this.makeCorona(item)
+        } else {
+          Utils.getObjectsByUserData(
+            item.parent.parent.parent,
+            'name',
+            corona.targetName
+          ).forEach((prop: Group) => {
+            prop.userData.corona = JSON.parse(JSON.stringify(corona))
+            this.makeCorona(prop)
+            prop.userData.onUpdate()
+          })
+        }
+      }
     }
     if (action.url != null) {
       this.openUrl(action.url.address)
@@ -361,7 +416,11 @@ export class PropService {
           item.userData[trigger].name = cmd.targetName
           break
         case 'visible':
-          item.userData[trigger].notVisible = !cmd.value
+          item.userData[trigger].visible = item.userData[trigger].visible || []
+          item.userData[trigger].visible.push({
+            value: cmd.value,
+            targetName: cmd.targetName
+          })
           break
         case 'color':
           item.userData[trigger].color = cmd.color
@@ -394,20 +453,24 @@ export class PropService {
           }
           break
         case 'light':
-          item.userData[trigger].light = {
-            color: cmd?.color
+          item.userData[trigger].light = item.userData[trigger].light || []
+          item.userData[trigger].light.push({
+            color: cmd.color
               ? Utils.rgbToHex(cmd.color.r, cmd.color.g, cmd.color.b)
               : 0xffffff,
-            brightness: cmd?.brightness,
-            radius: cmd?.radius,
-            fx: cmd?.fx
-          }
+            brightness: cmd.brightness,
+            radius: cmd.radius,
+            fx: cmd.fx,
+            targetName: cmd.targetName
+          })
           break
         case 'corona':
-          item.userData[trigger].corona = {
-            texture: cmd?.resource,
-            size: cmd?.size
-          }
+          item.userData[trigger].corona = item.userData[trigger].corona || []
+          item.userData[trigger].corona.push({
+            texture: cmd.resource,
+            size: cmd.size,
+            targetName: cmd.targetName
+          })
           break
         case 'noise':
           item.userData[trigger].noise = {url: cmd.resource}
@@ -706,7 +769,7 @@ export class PropService {
     return forkJoin(promises)
   }
 
-  public makeCorona(item: Group) {
+  private makeCorona(item: Group) {
     // Create only once
     if (
       item.userData.corona.texture == null ||

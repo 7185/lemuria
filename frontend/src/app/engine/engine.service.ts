@@ -797,7 +797,11 @@ export class EngineService {
       while (obj.parent !== this.terrain && !obj.parent.userData.world?.chunk) {
         obj = obj.parent
       }
-      if (obj.name.endsWith('.rwx') && obj.parent.visible) {
+      if (
+        obj.name.endsWith('.rwx') &&
+        obj.parent.visible &&
+        !obj?.userData?.notVisible
+      ) {
         return {obj: obj as Group, faceIndex: i.faceIndex}
       }
       if (obj.parent === this.terrain) {
