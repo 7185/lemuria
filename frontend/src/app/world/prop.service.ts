@@ -218,18 +218,39 @@ export class PropService {
       this.applyTexture(item, null, null, action.color)
     }
     if (action.texture != null && !action.notVisible) {
-      this.applyTexture(item, action.texture.texture, action.texture.mask)
+      item.userData.texturing = this.applyTexture(
+        item,
+        action.texture.texture,
+        action.texture.mask
+      )
     }
     if (action.picture != null && !action.notVisible) {
-      this.makePicture(item, action.picture.url)
+      if (item.userData.texturing) {
+        item.userData.texturing.subscribe(() =>
+          this.makePicture(item, action.picture.url)
+        )
+      } else {
+        this.makePicture(item, action.picture.url)
+      }
     }
     if (action.sign != null && !action.notVisible) {
-      this.makeSign(
-        item,
-        action.sign.text,
-        action.sign.color,
-        action.sign.bcolor
-      )
+      if (item.userData.texturing) {
+        item.userData.texturing.subscribe(() =>
+          this.makeSign(
+            item,
+            action.sign.text,
+            action.sign.color,
+            action.sign.bcolor
+          )
+        )
+      } else {
+        this.makeSign(
+          item,
+          action.sign.text,
+          action.sign.color,
+          action.sign.bcolor
+        )
+      }
     }
     if (action.noise != null) {
       this.makeNoise(action.noise.url)
@@ -490,6 +511,10 @@ export class PropService {
    * @param picture Image
    */
   private pictureToProp(item: Group, picture: Texture) {
+    if (!item.userData.taggedMaterials[PICTURE_TAG]) {
+      return
+    }
+
     picture.colorSpace = SRGBColorSpace
     picture.wrapS = RepeatWrapping
     picture.wrapT = RepeatWrapping
@@ -497,9 +522,15 @@ export class PropService {
       if (child instanceof Mesh) {
         const newMaterials = []
         newMaterials.push(...child.material)
-        if (item.userData.taggedMaterials[PICTURE_TAG]) {
-          for (const i of item.userData.taggedMaterials[PICTURE_TAG]) {
+        for (const i of item.userData.taggedMaterials[PICTURE_TAG]) {
+          if (child.material[i].userData.rwx.material != null) {
             newMaterials[i] = child.material[i].clone()
+            // Rebuild userData like the loader
+            newMaterials[i].userData = {
+              collision: child.material[i].userData.collision,
+              ratio: child.material[i].userData.ratio,
+              rwx: {material: child.material[i].userData.rwx.material.clone()}
+            }
             newMaterials[i].color = new Color(1, 1, 1)
             newMaterials[i].map = picture
             const {width, height} = picture.image
@@ -518,6 +549,13 @@ export class PropService {
             }
             newMaterials[i].needsUpdate = true
           }
+          if (child.material[i].alphaMap != null) {
+            child.material[i].alphaMap.dispose()
+          }
+          if (child.material[i].map != null) {
+            child.material[i].map.dispose()
+          }
+          child.material[i].dispose()
         }
         child.material = newMaterials
         child.material.needsUpdate = true
@@ -531,6 +569,10 @@ export class PropService {
     color: {r: number; g: number; b: number},
     bcolor: {r: number; g: number; b: number}
   ) {
+    if (!item.userData.taggedMaterials[SIGN_TAG]) {
+      return
+    }
+
     if (text == null) {
       text = item.userData.desc ?? ''
     }
@@ -545,9 +587,15 @@ export class PropService {
       if (child instanceof Mesh) {
         const newMaterials = []
         newMaterials.push(...child.material)
-        if (item.userData.taggedMaterials[SIGN_TAG]) {
-          for (const i of item.userData.taggedMaterials[SIGN_TAG]) {
+        for (const i of item.userData.taggedMaterials[SIGN_TAG]) {
+          if (child.material[i].userData.rwx.material != null) {
             newMaterials[i] = child.material[i].clone()
+            // Rebuild userData like the loader
+            newMaterials[i].userData = {
+              collision: child.material[i].userData.collision,
+              ratio: child.material[i].userData.ratio,
+              rwx: {material: child.material[i].userData.rwx.material.clone()}
+            }
             newMaterials[i].color = new Color(1, 1, 1)
             newMaterials[i].map = new CanvasTexture(
               TextCanvas.textCanvas(
@@ -559,6 +607,13 @@ export class PropService {
             )
             newMaterials[i].map.colorSpace = SRGBColorSpace
           }
+          if (child.material[i].alphaMap != null) {
+            child.material[i].alphaMap.dispose()
+          }
+          if (child.material[i].map != null) {
+            child.material[i].map.dispose()
+          }
+          child.material[i].dispose()
         }
         child.material = newMaterials
         child.material.needsUpdate = true
@@ -579,6 +634,12 @@ export class PropService {
         child.material.forEach((m: MeshPhongMaterial) => {
           if (m.userData.rwx.material != null) {
             const newRWXMat = m.userData.rwx.material.clone()
+            // Rebuild userData like the loader
+            newRWXMat.userData = {
+              collision: m.userData.collision,
+              ratio: m.userData.ratio,
+              rwx: {material: m.userData.rwx.material.clone()}
+            }
             newRWXMat.texture = textureName
             newRWXMat.mask = maskName
             if (color != null) {
