@@ -417,6 +417,11 @@ export class WorldService {
       this.propSvc.hideProp(g)
       hidden()
     }
+    g.userData.onClick = (clicked: () => void) => {
+      this.propSvc.clickProp(g)
+      clicked()
+    }
+    g.userData.onUpdate = () => {}
 
     g.updateMatrix()
     return g

@@ -1,4 +1,5 @@
 import {Vector3} from 'three'
+import type {Object3D} from 'three'
 
 export class Utils {
   static posToStringSimple(pos: Vector3): string {
@@ -108,5 +109,22 @@ export class Utils {
     // The final result still needs to be expressed within [-Pi, Pi],
     // so we translate the result back into it.
     return (diff % (2 * Math.PI)) - Math.PI
+  }
+
+  /**
+   * Find objects by userData attribute
+   * @param node The node to traverse
+   * @param key Which attribute to look for (e.g. name)
+   * @param value The value to search
+   * @returns List of matching objects
+   */
+  static getObjectsByUserData(node: Object3D, key: string, value: string) {
+    const objs = []
+    node.traverse((obj: Object3D) => {
+      if (obj.userData[key] === value) {
+        objs.push(obj)
+      }
+    })
+    return objs
   }
 }

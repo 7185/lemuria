@@ -59,16 +59,6 @@ Object3D.prototype.updateMatrixWorld = function () {
   _updateMatrixWorld.apply(this)
 }
 
-const getObjectsByUserData = (scene: Object3D, name: string, value: string) => {
-  const objs = []
-  scene.traverse((node) => {
-    if (node.userData[name] === value) {
-      objs.push(node)
-    }
-  })
-  return objs
-}
-
 // This defines which chunks (offset from the current chunk we sit in) we will
 // query for collisions for each player movement step
 const nearestChunkPattern = [
@@ -641,6 +631,7 @@ export class EngineService {
 
   public setPlayerPos(pos: Vector3 | string, yaw = 0): void {
     this.player.setPos(pos, yaw)
+    this.player.isOnFloor = true
   }
 
   public setPlayerYaw(yaw: number) {
@@ -729,6 +720,7 @@ export class EngineService {
           child.userData.onShow(() => {
             this.handleShownProp(child)
           })
+          child.userData.onUpdate = () => this.handleShownProp(child)
         })
       } else {
         // The chunk is being hidden
@@ -736,6 +728,7 @@ export class EngineService {
           child.userData.onHide(() => {
             this.handleHiddenProp(child)
           })
+          child.userData.onUpdate = () => {}
         })
       }
     }
@@ -836,68 +829,10 @@ export class EngineService {
       )
     }
 
-    if (activate.url != null) {
-      this.propSvc.openUrl(activate.url.address)
-    }
-
-    if (activate.noise != null) {
-      this.propSvc.makeNoise(activate.noise.url)
-    }
-
-    if (activate.move || activate.rotate) {
-      item.userData.animation = {}
-      if (activate?.move != null) {
-        for (const move of activate.move) {
-          if (move.targetName == null) {
-            item.userData.animation.move = JSON.parse(JSON.stringify(move))
-            // Reset on click
-            item.position.copy(
-              new Vector3()
-                .add(item.userData.posOrig)
-                .sub(item.parent.parent.position)
-            )
-          } else {
-            getObjectsByUserData(
-              this.objectsNode,
-              'name',
-              move.targetName
-            ).forEach((prop: Group) => {
-              prop.userData.animation = prop.userData.animation || {}
-              prop.userData.animation.move = JSON.parse(JSON.stringify(move))
-              prop.position.copy(
-                new Vector3()
-                  .add(prop.userData.posOrig)
-                  .sub(prop.parent.parent.position)
-              )
-              this.handleShownProp(prop)
-            })
-          }
-        }
-      }
-      if (activate?.rotate != null) {
-        for (const rotate of activate.rotate) {
-          if (rotate.targetName == null) {
-            item.userData.animation.rotate = JSON.parse(JSON.stringify(rotate))
-            // Reset on click
-            item.rotation.copy(item.userData.rotOrig)
-          } else {
-            getObjectsByUserData(
-              this.objectsNode,
-              'name',
-              rotate.targetName
-            ).forEach((prop: Group) => {
-              prop.userData.animation = prop.userData.animation || {}
-              prop.userData.animation.rotate = JSON.parse(
-                JSON.stringify(rotate)
-              )
-              prop.rotation.copy(prop.userData.rotOrig)
-              this.handleShownProp(prop)
-            })
-          }
-        }
-      }
+    item.userData.onClick(() => {
+      // Needed since the prop's state might have just changed
       this.handleShownProp(item)
-    }
+    })
   }
 
   private rightClick(event: MouseEvent) {
@@ -1234,7 +1169,11 @@ export class EngineService {
       .intersectObjects(
         this.objectsNode.children
           .filter((obj) => obj.parent.visible)
-          .concat(this.terrain ?? []),
+          .concat(
+            this.usersNode.children,
+            this.player.avatar,
+            this.terrain ?? []
+          ),
         true
       )
       .filter((intersect) => !ignoreList.includes(intersect.object))

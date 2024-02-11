@@ -144,13 +144,14 @@ export class PropService {
     return this.http.avatars(this.path())
   }
 
+  /**
+   * Parses the action string
+   * @param item
+   */
   public parseActions(item: Group) {
     const result = this.actionParser.parse(item.userData.act)
-    if (result.create != null) {
-      this.parseCreate(item, result)
-    }
-    if (result.activate != null) {
-      this.parseActivate(item, result)
+    for (const trigger of Object.keys(result)) {
+      this.parseAction(item, trigger, result[trigger])
     }
   }
 
@@ -162,6 +163,9 @@ export class PropService {
     if (item.userData.light != null) {
       delete item.userData.light
     }
+    if (item.userData.name != null) {
+      delete item.userData.name
+    }
   }
 
   /**
@@ -169,11 +173,35 @@ export class PropService {
    * @param item
    */
   public showProp(item: Group) {
-    const create = item?.userData?.create
-    if (create == null) {
+    this.triggerAction(item, 'create')
+  }
+
+  /**
+   * Called once a prop is clicked
+   * @param item
+   */
+  public clickProp(item: Group) {
+    this.triggerAction(item, 'activate')
+  }
+
+  /**
+   * Execute commands for the provided trigger
+   * @param item
+   * @param trigger
+   * @returns
+   */
+  public triggerAction(
+    item: Group,
+    trigger: 'activate' | 'adone' | 'bump' | 'create'
+  ) {
+    const action = item.userData[trigger]
+    if (action == null) {
       return
     }
-    if (create.notVisible) {
+    if (action.name != null) {
+      item.userData.name = action.name
+    }
+    if (action.notVisible) {
       item.traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           child.material.forEach((m: MeshPhongMaterial, i: number) => {
@@ -186,23 +214,44 @@ export class PropService {
         }
       })
     }
-    if (create.noise != null) {
-      this.makeNoise(item.userData.create.noise)
+    if (action.color != null && !action.notVisible) {
+      this.applyTexture(item, null, null, action.color)
     }
-    if (create.sound != null) {
-      item.userData.sound = item.userData.create.sound
+    if (action.texture != null && !action.notVisible) {
+      this.applyTexture(item, action.texture.texture, action.texture.mask)
     }
-    if (create.light != null) {
-      item.userData.light = JSON.parse(JSON.stringify(create.light))
+    if (action.picture != null && !action.notVisible) {
+      this.makePicture(item, action.picture.url)
     }
-    if (create.corona != null) {
-      item.userData.corona = JSON.parse(JSON.stringify(create.corona))
+    if (action.sign != null && !action.notVisible) {
+      this.makeSign(
+        item,
+        action.sign.text,
+        action.sign.color,
+        action.sign.bcolor
+      )
+    }
+    if (action.noise != null) {
+      this.makeNoise(action.noise.url)
+    }
+    if (action.sound != null) {
+      item.userData.sound = action.sound.url
+    }
+    if (action.light != null) {
+      item.userData.light = JSON.parse(JSON.stringify(action.light))
+    }
+    if (action.corona != null) {
+      // Should ALWAYS be checked after light
+      item.userData.corona = JSON.parse(JSON.stringify(action.corona))
       this.makeCorona(item)
     }
-    if (create.move != null) {
-      for (const move of create.move) {
+    if (action.url != null) {
+      this.openUrl(action.url.address)
+    }
+    if (action.move != null) {
+      for (const move of action.move) {
         if (move.targetName == null) {
-          item.userData.animation = {}
+          item.userData.animation = item.userData.animation || {}
           item.userData.animation.move = JSON.parse(JSON.stringify(move))
           // Reset on show
           item.position.copy(
@@ -210,43 +259,113 @@ export class PropService {
               .add(item.userData.posOrig)
               .sub(item.parent.parent.position)
           )
+        } else {
+          Utils.getObjectsByUserData(
+            item.parent.parent.parent,
+            'name',
+            move.targetName
+          ).forEach((prop: Group) => {
+            prop.userData.animation = prop.userData.animation || {}
+            prop.userData.animation.move = JSON.parse(JSON.stringify(move))
+            prop.position.copy(
+              new Vector3()
+                .add(prop.userData.posOrig)
+                .sub(prop.parent.parent.position)
+            )
+            prop.userData.onUpdate()
+          })
         }
       }
     }
-    if (create.rotate != null) {
-      for (const rotate of create.rotate) {
+    if (action.rotate != null) {
+      for (const rotate of action.rotate) {
         if (rotate.targetName == null) {
-          item.userData.animation = {}
+          item.userData.animation = item.userData.animation || {}
           item.userData.animation.rotate = JSON.parse(JSON.stringify(rotate))
           // Reset on show
           item.rotation.copy(item.userData.rotOrig)
+        } else {
+          Utils.getObjectsByUserData(
+            item.parent.parent.parent,
+            'name',
+            rotate.targetName
+          ).forEach((prop: Group) => {
+            prop.userData.animation = prop.userData.animation || {}
+            prop.userData.animation.rotate = JSON.parse(JSON.stringify(rotate))
+            prop.rotation.copy(prop.userData.rotOrig)
+            prop.userData.onUpdate()
+          })
         }
       }
     }
   }
 
-  private parseCreate(item: Group, result: any) {
-    const textured = result.create.some(
-      (cmd) => cmd.commandType === 'texture' || cmd.commandType === 'color'
-    )
-    let texturing = null
-    item.userData.create = {}
-    for (const cmd of result.create) {
+  /**
+   * Parse every action for the given trigger
+   * @param item The prop to check
+   * @param trigger The trigger string (e.g. create)
+   * @param commands The parsed object for this trigger
+   */
+  private parseAction(item: Group, trigger: string, commands: any) {
+    item.userData[trigger] = {}
+    for (const cmd of commands) {
       switch (cmd.commandType) {
+        case 'animate':
+          item.userData[trigger].animate = item.userData[trigger].animate || []
+          item.userData[trigger].animate.push({
+            mask: cmd.mask,
+            tag: cmd.tag,
+            targetName: cmd.targetName === 'me' ? null : cmd.targetName,
+            animation: cmd.animation,
+            imageCount: cmd.imageCount,
+            frameCount: cmd.frameCount,
+            frameDelay: cmd.frameDelay,
+            frameList:
+              cmd.frameList ||
+              Array.from({length: cmd.imageCount}, (_, i) => i + 1)
+          })
+          break
         case 'solid':
-          item.userData.create.notSolid = !cmd.value
+          item.userData[trigger].notSolid = !cmd.value
           break
         case 'name':
-          item.userData.name = cmd.targetName
+          item.userData[trigger].name = cmd.targetName
           break
-        case 'noise':
-          item.userData.create.noise = cmd.resource
+        case 'visible':
+          item.userData[trigger].notVisible = !cmd.value
           break
-        case 'sound':
-          item.userData.create.sound = cmd.resource
+        case 'color':
+          item.userData[trigger].color = cmd.color
+          break
+        case 'texture':
+          item.userData[trigger].texture = {
+            texture:
+              cmd.texture != null && cmd.texture.lastIndexOf('.') !== -1
+                ? cmd.texture.substring(0, cmd.texture.lastIndexOf('.'))
+                : cmd.texture,
+            mask:
+              cmd.mask != null && cmd.mask.lastIndexOf('.') !== -1
+                ? cmd.mask.substring(0, cmd.mask.lastIndexOf('.'))
+                : cmd.mask
+          }
+          break
+        case 'sign':
+          item.userData[trigger].sign = {
+            text: cmd.text,
+            color: cmd.color,
+            bcolor: cmd.bcolor
+          }
+          break
+        case 'picture':
+          item.userData[trigger].picture = {url: cmd.resource}
+          break
+        case 'url':
+          if (['create', 'adone'].indexOf(trigger) === -1) {
+            item.userData[trigger].url = {address: cmd.resource}
+          }
           break
         case 'light':
-          item.userData.create.light = {
+          item.userData[trigger].light = {
             color: cmd?.color
               ? Utils.rgbToHex(cmd.color.r, cmd.color.g, cmd.color.b)
               : 0xffffff,
@@ -256,132 +375,26 @@ export class PropService {
           }
           break
         case 'corona':
-          item.userData.create.corona = {
+          item.userData[trigger].corona = {
             texture: cmd?.resource,
             size: cmd?.size
           }
-          if (item.userData.create.light != null) {
-            item.userData.light = JSON.parse(
-              JSON.stringify(item.userData.create.light)
-            )
-          }
-          if (item.userData.create.corona != null) {
-            item.userData.corona = JSON.parse(
-              JSON.stringify(item.userData.create.corona)
-            )
-          }
-          break
-        case 'visible':
-          item.userData.create.notVisible = !cmd.value
-          break
-        case 'color':
-          this.applyTexture(item, null, null, cmd.color)
-          break
-        case 'texture':
-          if (cmd.texture) {
-            cmd.texture =
-              cmd.texture.lastIndexOf('.') !== -1
-                ? cmd.texture.substring(0, cmd.texture.lastIndexOf('.'))
-                : cmd.texture
-            if (cmd.mask) {
-              cmd.mask =
-                cmd.mask.lastIndexOf('.') !== -1
-                  ? cmd.mask.substring(0, cmd.mask.lastIndexOf('.'))
-                  : cmd.mask
-            }
-          }
-          texturing = this.applyTexture(item, cmd.texture, cmd.mask)
-          break
-        case 'sign':
-          if (!textured) {
-            this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
-          }
-          break
-        case 'picture':
-          if (!textured) {
-            this.makePicture(item, cmd.resource)
-          }
-          break
-        case 'move':
-          item.userData.create.move = item.userData.create.move || []
-          item.userData.create.move.push({
-            distance: cmd.distance,
-            time: cmd.time || 1,
-            loop: cmd.loop || false,
-            reset: cmd.reset || false,
-            wait: cmd.wait || 0,
-            waiting: 0,
-            completion: 0,
-            direction: 1,
-            targetName: cmd.targetName
-          })
-          break
-        case 'rotate':
-          item.userData.create.rotate = item.userData.create.rotate || []
-          item.userData.create.rotate.push({
-            speed: cmd.speed,
-            time: cmd.time || null,
-            loop: cmd.loop || false,
-            reset: cmd.reset || false,
-            wait: cmd.wait || 0,
-            waiting: 0,
-            completion: 0,
-            direction: 1,
-            targetName: cmd.targetName
-          })
-          break
-        default:
-          break
-      }
-    }
-    if (!textured) {
-      return
-    }
-    if (texturing != null) {
-      // there are textures, we wait for them to load
-      texturing.subscribe(() => {
-        for (const cmd of result.create) {
-          if (cmd.commandType === 'sign') {
-            this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
-          }
-          if (cmd.commandType === 'picture') {
-            this.makePicture(item, cmd.resource)
-          }
-        }
-      })
-    } else {
-      // color, no need to wait
-      for (const cmd of result.create) {
-        if (cmd.commandType === 'sign') {
-          this.makeSign(item, cmd.text, cmd.color, cmd.bcolor)
-        }
-        if (cmd.commandType === 'picture') {
-          this.makePicture(item, cmd.resource)
-        }
-      }
-    }
-  }
-
-  private parseActivate(item: Group, result: any) {
-    item.userData.activate = {}
-    for (const cmd of result.activate) {
-      switch (cmd.commandType) {
-        case 'teleport':
-          item.userData.activate.teleport = {...cmd.coordinates}
-          item.userData.activate.teleport.worldName = cmd.worldName ?? null
-          break
-        case 'url':
-          item.userData.activate.url = {address: cmd.resource}
           break
         case 'noise':
-          item.userData.activate.noise = {url: cmd.resource}
+          item.userData[trigger].noise = {url: cmd.resource}
           break
         case 'sound':
-          item.userData.activate.sound = {url: cmd.resource}
+          item.userData[trigger].sound = {url: cmd.resource}
+          break
+        case 'teleport':
+          if (['create', 'adone'].indexOf(trigger) === -1) {
+            item.userData[trigger].teleport = {...cmd.coordinates}
+            item.userData[trigger].teleport.worldName = cmd.worldName ?? null
+          }
           break
         case 'move':
-          item.userData.activate.move = item.userData.activate.move || []
-          item.userData.activate.move.push({
+          item.userData[trigger].move = item.userData[trigger].move || []
+          item.userData[trigger].move.push({
             distance: cmd.distance,
             time: cmd.time || 1,
             loop: cmd.loop || false,
@@ -394,8 +407,8 @@ export class PropService {
           })
           break
         case 'rotate':
-          item.userData.activate.rotate = item.userData.activate.rotate || []
-          item.userData.activate.rotate.push({
+          item.userData[trigger].rotate = item.userData[trigger].rotate || []
+          item.userData[trigger].rotate.push({
             speed: cmd.speed,
             time: cmd.time || null,
             loop: cmd.loop || false,
@@ -637,7 +650,7 @@ export class PropService {
     })
   }
 
-  public makeNoise(url: string) {
+  private makeNoise(url: string) {
     if (this.remoteUrl.test(url)) {
       url = `${environment.url.mediaProxy}${url}`
     } else {
@@ -646,7 +659,7 @@ export class PropService {
     this.audioSvc.playNoise(url)
   }
 
-  public openUrl(url: string) {
+  private openUrl(url: string) {
     Object.assign(document.createElement('a'), {
       target: '_blank',
       rel: 'noopener noreferrer',

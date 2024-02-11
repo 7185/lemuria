@@ -807,12 +807,13 @@ test('warp invalid coords', () => {
 test('animate and astop followed by astart', () => {
   expect(
     parser.parse(
-      'create animate tag=dummy mask me jump 5 9 100 1 2 3 4 5 4 3 2 1, astop; activate astart off'
+      'create animate tag=dummy mask me jump 5 9 100 1 2 3 4 5 4 3 2 1, astop; activate astart me off'
     )
   ).toStrictEqual({
     activate: [
       {
         commandType: 'astart',
+        targetName: 'me',
         loop: false
       }
     ],

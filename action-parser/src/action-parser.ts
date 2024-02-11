@@ -346,11 +346,7 @@ export class ActionParser extends CstParser {
 
   public astartCommand = this.RULE('astartCommand', () => {
     this.CONSUME(Astart)
-    this.OPTION({
-      GATE: () =>
-        ['Enabled', 'Disabled'].indexOf(this.LA(2).tokenType.name) > -1,
-      DEF: () => this.CONSUME(Resource)
-    })
+    this.OPTION(() => this.CONSUME(Resource))
     this.OPTION1(() => this.SUBRULE(this.boolean))
   })
 
