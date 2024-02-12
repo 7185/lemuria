@@ -1,6 +1,12 @@
 import {EMPTY, Subject, throwError, from, of, firstValueFrom} from 'rxjs'
 import type {Observable, Subscription} from 'rxjs'
-import {mergeMap, concatMap, bufferCount, catchError} from 'rxjs/operators'
+import {
+  mergeMap,
+  concatMap,
+  bufferCount,
+  catchError,
+  debounceTime
+} from 'rxjs/operators'
 import {UserService} from '../user'
 import {SettingsService} from '../settings/settings.service'
 import type {User} from '../user'
@@ -350,7 +356,7 @@ export class WorldService {
     skyboxGroup.add(oct)
 
     if (skybox) {
-      this.propSvc.loadProp(skybox, true).subscribe((s) => {
+      this.propSvc.loadModel(skybox, true).subscribe((s) => {
         const skyboxRwx = s.clone()
         const box = new Box3().setFromObject(skyboxRwx)
         const center = box.getCenter(new Vector3())
@@ -366,18 +372,18 @@ export class WorldService {
     this.chunkMap.clear()
   }
 
-  private async loadItem(
+  private async loadProp(
     id: number,
-    item: string,
+    prop: string,
     pos: Vector3,
     rot: Vector3,
     date = 0,
     desc = null,
     act = null
   ): Promise<Object3D> {
-    item = Utils.modelName(item)
-    const g = await firstValueFrom(this.propSvc.loadProp(item))
-    g.name = item
+    prop = Utils.modelName(prop)
+    const g = await firstValueFrom(this.propSvc.loadModel(prop))
+    g.name = prop
     g.userData.id = id
     g.userData.date = date
     g.userData.desc = desc
@@ -547,24 +553,24 @@ export class WorldService {
       .pipe(
         concatMap((props: any) =>
           from(props.entries).pipe(
-            mergeMap((item: any) =>
-              this.loadItem(
-                item[0],
-                item[2],
-                new Vector3(item[3], item[4], item[5]),
-                new Vector3(item[6], item[7], item[8]),
-                item[1],
-                item[9],
-                item[10]
+            mergeMap((prop: any) =>
+              this.loadProp(
+                prop[0],
+                prop[2],
+                new Vector3(prop[3], prop[4], prop[5]),
+                new Vector3(prop[6], prop[7], prop[8]),
+                prop[1],
+                prop[9],
+                prop[10]
               )
             ),
-            mergeMap((item: Object3D) => {
+            mergeMap((prop: Object3D) => {
               const chunkOffset = new Vector3(chunkPos.x, 0, chunkPos.z)
-              item.position.sub(chunkOffset)
-              item.updateMatrix()
-              return of(item)
+              prop.position.sub(chunkOffset)
+              prop.updateMatrix()
+              return of(prop)
             }), // Adjust position of objects based on the center of the chunk
-            bufferCount(props.entries.length), // Wait for all items to be loaded before proceeding
+            bufferCount(props.entries.length), // Wait for all props to be loaded before proceeding
             mergeMap((objs: Object3D[]) => {
               const chunkGroup = new Group().add(...objs)
               // Set metadata on the chunk
@@ -576,6 +582,11 @@ export class WorldService {
               chunkGroup.userData.world = {
                 chunk: {x: chunkPos.x, z: chunkPos.z}
               }
+              const bvhUpdate = new Subject()
+              bvhUpdate.pipe(debounceTime(200)).subscribe(() => {
+                PlayerCollider.updateChunkBVH(chunkGroup)
+              })
+              chunkGroup.userData.bvhUpdate = bvhUpdate
 
               lod.addLevel(chunkGroup, this.maxLodDistance)
               lod.addLevel(new Group(), this.maxLodDistance + 1)
@@ -583,7 +594,7 @@ export class WorldService {
               lod.autoUpdate = false
               lod.updateMatrix()
               chunkGroup.parent.visible = false
-              PlayerCollider.updateChunkBVH(chunkGroup)
+              chunkGroup.userData.bvhUpdate.next()
 
               return of(lod)
             })
@@ -612,7 +623,7 @@ export class WorldService {
 
       // Regenerate boundsTree for source LOD, if it's different from the destination one
       if (oldLOD !== newLOD) {
-        PlayerCollider.updateChunkBVH(oldChunk)
+        oldChunk.userData.bvhUpdate.next()
       }
 
       const chunk = newLOD.levels[0].object

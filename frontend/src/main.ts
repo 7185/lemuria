@@ -1,6 +1,10 @@
 import {ɵprovideZonelessChangeDetection} from '@angular/core'
 import {APP_BASE_HREF} from '@angular/common'
-import {provideHttpClient, withInterceptors} from '@angular/common/http'
+import {
+  provideHttpClient,
+  withFetch,
+  withInterceptors
+} from '@angular/common/http'
 import {bootstrapApplication} from '@angular/platform-browser'
 import {provideAnimationsAsync} from '@angular/platform-browser/animations/async'
 import {provideRouter, withViewTransitions} from '@angular/router'
@@ -13,7 +17,7 @@ bootstrapApplication(AppComponent, {
     provideRouter(APP_ROUTES, withViewTransitions()),
     ɵprovideZonelessChangeDetection(),
     provideAnimationsAsync(),
-    provideHttpClient(withInterceptors([jwtInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors([jwtInterceptor])),
     {provide: APP_BASE_HREF, useValue: '/'}
   ]
 })

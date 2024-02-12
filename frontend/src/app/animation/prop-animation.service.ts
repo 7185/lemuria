@@ -5,8 +5,8 @@ import {RPM, X_AXIS, Y_AXIS, Z_AXIS} from '../utils'
 
 @Injectable({providedIn: 'root'})
 export class PropAnimationService {
-  public moveItem(item: Group, delta: number) {
-    const moveData = item.userData.animation.move
+  public moveProp(prop: Group, delta: number) {
+    const moveData = prop.userData.animation.move
     if (moveData == null) {
       return
     }
@@ -20,34 +20,34 @@ export class PropAnimationService {
     // in order to keep the state (if direction is -1, we're on the second move)
     const moveFactor =
       (moveData.reset ? 1 : moveData.direction) * (delta / moveData.time)
-    item.position.x += moveData.distance.x * moveFactor
-    item.position.y += moveData.distance.y * moveFactor
-    item.position.z += moveData.distance.z * moveFactor
+    prop.position.x += moveData.distance.x * moveFactor
+    prop.position.y += moveData.distance.y * moveFactor
+    prop.position.z += moveData.distance.z * moveFactor
     moveData.completion += delta / moveData.time
 
-    // Check if the item has reached its destination (completion = 1)
+    // Check if the prop has reached its destination (completion = 1)
     if (moveData.completion >= 1) {
       moveData.completion = 0
       if (moveData.reset) {
         // Reset the position to the original position
-        item.position.copy(
+        prop.position.copy(
           new Vector3()
-            .add(item.userData.posOrig)
-            .sub(item.parent.parent.position)
+            .add(prop.userData.posOrig)
+            .sub(prop.parent.parent.position)
         )
       }
 
       if (moveData.direction < 0) {
         if (!moveData.loop) {
           // No loop and way back is done, so all is done
-          item.userData.animation.move = undefined
+          prop.userData.animation.move = undefined
           return
         }
         // Move is complete for this loop so we can force the initial position back to avoid drifting issues
-        item.position.copy(
+        prop.position.copy(
           new Vector3()
-            .add(item.userData.posOrig)
-            .sub(item.parent.parent.position)
+            .add(prop.userData.posOrig)
+            .sub(prop.parent.parent.position)
         )
       }
       // Switch direction
@@ -57,8 +57,8 @@ export class PropAnimationService {
     }
   }
 
-  public rotateItem(item: Group, delta: number) {
-    const rotateData = item.userData.animation.rotate
+  public rotateProp(prop: Group, delta: number) {
+    const rotateData = prop.userData.animation.rotate
     if (rotateData == null) {
       return
     }
@@ -68,15 +68,15 @@ export class PropAnimationService {
       return
     }
     // Update rotation
-    item.rotateOnAxis(
+    prop.rotateOnAxis(
       Y_AXIS,
       rotateData.speed.y * RPM * delta * rotateData.direction
     )
-    item.rotateOnAxis(
+    prop.rotateOnAxis(
       Z_AXIS,
       rotateData.speed.z * RPM * delta * rotateData.direction
     )
-    item.rotateOnAxis(
+    prop.rotateOnAxis(
       X_AXIS,
       rotateData.speed.x * RPM * delta * rotateData.direction
     )
@@ -87,14 +87,14 @@ export class PropAnimationService {
       rotateData.completion = 0
       if (rotateData.reset || rotateData.direction === -1) {
         // Reset the rotation to the original rotation
-        item.rotation.copy(item.userData.rotOrig)
+        prop.rotation.copy(prop.userData.rotOrig)
       }
       if (rotateData.time) {
         // Add a wait time before starting the next rotation
         rotateData.waiting = rotateData.wait
         if (!rotateData.loop && rotateData.direction === -1) {
           // No loop and the way back is done, so the rotation is over
-          item.userData.animation.rotate = undefined
+          prop.userData.animation.rotate = undefined
           return
         }
         // Loop and/or way back is starting

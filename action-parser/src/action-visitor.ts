@@ -60,9 +60,7 @@ class ActionVisitor extends BaseActionVisitor {
     this.validateVisitor()
   }
 
-  boolean(ctx: BooleanCtx) {
-    return !!ctx.Enabled
-  }
+  // Commands
 
   animateCommand(ctx: AnimateCommandCtx) {
     const res = {
@@ -97,6 +95,35 @@ class ActionVisitor extends BaseActionVisitor {
     return res
   }
 
+  astartCommand(ctx: AstartCommandCtx) {
+    const res = {
+      commandType: 'astart'
+    }
+    if (ctx.Resource != null) {
+      Object.assign(res, {
+        targetName: ctx.Resource.map((identToken) => identToken.image)[0]
+      })
+    }
+    if (ctx.boolean != null) {
+      Object.assign(res, {
+        loop: this.visit(ctx.boolean)
+      })
+    }
+    return res
+  }
+
+  astopCommand(ctx: AstopCommandCtx) {
+    const res = {
+      commandType: 'astop'
+    }
+    if (ctx.Resource != null) {
+      Object.assign(res, {
+        targetName: ctx.Resource.map((identToken) => identToken.image)[0]
+      })
+    }
+    return res
+  }
+
   colorCommand(ctx: ColorCommandCtx) {
     const res = {
       commandType: 'color',
@@ -110,46 +137,6 @@ class ActionVisitor extends BaseActionVisitor {
       })
     }
     return res.color == null ? null : res
-  }
-
-  examineCommand() {
-    return {
-      commandType: 'examine'
-    }
-  }
-
-  mediaCommand(ctx: MediaCommandCtx) {
-    const res = {
-      commandType: 'media',
-      resource: ctx.Resource.map((identToken) => identToken.image)[0]
-    }
-    const args = ctx.mediaArgs?.map((arg) => this.visit(arg))[0]
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
-    }
-    return res
-  }
-
-  nameCommand(ctx: NameCommandCtx) {
-    return {
-      commandType: 'name',
-      targetName: ctx.Resource.map((identToken) => identToken.image)[0]
-    }
-  }
-
-  lightCommand(ctx: LightCommandCtx) {
-    const res = {
-      commandType: 'light'
-    }
-    const args = ctx.lightArgs?.map((arg) => this.visit(arg))[0]
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
-    }
-    return res
   }
 
   coronaCommand(ctx: CoronaCommandCtx) {
@@ -166,22 +153,75 @@ class ActionVisitor extends BaseActionVisitor {
     return res
   }
 
-  noiseCommand(ctx: NoiseCommandCtx) {
+  examineCommand() {
     return {
-      commandType: 'noise',
-      resource: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
-    }
-  }
-  soundCommand(ctx: SoundCommandCtx) {
-    return {
-      commandType: 'sound',
-      resource: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
+      commandType: 'examine'
     }
   }
 
-  urlCommand(ctx: UrlCommandCtx) {
+  lightCommand(ctx: LightCommandCtx) {
+    const res = {
+      commandType: 'light'
+    }
+    const args = ctx.lightArgs?.map((arg) => this.visit(arg))[0]
+    if (args != null) {
+      args.forEach((arg: object) => {
+        Object.assign(res, arg)
+      })
+    }
+    return res
+  }
+
+  mediaCommand(ctx: MediaCommandCtx) {
+    const res = {
+      commandType: 'media',
+      url: ctx.Resource.map((identToken) => identToken.image)[0]
+    }
+    const args = ctx.mediaArgs?.map((arg) => this.visit(arg))[0]
+    if (args != null) {
+      args.forEach((arg: object) => {
+        Object.assign(res, arg)
+      })
+    }
+    return res
+  }
+
+  moveCommand(ctx: MoveCommandCtx) {
+    const res = {
+      commandType: 'move',
+      distance: {x: 0, y: 0, z: 0}
+    }
+
+    if (ctx.Resource.length === 1) {
+      res.distance.y = parseFloat(ctx.Resource[0].image)
+    } else if (ctx.Resource.length === 2) {
+      res.distance.x = parseFloat(ctx.Resource[0].image)
+      res.distance.y = parseFloat(ctx.Resource[1].image)
+    } else if (ctx.Resource.length === 3) {
+      res.distance.x = parseFloat(ctx.Resource[0].image)
+      res.distance.y = parseFloat(ctx.Resource[1].image)
+      res.distance.z = parseFloat(ctx.Resource[2].image)
+    }
+
+    const args = ctx.moveArgs?.map((arg: CstNode) => this.visit(arg))[0]
+    if (args != null) {
+      args.forEach((arg: object) => {
+        Object.assign(res, arg)
+      })
+    }
+    return res
+  }
+
+  nameCommand(ctx: NameCommandCtx) {
     return {
-      commandType: 'url',
+      commandType: 'name',
+      targetName: ctx.Resource.map((identToken) => identToken.image)[0]
+    }
+  }
+
+  noiseCommand(ctx: NoiseCommandCtx) {
+    return {
+      commandType: 'noise',
       resource: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
     }
   }
@@ -192,6 +232,32 @@ class ActionVisitor extends BaseActionVisitor {
       resource: ctx.Resource.map((identToken) => identToken.image)[0]
     }
     const args = ctx.pictureArgs?.map((arg) => this.visit(arg))[0]
+    if (args != null) {
+      args.forEach((arg: object) => {
+        Object.assign(res, arg)
+      })
+    }
+    return res
+  }
+
+  rotateCommand(ctx: RotateCommandCtx) {
+    const res = {
+      commandType: 'rotate',
+      speed: {x: 0, y: 0, z: 0}
+    }
+
+    if (ctx.Resource.length === 1) {
+      res.speed.y = parseFloat(ctx.Resource[0].image)
+    } else if (ctx.Resource.length === 2) {
+      res.speed.x = parseFloat(ctx.Resource[0].image)
+      res.speed.y = parseFloat(ctx.Resource[1].image)
+    } else if (ctx.Resource.length === 3) {
+      res.speed.x = parseFloat(ctx.Resource[0].image)
+      res.speed.y = parseFloat(ctx.Resource[1].image)
+      res.speed.z = parseFloat(ctx.Resource[2].image)
+    }
+
+    const args = ctx.moveArgs?.map((arg: CstNode) => this.visit(arg))[0]
     if (args != null) {
       args.forEach((arg: object) => {
         Object.assign(res, arg)
@@ -228,10 +294,108 @@ class ActionVisitor extends BaseActionVisitor {
     return res
   }
 
-  colorParameter(ctx: ColorParameterCtx) {
-    const paramName = ctx.Color[0].image.toLowerCase()
+  solidCommand(ctx: SolidCommandCtx) {
+    const res = {
+      commandType: 'solid',
+      value: this.visit(ctx.boolean)
+    }
+    if (ctx.Resource != null) {
+      Object.assign(res, {
+        targetName: ctx.Resource.map((identToken) => identToken.image)[0]
+      })
+    }
+    return res
+  }
+
+  soundCommand(ctx: SoundCommandCtx) {
+    return {
+      commandType: 'sound',
+      resource: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
+    }
+  }
+
+  teleportCommand(ctx: TeleportCommandCtx) {
+    const res = {
+      commandType: 'teleport'
+    }
+    const resource = ctx.Resource.map((identToken: IToken) => identToken.image)
+    const worldName = resource[0]
+    let [, coordA, coordB, coordC, coordD] = resource
+
+    if (/^[+-\d]/.test(worldName)) {
+      // Relative teleport
+      coordD = coordC
+      coordC = coordB
+      coordB = coordA
+      coordA = worldName
+    } else {
+      Object.assign(res, {worldName})
+      if (coordA == null) {
+        // World name only
+        return res
+      }
+    }
+    visitCoords(res, coordA, coordB, coordC, coordD)
+
+    return res
+  }
+
+  textureCommand(ctx: TextureCommandCtx) {
+    const res = {
+      commandType: 'texture',
+      texture: ctx.Resource.map((identToken) => identToken.image)[0]
+    }
+    const args = ctx.textureArgs?.map((arg) => this.visit(arg))[0]
+    if (args != null) {
+      args.forEach((arg: object) => {
+        Object.assign(res, arg)
+      })
+    }
+    return res
+  }
+
+  urlCommand(ctx: UrlCommandCtx) {
+    return {
+      commandType: 'url',
+      resource: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
+    }
+  }
+
+  visibleCommand(ctx: VisibleCommandCtx) {
+    const res = {
+      commandType: 'visible',
+      value: this.visit(ctx.boolean)
+    }
+    if (ctx.Resource != null) {
+      Object.assign(res, {
+        targetName: ctx.Resource.map((identToken) => identToken.image)[0]
+      })
+    }
+    return res
+  }
+
+  warpCommand(ctx: WarpCommandCtx) {
+    if (ctx.Resource == null || ctx.Resource.length < 2) {
+      return null
+    }
+
+    const res = {
+      commandType: 'warp'
+    }
+    const [coordA, coordB, coordC, coordD] = ctx.Resource.map(
+      (identToken: IToken) => identToken.image
+    )
+    visitCoords(res, coordA, coordB, coordC, coordD)
+
+    return res
+  }
+
+  // Parameters
+
+  angleParameter(ctx: AngleParameterCtx) {
+    const paramName = ctx.Angle[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
-    return {[paramName]: colorStringToRGB(paramValue)}
+    return {[paramName]: parseFloat(paramValue)}
   }
 
   bcolorParameter(ctx: BcolorParameterCtx) {
@@ -240,9 +404,22 @@ class ActionVisitor extends BaseActionVisitor {
     return {[paramName]: colorStringToRGB(paramValue)}
   }
 
-  nameParameter(ctx: NameParameterCtx) {
+  brightnessParameter(ctx: BrightnessParameterCtx) {
+    const paramName = ctx.Brightness[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
-    return {targetName: paramValue}
+    return {[paramName]: parseFloat(paramValue)}
+  }
+
+  colorParameter(ctx: ColorParameterCtx) {
+    const paramName = ctx.Color[0].image.toLowerCase()
+    const paramValue = ctx.Resource[0].image
+    return {[paramName]: colorStringToRGB(paramValue)}
+  }
+
+  fxParameter(ctx: FxParameterCtx) {
+    const paramName = ctx.Fx[0].image.toLowerCase()
+    const paramValue = ctx.Resource[0].image
+    return {[paramName]: paramValue}
   }
 
   maskParameter(ctx: MaskParameterCtx) {
@@ -251,28 +428,9 @@ class ActionVisitor extends BaseActionVisitor {
     return {[paramName]: paramValue}
   }
 
-  timeParameter(ctx: TimeParameterCtx) {
-    const paramName = ctx.Time[0].image.toLowerCase()
+  nameParameter(ctx: NameParameterCtx) {
     const paramValue = ctx.Resource[0].image
-    return {[paramName]: parseFloat(paramValue)}
-  }
-
-  waitParameter(ctx: WaitParameterCtx) {
-    const paramName = ctx.Wait[0].image.toLowerCase()
-    const paramValue = ctx.Resource[0].image
-    return {[paramName]: parseFloat(paramValue)}
-  }
-
-  angleParameter(ctx: AngleParameterCtx) {
-    const paramName = ctx.Angle[0].image.toLowerCase()
-    const paramValue = ctx.Resource[0].image
-    return {[paramName]: parseFloat(paramValue)}
-  }
-
-  brightnessParameter(ctx: BrightnessParameterCtx) {
-    const paramName = ctx.Brightness[0].image.toLowerCase()
-    const paramValue = ctx.Resource[0].image
-    return {[paramName]: parseFloat(paramValue)}
+    return {targetName: paramValue}
   }
 
   pitchParameter(ctx: PitchParameterCtx) {
@@ -299,14 +457,14 @@ class ActionVisitor extends BaseActionVisitor {
     return {[paramName]: paramValue}
   }
 
-  typeParameter(ctx: TypeParameterCtx) {
-    const paramName = ctx.Type[0].image.toLowerCase()
+  timeParameter(ctx: TimeParameterCtx) {
+    const paramName = ctx.Time[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
-    return {[paramName]: paramValue}
+    return {[paramName]: parseFloat(paramValue)}
   }
 
-  fxParameter(ctx: FxParameterCtx) {
-    const paramName = ctx.Fx[0].image.toLowerCase()
+  typeParameter(ctx: TypeParameterCtx) {
+    const paramName = ctx.Type[0].image.toLowerCase()
     const paramValue = ctx.Resource[0].image
     return {[paramName]: paramValue}
   }
@@ -316,6 +474,14 @@ class ActionVisitor extends BaseActionVisitor {
     const paramValue = ctx.Resource[0].image
     return {[paramName]: parseInt(paramValue)}
   }
+
+  waitParameter(ctx: WaitParameterCtx) {
+    const paramName = ctx.Wait[0].image.toLowerCase()
+    const paramValue = ctx.Resource[0].image
+    return {[paramName]: parseFloat(paramValue)}
+  }
+
+  // Command args
 
   coronaArgs(ctx: CoronaArgsCtx) {
     const args = []
@@ -363,17 +529,6 @@ class ActionVisitor extends BaseActionVisitor {
     return args
   }
 
-  pictureArgs(ctx: PictureArgsCtx) {
-    const args = []
-    if (ctx.nameParameter) {
-      args.push(this.visit(ctx.nameParameter))
-    }
-    if (ctx.updateParameter) {
-      args.push(this.visit(ctx.updateParameter))
-    }
-    return args
-  }
-
   mediaArgs(ctx: MediaArgsCtx) {
     const args = []
     if (ctx.radiusParameter) {
@@ -408,6 +563,17 @@ class ActionVisitor extends BaseActionVisitor {
     return args
   }
 
+  pictureArgs(ctx: PictureArgsCtx) {
+    const args = []
+    if (ctx.nameParameter) {
+      args.push(this.visit(ctx.nameParameter))
+    }
+    if (ctx.updateParameter) {
+      args.push(this.visit(ctx.updateParameter))
+    }
+    return args
+  }
+
   signArgs(ctx: SignArgsCtx) {
     const args = []
     if (ctx.colorParameter) {
@@ -436,167 +602,10 @@ class ActionVisitor extends BaseActionVisitor {
     return args
   }
 
-  astartCommand(ctx: AstartCommandCtx) {
-    const res = {
-      commandType: 'astart'
-    }
-    if (ctx.Resource != null) {
-      Object.assign(res, {
-        targetName: ctx.Resource.map((identToken) => identToken.image)[0]
-      })
-    }
-    if (ctx.boolean != null) {
-      Object.assign(res, {
-        loop: this.visit(ctx.boolean)
-      })
-    }
-    return res
-  }
+  // Generic visitors
 
-  astopCommand(ctx: AstopCommandCtx) {
-    const res = {
-      commandType: 'astop'
-    }
-    if (ctx.Resource != null) {
-      Object.assign(res, {
-        targetName: ctx.Resource.map((identToken) => identToken.image)[0]
-      })
-    }
-    return res
-  }
-
-  solidCommand(ctx: SolidCommandCtx) {
-    const res = {
-      commandType: 'solid',
-      value: this.visit(ctx.boolean)
-    }
-    if (ctx.Resource != null) {
-      Object.assign(res, {
-        targetName: ctx.Resource.map((identToken) => identToken.image)[0]
-      })
-    }
-    return res
-  }
-
-  visibleCommand(ctx: VisibleCommandCtx) {
-    const res = {
-      commandType: 'visible',
-      value: this.visit(ctx.boolean)
-    }
-    if (ctx.Resource != null) {
-      Object.assign(res, {
-        targetName: ctx.Resource.map((identToken) => identToken.image)[0]
-      })
-    }
-    return res
-  }
-
-  teleportCommand(ctx: TeleportCommandCtx) {
-    const res = {
-      commandType: 'teleport'
-    }
-    const resource = ctx.Resource.map((identToken: IToken) => identToken.image)
-    const worldName = resource[0]
-    let [, coordA, coordB, coordC, coordD] = resource
-
-    if (/^[+-\d]/.test(worldName)) {
-      // Relative teleport
-      coordD = coordC
-      coordC = coordB
-      coordB = coordA
-      coordA = worldName
-    } else {
-      Object.assign(res, {worldName})
-      if (coordA == null) {
-        // World name only
-        return res
-      }
-    }
-    visitCoords(res, coordA, coordB, coordC, coordD)
-
-    return res
-  }
-
-  warpCommand(ctx: WarpCommandCtx) {
-    if (ctx.Resource == null || ctx.Resource.length < 2) {
-      return null
-    }
-
-    const res = {
-      commandType: 'warp'
-    }
-    const [coordA, coordB, coordC, coordD] = ctx.Resource.map(
-      (identToken: IToken) => identToken.image
-    )
-    visitCoords(res, coordA, coordB, coordC, coordD)
-
-    return res
-  }
-
-  textureCommand(ctx: TextureCommandCtx) {
-    const res = {
-      commandType: 'texture',
-      texture: ctx.Resource.map((identToken) => identToken.image)[0]
-    }
-    const args = ctx.textureArgs?.map((arg) => this.visit(arg))[0]
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
-    }
-    return res
-  }
-
-  moveCommand(ctx: MoveCommandCtx) {
-    const res = {
-      commandType: 'move',
-      distance: {x: 0, y: 0, z: 0}
-    }
-
-    if (ctx.Resource.length === 1) {
-      res.distance.y = parseFloat(ctx.Resource[0].image)
-    } else if (ctx.Resource.length === 2) {
-      res.distance.x = parseFloat(ctx.Resource[0].image)
-      res.distance.y = parseFloat(ctx.Resource[1].image)
-    } else if (ctx.Resource.length === 3) {
-      res.distance.x = parseFloat(ctx.Resource[0].image)
-      res.distance.y = parseFloat(ctx.Resource[1].image)
-      res.distance.z = parseFloat(ctx.Resource[2].image)
-    }
-
-    const args = ctx.moveArgs?.map((arg: CstNode) => this.visit(arg))[0]
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
-    }
-    return res
-  }
-
-  rotateCommand(ctx: RotateCommandCtx) {
-    const res = {
-      commandType: 'rotate',
-      speed: {x: 0, y: 0, z: 0}
-    }
-
-    if (ctx.Resource.length === 1) {
-      res.speed.y = parseFloat(ctx.Resource[0].image)
-    } else if (ctx.Resource.length === 2) {
-      res.speed.x = parseFloat(ctx.Resource[0].image)
-      res.speed.y = parseFloat(ctx.Resource[1].image)
-    } else if (ctx.Resource.length === 3) {
-      res.speed.x = parseFloat(ctx.Resource[0].image)
-      res.speed.y = parseFloat(ctx.Resource[1].image)
-      res.speed.z = parseFloat(ctx.Resource[2].image)
-    }
-
-    const args = ctx.moveArgs?.map((arg: CstNode) => this.visit(arg))[0]
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
-    }
-    return res
+  boolean(ctx: BooleanCtx) {
+    return !!ctx.Enabled
   }
 
   command(ctx: CommandCtx) {

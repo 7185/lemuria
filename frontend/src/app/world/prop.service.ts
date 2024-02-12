@@ -85,7 +85,7 @@ export class PropService {
   private remoteUrl = /.+\..+\/.+/
   private animatedPictures = []
   private archiveApiQueue = new Subject<{
-    item: Group
+    prop: Group
     url: string
     type: string
     volume?: number
@@ -154,249 +154,200 @@ export class PropService {
 
   /**
    * Parses the action string
-   * @param item
+   * @param prop
    */
-  public parseActions(item: Group) {
-    const result = this.actionParser.parse(item.userData.act)
+  public parseActions(prop: Group) {
+    const result = this.actionParser.parse(prop.userData.act)
     for (const trigger of Object.keys(result)) {
-      this.parseAction(item, trigger, result[trigger])
+      this.parseAction(prop, trigger, result[trigger])
     }
   }
 
   /**
    * Called whenever the prop chunk is no longer visible
-   * @param item
+   * @param prop
    */
-  public hideProp(item: Group) {
-    if (item.userData.light != null) {
-      delete item.userData.light
+  public hideProp(prop: Group) {
+    if (prop.userData.light != null) {
+      delete prop.userData.light
     }
-    if (item.userData.name != null) {
-      delete item.userData.name
+    if (prop.userData.name != null) {
+      delete prop.userData.name
     }
   }
 
   /**
    * Called on every prop whenever their chunk becomes visible
-   * @param item
+   * @param prop
    */
-  public showProp(item: Group) {
-    this.triggerAction(item, 'create')
+  public showProp(prop: Group) {
+    this.triggerAction(prop, 'create')
   }
 
   /**
    * Called once a prop is clicked
-   * @param item
+   * @param prop
    */
-  public clickProp(item: Group) {
-    this.triggerAction(item, 'activate')
+  public clickProp(prop: Group) {
+    this.triggerAction(prop, 'activate')
+  }
+
+  /**
+   * Applies command on prop and remote named props
+   * @param prop
+   * @param commandArray
+   * @param callback
+   */
+  private applyCommand(prop: Group, commandArray: any[], callback) {
+    for (const command of commandArray) {
+      if (command.targetName == null) {
+        callback(prop, command)
+        prop.userData.onUpdate()
+      } else {
+        Utils.getObjectsByUserData(
+          prop.parent.parent.parent,
+          'name',
+          command.targetName
+        ).forEach((child) => {
+          callback(child, command)
+          child.userData.onUpdate()
+        })
+      }
+    }
   }
 
   /**
    * Execute commands for the provided trigger
-   * @param item
+   * @param prop
    * @param trigger
    * @returns
    */
   public triggerAction(
-    item: Group,
+    prop: Group,
     trigger: 'activate' | 'adone' | 'bump' | 'create'
   ) {
-    const action = item.userData[trigger]
+    const action = prop.userData[trigger]
     if (action == null) {
       return
     }
     if (action.name != null) {
-      item.userData.name = action.name
+      prop.userData.name = action.name
+    }
+    if (action.solid != null) {
+      this.applyCommand(prop, action.solid, (target: Group, command) => {
+        target.userData.notSolid = !(command.value ?? true)
+      })
     }
     if (action.visible != null) {
-      for (const visible of action.visible) {
-        if (visible.targetName == null) {
-          item.userData.notVisible = !(visible.value ?? true)
-          item.traverse((child: Object3D) => {
-            if (child instanceof Mesh) {
-              child.material.forEach((m: MeshPhongMaterial, i: number) => {
-                // Clone in order to not hide shared materials
-                child.material[i] = m.clone()
-                // Keep the material from the loader (not serializable)
-                child.material[i].userData.rwx.material =
-                  m.userData.rwx.material
-                child.material[i].visible = !item.userData.notVisible
-              })
-            }
-          })
-          item.userData.onUpdate()
-        } else {
-          Utils.getObjectsByUserData(
-            item.parent.parent.parent,
-            'name',
-            visible.targetName
-          ).forEach((prop: Group) => {
-            prop.userData.notVisible = !(visible.value ?? true)
-            prop.traverse((child: Object3D) => {
-              if (child instanceof Mesh) {
-                child.material.forEach((m: MeshPhongMaterial, i: number) => {
-                  // Clone in order to not hide shared materials
-                  child.material[i] = m.clone()
-                  // Keep the material from the loader (not serializable)
-                  child.material[i].userData.rwx.material =
-                    m.userData.rwx.material
-                  child.material[i].visible = !prop.userData.notVisible
-                })
-              }
+      this.applyCommand(prop, action.visible, (target: Group, command) => {
+        target.userData.notVisible = !(command.value ?? true)
+        target.traverse((child: Object3D) => {
+          if (child instanceof Mesh) {
+            child.material.forEach((m: MeshPhongMaterial, i: number) => {
+              // Clone in order to not hide shared materials
+              child.material[i] = m.clone()
+              // Keep the material from the loader (not serializable)
+              child.material[i].userData.rwx.material = m.userData.rwx.material
+              child.material[i].visible = !target.userData.notVisible
             })
-            prop.userData.onUpdate()
-          })
-        }
-      }
+          }
+        })
+      })
     }
     if (action.color != null) {
-      this.applyTexture(item, null, null, action.color)
+      this.applyCommand(prop, action.color, (target: Group, command) => {
+        this.applyTexture(target, null, null, command.color)
+      })
     }
     if (action.texture != null) {
-      item.userData.texturing = this.applyTexture(
-        item,
-        action.texture.texture,
-        action.texture.mask
-      )
+      this.applyCommand(prop, action.texture, (target: Group, command) => {
+        target.userData.texturing = this.applyTexture(
+          target,
+          command.texture,
+          command.mask
+        )
+      })
     }
     if (action.picture != null) {
-      if (item.userData.texturing) {
-        item.userData.texturing.subscribe(() =>
-          this.makePicture(item, action.picture.url)
-        )
-      } else {
-        this.makePicture(item, action.picture.url)
-      }
+      this.applyCommand(prop, action.picture, (target: Group, command) => {
+        if (target.userData.texturing) {
+          target.userData.texturing.subscribe(() =>
+            this.makePicture(target, command.url)
+          )
+        } else {
+          this.makePicture(target, command.url)
+        }
+      })
     }
     if (action.sign != null) {
-      if (item.userData.texturing) {
-        item.userData.texturing.subscribe(() =>
-          this.makeSign(
-            item,
-            action.sign.text,
-            action.sign.color,
-            action.sign.bcolor
+      this.applyCommand(prop, action.sign, (target: Group, command) => {
+        if (target.userData.texturing) {
+          target.userData.texturing.subscribe(() =>
+            this.makeSign(target, command.text, command.color, command.bcolor)
           )
-        )
-      } else {
-        this.makeSign(
-          item,
-          action.sign.text,
-          action.sign.color,
-          action.sign.bcolor
-        )
-      }
+        } else {
+          this.makeSign(target, command.text, command.color, command.bcolor)
+        }
+      })
     }
     if (action.noise != null) {
-      this.makeNoise(item, action.noise.url)
+      this.makeNoise(prop, action.noise.url)
     }
     if (action.sound != null) {
-      item.userData.sound = action.sound.url
+      this.applyCommand(prop, action.sound, (target: Group, command) => {
+        target.userData.sound = command.url
+      })
     }
     if (action.light != null) {
-      for (const light of action.light) {
-        if (light.targetName == null) {
-          item.userData.light = JSON.parse(JSON.stringify(light))
-        } else {
-          Utils.getObjectsByUserData(
-            item.parent.parent.parent,
-            'name',
-            light.targetName
-          ).forEach((prop: Group) => {
-            prop.userData.light = JSON.parse(JSON.stringify(light))
-            prop.userData.onUpdate()
-          })
-        }
-      }
+      this.applyCommand(prop, action.light, (target: Group, command) => {
+        target.userData.light = JSON.parse(JSON.stringify(command))
+      })
     }
     if (action.corona != null) {
       // Should ALWAYS be checked after light
-      for (const corona of action.corona) {
-        if (corona.targetName == null) {
-          item.userData.corona = JSON.parse(JSON.stringify(corona))
-          this.makeCorona(item)
-        } else {
-          Utils.getObjectsByUserData(
-            item.parent.parent.parent,
-            'name',
-            corona.targetName
-          ).forEach((prop: Group) => {
-            prop.userData.corona = JSON.parse(JSON.stringify(corona))
-            this.makeCorona(prop)
-            prop.userData.onUpdate()
-          })
-        }
-      }
+      this.applyCommand(prop, action.corona, (target: Group, command) => {
+        target.userData.corona = JSON.parse(JSON.stringify(command))
+        this.makeCorona(target)
+      })
     }
     if (action.url != null) {
       this.openUrl(action.url.address)
     }
     if (action.move != null) {
-      for (const move of action.move) {
-        if (move.targetName == null) {
-          item.userData.animation = item.userData.animation || {}
-          item.userData.animation.move = JSON.parse(JSON.stringify(move))
-          // Reset on show
-          item.position.copy(
-            new Vector3()
-              .add(item.userData.posOrig)
-              .sub(item.parent.parent.position)
-          )
-        } else {
-          Utils.getObjectsByUserData(
-            item.parent.parent.parent,
-            'name',
-            move.targetName
-          ).forEach((prop: Group) => {
-            prop.userData.animation = prop.userData.animation || {}
-            prop.userData.animation.move = JSON.parse(JSON.stringify(move))
-            prop.position.copy(
-              new Vector3()
-                .add(prop.userData.posOrig)
-                .sub(prop.parent.parent.position)
-            )
-            prop.userData.onUpdate()
-          })
-        }
-      }
+      this.applyCommand(prop, action.move, (target: Group, command) => {
+        target.userData.animation = prop.userData.animation || {}
+        target.userData.animation.move = JSON.parse(JSON.stringify(command))
+        // Reset on show
+        target.position.copy(
+          new Vector3()
+            .add(target.userData.posOrig)
+            .sub(target.parent.parent.position)
+        )
+      })
     }
     if (action.rotate != null) {
-      for (const rotate of action.rotate) {
-        if (rotate.targetName == null) {
-          item.userData.animation = item.userData.animation || {}
-          item.userData.animation.rotate = JSON.parse(JSON.stringify(rotate))
-          // Reset on show
-          item.rotation.copy(item.userData.rotOrig)
-        } else {
-          Utils.getObjectsByUserData(
-            item.parent.parent.parent,
-            'name',
-            rotate.targetName
-          ).forEach((prop: Group) => {
-            prop.userData.animation = prop.userData.animation || {}
-            prop.userData.animation.rotate = JSON.parse(JSON.stringify(rotate))
-            prop.rotation.copy(prop.userData.rotOrig)
-            prop.userData.onUpdate()
-          })
-        }
-      }
+      this.applyCommand(prop, action.rotate, (target: Group, command) => {
+        target.userData.animation = prop.userData.animation || {}
+        target.userData.animation.rotate = JSON.parse(JSON.stringify(command))
+        // Reset on show
+        target.rotation.copy(target.userData.rotOrig)
+      })
     }
   }
 
   /**
    * Parse every action for the given trigger
-   * @param item The prop to check
+   * @param prop The prop to check
    * @param trigger The trigger string (e.g. create)
    * @param commands The parsed object for this trigger
    */
-  private parseAction(item: Group, trigger: string, commands: any) {
-    item.userData[trigger] = {}
+  private parseAction(prop: Group, trigger: string, commands: any) {
+    prop.userData[trigger] = {}
     for (const cmd of commands) {
       switch (cmd.commandType) {
         case 'animate':
-          item.userData[trigger].animate = item.userData[trigger].animate || []
-          item.userData[trigger].animate.push({
+          prop.userData[trigger].animate = prop.userData[trigger].animate || []
+          prop.userData[trigger].animate.push({
             mask: cmd.mask,
             tag: cmd.tag,
             targetName: cmd.targetName === 'me' ? null : cmd.targetName,
@@ -409,52 +360,31 @@ export class PropService {
               Array.from({length: cmd.imageCount}, (_, i) => i + 1)
           })
           break
-        case 'solid':
-          item.userData[trigger].notSolid = !cmd.value
+        case 'astart':
           break
-        case 'name':
-          item.userData[trigger].name = cmd.targetName
+        case 'astop':
           break
-        case 'visible':
-          item.userData[trigger].visible = item.userData[trigger].visible || []
-          item.userData[trigger].visible.push({
-            value: cmd.value,
+        case 'color':
+          prop.userData[trigger].color = prop.userData[trigger].color || []
+          prop.userData[trigger].color.push({
+            color: cmd.color,
             targetName: cmd.targetName
           })
           break
-        case 'color':
-          item.userData[trigger].color = cmd.color
+        case 'corona':
+          prop.userData[trigger].corona = prop.userData[trigger].corona || []
+          prop.userData[trigger].corona.push({
+            texture: cmd.resource,
+            size: cmd.size,
+            targetName: cmd.targetName
+          })
           break
-        case 'texture':
-          item.userData[trigger].texture = {
-            texture:
-              cmd.texture != null && cmd.texture.lastIndexOf('.') !== -1
-                ? cmd.texture.substring(0, cmd.texture.lastIndexOf('.'))
-                : cmd.texture,
-            mask:
-              cmd.mask != null && cmd.mask.lastIndexOf('.') !== -1
-                ? cmd.mask.substring(0, cmd.mask.lastIndexOf('.'))
-                : cmd.mask
-          }
-          break
-        case 'sign':
-          item.userData[trigger].sign = {
-            text: cmd.text,
-            color: cmd.color,
-            bcolor: cmd.bcolor
-          }
-          break
-        case 'picture':
-          item.userData[trigger].picture = {url: cmd.resource}
-          break
-        case 'url':
-          if (['create', 'adone'].indexOf(trigger) === -1) {
-            item.userData[trigger].url = {address: cmd.resource}
-          }
+        case 'examine':
+          prop.userData[trigger].examine = true
           break
         case 'light':
-          item.userData[trigger].light = item.userData[trigger].light || []
-          item.userData[trigger].light.push({
+          prop.userData[trigger].light = prop.userData[trigger].light || []
+          prop.userData[trigger].light.push({
             color: cmd.color
               ? Utils.rgbToHex(cmd.color.r, cmd.color.g, cmd.color.b)
               : 0xffffff,
@@ -464,29 +394,16 @@ export class PropService {
             targetName: cmd.targetName
           })
           break
-        case 'corona':
-          item.userData[trigger].corona = item.userData[trigger].corona || []
-          item.userData[trigger].corona.push({
-            texture: cmd.resource,
-            size: cmd.size,
+        case 'media':
+          prop.userData[trigger].media = prop.userData[trigger].media || []
+          prop.userData[trigger].media.push({
+            url: cmd.url,
             targetName: cmd.targetName
           })
           break
-        case 'noise':
-          item.userData[trigger].noise = {url: cmd.resource}
-          break
-        case 'sound':
-          item.userData[trigger].sound = {url: cmd.resource}
-          break
-        case 'teleport':
-          if (['create', 'adone'].indexOf(trigger) === -1) {
-            item.userData[trigger].teleport = {...cmd.coordinates}
-            item.userData[trigger].teleport.worldName = cmd.worldName ?? null
-          }
-          break
         case 'move':
-          item.userData[trigger].move = item.userData[trigger].move || []
-          item.userData[trigger].move.push({
+          prop.userData[trigger].move = prop.userData[trigger].move || []
+          prop.userData[trigger].move.push({
             distance: cmd.distance,
             time: cmd.time || 1,
             loop: cmd.loop || false,
@@ -498,9 +415,15 @@ export class PropService {
             targetName: cmd.targetName
           })
           break
+        case 'name':
+          prop.userData[trigger].name = cmd.targetName
+          break
+        case 'noise':
+          prop.userData[trigger].noise = {url: cmd.resource}
+          break
         case 'rotate':
-          item.userData[trigger].rotate = item.userData[trigger].rotate || []
-          item.userData[trigger].rotate.push({
+          prop.userData[trigger].rotate = prop.userData[trigger].rotate || []
+          prop.userData[trigger].rotate.push({
             speed: cmd.speed,
             time: cmd.time || null,
             loop: cmd.loop || false,
@@ -512,6 +435,71 @@ export class PropService {
             targetName: cmd.targetName
           })
           break
+        case 'sign':
+          prop.userData[trigger].sign = prop.userData[trigger].sign || []
+          prop.userData[trigger].sign.push({
+            text: cmd.text,
+            color: cmd.color,
+            bcolor: cmd.bcolor,
+            targetName: cmd.targetName
+          })
+          break
+        case 'solid':
+          prop.userData[trigger].solid = prop.userData[trigger].solid || []
+          prop.userData[trigger].solid.push({
+            value: cmd.value,
+            targetName: cmd.targetName
+          })
+          break
+        case 'sound':
+          prop.userData[trigger].sound = prop.userData[trigger].sound || []
+          prop.userData[trigger].sound.push({
+            url: cmd.resource,
+            targetName: cmd.targetName
+          })
+          break
+        case 'picture':
+          prop.userData[trigger].picture = prop.userData[trigger].picture || []
+          prop.userData[trigger].picture.push({
+            url: cmd.resource,
+            targetName: cmd.targetName
+          })
+          break
+        case 'texture':
+          prop.userData[trigger].texture = prop.userData[trigger].texture || []
+          prop.userData[trigger].texture.push({
+            texture:
+              cmd.texture != null && cmd.texture.lastIndexOf('.') !== -1
+                ? cmd.texture.substring(0, cmd.texture.lastIndexOf('.'))
+                : cmd.texture,
+            mask:
+              cmd.mask != null && cmd.mask.lastIndexOf('.') !== -1
+                ? cmd.mask.substring(0, cmd.mask.lastIndexOf('.'))
+                : cmd.mask
+          })
+          break
+        case 'url':
+          if (['create', 'adone'].indexOf(trigger) === -1) {
+            prop.userData[trigger].url = {address: cmd.resource}
+          }
+          break
+
+        case 'teleport':
+          if (['create', 'adone'].indexOf(trigger) === -1) {
+            prop.userData[trigger].teleport = {...cmd.coordinates}
+            prop.userData[trigger].teleport.worldName = cmd.worldName ?? null
+          }
+          break
+        case 'visible':
+          prop.userData[trigger].visible = prop.userData[trigger].visible || []
+          prop.userData[trigger].visible.push({
+            value: cmd.value,
+            targetName: cmd.targetName
+          })
+          break
+        case 'warp':
+          prop.userData[trigger].warp = {...cmd.coordinates}
+          break
         default:
           break
       }
@@ -520,12 +508,12 @@ export class PropService {
 
   /**
    * Try to load a picture to apply
-   * @param item Prop
+   * @param prop Prop
    * @param url Url string from parsed action
    * @param fallbackArchive If true and no picture is found,
    * try to look for an archived version
    */
-  private makePicture(item: Group, url: string, fallbackArchive = true) {
+  private makePicture(prop: Group, url: string, fallbackArchive = true) {
     let remote = ''
     if (this.remoteUrl.test(url)) {
       remote = url
@@ -535,13 +523,13 @@ export class PropService {
     }
     this.textureLoader.load(
       url,
-      (picture) => this.pictureToProp(item, picture),
+      (picture) => this.pictureToProp(prop, picture),
       null,
       () => {
         // Error, usually 404
         if (remote && fallbackArchive && this.settings.get('archivedMedia')) {
           // Send to archive queue
-          this.archiveApiQueue.next({item, url: remote, type: 'picture'})
+          this.archiveApiQueue.next({prop: prop, url: remote, type: 'picture'})
         }
       }
     )
@@ -553,7 +541,7 @@ export class PropService {
    * @returns an observable for the request
    */
   private archivedMedia(data: {
-    item: Group
+    prop: Group
     url: string
     volume?: number
     type: string
@@ -562,7 +550,7 @@ export class PropService {
       .replace('$1', data.url)
       .replace(
         '$2',
-        new Date(data.item.userData.date * 1000)
+        new Date(data.prop.userData.date * 1000)
           .toISOString()
           .substring(0, 10)
           .replaceAll('-', '')
@@ -573,7 +561,7 @@ export class PropService {
           tap((res: {url?: string}) => {
             if (res?.url != null) {
               // No fallback this time since we're already loading an archived picture
-              this.makePicture(data.item, res.url, false)
+              this.makePicture(data.prop, res.url, false)
             }
           })
         )
@@ -582,7 +570,7 @@ export class PropService {
           tap((res: {url?: string}) => {
             if (res?.url != null) {
               // No fallback this time since we're already loading an archived noise
-              this.makeNoise(data.item, res.url, false)
+              this.makeNoise(data.prop, res.url, false)
             }
           })
         )
@@ -593,7 +581,7 @@ export class PropService {
               // We reset the bgUrl in order to treat the archive like a new sound
               this.audioSvc.bgUrl = ''
               // No fallback this time since we're already loading an archived sound
-              this.makeSound(data.item, res.url, data.volume, false)
+              this.makeSound(data.prop, res.url, data.volume, false)
             }
           })
         )
@@ -604,22 +592,22 @@ export class PropService {
 
   /**
    * Applies a picture texture to a prop
-   * @param item Prop
+   * @param prop Prop
    * @param picture Image
    */
-  private pictureToProp(item: Group, picture: Texture) {
-    if (!item.userData.taggedMaterials[PICTURE_TAG]) {
+  private pictureToProp(prop: Group, picture: Texture) {
+    if (!prop.userData.taggedMaterials[PICTURE_TAG]) {
       return
     }
 
     picture.colorSpace = SRGBColorSpace
     picture.wrapS = RepeatWrapping
     picture.wrapT = RepeatWrapping
-    item.traverse((child: Object3D) => {
+    prop.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         const newMaterials = []
         newMaterials.push(...child.material)
-        for (const i of item.userData.taggedMaterials[PICTURE_TAG]) {
+        for (const i of prop.userData.taggedMaterials[PICTURE_TAG]) {
           if (child.material[i].userData.rwx.material != null) {
             newMaterials[i] = child.material[i].clone()
             // Rebuild userData like the loader
@@ -661,17 +649,17 @@ export class PropService {
   }
 
   private makeSign(
-    item: Group,
+    prop: Group,
     text: string,
     color: {r: number; g: number; b: number},
     bcolor: {r: number; g: number; b: number}
   ) {
-    if (!item.userData.taggedMaterials[SIGN_TAG]) {
+    if (!prop.userData.taggedMaterials[SIGN_TAG]) {
       return
     }
 
     if (text == null) {
-      text = item.userData.desc ?? ''
+      text = prop.userData.desc ?? ''
     }
     if (color == null) {
       color = {r: 255, g: 255, b: 255}
@@ -680,11 +668,11 @@ export class PropService {
       bcolor = {r: 0, g: 0, b: 255}
     }
 
-    item.traverse((child: Object3D) => {
+    prop.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         const newMaterials = []
         newMaterials.push(...child.material)
-        for (const i of item.userData.taggedMaterials[SIGN_TAG]) {
+        for (const i of prop.userData.taggedMaterials[SIGN_TAG]) {
           if (child.material[i].userData.rwx.material != null) {
             newMaterials[i] = child.material[i].clone()
             // Rebuild userData like the loader
@@ -719,13 +707,13 @@ export class PropService {
   }
 
   private applyTexture(
-    item: Group,
+    prop: Group,
     textureName: string = null,
     maskName: string = null,
     color: {r: number; g: number; b: number} = null
   ): Observable<unknown> {
     const promises: Observable<unknown>[] = []
-    item.traverse((child: Object3D) => {
+    prop.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         const newMaterials = []
         child.material.forEach((m: MeshPhongMaterial) => {
@@ -769,20 +757,20 @@ export class PropService {
     return forkJoin(promises)
   }
 
-  private makeCorona(item: Group) {
+  private makeCorona(prop: Group) {
     // Create only once
     if (
-      item.userData.corona.texture == null ||
-      item.userData.coronaObj != null
+      prop.userData.corona.texture == null ||
+      prop.userData.coronaObj != null
     ) {
       return
     }
 
     const textureUrl = `${this.resPath()}/${
-      item.userData.corona.texture
-    }${item.userData.corona.texture.endsWith('.jpg') ? '' : '.jpg'}`
-    const size = item.userData.corona?.size / 100 || 1
-    const color = item.userData.light?.color ?? 0xffffff
+      prop.userData.corona.texture
+    }${prop.userData.corona.texture.endsWith('.jpg') ? '' : '.jpg'}`
+    const size = prop.userData.corona?.size / 100 || 1
+    const color = prop.userData.light?.color ?? 0xffffff
     this.textureLoader.load(textureUrl, (texture) => {
       texture.colorSpace = SRGBColorSpace
       const corona = new Sprite(
@@ -799,16 +787,16 @@ export class PropService {
       corona.visible = false
       corona.scale.set(size, size, size)
       corona.position.set(
-        item.userData.boxCenter.x,
-        item.userData.boxCenter.y,
-        item.userData.boxCenter.z
+        prop.userData.boxCenter.x,
+        prop.userData.boxCenter.y,
+        prop.userData.boxCenter.z
       )
-      item.userData.coronaObj = corona
-      item.add(corona)
+      prop.userData.coronaObj = corona
+      prop.add(corona)
     })
   }
 
-  private makeNoise(item: Group, url: string, fallbackArchive = true) {
+  private makeNoise(prop: Group, url: string, fallbackArchive = true) {
     let remote = ''
     if (this.remoteUrl.test(url)) {
       remote = url
@@ -824,19 +812,19 @@ export class PropService {
         // Error, usually 404
         if (remote && fallbackArchive && this.settings.get('archivedMedia')) {
           // Send to archive queue
-          this.archiveApiQueue.next({item, url: remote, type: 'noise'})
+          this.archiveApiQueue.next({prop, url: remote, type: 'noise'})
         }
       }
     )
   }
 
   public makeSound(
-    item: Group,
+    prop: Group,
     url: string,
     volume: number,
     fallbackArchive = true
   ) {
-    if (this.audioSvc.bgUrl === item.userData.sound) {
+    if (this.audioSvc.bgUrl === prop.userData.sound) {
       // Sound didn't change, don't load it again
       this.audioSvc.setSoundVolume(volume)
       return
@@ -849,7 +837,7 @@ export class PropService {
       url = `${this.audioPath()}/${url}`
     }
     // This sound might not be working, but we still store it to keep track of it
-    this.audioSvc.bgUrl = item.userData.sound
+    this.audioSvc.bgUrl = prop.userData.sound
     this.audioLoader.load(
       url,
       (sound) => this.audioSvc.playSound(sound, url, volume),
@@ -858,7 +846,7 @@ export class PropService {
         // Error, usually 404
         if (remote && fallbackArchive && this.settings.get('archivedMedia')) {
           // Send to archive queue
-          this.archiveApiQueue.next({item, url: remote, volume, type: 'sound'})
+          this.archiveApiQueue.next({prop, url: remote, volume, type: 'sound'})
         }
       }
     )
@@ -930,12 +918,12 @@ export class PropService {
     })
   }
 
-  public loadProp(name: string, basic = false): Observable<Group> {
-    return this.loadObject(name, this.objects, basic ? 'basic' : 'prop')
+  public loadModel(name: string, basic = false): Observable<Group> {
+    return this.loadRwxObject(name, this.objects, basic ? 'basic' : 'prop')
   }
 
   public loadAvatar(name: string): Observable<Group> {
-    return this.loadObject(name, this.avatars, 'avatar')
+    return this.loadRwxObject(name, this.avatars, 'avatar')
   }
 
   public cleanCache() {
@@ -965,7 +953,7 @@ export class PropService {
    * @param loaderType Type of the loader
    * @returns
    */
-  private loadObject(
+  private loadRwxObject(
     name: string,
     objectCache: Map<string, Observable<Group>>,
     loaderType = 'basic'

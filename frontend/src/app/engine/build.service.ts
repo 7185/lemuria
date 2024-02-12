@@ -12,7 +12,6 @@ import {
   Vector3
 } from 'three'
 import type {Object3D, Material, Mesh} from 'three'
-import {PlayerCollider} from './player-collider'
 import type {PropAct} from '../world/prop.service'
 import {InputSystemService} from './inputsystem.service'
 import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils'
@@ -40,7 +39,7 @@ export class BuildService {
   private propSelectionBox: LineSegments | null = null
   private inputSysSvc = inject(InputSystemService)
 
-  public selectProp(item: Group, buildNode: Group) {
+  public selectProp(prop: Group, buildNode: Group) {
     if (this.cellSelection != null) {
       this.deselectCell(buildNode)
     }
@@ -48,19 +47,19 @@ export class BuildService {
       this.deselectProp(buildNode)
     }
     this.buildMode = true
-    this.selectedProp = item
+    this.selectedProp = prop
     this.selectedPropSignal.set({
-      name: item.name,
-      desc: item.userData.desc,
-      act: item.userData.act,
-      date: item.userData.date
+      name: prop.name,
+      desc: prop.userData.desc,
+      act: prop.userData.act,
+      date: prop.userData.date
     })
-    console.log(item)
+    console.log(prop)
 
     const geometry = new BoxGeometry(
-      item.userData.box.x,
-      item.userData.box.y,
-      item.userData.box.z
+      prop.userData.box.x,
+      prop.userData.box.y,
+      prop.userData.box.z
     )
     const edges = new EdgesGeometry(geometry)
     this.propSelection = new Group()
@@ -81,7 +80,7 @@ export class BuildService {
     if (this.propSelectionBox == null) {
       return
     }
-    PlayerCollider.updateObjectBVH(this.selectedProp)
+    this.selectedProp.parent.userData.bvhUpdate.next()
     this.buildMode = false
     this.selectedProp = null
     this.selectedPropSignal.set({})

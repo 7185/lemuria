@@ -35,7 +35,6 @@ import type {AvatarAnimationPlayer} from '../animation'
 import type {PressedKey} from './inputsystem.service'
 import {InputSystemService} from './inputsystem.service'
 import {environment} from '../../environments/environment'
-import {PlayerCollider} from './player-collider'
 import {DEG, Utils} from '../utils'
 import {Player} from './player'
 import {
@@ -271,8 +270,8 @@ export class EngineService {
   public clearObjects() {
     this.buildSvc.deselectProp(this.buildNode)
     // Children is a dynamic iterable, we need a copy to get all of them
-    for (const item of [...this.objectsNode.children]) {
-      this.removeObject(item as Group)
+    for (const prop of [...this.objectsNode.children]) {
+      this.removeObject(prop as Group)
     }
     this.sprites.clear()
     this.animatedObjects.clear()
@@ -285,8 +284,8 @@ export class EngineService {
 
   public clearScene() {
     this.buildSvc.deselectProp(this.buildNode)
-    for (const item of [...this.worldNode.children]) {
-      this.removeWorldObject(item as Group)
+    for (const prop of [...this.worldNode.children]) {
+      this.removeWorldObject(prop as Group)
     }
     this.scene.traverse((child: Object3D) => {
       this.disposeGeometry(child as Group)
@@ -305,11 +304,11 @@ export class EngineService {
       return
     }
 
-    for (const item of this.worldNode.children.filter(
+    for (const prop of this.worldNode.children.filter(
       (i) => i.name === 'boundingBox'
     )) {
-      this.disposeMaterial(item as Group)
-      this.worldNode.remove(item)
+      this.disposeMaterial(prop as Group)
+      this.worldNode.remove(prop)
     }
     this.player.createBoundingBox(boxHeight)
     this.worldNode.add(this.player.colliderBox)
@@ -461,9 +460,10 @@ export class EngineService {
 
     const chunk = group.parent as Group
     chunk.remove(group)
-
-    // Regenerate boundsTree for this LOD
-    PlayerCollider.updateChunkBVH(chunk)
+    if (chunk.userData.bvhUpdate) {
+      // Regenerate boundsTree
+      chunk.userData.bvhUpdate.next()
+    }
   }
 
   public removeLight(light: PointLight) {
@@ -587,17 +587,17 @@ export class EngineService {
     timer(0, 100).subscribe(() => {
       this.mouseIdle++
       document.body.style.cursor = 'default'
-      const item = this.pointedItem().obj
-      if (item?.userData?.activate != null) {
+      const prop = this.pointedProp().obj
+      if (prop?.userData?.activate != null) {
         document.body.style.cursor = 'pointer'
       }
       if (this.mouseIdle >= 10) {
-        if (item !== this.hoveredObject) {
+        if (prop !== this.hoveredObject) {
           this.labelDesc.style.display = 'none'
-          this.hoveredObject = item
-          if (item?.userData?.desc) {
+          this.hoveredObject = prop
+          if (prop?.userData?.desc) {
             this.labelDesc.style.display = 'block'
-            this.labelDesc.innerHTML = item.userData.desc.replace(
+            this.labelDesc.innerHTML = prop.userData.desc.replace(
               /[\u0000-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u00FF]/g,
               (c: string) => '&#' + `000${c.charCodeAt(0)}`.slice(-4) + ';'
             )
@@ -689,6 +689,10 @@ export class EngineService {
     if (group.userData.sound != null) {
       this.sonicObjects.add(group)
     }
+    if (group.userData.notSolid === true) {
+      // Regenerate boundsTree
+      group.parent.userData.bvhUpdate.next()
+    }
   }
 
   /**
@@ -762,7 +766,7 @@ export class EngineService {
 
     if (!this.buildSvc.buildMode) {
       this.moveCamera()
-      this.animateItems()
+      this.animateProps()
       this.updatePointLights()
       this.updateSound()
     }
@@ -786,7 +790,7 @@ export class EngineService {
     this.labelRenderer?.setSize(width, height)
   }
 
-  private pointedItem() {
+  private pointedProp() {
     this.raycaster.setFromCamera(this.mouse, this.activeCamera)
     const intersects = this.raycaster.intersectObjects(
       this.objectsNode.children.concat(this.terrain ?? []),
@@ -819,8 +823,8 @@ export class EngineService {
       // Left click to exit buildMode, do nothing else
       return
     }
-    const item = this.pointedItem().obj
-    const activate = item?.userData?.activate
+    const prop = this.pointedProp().obj
+    const activate = prop?.userData?.activate
     if (activate == null) {
       return
     }
@@ -833,15 +837,15 @@ export class EngineService {
       )
     }
 
-    item.userData.onClick(() => {
+    prop.userData.onClick(() => {
       // Needed since the prop's state might have just changed
-      this.handleShownProp(item)
+      this.handleShownProp(prop)
     })
   }
 
   private rightClick(event: MouseEvent) {
     event.preventDefault()
-    const {obj, faceIndex} = this.pointedItem()
+    const {obj, faceIndex} = this.pointedProp()
     if (obj == null) {
       return
     }
@@ -1092,11 +1096,11 @@ export class EngineService {
     })
   }
 
-  private animateItems() {
-    for (const item of this.animatedObjects) {
-      this.propAnimSvc.moveItem(item, this.deltaSinceLastFrame)
-      this.propAnimSvc.rotateItem(item, this.deltaSinceLastFrame)
-      item.updateMatrix()
+  private animateProps() {
+    for (const prop of this.animatedObjects) {
+      this.propAnimSvc.moveProp(prop, this.deltaSinceLastFrame)
+      this.propAnimSvc.rotateProp(prop, this.deltaSinceLastFrame)
+      prop.updateMatrix()
     }
   }
 
@@ -1153,9 +1157,9 @@ export class EngineService {
   }
 
   private rotateSprites() {
-    for (const item of this.sprites) {
-      item.rotation.set(0, this.player.rotation.y, 0)
-      item.updateMatrix()
+    for (const prop of this.sprites) {
+      prop.rotation.set(0, this.player.rotation.y, 0)
+      prop.updateMatrix()
     }
   }
 

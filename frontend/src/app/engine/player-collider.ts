@@ -1,5 +1,5 @@
 import {Vector3, Box3, Ray} from 'three'
-import type {Group, Mesh, Object3D, Triangle} from 'three'
+import type {Group, Mesh, Triangle} from 'three'
 import {flattenGroup} from 'three-rwx-loader'
 import {MeshBVH, MeshBVHHelper} from 'three-mesh-bvh'
 import type {MeshBVHOptions} from 'three-mesh-bvh'
@@ -57,16 +57,11 @@ export class PlayerCollider {
     this.translate(this.currentPos)
   }
 
-  public static updateObjectBVH(object: Object3D) {
-    // Regenerate boundsTree for associated LOD
-    this.updateChunkBVH(object.parent as Group)
-  }
-
   public static updateChunkBVH(chunk: Group) {
     // Regenerate boundsTree for associated LOD
     const bvhMesh = flattenGroup(
       chunk,
-      (mesh: Mesh) => mesh.userData?.create?.notSolid !== true
+      (mesh: Mesh) => mesh.userData?.notSolid !== true
     )
 
     // If the mesh is empty (no faces): we don't need a bounds tree

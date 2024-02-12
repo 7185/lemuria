@@ -253,6 +253,8 @@ export class ActionParser extends CstParser {
     this.performSelfAnalysis()
   }
 
+  // Commands
+
   public animateCommand = this.RULE('animateCommand', () => {
     this.CONSUME(Animate)
     this.OPTION(() => this.SUBRULE(this.tagParameter))
@@ -267,24 +269,36 @@ export class ActionParser extends CstParser {
     })
   })
 
+  public astartCommand = this.RULE('astartCommand', () => {
+    this.CONSUME(Astart)
+    this.OPTION(() => this.CONSUME(Resource))
+    this.OPTION1(() => this.SUBRULE(this.boolean))
+  })
+
+  public astopCommand = this.RULE('astopCommand', () => {
+    this.CONSUME(Astop)
+    this.OPTION(() => this.CONSUME(Resource))
+  })
+
   public colorCommand = this.RULE('colorCommand', () => {
     this.CONSUME(Color)
     this.CONSUME(Resource)
     this.OPTION(() => this.SUBRULE(this.nameParameter))
   })
 
+  public coronaCommand = this.RULE('coronaCommand', () => {
+    this.CONSUME(Corona)
+    this.CONSUME(Resource)
+    this.OPTION(() => this.SUBRULE(this.coronaArgs))
+  })
+
   public examineCommand = this.RULE('examineCommand', () => {
     this.CONSUME(Examine)
   })
 
-  public signCommand = this.RULE('signCommand', () => {
-    this.CONSUME(Sign)
-    this.MANY({
-      GATE: () =>
-        ['Name', 'Color', 'Bcolor'].indexOf(this.LA(1).tokenType.name) === -1,
-      DEF: () => this.CONSUME(Resource)
-    })
-    this.OPTION1(() => this.SUBRULE(this.signArgs))
+  public lightCommand = this.RULE('lightCommand', () => {
+    this.CONSUME(Light)
+    this.OPTION(() => this.SUBRULE(this.lightArgs))
   })
 
   public mediaCommand = this.RULE('mediaCommand', () => {
@@ -302,6 +316,16 @@ export class ActionParser extends CstParser {
     this.OPTION(() => this.SUBRULE(this.moveArgs))
   })
 
+  public nameCommand = this.RULE('nameCommand', () => {
+    this.CONSUME(Name)
+    this.CONSUME(Resource)
+  })
+
+  public noiseCommand = this.RULE('noiseCommand', () => {
+    this.CONSUME(Noise)
+    this.CONSUME(Resource)
+  })
+
   public rotateCommand = this.RULE('rotateCommand', () => {
     this.CONSUME(Rotate)
     this.AT_LEAST_ONE({
@@ -311,25 +335,24 @@ export class ActionParser extends CstParser {
     this.OPTION(() => this.SUBRULE(this.moveArgs))
   })
 
-  public nameCommand = this.RULE('nameCommand', () => {
-    this.CONSUME(Name)
-    this.CONSUME(Resource)
+  public signCommand = this.RULE('signCommand', () => {
+    this.CONSUME(Sign)
+    this.MANY({
+      GATE: () =>
+        ['Name', 'Color', 'Bcolor'].indexOf(this.LA(1).tokenType.name) === -1,
+      DEF: () => this.CONSUME(Resource)
+    })
+    this.OPTION1(() => this.SUBRULE(this.signArgs))
   })
 
-  public lightCommand = this.RULE('lightCommand', () => {
-    this.CONSUME(Light)
-    this.OPTION(() => this.SUBRULE(this.lightArgs))
-  })
-
-  public coronaCommand = this.RULE('coronaCommand', () => {
-    this.CONSUME(Corona)
-    this.CONSUME(Resource)
-    this.OPTION(() => this.SUBRULE(this.coronaArgs))
-  })
-
-  public noiseCommand = this.RULE('noiseCommand', () => {
-    this.CONSUME(Noise)
-    this.CONSUME(Resource)
+  public solidCommand = this.RULE('solidCommand', () => {
+    this.CONSUME(Solid)
+    this.OPTION({
+      GATE: () =>
+        ['Enabled', 'Disabled'].indexOf(this.LA(2).tokenType.name) > -1,
+      DEF: () => this.CONSUME(Resource)
+    })
+    this.SUBRULE(this.boolean)
   })
 
   public soundCommand = this.RULE('soundCommand', () => {
@@ -344,25 +367,22 @@ export class ActionParser extends CstParser {
     this.OPTION(() => this.SUBRULE(this.pictureArgs))
   })
 
-  public astartCommand = this.RULE('astartCommand', () => {
-    this.CONSUME(Astart)
-    this.OPTION(() => this.CONSUME(Resource))
-    this.OPTION1(() => this.SUBRULE(this.boolean))
-  })
-
-  public astopCommand = this.RULE('astopCommand', () => {
-    this.CONSUME(Astop)
-    this.OPTION(() => this.CONSUME(Resource))
-  })
-
-  public solidCommand = this.RULE('solidCommand', () => {
-    this.CONSUME(Solid)
-    this.OPTION({
-      GATE: () =>
-        ['Enabled', 'Disabled'].indexOf(this.LA(2).tokenType.name) > -1,
-      DEF: () => this.CONSUME(Resource)
+  public teleportCommand = this.RULE('teleportCommand', () => {
+    this.CONSUME(Teleport)
+    this.AT_LEAST_ONE(() => {
+      this.CONSUME(Resource)
     })
-    this.SUBRULE(this.boolean)
+  })
+
+  public textureCommand = this.RULE('textureCommand', () => {
+    this.CONSUME(Texture)
+    this.CONSUME(Resource)
+    this.OPTION(() => this.SUBRULE(this.textureArgs))
+  })
+
+  public urlCommand = this.RULE('urlCommand', () => {
+    this.CONSUME(Url)
+    this.CONSUME(Resource)
   })
 
   public visibleCommand = this.RULE('visibleCommand', () => {
@@ -375,18 +395,6 @@ export class ActionParser extends CstParser {
     this.SUBRULE(this.boolean)
   })
 
-  public teleportCommand = this.RULE('teleportCommand', () => {
-    this.CONSUME(Teleport)
-    this.AT_LEAST_ONE(() => {
-      this.CONSUME(Resource)
-    })
-  })
-
-  public urlCommand = this.RULE('urlCommand', () => {
-    this.CONSUME(Url)
-    this.CONSUME(Resource)
-  })
-
   public warpCommand = this.RULE('warpCommand', () => {
     this.CONSUME(Warp)
     this.AT_LEAST_ONE(() => {
@@ -394,11 +402,7 @@ export class ActionParser extends CstParser {
     })
   })
 
-  public textureCommand = this.RULE('textureCommand', () => {
-    this.CONSUME(Texture)
-    this.CONSUME(Resource)
-    this.OPTION(() => this.SUBRULE(this.textureArgs))
-  })
+  // Parameters
 
   public angleParameter = this.RULE('angleParameter', () => {
     this.CONSUME(Angle)
@@ -406,14 +410,8 @@ export class ActionParser extends CstParser {
     this.CONSUME(Resource)
   })
 
-  public pitchParameter = this.RULE('pitchParameter', () => {
-    this.CONSUME(Pitch)
-    this.CONSUME(Equals)
-    this.CONSUME(Resource)
-  })
-
-  public fxParameter = this.RULE('fxParameter', () => {
-    this.CONSUME(Fx)
+  public bcolorParameter = this.RULE('bcolorParameter', () => {
+    this.CONSUME(Bcolor)
     this.CONSUME(Equals)
     this.CONSUME(Resource)
   })
@@ -430,8 +428,14 @@ export class ActionParser extends CstParser {
     this.CONSUME(Resource)
   })
 
-  public bcolorParameter = this.RULE('bcolorParameter', () => {
-    this.CONSUME(Bcolor)
+  public fxParameter = this.RULE('fxParameter', () => {
+    this.CONSUME(Fx)
+    this.CONSUME(Equals)
+    this.CONSUME(Resource)
+  })
+
+  public maskParameter = this.RULE('maskParameter', () => {
+    this.CONSUME(Mask)
     this.CONSUME(Equals)
     this.CONSUME(Resource)
   })
@@ -442,8 +446,8 @@ export class ActionParser extends CstParser {
     this.CONSUME(Resource)
   })
 
-  public maskParameter = this.RULE('maskParameter', () => {
-    this.CONSUME(Mask)
+  public pitchParameter = this.RULE('pitchParameter', () => {
+    this.CONSUME(Pitch)
     this.CONSUME(Equals)
     this.CONSUME(Resource)
   })
@@ -490,6 +494,8 @@ export class ActionParser extends CstParser {
     this.CONSUME(Resource)
   })
 
+  // Command args
+
   public coronaArgs = this.RULE('coronaArgs', () => {
     const args: CstNode[] = []
     this.MANY(() => {
@@ -497,20 +503,6 @@ export class ActionParser extends CstParser {
         {ALT: () => this.SUBRULE(this.maskParameter)},
         {ALT: () => this.SUBRULE(this.nameParameter)},
         {ALT: () => this.SUBRULE(this.sizeParameter)}
-      ])
-      if (arg) {
-        args.push(arg)
-      }
-    })
-    return args
-  })
-
-  public mediaArgs = this.RULE('mediaArgs', () => {
-    const args: CstNode[] = []
-    this.MANY(() => {
-      const arg = this.OR([
-        {ALT: () => this.SUBRULE(this.radiusParameter)},
-        {ALT: () => this.SUBRULE(this.nameParameter)}
       ])
       if (arg) {
         args.push(arg)
@@ -532,6 +524,20 @@ export class ActionParser extends CstParser {
         {ALT: () => this.SUBRULE(this.radiusParameter)},
         {ALT: () => this.SUBRULE(this.timeParameter)},
         {ALT: () => this.SUBRULE(this.typeParameter)}
+      ])
+      if (arg) {
+        args.push(arg)
+      }
+    })
+    return args
+  })
+
+  public mediaArgs = this.RULE('mediaArgs', () => {
+    const args: CstNode[] = []
+    this.MANY(() => {
+      const arg = this.OR([
+        {ALT: () => this.SUBRULE(this.radiusParameter)},
+        {ALT: () => this.SUBRULE(this.nameParameter)}
       ])
       if (arg) {
         args.push(arg)
@@ -601,6 +607,8 @@ export class ActionParser extends CstParser {
     })
     return args
   })
+
+  // Generic rules
 
   public boolean = this.RULE('boolean', () => {
     this.OR([

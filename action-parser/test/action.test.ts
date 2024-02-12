@@ -589,8 +589,7 @@ test('complex example', () => {
       {
         commandType: 'media',
         radius: 1000,
-        resource:
-          'http://127.0.0.1/music/spam/rickroll/Never_gonna_give_you_up.mp3',
+        url: 'http://127.0.0.1/music/spam/rickroll/Never_gonna_give_you_up.mp3',
         targetName: 'Mplayer'
       }
     ]

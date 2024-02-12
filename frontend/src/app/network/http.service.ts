@@ -39,15 +39,15 @@ export class HttpService extends HttpClient {
     return c ? c.pop() : ''
   }
 
-  isLogged(): boolean {
+  public isLogged(): boolean {
     return !this.hasExpired()
   }
 
-  setLogged(logged: User): void {
+  public setLogged(logged: User): void {
     this.userLogged.next(logged)
   }
 
-  getLogged(): Observable<User> {
+  public getLogged(): Observable<User> {
     if (this.userLogged.value.id == null) {
       this.session().subscribe()
     }
@@ -91,8 +91,7 @@ export class HttpService extends HttpClient {
       implicit: Map<string, string>
       explicit: Map<string, string>
     }[] = []
-    let readImp = false
-    let readExp = false
+    let [readImp, readExp] = [false, false]
     return this.get(`${path}/avatars/avatars.dat`, {responseType: 'text'}).pipe(
       map((a: string) => {
         a.split('\n')

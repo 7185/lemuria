@@ -1,9 +1,6 @@
 import {CstNode, IToken} from 'chevrotain'
 
-export interface BooleanCtx {
-  Enabled: IToken[]
-  Disabled: IToken[]
-}
+// Commands
 
 export interface AnimateCommandCtx {
   Resource: IToken[]
@@ -12,13 +9,27 @@ export interface AnimateCommandCtx {
   tagParameter?: CstNode[]
 }
 
+export interface AstartCommandCtx {
+  Resource?: IToken[]
+  boolean: CstNode[]
+}
+
+export interface AstopCommandCtx {
+  Resource?: IToken[]
+}
+
 export interface ColorCommandCtx {
   Resource: IToken[]
   nameParameter?: CstNode[]
 }
 
-export interface NameCommandCtx {
+export interface CoronaCommandCtx {
   Resource: IToken[]
+  coronaArgs?: CstNode[]
+}
+
+export interface LightCommandCtx {
+  lightArgs?: CstNode[]
 }
 
 export interface MediaCommandCtx {
@@ -29,6 +40,14 @@ export interface MediaCommandCtx {
 export interface MoveCommandCtx {
   Resource: IToken[]
   moveArgs?: CstNode[]
+}
+
+export interface NameCommandCtx {
+  Resource: IToken[]
+}
+
+export interface NoiseCommandCtx {
+  Resource: IToken[]
 }
 
 export interface PictureCommandCtx {
@@ -46,52 +65,25 @@ export interface SignCommandCtx {
   signArgs?: CstNode[]
 }
 
-export interface TextureCommandCtx {
+export interface SolidCommandCtx {
+  Resource?: IToken[]
+  boolean: CstNode[]
+}
+export interface SoundCommandCtx {
   Resource: IToken[]
-  textureArgs?: CstNode[]
 }
 
 export interface TeleportCommandCtx {
   Resource: IToken[]
 }
 
+export interface TextureCommandCtx {
+  Resource: IToken[]
+  textureArgs?: CstNode[]
+}
+
 export interface UrlCommandCtx {
   Resource: IToken[]
-}
-
-export interface WarpCommandCtx {
-  Resource: IToken[]
-}
-
-export interface LightCommandCtx {
-  lightArgs?: CstNode[]
-}
-
-export interface CoronaCommandCtx {
-  Resource: IToken[]
-  coronaArgs?: CstNode[]
-}
-
-export interface NoiseCommandCtx {
-  Resource: IToken[]
-}
-
-export interface SoundCommandCtx {
-  Resource: IToken[]
-}
-
-export interface AstartCommandCtx {
-  Resource?: IToken[]
-  boolean: CstNode[]
-}
-
-export interface AstopCommandCtx {
-  Resource?: IToken[]
-}
-
-export interface SolidCommandCtx {
-  Resource?: IToken[]
-  boolean: CstNode[]
 }
 
 export interface VisibleCommandCtx {
@@ -99,68 +91,14 @@ export interface VisibleCommandCtx {
   boolean: CstNode[]
 }
 
-export interface CommandCtx {
-  animateCommand: CstNode[]
-  astartCommand: CstNode[]
-  astopCommand: CstNode[]
-  colorCommand: CstNode[]
-  coronaCommand: CstNode[]
-  examineCommand: CstNode[]
-  lightCommand: CstNode[]
-  mediaCommand: CstNode[]
-  moveCommand: CstNode[]
-  nameCommand: CstNode[]
-  noiseCommand: CstNode[]
-  pictureCommand: CstNode[]
-  rotateCommand: CstNode[]
-  signCommand: CstNode[]
-  solidCommand: CstNode[]
-  soundCommand: CstNode[]
-  teleportCommand: CstNode[]
-  textureCommand: CstNode[]
-  urlCommand: CstNode[]
-  visibleCommand: CstNode[]
-  warpCommand: CstNode[]
+export interface WarpCommandCtx {
+  Resource: IToken[]
 }
 
-export interface TriggerCtx {
-  Create: IToken[]
-  Activate: IToken[]
-  Bump: IToken[]
-  Adone: IToken[]
-}
-
-export interface ActionCtx {
-  trigger: CstNode[]
-  command: CstNode[]
-}
-
-export interface ActionsCtx {
-  action: CstNode[]
-}
+// Parameters
 
 export interface AngleParameterCtx {
   Angle: IToken[]
-  Resource: IToken[]
-}
-
-export interface BrightnessParameterCtx {
-  Brightness: IToken[]
-  Resource: IToken[]
-}
-
-export interface PitchParameterCtx {
-  Pitch: IToken[]
-  Resource: IToken[]
-}
-
-export interface FxParameterCtx {
-  Fx: IToken[]
-  Resource: IToken[]
-}
-
-export interface ColorParameterCtx {
-  Color: IToken[]
   Resource: IToken[]
 }
 
@@ -169,13 +107,33 @@ export interface BcolorParameterCtx {
   Resource: IToken[]
 }
 
-export interface NameParameterCtx {
-  Name: IToken[]
+export interface BrightnessParameterCtx {
+  Brightness: IToken[]
+  Resource: IToken[]
+}
+
+export interface ColorParameterCtx {
+  Color: IToken[]
+  Resource: IToken[]
+}
+
+export interface FxParameterCtx {
+  Fx: IToken[]
   Resource: IToken[]
 }
 
 export interface MaskParameterCtx {
   Mask: IToken[]
+  Resource: IToken[]
+}
+
+export interface NameParameterCtx {
+  Name: IToken[]
+  Resource: IToken[]
+}
+
+export interface PitchParameterCtx {
+  Pitch: IToken[]
   Resource: IToken[]
 }
 
@@ -213,6 +171,8 @@ export interface WaitParameterCtx {
   Wait: IToken[]
   Resource: IToken[]
 }
+
+// Command args
 
 export interface CoronaArgsCtx {
   maskParameter?: CstNode[]
@@ -261,4 +221,51 @@ export interface TextureArgsCtx {
   maskParameter?: CstNode[]
   nameParameter?: CstNode[]
   tagParameter?: CstNode[]
+}
+
+// Generic interfaces
+
+export interface BooleanCtx {
+  Enabled: IToken[]
+  Disabled: IToken[]
+}
+
+export interface CommandCtx {
+  animateCommand: CstNode[]
+  astartCommand: CstNode[]
+  astopCommand: CstNode[]
+  colorCommand: CstNode[]
+  coronaCommand: CstNode[]
+  examineCommand: CstNode[]
+  lightCommand: CstNode[]
+  mediaCommand: CstNode[]
+  moveCommand: CstNode[]
+  nameCommand: CstNode[]
+  noiseCommand: CstNode[]
+  pictureCommand: CstNode[]
+  rotateCommand: CstNode[]
+  signCommand: CstNode[]
+  solidCommand: CstNode[]
+  soundCommand: CstNode[]
+  teleportCommand: CstNode[]
+  textureCommand: CstNode[]
+  urlCommand: CstNode[]
+  visibleCommand: CstNode[]
+  warpCommand: CstNode[]
+}
+
+export interface TriggerCtx {
+  Create: IToken[]
+  Activate: IToken[]
+  Bump: IToken[]
+  Adone: IToken[]
+}
+
+export interface ActionCtx {
+  trigger: CstNode[]
+  command: CstNode[]
+}
+
+export interface ActionsCtx {
+  action: CstNode[]
 }
