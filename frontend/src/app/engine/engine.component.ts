@@ -1,11 +1,10 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   inject,
-  ViewChild
+  viewChild
 } from '@angular/core'
-import type {AfterViewInit, OnInit, OnDestroy} from '@angular/core'
+import type {AfterViewInit, ElementRef, OnInit, OnDestroy} from '@angular/core'
 import {EngineService} from './engine.service'
 import {WorldService} from '../world/world.service'
 
@@ -17,21 +16,19 @@ import {WorldService} from '../world/world.service'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {
-  @ViewChild('rendererCanvas', {static: true})
-  public rendererCanvas: ElementRef<HTMLCanvasElement>
-  @ViewChild('labelZone', {static: true})
-  public labelZone: ElementRef<HTMLDivElement>
-  @ViewChild('labelDesc', {static: true})
-  public labelDesc: ElementRef<HTMLDivElement>
+  public rendererCanvas =
+    viewChild.required<ElementRef<HTMLCanvasElement>>('rendererCanvas')
+  public labelZone = viewChild.required<ElementRef<HTMLDivElement>>('labelZone')
+  public labelDesc = viewChild.required<ElementRef<HTMLDivElement>>('labelDesc')
 
   private engineSvc = inject(EngineService)
   private world = inject(WorldService)
 
   public ngOnInit(): void {
     this.engineSvc.createScene(
-      this.rendererCanvas,
-      this.labelZone,
-      this.labelDesc
+      this.rendererCanvas(),
+      this.labelZone(),
+      this.labelDesc()
     )
   }
 

@@ -12,7 +12,7 @@ import {
   Vector3
 } from 'three'
 import type {Object3D, Material, Mesh} from 'three'
-import type {PropAct} from '../world/prop.service'
+import type {PropCtl} from '../world/prop.service'
 import {InputSystemService} from './inputsystem.service'
 import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils'
 
@@ -93,7 +93,7 @@ export class BuildService {
     this.propSelection = null
   }
 
-  public moveProp(action: PropAct, cameraDirection: Vector3, buildNode: Group) {
+  public moveProp(action: PropCtl, cameraDirection: Vector3, buildNode: Group) {
     if (action === 'deselect') {
       this.deselectProp(buildNode)
       return

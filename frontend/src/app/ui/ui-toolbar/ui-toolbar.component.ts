@@ -17,13 +17,12 @@ import {
   ChangeDetectorRef,
   Component,
   effect,
-  ElementRef,
   inject,
   Renderer2,
   signal,
-  ViewChild
+  viewChild
 } from '@angular/core'
-import type {AfterViewInit, OnInit} from '@angular/core'
+import type {AfterViewInit, ElementRef, OnInit} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import type {User} from '../../user'
 import {environment} from '../../../environments/environment'
@@ -69,8 +68,6 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiToolbarComponent implements OnInit, AfterViewInit {
-  @ViewChild('compass', {static: true}) compass: ElementRef
-
   public faArrowLeft = faArrowLeft
   public faArrowRight = faArrowRight
   public faBolt = faBolt
@@ -115,6 +112,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   private http = inject(HttpService)
   private userSvc = inject(UserService)
   private settings = inject(SettingsService)
+  private compass = viewChild.required<ElementRef>('compass')
 
   public constructor() {
     effect(() => {
@@ -272,7 +270,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
         this.strPos = Utils.posToStringSimple(o.pos)
         this.strAlt = Utils.altToString(o.pos)
         this.renderer.setStyle(
-          this.compass.nativeElement,
+          this.compass().nativeElement,
           'transform',
           `rotate(${o.theta}deg)`
         )

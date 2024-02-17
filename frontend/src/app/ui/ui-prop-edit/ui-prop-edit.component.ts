@@ -8,7 +8,7 @@ import {MatInputModule} from '@angular/material/input'
 import {MatFormFieldModule} from '@angular/material/form-field'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {PropService} from '../../world/prop.service'
-import type {PropAct} from '../../world/prop.service'
+import type {PropCtl} from '../../world/prop.service'
 import {BuildService} from '../../engine/build.service'
 import {
   faArrowDown,
@@ -68,9 +68,9 @@ export class UiPropEditComponent {
     this.selectedProp = this.buildSvc.selectedPropSignal
   }
 
-  public trigger(event: MouseEvent, action: PropAct) {
+  public trigger(event: MouseEvent, control: PropCtl) {
     if (event.button === 0) {
-      this.propSvc.propAction.next(action)
+      this.propSvc.propControl.next(control)
     }
     event.preventDefault()
   }

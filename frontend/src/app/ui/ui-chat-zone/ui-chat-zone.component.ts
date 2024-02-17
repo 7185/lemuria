@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   inject,
-  ViewChild
+  viewChild
 } from '@angular/core'
 import {NgStyle} from '@angular/common'
 import {FormsModule} from '@angular/forms'
@@ -38,8 +38,9 @@ import {UserService} from '../../user'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiChatZoneComponent implements OnInit {
-  @ViewChild(VirtualScrollerComponent)
-  private virtualScroller: VirtualScrollerComponent
+  private virtualScroller = viewChild.required<VirtualScrollerComponent>(
+    VirtualScrollerComponent
+  )
 
   public socket = inject(SocketService)
   public usrSvc = inject(UserService)
@@ -67,7 +68,7 @@ export class UiChatZoneComponent implements OnInit {
           this.colors[u.name] = '#' + u.id.substring(0, 6)
         }
         this.data.push(msg)
-        this.virtualScroller.scrollInto(msg)
+        this.virtualScroller().scrollInto(msg)
       }
     })
   }

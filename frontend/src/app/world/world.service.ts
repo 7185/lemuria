@@ -1,3 +1,5 @@
+import {inject, Injectable, effect, signal} from '@angular/core'
+import type {WritableSignal} from '@angular/core'
 import {EMPTY, Subject, throwError, from, of, firstValueFrom} from 'rxjs'
 import type {Observable, Subscription} from 'rxjs'
 import {
@@ -7,22 +9,6 @@ import {
   catchError,
   debounceTime
 } from 'rxjs/operators'
-import {UserService} from '../user'
-import {SettingsService} from '../settings/settings.service'
-import type {User} from '../user'
-import {EngineService} from '../engine/engine.service'
-import {TerrainService} from './terrain.service'
-import {TeleportService} from '../engine/teleport.service'
-import {PlayerCollider} from '../engine/player-collider'
-import type {PropAct} from './prop.service'
-import {PropService} from './prop.service'
-import {SocketService} from '../network/socket.service'
-import {AvatarAnimationService} from '../animation'
-import type {AvatarAnimationManager} from '../animation'
-import {HttpService} from '../network'
-import {inject, Injectable, effect, signal} from '@angular/core'
-import type {WritableSignal} from '@angular/core'
-import {environment} from '../../environments/environment'
 import {
   Euler,
   Mesh,
@@ -34,8 +20,23 @@ import {
   Box3,
   BufferAttribute
 } from 'three'
-import {SRGBToLinear} from 'three/src/math/ColorManagement.js'
 import type {MeshPhongMaterial, Object3D} from 'three'
+import {SRGBToLinear} from 'three/src/math/ColorManagement.js'
+import {UserService} from '../user'
+import type {User} from '../user'
+import {SettingsService} from '../settings/settings.service'
+import {EngineService} from '../engine/engine.service'
+import {TerrainService} from './terrain.service'
+import {TeleportService} from '../engine/teleport.service'
+import {PlayerCollider} from '../engine/player-collider'
+import type {PropCtl} from './prop.service'
+import {PropService} from './prop.service'
+import {PropActionService} from './prop-action.service'
+import {SocketService} from '../network/socket.service'
+import {AvatarAnimationService} from '../animation'
+import type {AvatarAnimationManager} from '../animation'
+import {HttpService} from '../network'
+import {environment} from '../../environments/environment'
 import {DEG, Utils} from '../utils'
 import {BuildService} from '../engine/build.service'
 import {LightingService} from './lighting.service'
@@ -65,8 +66,9 @@ export class WorldService {
   private terrainSvc = inject(TerrainService)
   private userSvc = inject(UserService)
   private propSvc = inject(PropService)
+  private propActionSvc = inject(PropActionService)
   private anmSvc = inject(AvatarAnimationService)
-  private httpSvc = inject(HttpService)
+  private http = inject(HttpService)
   private settings = inject(SettingsService)
   private socket = inject(SocketService)
   private teleportSvc = inject(TeleportService)
@@ -124,7 +126,7 @@ export class WorldService {
         return
       }
 
-      this.httpSvc.world(targetWorld.id).subscribe((w: any) => {
+      this.http.world(targetWorld.id).subscribe((w: any) => {
         this.teleportSvc.teleportFrom(this.worldName, currentPos, isNew)
         this.setWorld(w, position)
       })
@@ -206,7 +208,7 @@ export class WorldService {
     })
 
     // Register object chunk updater to the engine
-    this.propSvc.propAction.subscribe((action: PropAct) => {
+    this.propSvc.propControl.subscribe((action: PropCtl) => {
       if (
         [
           'up',
@@ -413,18 +415,18 @@ export class WorldService {
     g.userData.posOrig = g.position.clone()
     g.userData.rotOrig = g.rotation.clone()
     if (act && g.userData?.isError !== true) {
-      this.propSvc.parseActions(g)
+      this.propActionSvc.parseActions(g)
     }
     g.userData.onShow = (shown: () => void) => {
-      this.propSvc.showProp(g)
+      this.propActionSvc.showProp(g)
       shown()
     }
     g.userData.onHide = (hidden: () => void) => {
-      this.propSvc.hideProp(g)
+      this.propActionSvc.hideProp(g)
       hidden()
     }
     g.userData.onClick = (clicked: () => void) => {
-      this.propSvc.clickProp(g)
+      this.propActionSvc.clickProp(g)
       clicked()
     }
     g.userData.onUpdate = () => {}
@@ -540,7 +542,7 @@ export class WorldService {
 
     // We first need to fetch the list of props using HttpService, we cannot go further
     // with this chunk if this call fails
-    return this.httpSvc
+    return this.http
       .props(
         this.worldId,
         x * this.chunkWidth - this.chunkWidth / 2,
@@ -734,7 +736,7 @@ export class WorldService {
       enabled: world.light.fog.enabled
     }
 
-    this.propSvc.loadAvatarList().subscribe((list) => {
+    this.http.avatars(this.propSvc.path()).subscribe((list) => {
       this.avatarList = list
       // Set first avatar on self
       const savedAvatars = this.settings.get('avatar')

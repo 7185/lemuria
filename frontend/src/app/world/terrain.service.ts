@@ -21,7 +21,7 @@ export class TerrainService {
   public terrain: Group
   public water: Group
   private engineSvc = inject(EngineService)
-  private httpSvc = inject(HttpService)
+  private http = inject(HttpService)
   private propSvc = inject(PropService)
   private textureLoader = new TextureLoader()
   private terrainMaterials = []
@@ -215,7 +215,7 @@ export class TerrainService {
 
     this.loadingPages.add(`${xPage}_${zPage}`)
 
-    this.httpSvc.terrain(this.worldId, xPage, zPage).subscribe((elevData) => {
+    this.http.terrain(this.worldId, xPage, zPage).subscribe((elevData) => {
       const geometry = new PlaneGeometry(
         TERRAIN_PAGE_SIZE * 10,
         TERRAIN_PAGE_SIZE * 10,

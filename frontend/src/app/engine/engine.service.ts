@@ -28,8 +28,9 @@ import type {DirectionalLight, LOD, Sprite} from 'three'
 import {AudioService} from './audio.service'
 import {BuildService} from './build.service'
 import {UserService} from '../user'
-import type {PropAct} from '../world/prop.service'
+import type {PropCtl} from '../world/prop.service'
 import {PropService} from '../world/prop.service'
+import {PropActionService} from '../world/prop-action.service'
 import {PropAnimationService} from '../animation'
 import type {AvatarAnimationPlayer} from '../animation'
 import type {PressedKey} from './inputsystem.service'
@@ -88,6 +89,7 @@ export class EngineService {
   private propSvc = inject(PropService)
   private buildSvc = inject(BuildService)
   private propAnimSvc = inject(PropAnimationService)
+  private propActionSvc = inject(PropActionService)
 
   private terrain: Group
   private water: Group
@@ -138,7 +140,7 @@ export class EngineService {
 
   private chunkTile: [number, number] = [0, 0]
 
-  private keyActionMap: Map<PressedKey, PropAct> = new Map([
+  private keyControlMap: Map<PressedKey, PropCtl> = new Map([
     ['moveFwd', 'forward'],
     ['turnRgt', 'right'],
     ['moveRgt', 'right'],
@@ -564,15 +566,15 @@ export class EngineService {
       this.labelDesc.style.display = 'none'
       this.hoveredObject = null
       if (this.buildSvc.buildMode) {
-        const act =
-          this.keyActionMap.get(this.inputSysSvc.getKey(k.code)) || 'nop'
-        this.propSvc.propAction.next(act)
+        const ctl =
+          this.keyControlMap.get(this.inputSysSvc.getKey(k.code)) || 'nop'
+        this.propSvc.propControl.next(ctl)
       }
     })
     this.inputSysSvc.keyUpEvent.subscribe(() => {
       this.mouseIdle = 0
     })
-    this.propSvc.propAction.subscribe((act: PropAct) => {
+    this.propSvc.propControl.subscribe((act: PropCtl) => {
       if (!this.buildSvc.buildMode) {
         return
       }
@@ -830,7 +832,7 @@ export class EngineService {
     }
 
     if (activate.teleport != null) {
-      this.propSvc.teleportPlayer(
+      this.propActionSvc.teleportPlayer(
         activate.teleport,
         this.player.position,
         this.yaw
@@ -871,7 +873,7 @@ export class EngineService {
     })
     heard.sort((a, b) => a.dist - b.dist)
     if (heard.length) {
-      this.propSvc.makeSound(
+      this.propActionSvc.makeSound(
         heard[0].obj,
         heard[0].obj.userData.sound,
         Math.max(0, 1 - Math.sqrt(heard[0].dist) / 200)
