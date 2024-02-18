@@ -1,5 +1,15 @@
 import {Injectable, inject} from '@angular/core'
-import {catchError, EMPTY, forkJoin, mergeMap, of, Subject, tap} from 'rxjs'
+import {
+  catchError,
+  EMPTY,
+  forkJoin,
+  interval,
+  mergeMap,
+  of,
+  Subject,
+  take,
+  tap
+} from 'rxjs'
 import type {Observable} from 'rxjs'
 import {
   AdditiveBlending,
@@ -116,14 +126,23 @@ export class PropActionService {
             imageCount: cmd.imageCount,
             frameCount: cmd.frameCount,
             frameDelay: cmd.frameDelay,
-            frameList:
-              cmd.frameList ||
-              Array.from({length: cmd.imageCount}, (_, i) => i + 1)
+            frameList: cmd.frameList.length
+              ? cmd.frameList
+              : Array.from({length: cmd.imageCount}, (_, i) => i + 1)
           })
           break
         case 'astart':
+          prop.userData[trigger].astart = prop.userData[trigger].astart || []
+          prop.userData[trigger].astart.push({
+            loop: cmd.loop ?? false,
+            targetName: cmd.targetName
+          })
           break
         case 'astop':
+          prop.userData[trigger].astop = prop.userData[trigger].astop || []
+          prop.userData[trigger].astop.push({
+            targetName: cmd.targetName
+          })
           break
         case 'color':
           prop.userData[trigger].color = prop.userData[trigger].color || []
@@ -236,7 +255,9 @@ export class PropActionService {
             mask:
               cmd.mask != null && cmd.mask.lastIndexOf('.') !== -1
                 ? cmd.mask.substring(0, cmd.mask.lastIndexOf('.'))
-                : cmd.mask
+                : cmd.mask,
+            tag: cmd.tag,
+            targetName: cmd.targetName
           })
           break
         case 'url':
@@ -308,6 +329,21 @@ export class PropActionService {
     if (action.name != null) {
       prop.userData.name = action.name
     }
+    if (action.animate != null) {
+      this.applyCommand(prop, action.animate, (target: Group, command) => {
+        target.userData.animate = JSON.parse(JSON.stringify(command))
+      })
+    }
+    if (action.astart != null) {
+      this.applyCommand(prop, action.astart, (target: Group, command) => {
+        this.animateStart(target, command.loop)
+      })
+    }
+    if (action.astop != null) {
+      this.applyCommand(prop, action.astop, (target: Group, _: unknown) => {
+        this.animateStop(target)
+      })
+    }
     if (action.solid != null) {
       this.applyCommand(prop, action.solid, (target: Group, command) => {
         target.userData.notSolid = !(command.value ?? true)
@@ -331,7 +367,7 @@ export class PropActionService {
     }
     if (action.color != null) {
       this.applyCommand(prop, action.color, (target: Group, command) => {
-        this.applyTexture(target, null, null, command.color)
+        this.applyTexture(target, null, null, null, command.color)
       })
     }
     if (action.texture != null) {
@@ -339,7 +375,8 @@ export class PropActionService {
         target.userData.texturing = this.applyTexture(
           target,
           command.texture,
-          command.mask
+          command.mask,
+          command.tag
         )
       })
     }
@@ -407,6 +444,43 @@ export class PropActionService {
         // Reset on show
         target.rotation.copy(target.userData.rotOrig)
       })
+    }
+  }
+
+  private animateStart(prop: Group, loop = false) {
+    if (prop.userData.animate == null) {
+      return
+    }
+    if (prop.userData.animateSub != null) {
+      prop.userData.animateSub.unsubscribe()
+    }
+    prop.userData.animateSub = interval(prop.userData.animate.frameDelay)
+      .pipe(
+        take(prop.userData.animate.frameList.length),
+        tap({
+          complete: () => {
+            if (!loop) {
+              prop.userData.animateSub.unsubscribe()
+              this.triggerAction(prop, 'adone')
+            }
+          }
+        })
+      )
+      .subscribe((frameId) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const animation = `${prop.userData.animate.animation}${frameId}`
+        // Doesn't apply to all objects
+        // Shouldn't do anything if the texture is not found
+        // this.applyTexture(prop, animation, prop.userData.animate.mask ? `${animation}m` : null)
+      })
+  }
+
+  private animateStop(prop: Group) {
+    if (prop.userData.animate == null) {
+      return
+    }
+    if (prop.userData.animateSub != null) {
+      prop.userData.animateSub.unsubscribe()
     }
   }
 
@@ -518,7 +592,7 @@ export class PropActionService {
             newMaterials[i].userData = {
               collision: child.material[i].userData.collision,
               ratio: child.material[i].userData.ratio,
-              rwx: {material: child.material[i].userData.rwx.material.clone()}
+              rwx: {material: child.material[i].userData.rwx.material}
             }
             newMaterials[i].color = new Color(1, 1, 1)
             newMaterials[i].map = picture
@@ -546,6 +620,10 @@ export class PropActionService {
           }
           child.material[i].dispose()
         }
+        newMaterials.forEach((m: MeshPhongMaterial) => {
+          m.shininess = 0
+          m.visible = !prop.userData.notVisible
+        })
         child.material = newMaterials
         child.material.needsUpdate = true
       }
@@ -583,7 +661,7 @@ export class PropActionService {
             newMaterials[i].userData = {
               collision: child.material[i].userData.collision,
               ratio: child.material[i].userData.ratio,
-              rwx: {material: child.material[i].userData.rwx.material.clone()}
+              rwx: {material: child.material[i].userData.rwx.material}
             }
             newMaterials[i].color = new Color(1, 1, 1)
             newMaterials[i].map = new CanvasTexture(
@@ -604,6 +682,10 @@ export class PropActionService {
           }
           child.material[i].dispose()
         }
+        newMaterials.forEach((m: MeshPhongMaterial) => {
+          m.shininess = 0
+          m.visible = !prop.userData.notVisible
+        })
         child.material = newMaterials
         child.material.needsUpdate = true
       }
@@ -614,6 +696,8 @@ export class PropActionService {
     prop: Group,
     textureName: string = null,
     maskName: string = null,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    tag: string = null,
     color: {r: number; g: number; b: number} = null
   ): Observable<unknown> {
     const promises: Observable<unknown>[] = []
@@ -627,7 +711,7 @@ export class PropActionService {
             newRWXMat.userData = {
               collision: m.userData.collision,
               ratio: m.userData.ratio,
-              rwx: {material: m.userData.rwx.material.clone()}
+              rwx: {material: m.userData.rwx.material}
             }
             newRWXMat.texture = textureName
             newRWXMat.mask = maskName
@@ -658,6 +742,7 @@ export class PropActionService {
         })
         newMaterials.forEach((m: MeshPhongMaterial) => {
           m.shininess = 0
+          m.visible = !prop.userData.notVisible
         })
         child.material = newMaterials
         child.material.needsUpdate = true
