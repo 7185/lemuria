@@ -15,6 +15,7 @@ import {
   AdditiveBlending,
   AudioLoader,
   Mesh,
+  Group,
   CanvasTexture,
   TextureLoader,
   SRGBColorSpace,
@@ -24,7 +25,7 @@ import {
   SpriteMaterial,
   Vector3
 } from 'three'
-import type {Group, MeshPhongMaterial, Object3D, Texture} from 'three'
+import type {MeshPhongMaterial, Object3D, Texture} from 'three'
 import {pictureTag as PICTURE_TAG, signTag as SIGN_TAG} from 'three-rwx-loader'
 import {Action} from '@lemuria/action-parser'
 import {environment} from '../../environments/environment'
@@ -492,6 +493,9 @@ export class PropActionService {
    * try to look for an archived version
    */
   private makePicture(prop: Group, url: string, fallbackArchive = true) {
+    if (!this.hasTaggedMaterial(prop, PICTURE_TAG)) {
+      return
+    }
     let remote = ''
     if (this.remoteUrl.test(url)) {
       remote = url
@@ -574,18 +578,17 @@ export class PropActionService {
    * @param picture Image
    */
   private pictureToProp(prop: Group, picture: Texture) {
-    if (!prop.userData.taggedMaterials[PICTURE_TAG]) {
-      return
-    }
-
     picture.colorSpace = SRGBColorSpace
     picture.wrapS = RepeatWrapping
     picture.wrapT = RepeatWrapping
     prop.traverse((child: Object3D) => {
-      if (child instanceof Mesh) {
+      if (
+        child instanceof Mesh &&
+        Object.keys(child.userData.taggedMaterials).length
+      ) {
         const newMaterials = []
         newMaterials.push(...child.material)
-        for (const i of prop.userData.taggedMaterials[PICTURE_TAG]) {
+        for (const i of child.userData.taggedMaterials[PICTURE_TAG]) {
           if (child.material[i].userData.rwx.material != null) {
             newMaterials[i] = child.material[i].clone()
             // Rebuild userData like the loader
@@ -636,7 +639,7 @@ export class PropActionService {
     color: {r: number; g: number; b: number},
     bcolor: {r: number; g: number; b: number}
   ) {
-    if (!prop.userData.taggedMaterials[SIGN_TAG]) {
+    if (!this.hasTaggedMaterial(prop, SIGN_TAG)) {
       return
     }
 
@@ -651,10 +654,13 @@ export class PropActionService {
     }
 
     prop.traverse((child: Object3D) => {
-      if (child instanceof Mesh) {
+      if (
+        child instanceof Mesh &&
+        Object.keys(child.userData.taggedMaterials).length
+      ) {
         const newMaterials = []
         newMaterials.push(...child.material)
-        for (const i of prop.userData.taggedMaterials[SIGN_TAG]) {
+        for (const i of child.userData.taggedMaterials[SIGN_TAG]) {
           if (child.material[i].userData.rwx.material != null) {
             newMaterials[i] = child.material[i].clone()
             // Rebuild userData like the loader
@@ -696,13 +702,19 @@ export class PropActionService {
     prop: Group,
     textureName: string = null,
     maskName: string = null,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     tag: string = null,
     color: {r: number; g: number; b: number} = null
   ): Observable<unknown> {
     const promises: Observable<unknown>[] = []
+    let currentTag = null
     prop.traverse((child: Object3D) => {
+      if (tag && child instanceof Group) {
+        currentTag = child.parent.userData.rwx?.tag
+      }
       if (child instanceof Mesh) {
+        if (tag && currentTag !== +tag) {
+          return
+        }
         const newMaterials = []
         child.material.forEach((m: MeshPhongMaterial) => {
           if (m.userData.rwx.material != null) {
@@ -852,6 +864,16 @@ export class PropActionService {
       rel: 'noopener noreferrer',
       href: url
     }).click()
+  }
+
+  private hasTaggedMaterial(prop: Group, tag: string) {
+    let hasTag = false
+    prop.traverse((child: Object3D) => {
+      if (child instanceof Mesh && child.userData.taggedMaterials[tag]) {
+        hasTag = true
+      }
+    })
+    return hasTag
   }
 
   /**

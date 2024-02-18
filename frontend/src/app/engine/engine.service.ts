@@ -1175,7 +1175,7 @@ export class EngineService {
     this.raycaster.set(cameraPosition, cameraToSpriteDirection)
 
     // Ignore the current prop during raycasting to prevent self-intersection
-    const ignoreList = [corona, corona.parent]
+    const ignoreList = Utils.getMeshes(corona.parent)
     const intersects = this.raycaster
       .intersectObjects(
         this.objectsNode.children

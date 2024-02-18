@@ -9,7 +9,7 @@ import {
   MeshBasicMaterial,
   SRGBColorSpace
 } from 'three'
-import RWXLoader, {RWXMaterialManager} from 'three-rwx-loader'
+import RWXLoader, {RWXMaterialManager, flattenGroup} from 'three-rwx-loader'
 import * as fflate from 'fflate'
 import {Utils} from '../utils'
 
@@ -46,7 +46,6 @@ export class PropService {
   private rwxPath = computed(() => `${this.path()}/rwx`)
   private unknown: Group
   private rwxPropLoader = new RWXLoader(new LoadingManager())
-  private rwxAvatarLoader = new RWXLoader(new LoadingManager())
   private basicLoader = new RWXLoader(new LoadingManager())
   private objects: Map<string, Observable<Group>> = new Map()
   private avatars: Map<string, Observable<Group>> = new Map()
@@ -74,10 +73,7 @@ export class PropService {
       false,
       SRGBColorSpace
     )
-    this.rwxPropLoader
-      .setRWXMaterialManager(this.rwxMaterialManager)
-      .setFlatten(true)
-    this.rwxAvatarLoader.setRWXMaterialManager(this.rwxMaterialManager)
+    this.rwxPropLoader.setRWXMaterialManager(this.rwxMaterialManager)
     this.basicLoader
       .setFflate(fflate)
       .setFlatten(true)
@@ -88,9 +84,6 @@ export class PropService {
       this.rwxMaterialManager.folder = this.resPath()
       this.basicLoader.setPath(this.rwxPath()).setResourcePath(this.resPath())
       this.rwxPropLoader.setPath(this.rwxPath()).setResourcePath(this.resPath())
-      this.rwxAvatarLoader
-        .setPath(this.rwxPath())
-        .setResourcePath(this.resPath())
     })
   }
 
@@ -99,7 +92,7 @@ export class PropService {
   }
 
   public loadAvatar(name: string): Observable<Group> {
-    return this.loadRwxObject(name, this.avatars, 'avatar')
+    return this.loadRwxObject(name, this.avatars, 'prop')
   }
 
   public cleanCache() {
@@ -140,25 +133,21 @@ export class PropService {
       return object
     }
 
-    let loader: RWXLoader
-    switch (loaderType) {
-      case 'prop':
-        loader = this.rwxPropLoader
-        break
-      case 'avatar':
-        loader = this.rwxAvatarLoader
-        break
-      default:
-        loader = this.basicLoader
-        if (loader.path !== this.rwxPath()) {
-          // Dirty fix for skybox loading too fast
-          loader.setPath(this.rwxPath()).setResourcePath(this.resPath())
-        }
-    }
+    const loader = loaderType === 'prop' ? this.rwxPropLoader : this.basicLoader
     const observable = new Observable<Group>((observer) => {
       loader.load(
         name,
         (rwx: Group) => {
+          // We flatten everything except RWX with tags (usually avatars)
+          let hasTag = false
+          rwx.traverse((child) => {
+            if (child.userData.rwx?.tag) {
+              hasTag = true
+            }
+          })
+          if (!hasTag) {
+            rwx = flattenGroup(rwx)
+          }
           if (rwx instanceof Mesh) {
             // Caching should probably be done by the loader
             // but this is still better than nothing

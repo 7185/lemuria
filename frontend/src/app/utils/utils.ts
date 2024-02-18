@@ -1,4 +1,4 @@
-import {Vector3} from 'three'
+import {Mesh, Vector3} from 'three'
 import type {Object3D} from 'three'
 
 export class Utils {
@@ -126,5 +126,26 @@ export class Utils {
       }
     })
     return objs
+  }
+
+  /**
+   * Get all children objects recursively
+   * @param object Object3D to traverse
+   * @param children Array of the children (empty by default)
+   * @returns Array of children
+   */
+  static getMeshes(object: Object3D, children = []) {
+    if (object instanceof Mesh) {
+      children.push(object)
+    }
+    object.children.forEach((child) => {
+      if (child instanceof Mesh) {
+        children.push(child)
+      }
+      if (child.children.length > 0) {
+        Utils.getMeshes(child, children)
+      }
+    })
+    return children
   }
 }
