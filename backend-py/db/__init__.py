@@ -4,9 +4,9 @@ Utility functions for working with a database using Prisma ORM
 """
 
 from functools import wraps
-from prisma import Client
+from prisma import Prisma
 
-db = Client()
+db = Prisma()
 
 def db_required(func):
     """

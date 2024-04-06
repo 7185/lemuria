@@ -14,10 +14,10 @@ export class UserController {
   @Get('/')
   authSession(@Headers('cookie') cookie: string, @Res() res: FastifyReply) {
     const user = this.userService.getUserFromAccessCookie(cookie)
-    if (user.id != null) {
-      return res.status(200).send({id: user.id, name: user.name})
+    if (user.id == null) {
+      return res.status(401).send()
     }
-    return res.status(401).send()
+    return res.status(200).send({id: user.id, name: user.name})
   }
 
   @Post('/')
@@ -67,6 +67,9 @@ export class UserController {
   @Post('/renew')
   authRenew(@Headers('cookie') cookie: string, @Res() res: FastifyReply) {
     const user = this.userService.getUserFromRefreshCookie(cookie)
+    if (user.id == null) {
+      return res.status(401).send()
+    }
     const newToken = this.jwtService.sign(
       {id: user.id},
       {expiresIn: config.cookie.accessExpires}

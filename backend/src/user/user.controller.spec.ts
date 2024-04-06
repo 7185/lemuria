@@ -20,10 +20,11 @@ describe('UserController', () => {
     offlineController = offlineModule.get<UserController>(UserController)
 
     const mockUser = {
-      getUserFromAccessCookie: () => new User({id: 'dummy'})
+      getUserFromAccessCookie: () => new User({id: 'dummy'}),
+      getUserFromRefreshCookie: () => new User({id: 'dummy'})
     }
     const module: TestingModule = await Test.createTestingModule({
-      imports: [JwtModule],
+      imports: [JwtModule.register({secret: config.secret})],
       controllers: [UserController],
       providers: [UserService]
     })
@@ -104,6 +105,35 @@ describe('UserController', () => {
       expect(
         offlineController.authLogout('cookie', responseMock)
       ).toStrictEqual({})
+      expect(responseMock.status).toHaveBeenCalledWith(200)
+    })
+  })
+
+  describe('authRenew', () => {
+    it('should return 401', () => {
+      const statusResponseMock = {
+        send: jest.fn((x) => x)
+      }
+      const responseMock = {
+        status: jest.fn().mockReturnValue(statusResponseMock),
+        send: jest.fn((x) => x)
+      } as unknown as FastifyReply
+      offlineController.authRenew('cookie', responseMock)
+      expect(responseMock.status).toHaveBeenCalledWith(401)
+    })
+    it('should return 200', () => {
+      const statusResponseMock = {
+        send: jest.fn((x) => x)
+      }
+      const responseMock = {
+        status: jest.fn().mockReturnValue(statusResponseMock),
+        setCookie: jest.fn(),
+        send: jest.fn((x) => x)
+      } as unknown as FastifyReply
+      expect(controller.authRenew('cookie', responseMock)).toStrictEqual({
+        id: 'dummy',
+        name: undefined
+      })
       expect(responseMock.status).toHaveBeenCalledWith(200)
     })
   })
