@@ -36,7 +36,13 @@ export class WorldController {
     const world = await this.worldService.getWorld(parseInt(id))
     user.world = parseInt(id)
     this.userService.broadcastUserlist()
-    return res.status(200).send(Object.fromEntries(Object.entries(world)))
+    return res
+      .status(200)
+      .send(
+        Object.fromEntries(
+          Object.entries(world).filter((a) => a[1] !== undefined)
+        )
+      )
   }
 
   @Get(':id/props')

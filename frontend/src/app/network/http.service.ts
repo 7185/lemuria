@@ -32,29 +32,29 @@ export class HttpService extends HttpClient {
     localStorage.setItem('expiration', value.toString())
   }
 
-  public static getCookie(name: string) {
+  static getCookie(name: string) {
     const c = RegExp('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)').exec(
       document.cookie
     )
     return c ? c.pop() : ''
   }
 
-  public isLogged(): boolean {
+  isLogged(): boolean {
     return !this.hasExpired()
   }
 
-  public setLogged(logged: User): void {
+  setLogged(logged: User): void {
     this.userLogged.next(logged)
   }
 
-  public getLogged(): Observable<User> {
+  getLogged(): Observable<User> {
     if (this.userLogged.value.id == null) {
       this.session().subscribe()
     }
     return this.userLogged.asObservable()
   }
 
-  public login(login: string, password: string) {
+  login(login: string, password: string) {
     localStorage.setItem('login', login)
     return this.post(`${this.baseUrl}/auth/`, {login, password}).pipe(
       tap((data) => {
@@ -64,7 +64,7 @@ export class HttpService extends HttpClient {
     )
   }
 
-  public logout() {
+  logout() {
     this.expiration = 0
     return this.delete(`${this.baseUrl}/auth/`).pipe(
       tap(() => {
@@ -74,7 +74,7 @@ export class HttpService extends HttpClient {
     )
   }
 
-  public session() {
+  session() {
     return this.get(`${this.baseUrl}/auth/`).pipe(
       catchError((error: HttpResponse<unknown>) => {
         this.logout().subscribe()
@@ -84,7 +84,7 @@ export class HttpService extends HttpClient {
     )
   }
 
-  public avatars(path: string) {
+  avatars(path: string) {
     const list: {
       name: string
       geometry: string
@@ -132,11 +132,11 @@ export class HttpService extends HttpClient {
     )
   }
 
-  public world(worldId: number) {
+  world(worldId: number) {
     return this.get(`${this.baseUrl}/world/${worldId}`)
   }
 
-  public props(
+  props(
     worldId: number,
     minX: number | null,
     maxX: number | null,
@@ -181,11 +181,11 @@ export class HttpService extends HttpClient {
     return this.get(`${this.baseUrl}/world/${worldId}/props`, opts)
   }
 
-  public worlds() {
+  worlds() {
     return this.get(`${this.baseUrl}/world/`)
   }
 
-  public terrain(worldId: number, pageX: number, pageZ: number) {
+  terrain(worldId: number, pageX: number, pageZ: number) {
     return this.get(`${this.baseUrl}/world/${worldId}/terrain`, {
       params: {page_x: pageX, page_z: pageZ}
     })

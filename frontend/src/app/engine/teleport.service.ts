@@ -4,9 +4,9 @@ import {Injectable, signal} from '@angular/core'
   providedIn: 'root'
 })
 export class TeleportService {
-  public teleportHistory = []
-  public currentTeleportIndex = 0
-  public teleport = signal<{
+  teleportHistory = []
+  currentTeleportIndex = 0
+  teleport = signal<{
     world: string | null
     position: string | null
     isNew: boolean | null

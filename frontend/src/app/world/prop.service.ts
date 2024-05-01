@@ -37,12 +37,12 @@ export type PropCtl = (typeof propCtls)[number]
 
 @Injectable({providedIn: 'root'})
 export class PropService {
-  public propControl = new Subject<PropCtl>()
-  public path = signal('')
-  public animatedPictures = []
-  public rwxMaterialManager: RWXMaterialManager
-  public audioPath = computed(() => `${this.path()}/sounds`)
-  public resPath = computed(() => `${this.path()}/textures`)
+  propControl = new Subject<PropCtl>()
+  path = signal('')
+  animatedPictures = []
+  rwxMaterialManager: RWXMaterialManager
+  audioPath = computed(() => `${this.path()}/sounds`)
+  resPath = computed(() => `${this.path()}/textures`)
   private rwxPath = computed(() => `${this.path()}/rwx`)
   private unknown: Group
   private rwxPropLoader = new RWXLoader(new LoadingManager())
@@ -87,15 +87,15 @@ export class PropService {
     })
   }
 
-  public loadModel(name: string, basic = false): Observable<Group> {
+  loadModel(name: string, basic = false): Observable<Group> {
     return this.loadRwxObject(name, this.objects, basic ? 'basic' : 'prop')
   }
 
-  public loadAvatar(name: string): Observable<Group> {
+  loadAvatar(name: string): Observable<Group> {
     return this.loadRwxObject(name, this.avatars, 'prop')
   }
 
-  public cleanCache() {
+  cleanCache() {
     this.objects.clear()
     this.avatars.clear()
     this.animatedPictures.length = 0
@@ -103,7 +103,7 @@ export class PropService {
     this.geomCache.clear()
   }
 
-  public texturesNextFrame() {
+  texturesNextFrame() {
     this.rwxMaterialManager.texturesNextFrame()
     for (const m of this.animatedPictures) {
       const anim = m.userData.rwx.animation

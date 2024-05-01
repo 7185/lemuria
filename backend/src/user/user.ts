@@ -27,7 +27,7 @@ export class User {
     Object.assign(this, params)
   }
 
-  public toDict() {
+  toDict() {
     return {
       id: this.id,
       name: this.name,

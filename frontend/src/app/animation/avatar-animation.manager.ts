@@ -9,7 +9,7 @@ export class AvatarAnimationManager {
     public explicitSequences: Map<string, ThreeSequence>
   ) {}
 
-  public spawnAnimationPlayer(avatar: Group) {
+  spawnAnimationPlayer(avatar: Group) {
     return new AvatarAnimationPlayer(this, avatar)
   }
 }

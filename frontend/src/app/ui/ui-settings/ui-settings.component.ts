@@ -25,10 +25,10 @@ import {SettingsService} from '../../settings/settings.service'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiSettingsComponent implements OnInit {
-  public maxFps: number
-  public maxLights: number
-  public archivedMedia = false
-  public dialogRef = inject(MatDialogRef<UiSettingsComponent>)
+  maxFps: number
+  maxLights: number
+  archivedMedia = false
+  dialogRef = inject(MatDialogRef<UiSettingsComponent>)
   private engineSvc = inject(EngineService)
   private settings = inject(SettingsService)
 

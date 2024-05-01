@@ -3,7 +3,7 @@ import {BehaviorSubject} from 'rxjs'
 
 @Injectable({providedIn: 'root'})
 export class SettingsService {
-  public updated = new BehaviorSubject(true)
+  updated = new BehaviorSubject(true)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   set(key: string, value: any): void {

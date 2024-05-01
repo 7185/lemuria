@@ -42,26 +42,26 @@ export class UiChatZoneComponent implements OnInit {
     VirtualScrollerComponent
   )
 
-  public socket = inject(SocketService)
-  public usrSvc = inject(UserService)
-  public faComments = faComments
-  public data = []
-  public message = ''
-  public chatActive = false
-  public colors = {}
+  socket = inject(SocketService)
+  usrSvc = inject(UserService)
+  faComments = faComments
+  data = []
+  message = ''
+  chatActive = false
+  colors = {}
 
-  public activeChat() {
+  activeChat() {
     this.chatActive = !this.chatActive
   }
 
-  public send(): void {
+  send(): void {
     if (this.message.length) {
       this.socket.sendMessage({type: 'msg', data: this.message})
       this.message = ''
     }
   }
 
-  public ngOnInit(): void {
+  ngOnInit(): void {
     this.socket.messages.subscribe((msg) => {
       if (['msg', 'err', 'join', 'part', 'info'].indexOf(msg.type) > -1) {
         for (const u of this.usrSvc.userList()) {

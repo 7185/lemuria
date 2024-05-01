@@ -30,31 +30,31 @@ export class LightingService {
     this.engineSvc.addWorldObject(this.dirLight)
   }
 
-  public get ambLightColor(): number {
+  get ambLightColor(): number {
     return this.light.color.getHex()
   }
 
-  public set ambLightColor(color: number) {
+  set ambLightColor(color: number) {
     this.light.color = new Color(color)
   }
 
-  public get dirLightColor(): number {
+  get dirLightColor(): number {
     return this.dirLight.color.getHex()
   }
 
-  public set dirLightColor(color: number) {
+  set dirLightColor(color: number) {
     this.dirLight.color = new Color(color)
   }
 
-  public get dirLightTarget(): number[] {
+  get dirLightTarget(): number[] {
     return this.dirLightTargetObj.position.toArray()
   }
 
-  public set dirLightTarget(position: number[]) {
+  set dirLightTarget(position: number[]) {
     this.dirLightTargetObj.position.set(position[0], position[1], position[2])
   }
 
-  public set worldFog(worldFog: {
+  set worldFog(worldFog: {
     color: number
     near: number
     far: number
@@ -64,7 +64,7 @@ export class LightingService {
     this.engineSvc.updateFog()
   }
 
-  public get worldFog() {
+  get worldFog() {
     return this.engineSvc.worldFog
   }
 }

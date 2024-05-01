@@ -9,14 +9,14 @@ const playerHalfSide = environment.world.collider.boxSide / 2
 const playerClimbHeight = environment.world.collider.climbHeight
 
 export class PlayerCollider {
-  public boxHeight: number
-  public mainBox: Box3
+  boxHeight: number
+  mainBox: Box3
   private topBox: Box3
   private bottomBox: Box3
   private rays: Ray[]
   private currentPos = new Vector3()
 
-  public constructor(boxHeight: number, pos = new Vector3()) {
+  constructor(boxHeight: number, pos = new Vector3()) {
     // We need to ensure the total collider height doesn't go too low
     this.boxHeight = Math.max(boxHeight, playerClimbHeight + 0.1)
 
@@ -57,7 +57,7 @@ export class PlayerCollider {
     this.translate(this.currentPos)
   }
 
-  public static updateChunkBVH(chunk: Group) {
+  static updateChunkBVH(chunk: Group) {
     // Regenerate boundsTree for associated LOD
     const bvhMesh = flattenGroup(
       chunk,
@@ -77,7 +77,7 @@ export class PlayerCollider {
     })
   }
 
-  public static updateTerrainBVH(terrainMesh: Mesh) {
+  static updateTerrainBVH(terrainMesh: Mesh) {
     if (terrainMesh == null) {
       return
     }
@@ -103,15 +103,15 @@ export class PlayerCollider {
     }
   }
 
-  public topBoxIntersectsTriangle(tri: Triangle): boolean {
+  topBoxIntersectsTriangle(tri: Triangle): boolean {
     return this.topBox.intersectsTriangle(tri)
   }
 
-  public bottomBoxIntersectsTriangle(tri: Triangle): boolean {
+  bottomBoxIntersectsTriangle(tri: Triangle): boolean {
     return this.bottomBox.intersectsTriangle(tri)
   }
 
-  public raysIntersectTriangle(tri: Triangle): Vector3 {
+  raysIntersectTriangle(tri: Triangle): Vector3 {
     let intersectionPoint: Vector3 = null
     this.rays.forEach((ray) => {
       const point = ray.intersectTriangle(
@@ -128,7 +128,7 @@ export class PlayerCollider {
     return intersectionPoint
   }
 
-  public checkBoundsTree(
+  checkBoundsTree(
     boundsTree: MeshBVH,
     intersectsTriangle: (_: Triangle) => void
   ): void {
@@ -138,7 +138,7 @@ export class PlayerCollider {
     })
   }
 
-  public translate(delta: Vector3): void {
+  translate(delta: Vector3): void {
     this.mainBox.translate(delta)
     this.topBox.translate(delta)
     this.bottomBox.translate(delta)
@@ -147,7 +147,7 @@ export class PlayerCollider {
     })
   }
 
-  public copyPos(pos: Vector3): void {
+  copyPos(pos: Vector3): void {
     const delta = pos.clone().sub(this.currentPos)
     this.translate(delta)
     this.currentPos.copy(pos)

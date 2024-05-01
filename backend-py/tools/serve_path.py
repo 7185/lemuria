@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # encoding: utf-8
-"""Use instead of `python3 -m http.server` when you need CORS"""
+"""Use instead of `python -m http.server` when you need CORS"""
 
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 

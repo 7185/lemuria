@@ -27,13 +27,14 @@ export type PressedKey = (typeof pressedKeys)[number]
 
 @Injectable({providedIn: 'root'})
 export class InputSystemService {
-  public controls: Record<PressedKey, boolean> = pressedKeys.reduce(
+  controls: Record<PressedKey, boolean> = pressedKeys.reduce(
     (acc, value) => {
       return {...acc, [value]: false}
     },
     {} as Record<PressedKey, boolean>
   )
-  public keyUpEvent = fromEvent<KeyboardEvent>(window, 'keyup').pipe(
+
+  keyUpEvent = fromEvent<KeyboardEvent>(window, 'keyup').pipe(
     filter(
       (e: KeyboardEvent) =>
         ['INPUT', 'TEXTAREA'].indexOf((e.target as HTMLElement).nodeName) === -1
@@ -43,7 +44,8 @@ export class InputSystemService {
       e.preventDefault()
     })
   )
-  public keyDownEvent = fromEvent<KeyboardEvent>(window, 'keydown').pipe(
+
+  keyDownEvent = fromEvent<KeyboardEvent>(window, 'keydown').pipe(
     filter(
       (e: KeyboardEvent) =>
         ['INPUT', 'TEXTAREA'].indexOf((e.target as HTMLElement).nodeName) === -1
@@ -91,30 +93,30 @@ export class InputSystemService {
     this.keyMap = new Map(this.settings.get('keymap') ?? this.defaultKeymap)
   }
 
-  public clearKeys() {
+  clearKeys() {
     this.keyMap.clear()
     this.saveKeyMap()
   }
 
-  public getKeyMap() {
+  getKeyMap() {
     return this.keyMap
   }
 
-  public getKey(k: string) {
+  getKey(k: string) {
     return this.keyMap.get(k)
   }
 
-  public setDefault() {
+  setDefault() {
     this.keyMap = new Map(this.defaultKeymap)
     this.saveKeyMap()
   }
 
-  public mapKey(k: string, value: PressedKey) {
+  mapKey(k: string, value: PressedKey) {
     this.keyMap.set(k, value)
     this.saveKeyMap()
   }
 
-  public handleKeys(k: string, value: boolean) {
+  handleKeys(k: string, value: boolean) {
     const key = this.keyMap.get(k)
     if (key != null) {
       this.controls[key] = value

@@ -18,8 +18,8 @@ import {TERRAIN_PAGE_SIZE, Utils} from '../utils'
 
 @Injectable({providedIn: 'root'})
 export class TerrainService {
-  public terrain: Group
-  public water: Group
+  terrain: Group
+  water: Group
   private engineSvc = inject(EngineService)
   private http = inject(HttpService)
   private propSvc = inject(PropService)
@@ -32,7 +32,7 @@ export class TerrainService {
   private worldId = 0
   private loadingPages = new Set()
 
-  public setWater(water: {
+  setWater(water: {
     enabled?: boolean
     color?: number[]
     offset?: number
@@ -118,10 +118,7 @@ export class TerrainService {
     this.engineSvc.addWorldObject(this.water)
   }
 
-  public setTerrain(
-    terrain: {enabled: boolean; offset: number},
-    worldId: number
-  ) {
+  setTerrain(terrain: {enabled: boolean; offset: number}, worldId: number) {
     this.worldId = worldId
     if (this.terrain != null) {
       this.engineSvc.removeWorldObject(this.terrain)
@@ -157,7 +154,7 @@ export class TerrainService {
     this.terrain.updateMatrixWorld()
   }
 
-  public getTerrainPages(playerX: number, playerZ: number, radius: number) {
+  getTerrainPages(playerX: number, playerZ: number, radius: number) {
     // Since the pages are centered, we need to add an offset
     const centerOffset = (TERRAIN_PAGE_SIZE * 10) / 2
     const pageX: number = Math.floor(

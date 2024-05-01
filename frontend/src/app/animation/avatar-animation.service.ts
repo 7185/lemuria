@@ -98,7 +98,7 @@ export class AvatarAnimationService {
     })
   }
 
-  public async loadSequence(name: string, uri: string) {
+  async loadSequence(name: string, uri: string) {
     if (this.sequences.has(name)) {
       return this.sequences.get(name)
     }
@@ -118,7 +118,7 @@ export class AvatarAnimationService {
     }
   }
 
-  public getAvatarAnimationManager(
+  getAvatarAnimationManager(
     name: string,
     implicit: Map<string, string>,
     explicit: Map<string, string>,
@@ -137,7 +137,7 @@ export class AvatarAnimationService {
     return mgrPromise
   }
 
-  public async setFrameRate(frameRate: number) {
+  async setFrameRate(frameRate: number) {
     this.frameRate = frameRate
 
     if (!this.sequences) {

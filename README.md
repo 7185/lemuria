@@ -8,7 +8,7 @@ Powered with Nest (or Quart), Angular and Three.js.
 
 ## Installation
 
-First we need to fetch all dependencies for the frontend, go to `frontend` and do the following:
+First we need to fetch all dependencies:
 
 ```bash
 $ npm ci
@@ -18,7 +18,7 @@ Then we build and run the project:
 
 ```bash
 # You can also use build:prod to build a production-ready bundle
-$ npm run build
+$ npm run build -w frontend
 ```
 
 To avoid CORS issues when accessing static files from a web browser, go to `backend-py` and do the following:
@@ -35,34 +35,33 @@ Here you will find a few steps to follow in order to create and populate a worki
 
 ### Install various dependencies for the server
 
-There are two different implementations for the backend server.
+There are two different implementations for the backend server: Node and Python.
 
 #### Node backend
 ```bash
-$ cd backend
-$ npm ci
-$ npx prisma generate --generator client
+$ npx -w backend prisma generate --generator client
 ```
 
 #### Python backend
 ```bash
-$ cd backend-py
-$ pip3 install --user -r requirements.txt
-$ prisma generate --schema ../backend/prisma/schema.prisma --generator client-py
+$ python -m venv venv
+$ source venv/bin/activate
+$ pip install -r backend-py/requirements.txt
+$ prisma generate --schema backend/prisma/schema.prisma --generator client-py
 ```
 ### Create an empty database and import the dump files
 
 #### Node backend
 ```bash
-$ cd backend
-$ npx prisma db push --skip-generate
+$ npx -w backend prisma db push --skip-generate
 ```
 There is no node script to import worlds yet, so you can use the python one instead.
 
 #### Python backend
 ```bash
+# See above for the venv setup
+$ prisma db push --schema backend/prisma/schema.prisma
 $ cd backend-py
-$ prisma db push --schema ../backend/prisma/schema.prisma
 $ python tools/import_lemuria.py
 ```
 
@@ -80,18 +79,17 @@ $ ln -s /my/path/to/resource/folder/for/village2 village2
 The API backend is listening on port `8080`.
 
 #### Node backend
-Go to `backend` and run the following:
 
 ```bash
-$ npm run start
+$ npm -w backend run start
 ```
 
 #### Python backend
-Go to `backend-py` and run the following:
 
 ```bash
-$ prisma generate --schema ../backend/prisma/schema.prisma --generator client-py
-$ python3 app.py
+$ prisma generate --schema backend/prisma/schema.prisma --generator client-py
+$ cd backend-py
+$ python app.py
 ```
 
 ## Docker

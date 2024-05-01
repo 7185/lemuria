@@ -9,60 +9,60 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./backend
+        working-directory: .
     strategy:
       matrix:
         node-version: [18.x, 20.x]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
-    - run: npm ci
-    - run: npx prisma generate --generator client
-    - run: npm run lint
-    - run: npm run test
-    - run: npm run build
+        cache-dependency-path: package-lock.json
+    - run: npm -w backend ci
+    - run: npx -w backend prisma generate --generator client
+    - run: npm -w backend run lint
+    - run: npm -w backend run test
+    - run: npm -w backend run build
 
   frontend:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./frontend
+        working-directory: .
     strategy:
       matrix:
         node-version: [18.x, 20.x]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-    - run: npm ci
-    - run: npm run lint
-    - run: npm run build:prod
+        cache-dependency-path: package-lock.json
+    - run: npm -w action-parser -w frontend ci
+    - run: npm -w frontend run lint
+    - run: npm -w frontend run build:prod
 
   action-parser:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./action-parser
+        working-directory: .
     strategy:
       matrix:
         node-version: [18.x, 20.x]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        cache-dependency-path: action-parser/package-lock.json
-    - run: npm ci
-    - run: npm run lint
-    - run: npm run test
+        cache-dependency-path: package-lock.json
+    - run: npm -w action-parser ci
+    - run: npm -w action-parser run lint
+    - run: npm -w action-parser run test:cov

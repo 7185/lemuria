@@ -75,13 +75,13 @@ const nearestChunkPattern = [
 
 @Injectable({providedIn: 'root'})
 export class EngineService {
-  public compassSub: Subject<{pos: Vector3; theta: number}> = new Subject()
-  public fpsSub = new BehaviorSubject<string>('0')
-  public maxFps = signal(60)
-  public maxLights = signal(6)
-  public texturesAnimation = signal(0)
-  public playerPosition = signal(new Vector3())
-  public worldFog = {color: 0x00007f, near: 0, far: 120, enabled: false}
+  compassSub: Subject<{pos: Vector3; theta: number}> = new Subject()
+  fpsSub = new BehaviorSubject<string>('0')
+  maxFps = signal(60)
+  maxLights = signal(6)
+  texturesAnimation = signal(0)
+  playerPosition = signal(new Vector3())
+  worldFog = {color: 0x00007f, near: 0, far: 120, enabled: false}
 
   private userSvc = inject(UserService)
   private inputSysSvc = inject(InputSystemService)
@@ -160,7 +160,7 @@ export class EngineService {
     ['del', 'delete']
   ])
 
-  public constructor() {
+  constructor() {
     this.raycaster.firstHitOnly = true
     effect(() => {
       this.refreshLights(this.maxLights())
@@ -170,7 +170,7 @@ export class EngineService {
     })
   }
 
-  public cancel(): void {
+  cancel(): void {
     if (this.frameId != null) {
       cancelAnimationFrame(this.frameId)
     }
@@ -182,7 +182,7 @@ export class EngineService {
     }
   }
 
-  public createScene(
+  createScene(
     canvas: ElementRef<HTMLCanvasElement>,
     labelZone: ElementRef<HTMLDivElement>,
     labelDesc: ElementRef<HTMLDivElement>
@@ -269,7 +269,7 @@ export class EngineService {
     this.buildScene.add(this.buildNode)
   }
 
-  public clearObjects() {
+  clearObjects() {
     this.buildSvc.deselectProp(this.buildNode)
     // Children is a dynamic iterable, we need a copy to get all of them
     for (const prop of [...this.objectsNode.children]) {
@@ -284,7 +284,7 @@ export class EngineService {
     this.updateSound()
   }
 
-  public clearScene() {
+  clearScene() {
     this.buildSvc.deselectProp(this.buildNode)
     for (const prop of [...this.worldNode.children]) {
       this.removeWorldObject(prop as Group)
@@ -298,7 +298,7 @@ export class EngineService {
     })
   }
 
-  public updateBoundingBox() {
+  updateBoundingBox() {
     const boxHeight = this.camera.position.y * 1.11
     this.player.resetCollider(boxHeight)
 
@@ -316,7 +316,7 @@ export class EngineService {
     this.worldNode.add(this.player.colliderBox)
   }
 
-  public get position(): [Vector3, Vector3] {
+  get position(): [Vector3, Vector3] {
     return this.player == null
       ? [new Vector3(), new Vector3()]
       : [
@@ -325,31 +325,31 @@ export class EngineService {
         ]
   }
 
-  public get yaw(): number {
+  get yaw(): number {
     return Math.round(this.compass.theta / DEG)
   }
 
-  public set gesture(gesture: string) {
+  set gesture(gesture: string) {
     this.player.gesture = gesture
   }
 
-  public get gesture(): string {
+  get gesture(): string {
     return this.player.gesture
   }
 
-  public get state(): string {
+  get state(): string {
     return this.player.state
   }
 
-  public set currentChunk(tile: [number, number]) {
+  set currentChunk(tile: [number, number]) {
     this.chunkTile = tile
   }
 
-  public get currentChunk(): [number, number] {
+  get currentChunk(): [number, number] {
     return this.chunkTile
   }
 
-  public updateFog(inWater = this.player.inWater()) {
+  updateFog(inWater = this.player.inWater()) {
     if (inWater) {
       this.fog.color = new Color(this.water?.userData?.color ?? 0x00ffff)
       this.fog.near = 0
@@ -364,15 +364,15 @@ export class EngineService {
     }
   }
 
-  public get avatar(): Group {
+  get avatar(): Group {
     return this.player.avatar
   }
 
-  public setCameraOffset(offset: number) {
+  setCameraOffset(offset: number) {
     this.camera.position.y = offset
   }
 
-  public addChunk(chunk: LOD) {
+  addChunk(chunk: LOD) {
     chunk.matrixAutoUpdate = false
     this.objectsNode.add(chunk)
     chunk.updateMatrix()
@@ -383,14 +383,14 @@ export class EngineService {
     )
   }
 
-  public setChunksDistance(meters: number) {
+  setChunksDistance(meters: number) {
     for (const chunk of this.objectsNode.children as LOD[]) {
       chunk.levels[0].distance = meters
       chunk.levels[1].distance = meters + 1
     }
   }
 
-  public addWorldObject(obj: Object3D) {
+  addWorldObject(obj: Object3D) {
     this.worldNode.add(obj)
     switch (obj.name) {
       case 'dirLight':
@@ -406,7 +406,7 @@ export class EngineService {
     }
   }
 
-  public addUser(group: Group) {
+  addUser(group: Group) {
     const div = document.createElement('div')
     div.className = 'text-label'
     const user = this.userSvc.getUser(group.name)
@@ -418,7 +418,7 @@ export class EngineService {
     this.usersNode.add(group)
   }
 
-  public setSkybox(skybox: Group) {
+  setSkybox(skybox: Group) {
     if (!this.skybox) {
       return
     }
@@ -428,7 +428,7 @@ export class EngineService {
     this.skybox.add(skybox)
   }
 
-  public disposeGeometry(group: Group) {
+  disposeGeometry(group: Group) {
     group.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         child.geometry.dispose()
@@ -436,7 +436,7 @@ export class EngineService {
     })
   }
 
-  public disposeMaterial(group: Group) {
+  disposeMaterial(group: Group) {
     group.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         for (const m of child.material) {
@@ -452,7 +452,7 @@ export class EngineService {
     })
   }
 
-  public removeObject(group: Group) {
+  removeObject(group: Group) {
     if (group === this.buildSvc.selectedProp) {
       this.buildSvc.deselectProp(this.buildNode)
     }
@@ -468,14 +468,14 @@ export class EngineService {
     }
   }
 
-  public removeLight(light: PointLight) {
+  removeLight(light: PointLight) {
     light.dispose()
     if (light.parent) {
       light.parent.remove(light)
     }
   }
 
-  public refreshLights(length: number) {
+  refreshLights(length: number) {
     if (this.scene == null) {
       return
     }
@@ -489,7 +489,7 @@ export class EngineService {
     }
   }
 
-  public removeWorldObject(group: Group) {
+  removeWorldObject(group: Group) {
     if (!group) {
       return
     }
@@ -514,7 +514,7 @@ export class EngineService {
     }
   }
 
-  public removeUser(group: Group) {
+  removeUser(group: Group) {
     const label = this.labelMap.get(group.name)
     if (label != null) {
       this.labelScene.remove(label)
@@ -524,15 +524,15 @@ export class EngineService {
     this.usersNode.remove(group)
   }
 
-  public users(): Group[] {
+  users(): Group[] {
     return this.usersNode.children as Group[]
   }
 
-  public getMemInfo(): [{geometries: number; textures: number}, number] {
+  getMemInfo(): [{geometries: number; textures: number}, number] {
     return [this.renderer.info.memory, this.renderer.info.render.calls]
   }
 
-  public animate(): void {
+  animate(): void {
     this.clock = new Clock(true)
     if (document.readyState !== 'loading') {
       this.render()
@@ -614,7 +614,7 @@ export class EngineService {
     })
   }
 
-  public setCamera(cameraType: number) {
+  setCamera(cameraType: number) {
     switch (cameraType) {
       case 0:
         this.activeCamera = this.camera
@@ -631,24 +631,24 @@ export class EngineService {
     this.player.avatar.visible = this.activeCamera !== this.camera
   }
 
-  public setPlayerPos(pos: Vector3 | string, yaw = 0): void {
+  setPlayerPos(pos: Vector3 | string, yaw = 0): void {
     this.player.setPos(pos, yaw)
     this.player.isOnFloor = true
   }
 
-  public setPlayerYaw(yaw: number) {
+  setPlayerYaw(yaw: number) {
     this.player.setYaw(yaw)
   }
 
-  public getLODs(): LOD[] {
+  getLODs(): LOD[] {
     return this.objectsNode.children as LOD[]
   }
 
-  public resetChunkLODMap() {
+  resetChunkLODMap() {
     this.chunkLODMap.clear()
   }
 
-  public getNearestChunks(): LOD[] {
+  getNearestChunks(): LOD[] {
     return nearestChunkPattern
       .map((offset) =>
         this.chunkLODMap.get(

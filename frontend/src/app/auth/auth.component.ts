@@ -35,18 +35,18 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AuthComponent implements OnInit {
-  public faCircleNotch = faCircleNotch
-  public faEye = faEye
-  public faEyeSlash = faEyeSlash
-  public faKey = faKey
-  public faUser = faUser
+  faCircleNotch = faCircleNotch
+  faEye = faEye
+  faEyeSlash = faEyeSlash
+  faKey = faKey
+  faUser = faUser
 
-  public hide = true
-  public processing = false
-  public loginForm: FormGroup
-  public loginError = false
-  public usernameCtl: FormControl<string | null>
-  public passwordCtl: FormControl<string | null>
+  hide = true
+  processing = false
+  loginForm: FormGroup
+  loginError = false
+  usernameCtl: FormControl<string | null>
+  passwordCtl: FormControl<string | null>
   private returnUrl: string
 
   constructor(

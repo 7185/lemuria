@@ -42,19 +42,19 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiPropEditComponent {
-  public faArrowDown = faArrowDown
-  public faArrowLeft = faArrowLeft
-  public faArrowRight = faArrowRight
-  public faArrowRotateLeft = faArrowRotateLeft
-  public faArrowRotateRight = faArrowRotateRight
-  public faArrowUp = faArrowUp
-  public faBorderNone = faBorderNone
-  public faClone = faClone
-  public faRoad = faRoad
-  public faRotate = faRotate
-  public faTrashCan = faTrashCan
+  faArrowDown = faArrowDown
+  faArrowLeft = faArrowLeft
+  faArrowRight = faArrowRight
+  faArrowRotateLeft = faArrowRotateLeft
+  faArrowRotateRight = faArrowRotateRight
+  faArrowUp = faArrowUp
+  faBorderNone = faBorderNone
+  faClone = faClone
+  faRoad = faRoad
+  faRotate = faRotate
+  faTrashCan = faTrashCan
 
-  public selectedProp: WritableSignal<{
+  selectedProp: WritableSignal<{
     name?: string
     desc?: string
     act?: string
@@ -64,11 +64,11 @@ export class UiPropEditComponent {
   private buildSvc = inject(BuildService)
   private propSvc = inject(PropService)
 
-  public constructor() {
+  constructor() {
     this.selectedProp = this.buildSvc.selectedPropSignal
   }
 
-  public trigger(event: MouseEvent, control: PropCtl) {
+  trigger(event: MouseEvent, control: PropCtl) {
     if (event.button === 0) {
       this.propSvc.propControl.next(control)
     }

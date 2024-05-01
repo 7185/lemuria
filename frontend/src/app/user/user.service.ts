@@ -7,17 +7,17 @@ import {User} from './user.model'
 
 @Injectable({providedIn: 'root'})
 export class UserService {
-  public userList: WritableSignal<User[]> = signal([])
-  public avatarChanged: Subject<User> = new Subject()
-  public currentName = 'Anonymous'
+  userList: WritableSignal<User[]> = signal([])
+  avatarChanged: Subject<User> = new Subject()
+  currentName = 'Anonymous'
 
   private http = inject(HttpService)
 
-  public currentUser() {
+  currentUser() {
     return this.http.getLogged()
   }
 
-  public getUser(id: string) {
+  getUser(id: string) {
     return this.userList().find((user) => user.id === id) ?? new User()
   }
 

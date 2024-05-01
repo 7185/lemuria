@@ -22,10 +22,10 @@ import {BuildService} from '../engine/build.service'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiComponent {
-  public loadPropEdit: Signal<boolean>
-  public loadTerrainEdit: Signal<boolean>
+  loadPropEdit: Signal<boolean>
+  loadTerrainEdit: Signal<boolean>
 
-  public constructor(private buildSvc: BuildService) {
+  constructor(private buildSvc: BuildService) {
     this.loadPropEdit = computed(
       () => this.buildSvc.selectedPropSignal()?.name != null
     )

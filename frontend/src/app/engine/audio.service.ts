@@ -8,19 +8,19 @@ export class AudioService {
   private audioListener = new AudioListener()
   private bgAudio = new Audio(this.audioListener)
   private audio = new Audio(this.audioListener)
-  public bgUrl = ''
+  bgUrl = ''
 
-  public addListener(camera) {
+  addListener(camera) {
     camera.add(this.audioListener)
   }
 
-  public setSoundVolume(volume: number) {
+  setSoundVolume(volume: number) {
     if (this.bgAudio.isPlaying) {
       this.bgAudio.setVolume(volume)
     }
   }
 
-  public playSound(buffer: AudioBuffer, url: string, volume: number) {
+  playSound(buffer: AudioBuffer, url: string, volume: number) {
     this.stopSound()
     this.bgAudio.setBuffer(buffer)
     this.bgAudio.setLoop(true)
@@ -28,14 +28,14 @@ export class AudioService {
     this.bgAudio.play()
   }
 
-  public stopSound() {
+  stopSound() {
     if (this.bgAudio.isPlaying) {
       this.bgAudio.stop()
       this.bgUrl = ''
     }
   }
 
-  public playNoise(buffer: AudioBuffer) {
+  playNoise(buffer: AudioBuffer) {
     if (this.audio.isPlaying) {
       return
     }

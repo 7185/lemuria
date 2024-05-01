@@ -54,9 +54,8 @@
           "never"
         ],
         "no-shadow": "off",
-        "@typescript-eslint/no-shadow": [
-          "error"
-        ],
+        "@typescript-eslint/no-shadow":  "error",
+        "@typescript-eslint/explicit-member-accessibility": ["error", { "accessibility": "no-public" }],
         "@typescript-eslint/consistent-type-imports": "error",
         "@typescript-eslint/no-unused-vars": [
           "error",

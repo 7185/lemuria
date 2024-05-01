@@ -15,24 +15,24 @@ import type {AvatarAnimationPlayer} from '../animation'
 import {InputSystemService} from './inputsystem.service'
 
 export class Player {
-  static BOX_SIDE = environment.world.collider.boxSide
-  static CLIMB_HEIGHT = environment.world.collider.climbHeight
-  static GROUND_ADJUST = environment.world.collider.groundAdjust
-  static MAX_STEP_LENGTH = environment.world.collider.maxStepLength
-  static MAX_NB_STEPS = environment.world.collider.maxNbSteps
+  static readonly BOX_SIDE = environment.world.collider.boxSide
+  static readonly CLIMB_HEIGHT = environment.world.collider.climbHeight
+  static readonly GROUND_ADJUST = environment.world.collider.groundAdjust
+  static readonly MAX_STEP_LENGTH = environment.world.collider.maxStepLength
+  static readonly MAX_NB_STEPS = environment.world.collider.maxNbSteps
 
   private inputSysSvc = inject(InputSystemService)
 
-  public avatar: Group
-  public state = 'idle'
-  public gesture: string | null = null
-  public isFlying = false
-  public isOnFloor = true
-  public inWater = signal(false)
-  public collider: PlayerCollider
-  public colliderBox: Group
-  public entity: Object3D
-  public velocity = new Vector3()
+  avatar: Group
+  state = 'idle'
+  gesture: string | null = null
+  isFlying = false
+  isOnFloor = true
+  inWater = signal(false)
+  collider: PlayerCollider
+  colliderBox: Group
+  entity: Object3D
+  velocity = new Vector3()
   private boxMaterial = new MeshBasicMaterial({
     color: 0x00ff00,
     wireframe: true
@@ -58,11 +58,11 @@ export class Player {
     return this.entity.rotation
   }
 
-  public resetCollider(height: number) {
+  resetCollider(height: number) {
     this.collider = new PlayerCollider(height, this.position)
   }
 
-  public setPos(pos: Vector3 | string, yaw = 0): void {
+  setPos(pos: Vector3 | string, yaw = 0): void {
     if (this.entity == null || pos == null) {
       return
     }
@@ -75,11 +75,11 @@ export class Player {
     this.setYaw(yaw)
   }
 
-  public setYaw(yaw: number) {
+  setYaw(yaw: number) {
     this.entity.rotation.y = Utils.radNormalized(yaw * DEG + Math.PI)
   }
 
-  public createBoundingBox(boxHeight: number) {
+  createBoundingBox(boxHeight: number) {
     const boxPos = new Vector3(0, boxHeight / 2, 0).add(this.position)
     const boundingBox = new Group()
     boundingBox.name = 'boundingBox'
@@ -117,7 +117,7 @@ export class Player {
     this.colliderBox = boundingBox
   }
 
-  public async updatePosition(
+  async updatePosition(
     deltaSinceLastFrame: number,
     chunksToCheck: LOD[],
     terrain: Group

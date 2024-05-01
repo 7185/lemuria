@@ -43,23 +43,23 @@ import {LightingService} from './lighting.service'
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
-  public avatarList: {
+  avatarList: {
     name: string
     geometry: string
     implicit: Map<string, string>
     explicit: Map<string, string>
   }[] = []
-  public avatarSub = new Subject<number>()
-  public gestures = signal<Map<string, string>>(new Map())
-  public worldId = 0
-  public worldList = []
-  public skybox = signal('')
-  public skyTop: WritableSignal<string>
-  public skyNorth: WritableSignal<string>
-  public skyEast: WritableSignal<string>
-  public skySouth: WritableSignal<string>
-  public skyWest: WritableSignal<string>
-  public skyBottom: WritableSignal<string>
+  avatarSub = new Subject<number>()
+  gestures = signal<Map<string, string>>(new Map())
+  worldId = 0
+  worldList = []
+  skybox = signal('')
+  skyTop: WritableSignal<string>
+  skyNorth: WritableSignal<string>
+  skyEast: WritableSignal<string>
+  skySouth: WritableSignal<string>
+  skyWest: WritableSignal<string>
+  skyBottom: WritableSignal<string>
 
   private engineSvc = inject(EngineService)
   private lightingSvc = inject(LightingService)
@@ -226,7 +226,7 @@ export class WorldService {
     })
   }
 
-  public initWorld() {
+  initWorld() {
     this.destroyWorld()
 
     // listeners
@@ -269,19 +269,19 @@ export class WorldService {
     })
   }
 
-  public destroyWorld() {
+  destroyWorld() {
     this.resetChunks()
     this.engineSvc.resetChunkLODMap()
     this.uAvatarListener?.unsubscribe()
     this.avatarListener?.unsubscribe()
   }
 
-  public set visibility(visibility: number) {
+  set visibility(visibility: number) {
     this.maxLodDistance = visibility
     this.engineSvc.setChunksDistance(visibility)
   }
 
-  public get playerLocation() {
+  get playerLocation() {
     return {
       world: this.worldName,
       position: Utils.posToString(

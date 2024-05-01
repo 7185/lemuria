@@ -5,7 +5,7 @@ import {RPM, X_AXIS, Y_AXIS, Z_AXIS} from '../utils'
 
 @Injectable({providedIn: 'root'})
 export class PropAnimationService {
-  public moveProp(prop: Group, delta: number) {
+  moveProp(prop: Group, delta: number) {
     const moveData = prop.userData.animation.move
     if (moveData == null) {
       return
@@ -57,7 +57,7 @@ export class PropAnimationService {
     }
   }
 
-  public rotateProp(prop: Group, delta: number) {
+  rotateProp(prop: Group, delta: number) {
     const rotateData = prop.userData.animation.rotate
     if (rotateData == null) {
       return

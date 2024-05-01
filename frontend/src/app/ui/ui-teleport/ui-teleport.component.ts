@@ -23,11 +23,11 @@ import {WorldService} from '../../world/world.service'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiTeleportComponent {
-  public worldName: string
-  public coordinates: string
-  public name: string
+  worldName: string
+  coordinates: string
+  name: string
 
-  public data: {type: number} = inject(MAT_DIALOG_DATA)
+  data: {type: number} = inject(MAT_DIALOG_DATA)
   private teleportSvc = inject(TeleportService)
   private settings = inject(SettingsService)
   private world = inject(WorldService)

@@ -20,14 +20,14 @@ import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils'
   providedIn: 'root'
 })
 export class BuildService {
-  public buildMode = false
-  public selectedProp: Group | null = null
-  public selectedCellSignal: WritableSignal<{
+  buildMode = false
+  selectedProp: Group | null = null
+  selectedCellSignal: WritableSignal<{
     height?: number
     texture?: number
     hole?: boolean
   }> = signal({})
-  public selectedPropSignal: WritableSignal<{
+  selectedPropSignal: WritableSignal<{
     name?: string
     desc?: string
     act?: string
@@ -39,7 +39,7 @@ export class BuildService {
   private propSelectionBox: LineSegments | null = null
   private inputSysSvc = inject(InputSystemService)
 
-  public selectProp(prop: Group, buildNode: Group) {
+  selectProp(prop: Group, buildNode: Group) {
     if (this.cellSelection != null) {
       this.deselectCell(buildNode)
     }
@@ -76,7 +76,7 @@ export class BuildService {
     buildNode.add(this.propSelection)
   }
 
-  public deselectProp(buildNode: Group) {
+  deselectProp(buildNode: Group) {
     if (this.propSelectionBox == null) {
       return
     }
@@ -93,7 +93,7 @@ export class BuildService {
     this.propSelection = null
   }
 
-  public moveProp(action: PropCtl, cameraDirection: Vector3, buildNode: Group) {
+  moveProp(action: PropCtl, cameraDirection: Vector3, buildNode: Group) {
     if (action === 'deselect') {
       this.deselectProp(buildNode)
       return
@@ -245,11 +245,7 @@ export class BuildService {
     this.propSelection.updateMatrix()
   }
 
-  public selectCell(
-    terrainPage: Object3D,
-    faceIndex: number,
-    buildNode: Group
-  ) {
+  selectCell(terrainPage: Object3D, faceIndex: number, buildNode: Group) {
     /**
      * Face indices for a 2x2 page:
      * +--+--+
@@ -322,7 +318,7 @@ export class BuildService {
     this.selectedCellSignal.set({height: cellSE.y})
   }
 
-  public deselectCell(buildNode: Group) {
+  deselectCell(buildNode: Group) {
     if (this.cellSelection == null) {
       return
     }

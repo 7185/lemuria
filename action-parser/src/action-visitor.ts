@@ -697,7 +697,7 @@ export class Action {
     })
   }
 
-  public parse(inputText: string) {
+  parse(inputText: string) {
     const lexResult = this.lexer.tokenize(inputText)
     parserInstance.input = lexResult.tokens
 
@@ -708,7 +708,7 @@ export class Action {
     return this.visitor.visit(cst)
   }
 
-  public debug(inputText: string) {
+  debug(inputText: string) {
     const lexResult = this.lexer.tokenize(inputText)
     parserInstance.input = lexResult.tokens
 

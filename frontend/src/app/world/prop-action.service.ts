@@ -71,7 +71,7 @@ export class PropActionService {
    * Called whenever the prop chunk is no longer visible
    * @param prop
    */
-  public hideProp(prop: Group) {
+  hideProp(prop: Group) {
     if (prop.userData.light != null) {
       delete prop.userData.light
     }
@@ -84,7 +84,7 @@ export class PropActionService {
    * Called on every prop whenever their chunk becomes visible
    * @param prop
    */
-  public showProp(prop: Group) {
+  showProp(prop: Group) {
     this.triggerAction(prop, 'create')
   }
 
@@ -92,7 +92,7 @@ export class PropActionService {
    * Called once a prop is clicked
    * @param prop
    */
-  public clickProp(prop: Group) {
+  clickProp(prop: Group) {
     this.triggerAction(prop, 'activate')
   }
 
@@ -100,7 +100,7 @@ export class PropActionService {
    * Parses the action string
    * @param prop
    */
-  public parseActions(prop: Group) {
+  parseActions(prop: Group) {
     const result = this.actionParser.parse(prop.userData.act)
     for (const trigger of Object.keys(result)) {
       this.parseAction(prop, trigger, result[trigger])
@@ -319,7 +319,7 @@ export class PropActionService {
    * @param trigger
    * @returns
    */
-  public triggerAction(
+  triggerAction(
     prop: Group,
     trigger: 'activate' | 'adone' | 'bump' | 'create'
   ) {
@@ -824,12 +824,7 @@ export class PropActionService {
     )
   }
 
-  public makeSound(
-    prop: Group,
-    url: string,
-    volume: number,
-    fallbackArchive = true
-  ) {
+  makeSound(prop: Group, url: string, volume: number, fallbackArchive = true) {
     if (this.audioSvc.bgUrl === prop.userData.sound) {
       // Sound didn't change, don't load it again
       this.audioSvc.setSoundVolume(volume)
@@ -883,7 +878,7 @@ export class PropActionService {
    * @param playerYaw Current player yaw
    * @returns
    */
-  public teleportPlayer(
+  teleportPlayer(
     teleport: {
       type?: string
       worldName?: string

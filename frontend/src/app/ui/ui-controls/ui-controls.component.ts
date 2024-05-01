@@ -21,7 +21,7 @@ import {Subject, takeUntil, take, timeout} from 'rxjs'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiControlsComponent implements OnInit {
-  public controlsLabels: [string, PressedKey][] = [
+  controlsLabels: [string, PressedKey][] = [
     ['Move Forward', 'moveFwd'],
     ['Move Backward', 'moveBck'],
     ['Turn Left', 'turnLft'],
@@ -38,8 +38,8 @@ export class UiControlsComponent implements OnInit {
     ['Pass Through', 'clip']
   ]
 
-  public controlsKeymap = Array(this.controlsLabels.length).fill([null, null])
-  public activeKey: [number | null, number | null] = [null, null]
+  controlsKeymap = Array(this.controlsLabels.length).fill([null, null])
+  activeKey: [number | null, number | null] = [null, null]
 
   private inputSysSvc = inject(InputSystemService)
   private cdRef = inject(ChangeDetectorRef)

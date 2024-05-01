@@ -29,25 +29,25 @@ import {LightingService} from 'src/app/world/lighting.service'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiWorldAttribsComponent {
-  public terrain: WritableSignal<boolean>
-  public terrainOffset: WritableSignal<number>
-  public ambLight: WritableSignal<string>
-  public dirLight: WritableSignal<string>
-  public lightDirX: WritableSignal<number>
-  public lightDirY: WritableSignal<number>
-  public lightDirZ: WritableSignal<number>
-  public fog: WritableSignal<boolean>
-  public fogColor: WritableSignal<string>
-  public fogMin: WritableSignal<number>
-  public fogMax: WritableSignal<number>
-  public skybox: WritableSignal<string>
-  public water: WritableSignal<boolean>
-  public waterColor: WritableSignal<string>
-  public waterTextureBottom: WritableSignal<string>
-  public waterTextureTop: WritableSignal<string>
-  public waterLevel: WritableSignal<number>
-  public waterOpacity: WritableSignal<number>
-  public waterUnderView: WritableSignal<number>
+  terrain: WritableSignal<boolean>
+  terrainOffset: WritableSignal<number>
+  ambLight: WritableSignal<string>
+  dirLight: WritableSignal<string>
+  lightDirX: WritableSignal<number>
+  lightDirY: WritableSignal<number>
+  lightDirZ: WritableSignal<number>
+  fog: WritableSignal<boolean>
+  fogColor: WritableSignal<string>
+  fogMin: WritableSignal<number>
+  fogMax: WritableSignal<number>
+  skybox: WritableSignal<string>
+  water: WritableSignal<boolean>
+  waterColor: WritableSignal<string>
+  waterTextureBottom: WritableSignal<string>
+  waterTextureTop: WritableSignal<string>
+  waterLevel: WritableSignal<number>
+  waterOpacity: WritableSignal<number>
+  waterUnderView: WritableSignal<number>
 
   constructor(
     private terrainSvc: TerrainService,

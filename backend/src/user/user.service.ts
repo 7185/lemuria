@@ -7,7 +7,7 @@ import {config} from '../app.config'
 
 @Injectable()
 export class UserService {
-  public authorizedUsers = new Set<User>()
+  authorizedUsers = new Set<User>()
   private cookieAccessRegex = new RegExp(`${config.cookie.accessName}=([^;]+)`)
   private cookieRefreshRegex = new RegExp(
     `${config.cookie.refreshName}=([^;]+)`

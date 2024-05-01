@@ -37,19 +37,19 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiTerrainEditComponent {
-  public faArrowsUpDown = faArrowsUpDown
-  public faArrowRotateLeft = faArrowRotateLeft
-  public faArrowRotateRight = faArrowRotateRight
-  public faClipboard = faClipboard
-  public faClone = faClone
-  public faSquare = faSquare
+  faArrowsUpDown = faArrowsUpDown
+  faArrowRotateLeft = faArrowRotateLeft
+  faArrowRotateRight = faArrowRotateRight
+  faClipboard = faClipboard
+  faClone = faClone
+  faSquare = faSquare
 
-  public selectedCell: WritableSignal<{
+  selectedCell: WritableSignal<{
     height?: number
     texture?: number
     hole?: boolean
   }>
-  public height = 0
+  height = 0
   private buildSvc = inject(BuildService)
 
   constructor() {
@@ -59,7 +59,7 @@ export class UiTerrainEditComponent {
     })
   }
 
-  public trigger(event: MouseEvent) {
+  trigger(event: MouseEvent) {
     event.preventDefault()
   }
 }

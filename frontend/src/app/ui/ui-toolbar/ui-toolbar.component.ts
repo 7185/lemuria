@@ -68,44 +68,46 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiToolbarComponent implements OnInit, AfterViewInit {
-  public faArrowLeft = faArrowLeft
-  public faArrowRight = faArrowRight
-  public faBolt = faBolt
-  public faCheck = faCheck
-  public faCircleUser = faCircleUser
-  public faCog = faCog
-  public faEye = faEye
-  public faGlobe = faGlobe
-  public faHand = faHand
-  public faHouse = faHouse
-  public faKeyboard = faKeyboard
-  public faLocationArrow = faLocationArrow
-  public faMountainSun = faMountainSun
-  public faRightFromBracket = faRightFromBracket
-  public faPerson = faPerson
-  public faUser = faUser
-  public faUsers = faUsers
-  public faVideo = faVideo
+  faArrowLeft = faArrowLeft
+  faArrowRight = faArrowRight
+  faBolt = faBolt
+  faCheck = faCheck
+  faCircleUser = faCircleUser
+  faCog = faCog
+  faEye = faEye
+  faGlobe = faGlobe
+  faHand = faHand
+  faHouse = faHouse
+  faKeyboard = faKeyboard
+  faLocationArrow = faLocationArrow
+  faMountainSun = faMountainSun
+  faRightFromBracket = faRightFromBracket
+  faPerson = faPerson
+  faUser = faUser
+  faUsers = faUsers
+  faVideo = faVideo
 
-  public debug = environment.debug
-  public cameraType = 0
-  public name = 'Anonymous'
-  public home = {world: null, position: null, isNew: true}
-  public teleports = signal([])
-  public userId: string
-  public avatarId = 0
-  public userList: User[] = []
-  public visibilityList = new Array(11).fill(40).map((n, i) => n + i * 20)
-  public visibility = environment.world.lod.maxDistance
-  public strPos: string
-  public strAlt: string
-  public strFps = '0 FPS 0 draws'
-  public strMem = '0 Geom. 0 Text.'
+  debug = environment.debug
+  cameraType = 0
+  name = 'Anonymous'
+  home = {world: null, position: null, isNew: true}
+  teleports = signal([])
+  userId: string
+  avatarId = 0
+  userList: User[] = []
+  visibilityList = Array.from<number>({length: 11})
+    .fill(40)
+    .map((n, i) => n + i * 20)
+  visibility = environment.world.lod.maxDistance
+  strPos: string
+  strAlt: string
+  strFps = '0 FPS 0 draws'
+  strMem = '0 Geom. 0 Text.'
 
-  public dialog = inject(MatDialog)
-  public socket = inject(SocketService)
-  public worldSvc = inject(WorldService)
-  public teleportSvc = inject(TeleportService)
+  dialog = inject(MatDialog)
+  socket = inject(SocketService)
+  worldSvc = inject(WorldService)
+  teleportSvc = inject(TeleportService)
   private renderer = inject(Renderer2)
   private cdRef = inject(ChangeDetectorRef)
   private engineSvc = inject(EngineService)
@@ -114,7 +116,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   private settings = inject(SettingsService)
   private compass = viewChild.required<ElementRef>('compass')
 
-  public constructor() {
+  constructor() {
     effect(() => {
       this.userList = this.userSvc.userList()
       this.worldSvc.worldList.forEach((w) => (w.users = 0))
@@ -128,16 +130,16 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     })
   }
 
-  public changeVisibility(visibility: number) {
+  changeVisibility(visibility: number) {
     this.visibility = visibility
     this.worldSvc.visibility = visibility
   }
 
-  public setAnimation(animation: string) {
+  setAnimation(animation: string) {
     this.engineSvc.gesture = animation
   }
 
-  public changeAvatar(avatarId: number) {
+  changeAvatar(avatarId: number) {
     if (avatarId >= this.worldSvc.avatarList.length) {
       avatarId = 0
     }
@@ -145,7 +147,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     this.worldSvc.avatarSub.next(avatarId)
   }
 
-  public teleportWorld(world: string, entry = null) {
+  teleportWorld(world: string, entry = null) {
     this.teleportSvc.teleport.set({
       world,
       position: entry,
@@ -153,14 +155,14 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     })
   }
 
-  public logout() {
+  logout() {
     if (this.socket.connected) {
       this.socket.close()
     }
     this.http.logout().subscribe()
   }
 
-  public async openSettings() {
+  async openSettings() {
     this.dialog.open(
       (await import('../ui-settings/ui-settings.component'))
         .UiSettingsComponent,
@@ -168,7 +170,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     )
   }
 
-  public async openControls() {
+  async openControls() {
     this.dialog.open(
       (await import('../ui-controls/ui-controls.component'))
         .UiControlsComponent,
@@ -176,7 +178,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     )
   }
 
-  public async openTeleport(type = 0) {
+  async openTeleport(type = 0) {
     if (type === 1 && !this.socket.connected) {
       return
     }
@@ -188,7 +190,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     )
   }
 
-  public async openWorldAttribs() {
+  async openWorldAttribs() {
     this.dialog.open(
       (await import('../ui-world-attribs/ui-world-attribs.component'))
         .UiWorldAttribsComponent,
@@ -196,23 +198,23 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     )
   }
 
-  public toggleCamera(): void {
+  toggleCamera(): void {
     this.cameraType = (this.cameraType + 1) % 3
     this.settings.set('camera', this.cameraType)
   }
 
-  public joinUser(userId: string) {
+  joinUser(userId: string) {
     const user = this.userSvc.getUser(userId)
     this.engineSvc.setPlayerPos(new Vector3(user.x, user.y, user.z))
     this.engineSvc.updateBoundingBox()
   }
 
-  public compassClick(north: boolean) {
+  compassClick(north: boolean) {
     this.engineSvc.setPlayerYaw((!north && 180) || 0)
     return false
   }
 
-  public ngOnInit(): void {
+  ngOnInit(): void {
     this.worldSvc.avatarSub.subscribe((avatarId) => (this.avatarId = avatarId))
     this.http.getLogged().subscribe((u: User) => {
       this.userId = u.id
@@ -251,7 +253,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     })
   }
 
-  public ngAfterViewInit(): void {
+  ngAfterViewInit(): void {
     this.engineSvc.compassSub
       .pipe(
         throttleTime(100),

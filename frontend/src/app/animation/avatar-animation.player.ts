@@ -58,7 +58,7 @@ export class AvatarAnimationPlayer {
     return transition
   }
 
-  public animate(
+  animate(
     deltaSecond: number,
     state = 'idle',
     gesture: string | null = null,
@@ -187,7 +187,7 @@ export class AvatarAnimationPlayer {
     return false
   }
 
-  public reset() {
+  reset() {
     // Reset the state of the avatar
     for (const entry of Object.entries<Group>(this.avatarView)) {
       entry[1].setRotationFromQuaternion(new Quaternion())
@@ -196,7 +196,7 @@ export class AvatarAnimationPlayer {
     this.avatarView['1']?.position.set(0, 0, 0)
   }
 
-  public makeNullFrame(): Frame {
+  makeNullFrame(): Frame {
     const frame: Frame = {joints: {}, location: new Vector3()}
 
     for (const entry of Object.entries(this.avatarView)) {

@@ -1,0 +1,17 @@
+{
+  "name": "@lemuria/lemuria",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "format": "npm -ws run format",
+    "lint": "npm -ws run lint",
+    "test": "npm -w action-parser -w backend run test"
+  },
+  "license": "MIT",
+  "workspaces": [
+    "action-parser",
+    "backend",
+    "frontend"
+  ]
+}
