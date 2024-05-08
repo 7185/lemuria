@@ -1,5 +1,10 @@
 import type {Signal} from '@angular/core'
-import {ChangeDetectionStrategy, Component, computed} from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject
+} from '@angular/core'
 import {EngineComponent} from '../engine/engine.component'
 import {UiChatZoneComponent} from './ui-chat-zone/ui-chat-zone.component'
 import {UiToolbarComponent} from './ui-toolbar/ui-toolbar.component'
@@ -25,7 +30,9 @@ export class UiComponent {
   loadPropEdit: Signal<boolean>
   loadTerrainEdit: Signal<boolean>
 
-  constructor(private buildSvc: BuildService) {
+  private buildSvc = inject(BuildService)
+
+  constructor() {
     this.loadPropEdit = computed(
       () => this.buildSvc.selectedPropSignal()?.name != null
     )

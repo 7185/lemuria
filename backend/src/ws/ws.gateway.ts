@@ -7,7 +7,7 @@ import {config} from '../app.config'
 
 export interface Message {
   type: string
-  user?: string
+  user?: string | null
   data: any
 }
 
@@ -21,7 +21,7 @@ export class WsGateway {
       'connection',
       (client: WebSocket, request: IncomingMessage) => {
         const user = this.userSvc.getUserFromAccessCookie(
-          request.headers.cookie
+          request.headers.cookie ?? ''
         )
         if (!user.id) {
           client.close()
@@ -68,7 +68,9 @@ export class WsGateway {
   }
 
   handleConnection(client: WebSocket, request: IncomingMessage) {
-    const user = this.userSvc.getUserFromAccessCookie(request.headers.cookie)
+    const user = this.userSvc.getUserFromAccessCookie(
+      request.headers.cookie ?? ''
+    )
     if (!user.id) {
       client.close()
       return
@@ -88,7 +90,7 @@ export class WsGateway {
         if (websocket === client) {
           user.websockets.delete(client)
           if (user.websockets.size === 0) {
-            user.positionTimer.unsubscribe()
+            user.positionTimer?.unsubscribe()
             user.connected = false
             this.userSvc.broadcast({type: 'part', data: user.name})
             this.userSvc.broadcastUserlist()

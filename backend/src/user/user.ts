@@ -2,16 +2,16 @@ import type {Subscription} from 'rxjs'
 import type {WebSocket} from 'ws'
 
 export class User {
-  id?: string
-  name?: string
-  avatar?: number
-  websockets?: Set<WebSocket>
-  connected?: boolean
-  position?: [number, number, number]
-  orientation?: [number, number, number]
-  world?: number
-  state?: string
-  gesture?: string | null
+  id: string | null
+  name: string
+  avatar: number
+  websockets: Set<WebSocket>
+  connected: boolean
+  position: [number, number, number]
+  orientation: [number, number, number]
+  world: number
+  state: string
+  gesture: string | null
   positionTimer?: Subscription
 
   constructor(params: User | object = {}) {

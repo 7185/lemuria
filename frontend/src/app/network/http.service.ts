@@ -55,7 +55,6 @@ export class HttpService extends HttpClient {
   }
 
   login(login: string, password: string) {
-    localStorage.setItem('login', login)
     return this.post(`${this.baseUrl}/auth/`, {login, password}).pipe(
       tap((data) => {
         this.expiration = Math.floor(new Date().getTime() / 1000) + 36000

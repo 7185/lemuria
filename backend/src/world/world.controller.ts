@@ -58,12 +58,30 @@ export class WorldController {
       max_z?: string
     }
   ) {
-    const min_x = /^-?\d+$/.test(query.min_x) ? parseInt(query.min_x) : null
-    const max_x = /^-?\d+$/.test(query.max_x) ? parseInt(query.max_x) : null
-    const min_y = /^-?\d+$/.test(query.min_y) ? parseInt(query.min_y) : null
-    const max_y = /^-?\d+$/.test(query.max_y) ? parseInt(query.max_y) : null
-    const min_z = /^-?\d+$/.test(query.min_z) ? parseInt(query.min_z) : null
-    const max_z = /^-?\d+$/.test(query.max_z) ? parseInt(query.max_z) : null
+    const min_x =
+      query.min_x != null && /^-?\d+$/.test(query.min_x)
+        ? parseInt(query.min_x)
+        : null
+    const max_x =
+      query.max_x != null && /^-?\d+$/.test(query.max_x)
+        ? parseInt(query.max_x)
+        : null
+    const min_y =
+      query.min_y != null && /^-?\d+$/.test(query.min_y)
+        ? parseInt(query.min_y)
+        : null
+    const max_y =
+      query.max_y != null && /^-?\d+$/.test(query.max_y)
+        ? parseInt(query.max_y)
+        : null
+    const min_z =
+      query.min_z != null && /^-?\d+$/.test(query.min_z)
+        ? parseInt(query.min_z)
+        : null
+    const max_z =
+      query.max_z != null && /^-?\d+$/.test(query.max_z)
+        ? parseInt(query.max_z)
+        : null
 
     const entries = (
       (await this.worldService.getProps(
@@ -75,7 +93,7 @@ export class WorldController {
         min_z,
         max_z
       )) as unknown[]
-    ).map((e) => Object.values(e))
+    ).map((e: any) => Object.values(e))
 
     return {entries}
   }
@@ -89,8 +107,14 @@ export class WorldController {
       page_z?: string
     }
   ) {
-    const pageX = /^-?\d+$/.test(query.page_x) ? parseInt(query.page_x) : 0
-    const pageZ = /^-?\d+$/.test(query.page_z) ? parseInt(query.page_z) : 0
+    const pageX =
+      query.page_x != null && /^-?\d+$/.test(query.page_x)
+        ? parseInt(query.page_x)
+        : 0
+    const pageZ =
+      query.page_z != null && /^-?\d+$/.test(query.page_z)
+        ? parseInt(query.page_z)
+        : 0
 
     return await this.worldService.getTerrainPage(parseInt(id), pageX, pageZ)
   }

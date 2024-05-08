@@ -10,33 +10,35 @@ RUN npm -w action-parser -w frontend ci && \
     rm -rf action-parser frontend/node-modules
 
 
-FROM python:3.12-alpine AS backend-py
+FROM python:3.12-alpine AS python
 EXPOSE 8080
 WORKDIR /backend
-COPY hypercorn.toml /backend/
-CMD ["hypercorn", "--config", "hypercorn.toml", "app:app"]
 ENV PATH="/venv/bin:$PATH"
 COPY backend-py /backend/
 COPY backend/prisma/schema.prisma /backend/prisma/schema.prisma
 COPY --from=frontend --chown=nobody:nobody /static /backend/static
-RUN apk add --update --no-cache build-base && \
+RUN apk add --update --no-cache icu-libs && \
     python -m venv /venv && \
     pip install --no-cache-dir -r /backend/requirements.txt && \
-    prisma generate --schema /backend/prisma/schema.prisma --generator client-py
+    prisma generate --schema /backend/prisma/schema.prisma --generator client-py && \
+    chown nobody -R /root && \
+    rm /backend/.env
+COPY backend/.env /backend/.env
+CMD ["hypercorn", "--config", "hypercorn.toml", "app:app"]
 VOLUME ["/backend/app.db", "/backend/dumps"]
 USER nobody
 
-FROM node:20-alpine AS backend
+FROM node:20-alpine AS node
 EXPOSE 8080
 WORKDIR /
 COPY backend /backend/
 COPY --from=frontend --chown=nobody:nobody /static /backend/static
 COPY package.json package-lock.json /
-RUN apk add --update --no-cache build-base && \
-    npm -w backend ci && \
+RUN npm -w backend ci && \
     npx -w backend prisma generate --generator client && \
     npm -w backend run build && \
-    rm -rf /node-modules
-CMD ["node", "backend/dist/main"]
+    cp -r backend/dist/ /dist/ && \
+    rm -rf /node-modules /backend/src /backend/test
+CMD ["node", "/dist/main"]
 VOLUME ["/backend/app.db", "/backend/dumps"]
 USER nobody

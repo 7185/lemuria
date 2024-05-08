@@ -98,11 +98,11 @@ You can also generate a docker image to build the project and run the server in 
 
 ```bash
 # Build with the node backend
-$ docker build --target backend -t lemuria .
+$ docker build --target node -t lemuria .
 # OR with the python backend
-$ docker build --target backend-py -t lemuria .
+$ docker build --target python -t lemuria .
 
-$ docker run -it -p 8080:8080 -v $PWD/backend-py/app.db:/app/app.db -v $PWD/dumps:/app/dumps lemuria
+$ docker run -it -p 8080:8080 -v $PWD/backend-py/app.db:/backend/app.db -v $PWD/dumps:/backend/dumps lemuria
 ```
 
 ## Try it out!

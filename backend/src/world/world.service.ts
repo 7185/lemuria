@@ -17,12 +17,15 @@ export class WorldService {
 
   async getWorld(id: number) {
     const world = await this.db.world.findFirst({where: {id}})
-    const attr = JSON.parse(world.data)
-    return new World({
-      id: world.id,
-      name: world.name,
-      ...attr
-    })
+    if (world != null) {
+      const attr = JSON.parse(world.data ?? '{}')
+      return new World({
+        id: world.id,
+        name: world.name,
+        ...attr
+      })
+    }
+    return new World()
   }
 
   async getProps(
@@ -35,7 +38,11 @@ export class WorldService {
     maxZ: number | null
   ) {
     // Having a null value on one of those coordinate criterias means no bound will be applied when querying all objects
-    const orClause = []
+    const orClause: {
+      x?: {gte?: number; lt?: number}
+      y?: {gte?: number; lt?: number}
+      z?: {gte?: number; lt?: number}
+    }[] = []
     if (minX != null) {
       orClause.push({x: {gte: minX}})
     }
@@ -83,7 +90,8 @@ export class WorldService {
 
   async getTerrainPage(wid: number, pageX: number, pageZ: number) {
     const cacheKey = `T-${wid}-${pageX}-${pageZ}`
-    let page = await this.cache.get(cacheKey)
+    let page: Partial<{[key: number]: [number, number]}> | undefined =
+      await this.cache.get(cacheKey)
 
     if (page == null) {
       page = {}
@@ -98,10 +106,12 @@ export class WorldService {
         where: {AND: [{wid}, {page_x: pageX}, {page_z: pageZ}]}
       })) {
         const width = elev.radius * 2
-        const textures = elev.textures
+        const textures = (elev.textures ?? '')
           .split(' ')
           .map((n: string) => parseInt(n))
-        const heights = elev.heights.split(' ').map((n: string) => parseInt(n))
+        const heights = (elev.heights ?? '')
+          .split(' ')
+          .map((n: string) => parseInt(n))
         for (let i = 0; i < width; i++) {
           const row = i * 128
           for (let j = 0; j < width; j++) {

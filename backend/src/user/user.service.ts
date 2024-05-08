@@ -25,7 +25,7 @@ export class UserService {
     return {id: user.id, name: user.name}
   }
 
-  logout(userId: string) {
+  logout(userId: string | null) {
     this.authorizedUsers.forEach((u) =>
       u.id === userId ? this.authorizedUsers.delete(u) : u
     )
@@ -63,8 +63,8 @@ export class UserService {
     this.broadcast({
       type: 'list',
       data: Array.from(this.authorizedUsers)
-        .filter((u) => u.connected)
-        .map((u) => u.toDict())
+        .filter((user: User) => user.connected)
+        .map((user: User) => user.toDict())
     })
   }
 
