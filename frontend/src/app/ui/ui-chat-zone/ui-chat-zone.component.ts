@@ -42,8 +42,8 @@ export class UiChatZoneComponent implements OnInit {
     VirtualScrollerComponent
   )
 
-  socket = inject(SocketService)
-  usrSvc = inject(UserService)
+  readonly socket = inject(SocketService)
+  readonly usrSvc = inject(UserService)
   faComments = faComments
   data = []
   message = ''

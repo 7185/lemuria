@@ -37,7 +37,7 @@ export class BuildService {
   private cellSelection: Group | null = null
   private propSelection: Group | null = null
   private propSelectionBox: LineSegments | null = null
-  private inputSysSvc = inject(InputSystemService)
+  private readonly inputSysSvc = inject(InputSystemService)
 
   selectProp(prop: Group, buildNode: Group) {
     if (this.cellSelection != null) {

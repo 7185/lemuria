@@ -21,7 +21,7 @@ export class Player {
   static readonly MAX_STEP_LENGTH = environment.world.collider.maxStepLength
   static readonly MAX_NB_STEPS = environment.world.collider.maxNbSteps
 
-  private inputSysSvc = inject(InputSystemService)
+  private readonly inputSysSvc = inject(InputSystemService)
 
   avatar: Group
   state = 'idle'

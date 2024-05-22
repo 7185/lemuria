@@ -11,7 +11,7 @@ export class UserService {
   avatarChanged: Subject<User> = new Subject()
   currentName = 'Anonymous'
 
-  private http = inject(HttpService)
+  private readonly http = inject(HttpService)
 
   currentUser() {
     return this.http.getLogged()

@@ -20,9 +20,9 @@ import {TERRAIN_PAGE_SIZE, Utils} from '../utils'
 export class TerrainService {
   terrain: Group
   water: Group
-  private engineSvc = inject(EngineService)
-  private http = inject(HttpService)
-  private propSvc = inject(PropService)
+  private readonly engineSvc = inject(EngineService)
+  private readonly http = inject(HttpService)
+  private readonly propSvc = inject(PropService)
   private textureLoader = new TextureLoader()
   private terrainMaterials = []
   private waterBottomGeom: PlaneGeometry

@@ -7,7 +7,7 @@ export class LightingService {
   private light: AmbientLight
   private dirLight: DirectionalLight
   private dirLightTargetObj: Object3D
-  private engineSvc = inject(EngineService)
+  private readonly engineSvc = inject(EngineService)
 
   constructor() {
     this.light = new AmbientLight(0xffffff, 2.5)

@@ -61,18 +61,18 @@ export class WorldService {
   skyWest: WritableSignal<string>
   skyBottom: WritableSignal<string>
 
-  private engineSvc = inject(EngineService)
-  private lightingSvc = inject(LightingService)
-  private terrainSvc = inject(TerrainService)
-  private userSvc = inject(UserService)
-  private propSvc = inject(PropService)
-  private propActionSvc = inject(PropActionService)
-  private anmSvc = inject(AvatarAnimationService)
-  private http = inject(HttpService)
-  private settings = inject(SettingsService)
-  private socket = inject(SocketService)
-  private teleportSvc = inject(TeleportService)
-  private buildSvc = inject(BuildService)
+  private readonly engineSvc = inject(EngineService)
+  private readonly lightingSvc = inject(LightingService)
+  private readonly terrainSvc = inject(TerrainService)
+  private readonly userSvc = inject(UserService)
+  private readonly propSvc = inject(PropService)
+  private readonly propActionSvc = inject(PropActionService)
+  private readonly anmSvc = inject(AvatarAnimationService)
+  private readonly http = inject(HttpService)
+  private readonly settings = inject(SettingsService)
+  private readonly socket = inject(SocketService)
+  private readonly teleportSvc = inject(TeleportService)
+  private readonly buildSvc = inject(BuildService)
 
   private worldName = 'Nowhere'
   private lastChunk = null

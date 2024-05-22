@@ -26,11 +26,11 @@ export class UiTeleportComponent {
   worldName: string
   coordinates: string
   name: string
-
   data: {type: number} = inject(MAT_DIALOG_DATA)
-  private teleportSvc = inject(TeleportService)
-  private settings = inject(SettingsService)
-  private world = inject(WorldService)
+
+  private readonly teleportSvc = inject(TeleportService)
+  private readonly settings = inject(SettingsService)
+  private readonly world = inject(WorldService)
 
   go() {
     this.teleportSvc.teleport.set({

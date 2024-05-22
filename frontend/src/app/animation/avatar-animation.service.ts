@@ -89,8 +89,8 @@ export class AvatarAnimationService {
     fflate
   }
   private frameRate = 60
-  private engineSvc = inject(EngineService)
-  private propSvc = inject(PropService)
+  private readonly engineSvc = inject(EngineService)
+  private readonly propSvc = inject(PropService)
 
   constructor() {
     effect(() => {

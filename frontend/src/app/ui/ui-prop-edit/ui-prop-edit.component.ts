@@ -61,8 +61,8 @@ export class UiPropEditComponent {
     date?: number
   }>
 
-  private buildSvc = inject(BuildService)
-  private propSvc = inject(PropService)
+  private readonly buildSvc = inject(BuildService)
+  private readonly propSvc = inject(PropService)
 
   constructor() {
     this.selectedProp = this.buildSvc.selectedPropSignal

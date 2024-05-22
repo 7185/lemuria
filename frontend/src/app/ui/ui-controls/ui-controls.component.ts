@@ -41,8 +41,8 @@ export class UiControlsComponent implements OnInit {
   controlsKeymap = Array(this.controlsLabels.length).fill([null, null])
   activeKey: [number | null, number | null] = [null, null]
 
-  private inputSysSvc = inject(InputSystemService)
-  private cdRef = inject(ChangeDetectorRef)
+  private readonly inputSysSvc = inject(InputSystemService)
+  private readonly cdRef = inject(ChangeDetectorRef)
   private cancel: Subject<boolean> | null = null
   private oldKey = 'nop'
 

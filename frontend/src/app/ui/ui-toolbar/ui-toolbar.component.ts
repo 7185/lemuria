@@ -104,16 +104,16 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
   strFps = '0 FPS 0 draws'
   strMem = '0 Geom. 0 Text.'
 
-  dialog = inject(MatDialog)
-  socket = inject(SocketService)
-  worldSvc = inject(WorldService)
-  teleportSvc = inject(TeleportService)
-  private renderer = inject(Renderer2)
-  private cdRef = inject(ChangeDetectorRef)
-  private engineSvc = inject(EngineService)
-  private http = inject(HttpService)
-  private userSvc = inject(UserService)
-  private settings = inject(SettingsService)
+  readonly dialog = inject(MatDialog)
+  readonly socket = inject(SocketService)
+  readonly worldSvc = inject(WorldService)
+  readonly teleportSvc = inject(TeleportService)
+  private readonly renderer = inject(Renderer2)
+  private readonly cdRef = inject(ChangeDetectorRef)
+  private readonly engineSvc = inject(EngineService)
+  private readonly http = inject(HttpService)
+  private readonly userSvc = inject(UserService)
+  private readonly settings = inject(SettingsService)
   private compass = viewChild.required<ElementRef>('compass')
 
   constructor() {

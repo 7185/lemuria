@@ -2,13 +2,13 @@
 @use '@angular/material' as mat;
 @import '../../../styles/_variables';
 
-$color-config: mat.get-color-config($lemuria-theme);
+$color-config: mat.m2-get-color-config($lemuria-theme);
 
 $primary-palette: map.get($color-config, 'primary');
 
 .pill{
-  background-color: mat.get-color-from-palette($primary-palette, 500);
-  color: mat.get-color-from-palette($primary-palette, '500-contrast');
+  background-color: mat.m2-get-color-from-palette($primary-palette, 500);
+  color: mat.m2-get-color-from-palette($primary-palette, '500-contrast');
   border-radius: 10px;
   padding: 4px;
 }

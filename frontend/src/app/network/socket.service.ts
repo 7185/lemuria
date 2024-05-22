@@ -19,8 +19,8 @@ export class SocketService {
   messages: Subject<Message> = new Subject()
   connected = false
 
-  private engineSvc = inject(EngineService)
-  private userSvc = inject(UserService)
+  private readonly engineSvc = inject(EngineService)
+  private readonly userSvc = inject(UserService)
   private connecting = false
   private socket: WebSocketSubject<unknown> = webSocket({
     url: environment.url.websocket

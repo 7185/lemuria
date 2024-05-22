@@ -83,13 +83,13 @@ export class EngineService {
   playerPosition = signal(new Vector3())
   worldFog = {color: 0x00007f, near: 0, far: 120, enabled: false}
 
-  private userSvc = inject(UserService)
-  private inputSysSvc = inject(InputSystemService)
-  private audioSvc = inject(AudioService)
-  private propSvc = inject(PropService)
-  private buildSvc = inject(BuildService)
-  private propAnimSvc = inject(PropAnimationService)
-  private propActionSvc = inject(PropActionService)
+  private readonly userSvc = inject(UserService)
+  private readonly inputSysSvc = inject(InputSystemService)
+  private readonly audioSvc = inject(AudioService)
+  private readonly propSvc = inject(PropService)
+  private readonly buildSvc = inject(BuildService)
+  private readonly propAnimSvc = inject(PropAnimationService)
+  private readonly propActionSvc = inject(PropActionService)
 
   private terrain: Group
   private water: Group

@@ -87,7 +87,7 @@ export class InputSystemService {
   ])
 
   private keyMap: Map<string, PressedKey>
-  private settings = inject(SettingsService)
+  private readonly settings = inject(SettingsService)
 
   constructor() {
     this.keyMap = new Map(this.settings.get('keymap') ?? this.defaultKeymap)

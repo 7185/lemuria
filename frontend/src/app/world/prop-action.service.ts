@@ -42,11 +42,11 @@ export class PropActionService {
   private textureLoader = new TextureLoader()
   private remoteUrl = /.+\..+\/.+/
   private actionParser = new Action()
-  private teleportSvc = inject(TeleportService)
-  private settings = inject(SettingsService)
-  private audioSvc = inject(AudioService)
-  private propSvc = inject(PropService)
-  private http = inject(HttpService)
+  private readonly teleportSvc = inject(TeleportService)
+  private readonly settings = inject(SettingsService)
+  private readonly audioSvc = inject(AudioService)
+  private readonly propSvc = inject(PropService)
+  private readonly http = inject(HttpService)
   private archiveApiQueue = new Subject<{
     prop: Group
     url: string

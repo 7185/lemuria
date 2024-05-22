@@ -30,7 +30,7 @@ export class UiComponent {
   loadPropEdit: Signal<boolean>
   loadTerrainEdit: Signal<boolean>
 
-  private buildSvc = inject(BuildService)
+  private readonly buildSvc = inject(BuildService)
 
   constructor() {
     this.loadPropEdit = computed(

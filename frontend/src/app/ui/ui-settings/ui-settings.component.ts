@@ -28,9 +28,9 @@ export class UiSettingsComponent implements OnInit {
   maxFps: number
   maxLights: number
   archivedMedia = false
-  dialogRef = inject(MatDialogRef<UiSettingsComponent>)
-  private engineSvc = inject(EngineService)
-  private settings = inject(SettingsService)
+  readonly dialogRef = inject(MatDialogRef<UiSettingsComponent>)
+  private readonly engineSvc = inject(EngineService)
+  private readonly settings = inject(SettingsService)
 
   constructor() {
     effect(() => {

@@ -48,10 +48,10 @@ export class AuthComponent implements OnInit {
   passwordCtl: FormControl<string | null>
   private returnUrl: string
 
-  private http = inject(HttpService)
-  private fb = inject(FormBuilder)
-  private router = inject(Router)
-  private route = inject(ActivatedRoute)
+  private readonly http = inject(HttpService)
+  private readonly fb = inject(FormBuilder)
+  private readonly router = inject(Router)
+  private readonly route = inject(ActivatedRoute)
 
   constructor() {
     this.usernameCtl = this.fb.control('', [

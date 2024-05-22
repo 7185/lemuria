@@ -21,8 +21,8 @@ export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {
   labelZone = viewChild.required<ElementRef<HTMLDivElement>>('labelZone')
   labelDesc = viewChild.required<ElementRef<HTMLDivElement>>('labelDesc')
 
-  private engineSvc = inject(EngineService)
-  private world = inject(WorldService)
+  private readonly engineSvc = inject(EngineService)
+  private readonly world = inject(WorldService)
 
   ngOnInit(): void {
     this.engineSvc.createScene(

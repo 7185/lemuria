@@ -50,7 +50,7 @@ export class UiTerrainEditComponent {
     hole?: boolean
   }>
   height = 0
-  private buildSvc = inject(BuildService)
+  private readonly buildSvc = inject(BuildService)
 
   constructor() {
     this.selectedCell = this.buildSvc.selectedCellSignal

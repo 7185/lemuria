@@ -1,4 +1,4 @@
-import {ɵprovideZonelessChangeDetection} from '@angular/core'
+import {provideExperimentalZonelessChangeDetection} from '@angular/core'
 import {APP_BASE_HREF} from '@angular/common'
 import {
   provideHttpClient,
@@ -15,7 +15,7 @@ import {jwtInterceptor} from './app/network'
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(APP_ROUTES, withViewTransitions()),
-    ɵprovideZonelessChangeDetection(),
+    provideExperimentalZonelessChangeDetection(),
     provideAnimationsAsync(),
     provideHttpClient(withFetch(), withInterceptors([jwtInterceptor])),
     {provide: APP_BASE_HREF, useValue: '/'}
