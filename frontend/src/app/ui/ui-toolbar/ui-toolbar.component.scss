@@ -1,5 +1,6 @@
 @use 'sass:map';
 @use '@angular/material' as mat;
+
 @import '../../../styles/_variables';
 
 $color-config: mat.m2-get-color-config($lemuria-theme);
@@ -11,6 +12,7 @@ $primary-palette: map.get($color-config, 'primary');
   color: mat.m2-get-color-from-palette($primary-palette, '500-contrast');
   border-radius: 10px;
   padding: 4px;
+  margin: 0 4px;
 }
 
 mat-toolbar {
@@ -22,6 +24,13 @@ mat-toolbar {
   button:not(.btn-circle) {
     width: auto;
   }
+}
+
+.world-item {
+  display: flex;
+  justify-content: space-between;
+  flex-flow: row nowrap;
+  align-items: center;
 }
 
 .info {
@@ -39,16 +48,16 @@ mat-toolbar {
 }
 
 button:disabled fa-icon {
-  color: rgba(255, 255, 255, 0.5) !important;
+  color: rgba(255 255 255 / 50%) !important;
 }
 
 .btn-circle {
   background-color: #263238;
   width: 38px !important;
   height: 38px !important;
-  padding: 6px 0px !important;
+  padding: 6px 0 !important;
   border-radius: 19px;
   text-align: center;
   font-size: 12px;
-  line-height: 1.42857;
+  line-height: 1.4286;
 }

@@ -1,4 +1,7 @@
 @use '@angular/material' as mat;
+
 @include mat.core();
-@import "_variables";
+
+@import '_variables';
+
 @include mat.all-component-themes($lemuria-theme);

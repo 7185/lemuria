@@ -1,8 +1,17 @@
 # Lemuria
 
-[![Lemuria CI](https://github.com/7185/lemuria/actions/workflows/lemuria.yml/badge.svg)](https://github.com/7185/lemuria/actions/workflows/lemuria.yml)
+[![build](https://img.shields.io/github/actions/workflow/status/7185/lemuria/lemuria.yml?style=flat-square)](https://github.com/7185/lemuria/actions)
+[![license](https://img.shields.io/github/license/7185/lemuria.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![last-commit](https://img.shields.io/github/last-commit/7185/lemuria?display_timestamp=author&style=flat-square)](https://github.com/7185/lemuria/commits/master) \
+![nestjs](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/@nestjs/core?filename=backend%2Fpackage.json&label=nestjs&style=flat-square&logo=nestjs&color=%23E0234E)
+![angular](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/@angular/core?filename=frontend%2Fpackage.json&label=angular&style=flat-square&logo=angular&color=%230F0F11)
+![three](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/three?filename=frontend%2Fpackage.json&style=flat-square&logo=three.js&color=%23000000)
 
 Yet another project about creating a 3D virtual world and stuff.
+
+<p align="center">
+<img src="frontend/src/app/logo/logo.component.svg" alt="Lemuria" width="256"/>
+</p>
 
 Powered with Nest (or Quart), Angular and Three.js.
 
@@ -14,20 +23,12 @@ First we need to fetch all dependencies:
 $ npm ci
 ```
 
-Then we build and run the project:
+Then we build the frontend:
 
 ```bash
 # You can also use build:prod to build a production-ready bundle
 $ npm run build -w frontend
 ```
-
-To avoid CORS issues when accessing static files from a web browser, go to `backend-py` and do the following:
-
-```bash
-$ python tools/serve_path.py
-```
-
-This will run a script to serve files in `backend-py` on port `8181`
 
 ## First DB and server setup
 
@@ -67,11 +68,26 @@ $ python tools/import_lemuria.py
 
 This will create and init the database `backend/app.db` using the data in `dumps/atlemuria.txt` and `dumps/proplemuria.txt`.
 
-You will also need the `village2` resource path to be served, to do so you can go to `backend-py`
-and create a symlink by running the following (but set the path correctly first):
+### Serve the world files
+
+Once again, you can choose between node or python to serve the world resource files. To avoid CORS issues when accessing static files from a web browser, do the following:
+
+#### Node file server
+```bash
+$ npx -y http-server -p 8181 -c-1 --cors
+```
+
+#### Python file server
+```bash
+$ cd backend-py
+$ python tools/serve_path.py
+```
+
+This will run a script to serve files in the current directory on port `8181`.
+You will also need the `village2` resource path to be served, to do so you can create a symlink by running the following (but set the path correctly first):
 
 ```bash
-$ ln -s /my/path/to/resource/folder/for/village2 village2
+$ ln -s /my/path/to/resource/directory/for/village2 village2
 ```
 
 ### Run the server
@@ -87,7 +103,7 @@ $ npm -w backend run start
 #### Python backend
 
 ```bash
-$ prisma generate --schema backend/prisma/schema.prisma --generator client-py
+$ prisma generate --schema backend/prisma/schema.prisma --generator client-py # only needed if the prisma version or the schema changed
 $ cd backend-py
 $ python app.py
 ```
@@ -105,8 +121,17 @@ $ docker build --target python -t lemuria .
 $ docker run -it -p 8080:8080 -v $PWD/backend-py/app.db:/backend/app.db -v $PWD/dumps:/backend/dumps lemuria
 ```
 
+## Bot
+
+You can use python bots on Lemuria. See the `bot` directory.
+```python
+from bot import Bot
+```
+
+An example bot `bonobot.py` is available in this repository.
+
 ## Try it out!
 
-Once `npm run build`, `npm run start` (or `app.py`) and `serve_path.py` are running: open your favorite web browser and go to `http://localhost:8080`,
+Once `npm run start` (or `app.py`) and `http-server` (or `serve_path.py`) are running: open your favorite web browser and go to `http://localhost:8080`,
 you should be prompted with a login screen, put whatever nickname you want, the password you provide doesn't matter as
 there's no proper authentication for the moment.

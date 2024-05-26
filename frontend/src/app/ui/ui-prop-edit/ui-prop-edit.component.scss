@@ -8,15 +8,15 @@
   width: 30vw;
   min-width: 352px;
   background-color: #00000080;
-  text-shadow: rgb(0, 0, 0) 2px 0px 0px, rgb(0, 0, 0) 1.75517px 0.958851px 0px, rgb(0, 0, 0) 1.0806px 1.68294px 0px,
-  rgb(0, 0, 0) 0.141474px 1.99499px 0px, rgb(0, 0, 0) -0.832294px 1.81859px 0px, rgb(0, 0, 0) -1.60229px 1.19694px 0px,
-  rgb(0, 0, 0) -1.97999px 0.28224px 0px, rgb(0, 0, 0) -1.87291px -0.701566px 0px, rgb(0, 0, 0) -1.30729px -1.51361px 0px,
-  rgb(0, 0, 0) -0.421592px -1.95506px 0px, rgb(0, 0, 0) 0.567324px -1.91785px 0px, rgb(0, 0, 0) 1.41734px -1.41108px 0px,
-  rgb(0, 0, 0) 1.92034px -0.558831px 0px;
+  text-shadow: #000 2px 0 0, #000 1.7552px 0.9589px 0, #000 1.0806px 1.6829px 0,
+  #000 0.1415px 1.9950px 0, #000 -0.8323px 1.8186px 0, #000 -1.6023px 1.1969px 0,
+  #000 -1.9800px 0.2822px 0, #000 -1.8729px -0.7016px 0, #000 -1.3073px -1.5136px 0,
+  #000 -0.4216px -1.9551px 0, #000 0.5673px -1.9179px 0, #000 1.4173px -1.4111px 0,
+  #000 1.9203px -0.5588px 0;
 
   .buttons button {
     width: auto;
-    margin: -5px -5px -5px -5px;
+    margin: -5px;
     transform: scale(0.8);
   }
 

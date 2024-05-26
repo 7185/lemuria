@@ -224,7 +224,7 @@ export class EngineService {
       1000
     )
     this.camera.rotation.order = 'YXZ'
-    this.camera.position.y = 0
+    this.camera.position.setY(0)
     this.lodCamera = this.camera.clone()
     this.scene.add(this.lodCamera)
     this.player.entity.attach(this.camera)
@@ -236,8 +236,8 @@ export class EngineService {
       1000
     )
     this.thirdCamera.rotation.order = 'YXZ'
-    this.thirdCamera.position.z = 6
-    this.thirdCamera.position.y = 0.2
+    this.thirdCamera.position.setZ(6)
+    this.thirdCamera.position.setY(0.2)
     this.camera.attach(this.thirdCamera)
 
     this.thirdFrontCamera = new PerspectiveCamera(
@@ -247,8 +247,8 @@ export class EngineService {
       1000
     )
     this.thirdFrontCamera.rotation.order = 'YXZ'
-    this.thirdFrontCamera.position.z = -6
-    this.thirdFrontCamera.position.y = 0.2
+    this.thirdFrontCamera.position.setZ(-6)
+    this.thirdFrontCamera.position.setY(0.2)
     this.thirdFrontCamera.rotation.y = Math.PI
     this.camera.attach(this.thirdFrontCamera)
 
@@ -369,7 +369,7 @@ export class EngineService {
   }
 
   setCameraOffset(offset: number) {
-    this.camera.position.y = offset
+    this.camera.position.setY(offset)
   }
 
   addChunk(chunk: LOD) {
@@ -1114,13 +1114,15 @@ export class EngineService {
       }
       u.completion = Math.min(1, u.completion + this.deltaSinceLastFrame / 0.2)
       const previousPos = user.position.clone()
-      user.position.x = u.oldX + (u.x - u.oldX) * u.completion
-      user.position.y = u.oldY + (u.y - u.oldY) * u.completion
+      user.position.set(
+        u.oldX + (u.x - u.oldX) * u.completion,
+        u.oldY + (u.y - u.oldY) * u.completion,
+        u.oldZ + (u.z - u.oldZ) * u.completion
+      )
       if (user.userData.offsetY != null) {
         // when the avatar is not loaded yet, the position should not be corrected
-        user.position.y += user.userData.offsetY
+        user.position.setY(user.position.y + user.userData.offsetY)
       }
-      user.position.z = u.oldZ + (u.z - u.oldZ) * u.completion
       user.rotation.set(
         u.oldRoll + Utils.shortestAngle(u.oldRoll, u.roll) * u.completion,
         u.oldYaw + Utils.shortestAngle(u.oldYaw, u.yaw) * u.completion,

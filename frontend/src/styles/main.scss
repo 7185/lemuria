@@ -13,13 +13,14 @@ html, body, app-root {
   margin: 0;
   padding: 0;
   background-color: #303030;
-  color: #ffffff;
+  color: #fff;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 // dialog backdrop
 .cdk-global-scrollblock {
   overflow: hidden;
+
   .cdk-overlay-backdrop {
     opacity: 0;
   }
@@ -49,12 +50,12 @@ html, body, app-root {
   font-weight: bold;
 }
 
-.cdk-drag:not(.cdk-drag-dragging) .cdk-drag-handle {
-  cursor: move;
-}
-
 .cdk-drag-dragging .cdk-drag-handle {
   cursor: grabbing;
+}
+
+.cdk-drag:not(.cdk-drag-dragging) .cdk-drag-handle {
+  cursor: move;
 }
 
 .text-blue {

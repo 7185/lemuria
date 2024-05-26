@@ -448,7 +448,7 @@ export class WorldService {
     this.propSvc.loadAvatar(name).subscribe(async (o) => {
       o.rotation.copy(new Euler(0, Math.PI, 0))
       group.parent.updateMatrixWorld()
-      group.position.y = group.parent.position.y
+      group.position.setY(group.parent.position.y)
       this.engineSvc.disposeMaterial(group)
       this.engineSvc.disposeGeometry(group)
       group.clear().add(o.clone())
@@ -461,16 +461,16 @@ export class WorldService {
       if (group.name === 'avatar') {
         this.engineSvc.setCameraOffset(group.userData.height * 0.9)
         this.engineSvc.updateBoundingBox()
-        group.position.y += group.userData.offsetY
+        group.position.setY(group.position.y + group.userData.offsetY)
       } else {
         const user = this.userSvc.getUser(group.name)
-        group.position.y = user.y + group.userData.offsetY
+        group.position.setY(user.y + group.userData.offsetY)
       }
     })
   }
 
   // Get chunk tile X and Z ids from position
-  private getChunkTile(pos: Vector3) {
+  private getChunkTile(pos: Vector3): [number, number] {
     const tileX = Math.floor(
       (Math.floor(pos.x * 100) + this.chunkWidth / 2) / this.chunkWidth
     )

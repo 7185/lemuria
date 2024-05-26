@@ -11,7 +11,7 @@ export class LightingService {
 
   constructor() {
     this.light = new AmbientLight(0xffffff, 2.5)
-    this.light.position.z = 100
+    this.light.position.setZ(100)
     this.engineSvc.addWorldObject(this.light)
 
     this.dirLightTargetObj = new Object3D()

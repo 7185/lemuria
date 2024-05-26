@@ -17,7 +17,10 @@
     <ng-template matMenuContent>
       @for (w of worldSvc.worldList; track w) {
       <button mat-menu-item (click)="teleportWorld(w.name)">
-        <fa-icon [icon]="faGlobe"/> {{ w.name }} <span class="pill">{{ w.users }}</span>
+        <div class="world-item">
+          <span><fa-icon [icon]="faGlobe"/> {{ w.name }}</span>
+          <span class="pill">{{ w.users }}</span>
+        </div>
       </button>
       }
     </ng-template>
@@ -144,7 +147,7 @@
 
   <span class="spacer"></span>
 
-  <button mat-icon-button  [matBadge]="userList.length" matBadgePosition="below" matBadgeSize="small" [matMenuTriggerFor]="usersMenu" title="Users">
+  <button mat-icon-button [matBadge]="userList.length" matBadgePosition="below" matBadgeSize="small" [matMenuTriggerFor]="usersMenu" title="Users">
     <fa-icon [icon]="faUsers" class="text-purple" [fixedWidth]="true"/>
   </button>
   <mat-menu #usersMenu="matMenu">

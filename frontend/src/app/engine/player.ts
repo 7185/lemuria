@@ -122,10 +122,11 @@ export class Player {
     chunksToCheck: LOD[],
     terrain: Group
   ) {
-    this.velocity.y =
+    this.velocity.setY(
       this.isOnFloor && !this.isFlying
         ? 0
         : deltaSinceLastFrame * 0.01 + this.velocity.y
+    )
 
     this.entity.updateMatrixWorld()
 
@@ -200,7 +201,7 @@ export class Player {
 
     if (this.position.y < -350) {
       this.velocity.set(0, 0, 0)
-      this.position.y = 0
+      this.position.setY(0)
     }
   }
 
