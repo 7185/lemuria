@@ -6,11 +6,11 @@ import {UserService} from './user.service'
 import type {FastifyReply} from 'fastify'
 import {config} from '../app.config'
 
-describe('UserController', () => {
+describe(UserController.name, () => {
   let offlineController: UserController
   let controller: UserController
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const offlineModule: TestingModule = await Test.createTestingModule({
       imports: [JwtModule.register({secret: config.secret})],
       controllers: [UserController],

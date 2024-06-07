@@ -7,6 +7,7 @@ import {MatButtonModule} from '@angular/material/button'
 import {MatInputModule} from '@angular/material/input'
 import {MatFormFieldModule} from '@angular/material/form-field'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
+import type {Group} from 'three'
 import {PropService} from '../../world/prop.service'
 import type {PropCtl} from '../../world/prop.service'
 import {BuildService} from '../../engine/build.service'
@@ -54,18 +55,20 @@ export class UiPropEditComponent {
   faRotate = faRotate
   faTrashCan = faTrashCan
 
-  selectedProp: WritableSignal<{
-    name?: string
-    desc?: string
-    act?: string
-    date?: number
-  }>
+  selectedProp: WritableSignal<Group>
 
   private readonly buildSvc = inject(BuildService)
   private readonly propSvc = inject(PropService)
 
   constructor() {
     this.selectedProp = this.buildSvc.selectedPropSignal
+  }
+
+  updateName(name: string) {
+    if (this.selectedProp() == null) {
+      return
+    }
+    this.selectedProp().name = name
   }
 
   trigger(event: MouseEvent, control: PropCtl) {

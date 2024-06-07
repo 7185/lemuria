@@ -7,10 +7,17 @@ import {MatFormFieldModule} from '@angular/material/form-field'
 import {MatInputModule} from '@angular/material/input'
 import {MatSliderModule} from '@angular/material/slider'
 import {MatTabsModule} from '@angular/material/tabs'
+import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {Utils} from '../../utils'
 import {WorldService} from 'src/app/world/world.service'
 import {TerrainService} from 'src/app/world/terrain.service'
 import {LightingService} from 'src/app/world/lighting.service'
+import {
+  faMound,
+  faPanorama,
+  faSun,
+  faWater
+} from '@fortawesome/free-solid-svg-icons'
 
 @Component({
   standalone: true,
@@ -21,7 +28,8 @@ import {LightingService} from 'src/app/world/lighting.service'
     MatFormFieldModule,
     MatInputModule,
     MatSliderModule,
-    MatTabsModule
+    MatTabsModule,
+    FontAwesomeModule
   ],
   selector: 'app-ui-world-attribs',
   templateUrl: './ui-world-attribs.component.html',
@@ -29,6 +37,10 @@ import {LightingService} from 'src/app/world/lighting.service'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiWorldAttribsComponent {
+  faMound = faMound
+  faPanorama = faPanorama
+  faSun = faSun
+  faWater = faWater
   terrain: WritableSignal<boolean>
   terrainOffset: WritableSignal<number>
   ambLight: WritableSignal<string>

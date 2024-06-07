@@ -3,7 +3,11 @@
 </h1>
 <mat-dialog-content class="mat-typography">
   <mat-tab-group dynamicHeight>
-    <mat-tab label="Ground">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <fa-icon [icon]="faMound" [fixedWidth]="true" pull="left"/>
+        Ground
+      </ng-template>
       <div class="tab-content">
         <mat-checkbox [ngModel]="terrain()" (ngModelChange)="terrain.set($event)">Enable Terrain</mat-checkbox>
         <mat-form-field appearance="outline">
@@ -12,7 +16,11 @@
         </mat-form-field>
       </div>
     </mat-tab>
-    <mat-tab label="Lighting">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <fa-icon [icon]="faSun" [fixedWidth]="true" pull="left"/>
+        Lighting
+      </ng-template>
       <div class="tab-content">
         <mat-checkbox [ngModel]="terrain()" [ngModel]="fog()" (ngModelChange)="fog.set($event)">Enable Fog</mat-checkbox>
         <mat-form-field appearance="outline">
@@ -37,7 +45,7 @@
         </mat-form-field>
         <div>
           <div>
-            <label>Light Direction</label>
+            <mat-label>Light Direction</mat-label>
           </div>
           <mat-slider min="-1000" max="1000" step="1" discrete>
             <input matSliderThumb [ngModel]="lightDirX()" (ngModelChange)="lightDirX.set($event)">
@@ -51,7 +59,11 @@
         </div>
       </div>
     </mat-tab>
-    <mat-tab label="Sky">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <fa-icon [icon]="faPanorama" [fixedWidth]="true" pull="left"/>
+        Sky
+      </ng-template>
       <div class="tab-content">
         <mat-form-field appearance="outline">
           <mat-label>Skybox</mat-label>
@@ -89,7 +101,11 @@
         </div>
       </div>
     </mat-tab>
-    <mat-tab label="Water">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <fa-icon [icon]="faWater" [fixedWidth]="true" pull="left"/>
+        Water
+      </ng-template>
       <div class="tab-content">
         <mat-checkbox [ngModel]="water()" (ngModelChange)="water.set($event)">Enable water</mat-checkbox>
         <mat-form-field appearance="outline">

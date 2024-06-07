@@ -6,10 +6,10 @@ import {WsGateway} from './ws.gateway'
 import {IncomingMessage} from 'http'
 import {WebSocket} from 'ws'
 
-describe('WsGateway', () => {
+describe(WsGateway.name, () => {
   let gateway: WsGateway
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const mockUser = {
       authorizedUsers: new Set([new User({id: 'dummy', name: 'alice'})]),
       getUserFromAccessCookie: jest.fn((x) => x)

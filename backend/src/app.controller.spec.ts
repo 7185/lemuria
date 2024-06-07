@@ -3,10 +3,10 @@ import type {FastifyReply} from 'fastify'
 import {AppController} from './app.controller'
 import {AppService} from './app.service'
 
-describe('AppController', () => {
+describe(AppController.name, () => {
   let appController: AppController
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
       providers: [AppService]

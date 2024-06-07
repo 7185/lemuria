@@ -1,4 +1,4 @@
-<div id="build-zone" cdkDrag [class.d-none]="selectedProp().name === undefined">
+<div id="build-zone" cdkDrag [class.d-none]="selectedProp() === null">
   <hr cdkDragHandle/>
   <div class="buttons">
     <button mat-icon-button type="button" (click)="trigger($event, 'copy')" title="Duplicate">
@@ -81,19 +81,19 @@
   <div class="prop-form">
     <mat-form-field appearance="outline">
       <mat-label>Object</mat-label>
-      <input matInput type="text" [(ngModel)]="selectedProp().name" autofocus>
+      <input matInput type="text" [ngModel]="selectedProp()?.name" (ngModelChange)="updateName($event)" autofocus>
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>Description</mat-label>
-      <textarea matInput cdkTextareaAutosize cdkAutosizeMinRows="1" cdkAutosizeMaxRows="8" [(ngModel)]="selectedProp().desc"></textarea>
+      <textarea matInput cdkTextareaAutosize cdkAutosizeMinRows="1" cdkAutosizeMaxRows="8" [(ngModel)]="selectedProp()?.userData.desc"></textarea>
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>Action</mat-label>
-      <textarea matInput cdkTextareaAutosize cdkAutosizeMinRows="1" cdkAutosizeMaxRows="8" [(ngModel)]="selectedProp().act" spellcheck="false"></textarea>
+      <textarea matInput cdkTextareaAutosize cdkAutosizeMinRows="1" cdkAutosizeMaxRows="8" [(ngModel)]="selectedProp()?.userData.act" spellcheck="false"></textarea>
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>Date</mat-label>
-      <input matInput type="text" [ngModel]="(selectedProp().date ?? 0) * 1000 | date:'EEE MMM d, y h:mm a'" readonly>
+      <input matInput type="text" [ngModel]="(selectedProp()?.userData.date ?? 0) * 1000 | date:'EEE MMM d, y h:mm a'" readonly>
     </mat-form-field>
   </div>
 </div>

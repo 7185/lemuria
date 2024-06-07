@@ -3,10 +3,10 @@ import {Test, TestingModule} from '@nestjs/testing'
 import {CACHE_MANAGER} from '@nestjs/cache-manager'
 import {WorldService} from './world.service'
 
-describe('WorldService', () => {
+describe(WorldService.name, () => {
   let service: WorldService
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WorldService,

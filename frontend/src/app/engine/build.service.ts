@@ -14,6 +14,7 @@ import {
 import type {Object3D, Material, Mesh} from 'three'
 import type {PropCtl} from '../world/prop.service'
 import {InputSystemService} from './inputsystem.service'
+import {PropActionService} from '../world/prop-action.service'
 import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils'
 
 @Injectable({
@@ -27,17 +28,13 @@ export class BuildService {
     texture?: number
     hole?: boolean
   }> = signal({})
-  selectedPropSignal: WritableSignal<{
-    name?: string
-    desc?: string
-    act?: string
-    date?: number
-  }> = signal({})
+  selectedPropSignal: WritableSignal<Group> = signal(null)
   private axesHelper: AxesHelper | null = null
   private cellSelection: Group | null = null
   private propSelection: Group | null = null
   private propSelectionBox: LineSegments | null = null
   private readonly inputSysSvc = inject(InputSystemService)
+  private readonly propActionSvc = inject(PropActionService)
 
   selectProp(prop: Group, buildNode: Group) {
     if (this.cellSelection != null) {
@@ -48,12 +45,7 @@ export class BuildService {
     }
     this.buildMode = true
     this.selectedProp = prop
-    this.selectedPropSignal.set({
-      name: prop.name,
-      desc: prop.userData.desc,
-      act: prop.userData.act,
-      date: prop.userData.date
-    })
+    this.selectedPropSignal.set(prop)
     console.log(prop)
 
     const geometry = new BoxGeometry(
@@ -80,10 +72,12 @@ export class BuildService {
     if (this.propSelectionBox == null) {
       return
     }
+    this.propActionSvc.parseActions(this.selectedProp)
+    this.propActionSvc.showProp(this.selectedProp)
     this.selectedProp.parent.userData.bvhUpdate.next()
     this.buildMode = false
     this.selectedProp = null
-    this.selectedPropSignal.set({})
+    this.selectedPropSignal.set(null)
     this.propSelectionBox.geometry.dispose()
     ;(this.propSelectionBox.material as Material).dispose()
     this.axesHelper?.dispose()

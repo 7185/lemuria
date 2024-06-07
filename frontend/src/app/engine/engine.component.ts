@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ViewEncapsulation,
   inject,
   viewChild
 } from '@angular/core'
@@ -13,6 +14,7 @@ import {WorldService} from '../world/world.service'
   selector: 'app-engine',
   templateUrl: './engine.component.html',
   styleUrl: './engine.component.scss',
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {

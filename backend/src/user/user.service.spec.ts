@@ -2,7 +2,7 @@ import {Test, TestingModule} from '@nestjs/testing'
 import {JwtService} from '@nestjs/jwt'
 import {UserService} from './user.service'
 
-describe('UserService', () => {
+describe(UserService.name, () => {
   let service: UserService
 
   beforeEach(async () => {

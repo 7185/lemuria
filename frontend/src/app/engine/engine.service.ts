@@ -912,7 +912,7 @@ export class EngineService {
       let fx = 1
       switch (prop.obj.userData.light?.fx) {
         case 'fire':
-          fx = Math.random() * (1.2 - 0.8) + 0.8
+          fx = Math.random() * 0.4 + 0.8
           break
         case 'pulse': {
           const power = (Date.now() / 1000) % 1

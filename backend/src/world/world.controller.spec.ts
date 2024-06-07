@@ -8,11 +8,11 @@ import {WorldController} from './world.controller'
 import {WorldService} from './world.service'
 import {User} from '../user/user'
 
-describe('WorldController', () => {
+describe(WorldController.name, () => {
   let controller: WorldController
   let offlineController: WorldController
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const mockDb = {
       world: {
         findFirst: () =>
