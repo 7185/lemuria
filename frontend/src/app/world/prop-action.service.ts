@@ -589,7 +589,7 @@ export class PropActionService {
         const newMaterials = []
         newMaterials.push(...child.material)
         for (const i of child.userData.taggedMaterials[PICTURE_TAG]) {
-          if (child.material[i].userData.rwx.material != null) {
+          if (child.material[i].userData.rwx?.material != null) {
             newMaterials[i] = child.material[i].clone()
             // Rebuild userData like the loader
             newMaterials[i].userData = {
@@ -661,7 +661,7 @@ export class PropActionService {
         const newMaterials = []
         newMaterials.push(...child.material)
         for (const i of child.userData.taggedMaterials[SIGN_TAG]) {
-          if (child.material[i].userData.rwx.material != null) {
+          if (child.material[i].userData.rwx?.material != null) {
             newMaterials[i] = child.material[i].clone()
             // Rebuild userData like the loader
             newMaterials[i].userData = {
@@ -717,8 +717,8 @@ export class PropActionService {
         }
         const newMaterials = []
         child.material.forEach((m: MeshPhongMaterial) => {
-          if (m.userData.rwx.material != null) {
-            const newRWXMat = m.userData.rwx.material.clone()
+          if (m.userData.rwx?.material != null) {
+            const newRWXMat = m.userData.rwx?.material.clone()
             // Rebuild userData like the loader
             newRWXMat.userData = {
               collision: m.userData.collision,

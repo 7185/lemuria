@@ -49,7 +49,7 @@ export const colorStringToRGB = (color: string) => {
   if (extractedHex) {
     // Get first hexadecimal string match & convert to number
     const colorValue = parseInt(extractedHex[0], 16)
-    if (colorValue > BigInt('18446744073709551615')) {
+    if (colorValue > 18446744073709551615n) {
       // AW considers everything white at this point
       return rgb(255, 255, 255)
     }

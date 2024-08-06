@@ -1,4 +1,10 @@
-import {ChangeDetectionStrategy, Component, effect, signal} from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  signal
+} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import {FormsModule} from '@angular/forms'
 import {MatCheckboxModule} from '@angular/material/checkbox'
@@ -9,9 +15,9 @@ import {MatSliderModule} from '@angular/material/slider'
 import {MatTabsModule} from '@angular/material/tabs'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {Utils} from '../../utils'
-import {WorldService} from 'src/app/world/world.service'
-import {TerrainService} from 'src/app/world/terrain.service'
-import {LightingService} from 'src/app/world/lighting.service'
+import {WorldService} from '../../world/world.service'
+import {TerrainService} from '../../world/terrain.service'
+import {LightingService} from '../../world/lighting.service'
 import {
   faMound,
   faPanorama,
@@ -61,11 +67,11 @@ export class UiWorldAttribsComponent {
   waterOpacity: WritableSignal<number>
   waterUnderView: WritableSignal<number>
 
-  constructor(
-    private terrainSvc: TerrainService,
-    private lightingSvc: LightingService,
-    public worldSvc: WorldService
-  ) {
+  private readonly terrainSvc = inject(TerrainService)
+  private readonly lightingSvc = inject(LightingService)
+  readonly worldSvc = inject(WorldService)
+
+  constructor() {
     this.terrain = signal(this.terrainSvc.terrain != null)
     this.terrainOffset = signal(this.terrainSvc.terrain?.position.y ?? 0)
     this.fog = signal(this.lightingSvc.worldFog?.enabled ?? false)

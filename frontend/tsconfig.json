@@ -10,13 +10,12 @@
     "noPropertyAccessFromIndexSignature": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "sourceMap": true,
+    "isolatedModules": false,
+    "sourceMap": false,
+    "inlineSourceMap": false,
     "declaration": false,
-    "downlevelIteration": true,
-    "experimentalDecorators": true,
     "moduleResolution": "node",
     "importHelpers": true,
-    "emitDecoratorMetadata": true,
     "allowSyntheticDefaultImports": true,
     "target": "es2022",
     "module": "es2022",
@@ -24,7 +23,6 @@
       "es2022",
       "dom"
     ],
-    "useDefineForClassFields": false,
     "paths": {
       "@lemuria/action-parser": ["../action-parser/src"]
     }

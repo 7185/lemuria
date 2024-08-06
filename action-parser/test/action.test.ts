@@ -2,6 +2,10 @@ import {Action} from '../src'
 
 const parser = new Action()
 
+test('undefined string', () => {
+  expect(parser.parse(undefined as unknown as string)).toStrictEqual({})
+})
+
 test('empty string', () => {
   expect(parser.parse('')).toStrictEqual({})
 })

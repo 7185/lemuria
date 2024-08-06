@@ -698,7 +698,7 @@ export class Action {
   }
 
   parse(inputText: string) {
-    const lexResult = this.lexer.tokenize(inputText)
+    const lexResult = this.lexer.tokenize(inputText ?? '')
     parserInstance.input = lexResult.tokens
 
     const cst = parserInstance.actions()

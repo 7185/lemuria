@@ -1,6 +1,7 @@
 import {BehaviorSubject, throwError} from 'rxjs'
 import type {Observable} from 'rxjs'
-import {Injectable} from '@angular/core'
+import {Injectable, inject} from '@angular/core'
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {HttpClient, HttpHandler} from '@angular/common/http'
 import type {HttpResponse} from '@angular/common/http'
 import {Router} from '@angular/router'
@@ -14,21 +15,20 @@ export class HttpService extends HttpClient {
   private userLogged: BehaviorSubject<User> = new BehaviorSubject<User>(
     new User()
   )
-  private mExpiration = parseInt(localStorage.getItem('expiration') ?? '0', 10)
+  #expiration = parseInt(localStorage.getItem('expiration') ?? '0', 10)
 
-  constructor(
-    private httpHandler: HttpHandler,
-    private router: Router
-  ) {
+  private readonly router = inject(Router)
+
+  constructor(private httpHandler: HttpHandler) {
     super(httpHandler)
   }
 
   get expiration(): number {
-    return this.mExpiration
+    return this.#expiration
   }
 
   set expiration(value: number) {
-    this.mExpiration = value
+    this.#expiration = value
     localStorage.setItem('expiration', value.toString())
   }
 
