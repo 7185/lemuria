@@ -1,6 +1,6 @@
 module.exports = {
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   transform: {
-    '^.+\\.(t|j)sx?$': '@swc/jest',
+    '^.+\\.(t|j)sx?$': '@swc/jest'
   }
 }

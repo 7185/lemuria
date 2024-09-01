@@ -2,7 +2,8 @@
 
 [![build](https://img.shields.io/github/actions/workflow/status/7185/lemuria/lemuria.yml?style=flat-square)](https://github.com/7185/lemuria/actions)
 [![license](https://img.shields.io/github/license/7185/lemuria.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![last-commit](https://img.shields.io/github/last-commit/7185/lemuria?display_timestamp=author&style=flat-square)](https://github.com/7185/lemuria/commits/master) \
+[![last-commit](https://img.shields.io/github/last-commit/7185/lemuria?display_timestamp=author&style=flat-square)](https://github.com/7185/lemuria/commits/master)
+[![CodeFactor](https://www.codefactor.io/repository/github/7185/lemuria/badge)](https://www.codefactor.io/repository/github/7185/lemuria) \
 ![nestjs](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/@nestjs/core?filename=backend%2Fpackage.json&label=nestjs&style=flat-square&logo=nestjs&color=%23E0234E)
 ![angular](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/@angular/core?filename=frontend%2Fpackage.json&label=angular&style=flat-square&logo=angular&color=%230F0F11)
 ![three](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/three?filename=frontend%2Fpackage.json&style=flat-square&logo=three.js&color=%23000000)
@@ -123,12 +124,17 @@ $ docker run -it -p 8080:8080 -v $PWD/backend-py/app.db:/backend/app.db -v $PWD/
 
 ## Bot
 
-You can use python bots on Lemuria. See the `bot` directory.
+You can use node or python bots on Lemuria. See the `bot` and `bot-py` directories.
+```ts
+// typescript
+import {Bot} from './bot'
+```
 ```python
+# python
 from bot import Bot
 ```
 
-An example bot `bonobot.py` is available in this repository.
+An example bot `bonobot.ts`/`bonobot.py` is available in this repository.
 
 ## Try it out!
 

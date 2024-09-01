@@ -10,7 +10,7 @@
     "noPropertyAccessFromIndexSignature": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "isolatedModules": false,
+    "isolatedModules": true,
     "sourceMap": false,
     "inlineSourceMap": false,
     "declaration": false,

@@ -12,6 +12,7 @@
   "workspaces": [
     "action-parser",
     "backend",
-    "frontend"
+    "frontend",
+    "bot"
   ]
 }
