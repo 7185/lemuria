@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node --import 'data:text/javascript,import {register} from \"node:module\"; import {pathToFileURL} from \"node:url\"; register(\"ts-node/esm\", pathToFileURL(\"./\"));' src/bonobot.ts",
     "format": "prettier --write \"**/*.{t,cj}s\"",
-    "lint": "echo \"No linter for bot yet.\""
+    "lint": "eslint \"src/**/*.ts\""
   },
   "license": "MIT",
   "dependencies": {
@@ -15,10 +15,16 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.1.0",
+    "@eslint/js": "^9.10.0",
     "@types/node": "^20.16.2",
     "@types/ws": "^8.5.12",
+    "@typescript-eslint/eslint-plugin": "^8.5.0",
+    "@typescript-eslint/parser": "^8.5.0",
+    "eslint": "^9.10.0",
+    "globals": "^15.9.0",
     "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.4"
+    "typescript": "^5.6.2"
   }
 }

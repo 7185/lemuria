@@ -117,17 +117,18 @@ class Bot extends User {
     const t = msg.type
 
     switch (t) {
-      case 'avatar':
+      case 'avatar': {
         const user = this.userlist[msg.user]
         if (user) {
           user.avatar = msg.data
         }
         await this._callback('on_user_avatar', msg.user, msg.data)
         break
+      }
       case 'join':
         await this._callback('on_user_join', msg.data)
         break
-      case 'list':
+      case 'list': {
         this.userlist = {}
         for (const u of msg.data as UserData[]) {
           const user = new User(u.name)
@@ -137,13 +138,14 @@ class Bot extends User {
         }
         await this._callback('on_user_list')
         break
+      }
       case 'msg':
         await this._callback('on_msg', msg.user, msg.data)
         break
       case 'part':
         await this._callback('on_user_part', msg.data)
         break
-      case 'pos':
+      case 'pos': {
         const posUser = this.userlist[msg.user]
         if (posUser) {
           const data = msg.data
@@ -158,6 +160,7 @@ class Bot extends User {
         }
         await this._callback('on_user_pos', msg.user, msg.data)
         break
+      }
     }
   }
 

@@ -80,16 +80,17 @@ class Bonobot extends Bot {
     const [command, ...args] = msg.split(' ')
 
     switch (command) {
-      case '!list':
+      case '!list': {
         const l = Object.entries(this.userlist)
           .map(([i, u]) => `${u.name}(${u.avatar}:${i})`)
           .join(' ')
         await this.sendMsg(l)
         break
+      }
       case '!pos':
         await this.sendMsg(`${this.x},${this.y},${this.z}`)
         break
-      case '!come':
+      case '!come': {
         const u = Object.values(this.userlist).find((u) => u.name === user)
         if (!u) {
           await this.sendMsg("Sorry, I don't know who you are.")
@@ -104,7 +105,8 @@ class Bonobot extends Bot {
           this.move(u.x, u.z).catch(console.error)
         }
         break
-      case '!whereami':
+      }
+      case '!whereami': {
         const targetUser = Object.values(this.userlist).find(
           (u) => u.name === user
         )
@@ -114,11 +116,13 @@ class Bonobot extends Bot {
           await this.sendMsg(`${targetUser.x},${targetUser.y},${targetUser.z}`)
         }
         break
-      case '!speed':
+      }
+      case '!speed': {
         const value = parseInt(args[0]) || 1
         this.moveSpeed = value
         await this.sendMsg(`Running at ${this.moveSpeed}`)
         break
+      }
       case '!change':
         await this.changeAvatar(Math.floor(Math.random() * 17))
         break

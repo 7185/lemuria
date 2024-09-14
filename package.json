@@ -6,7 +6,8 @@
   "scripts": {
     "format": "npm -ws run format",
     "lint": "npm -ws run lint",
-    "test": "npm -w action-parser -w backend run test"
+    "test": "npm -w action-parser -w backend run test",
+    "patch:frontend": "patch-package"
   },
   "license": "MIT",
   "workspaces": [

@@ -1,0 +1,72 @@
+diff --git a/node_modules/three-rwx-loader/src/RWXLoader.js b/node_modules/three-rwx-loader/src/RWXLoader.js
+index a8d9ceb..5a418e8 100644
+--- a/node_modules/three-rwx-loader/src/RWXLoader.js
++++ b/node_modules/three-rwx-loader/src/RWXLoader.js
+@@ -504,7 +504,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
+ 		const whiteEmissive = Math.trunc( surface[ 1 ] );
+ 		materialDict[ 'emissive' ] = ( whiteEmissive << 16 ) + ( whiteEmissive << 8 ) + whiteEmissive;
+ 
+-		materialDict[ 'shininess' ] = 30; // '30' is the demo's default Phong material shininess value
++		materialDict[ 'shininess' ] = 0;
+ 
+ 	}
+ 
+@@ -1656,33 +1656,23 @@ class RWXMaterial {
+ 
+ 	getMatSignature() {
+ 
+-		const color = this.color[ 0 ].toFixed( 3 ) + this.color[ 1 ].toFixed( 3 ) + this.color[ 2 ].toFixed( 3 );
+-		const surface = this.surface[ 0 ].toFixed( 3 ) + this.surface[ 1 ].toFixed( 3 ) + this.surface[ 2 ].toFixed( 3 );
+-		const opacity = this.opacity.toFixed( 3 );
+-		const lightSampling = this.lightsampling.toString();
+-		const geometrySampling = this.geometrysampling.toString();
+-		let textureMode = '';
+-
+-		this.texturemodes.forEach( ( tm ) => {
+-
+-			textureMode += tm.toString();
+-
+-		} );
+-
+-		const materialMode = this.materialmode.toString();
+-		const texture = this.texture === null ? '' : this.texture;
+-		const mask = this.mask === null ? '' : this.mask;
+-		const textureAddressMode = this.textureaddressmode.toString();
+-
+-		const collision = this.collision.toString();
+-
+-		const tag = this.tag.toString();
+-		const ratio = this.ratio.toFixed( 2 );
+-
+-		return `${color}_${surface}_${opacity}_${lightSampling}_${geometrySampling}_${textureMode}_${materialMode}` +
+-			`_${texture}_${mask}_${textureAddressMode}_${collision}_${tag}_${ratio}`;
+-
+-	}
++		return [
++		  [ Math.round(this.color[0] * 1000) / 1000, Math.round(this.color[1] * 1000) / 1000, Math.round(this.color[2] * 1000) / 1000 ].join(''),
++		  [ Math.round(this.surface[0] * 1000) / 1000, Math.round(this.surface[1] * 1000) / 1000, Math.round(this.surface[2] * 1000) / 1000 ].join(''),
++		  Math.round(this.opacity * 1000) / 1000,
++		  this.lightsampling,
++		  this.geometrysampling,
++		  this.texturemodes.join(''),
++		  this.materialmode,
++		  this.texture || '',
++		  this.mask || '',
++		  this.textureaddressmode,
++		  this.collision,
++		  this.tag,
++		  Math.round(this.ratio * 100) / 100
++		].join('_');
++
++	  }
+ 
+ }
+ 
+@@ -2515,6 +2505,7 @@ class RWXLoader extends Loader {
+ 			if ( res != null ) {
+ 
+ 				ctx.currentTransform.identity();
++				continue;
+ 
+ 			}
+ 

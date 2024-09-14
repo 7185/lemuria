@@ -20,7 +20,7 @@ import {
   Box3,
   BufferAttribute
 } from 'three'
-import type {MeshPhongMaterial, Object3D} from 'three'
+import type {Object3D} from 'three'
 import {SRGBToLinear} from 'three/src/math/ColorManagement.js'
 import {UserService} from '../user'
 import type {User} from '../user'
@@ -390,13 +390,6 @@ export class WorldService {
     g.userData.date = date
     g.userData.desc = desc
     g.userData.act = act
-    g.traverse((child: Object3D) => {
-      if (child instanceof Mesh) {
-        child.material.forEach((m: MeshPhongMaterial) => {
-          m.shininess = 0
-        })
-      }
-    })
     const box = new Box3().setFromObject(g)
     const center = box.getCenter(new Vector3())
     g.userData.box = {

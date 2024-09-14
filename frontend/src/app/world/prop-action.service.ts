@@ -624,7 +624,6 @@ export class PropActionService {
           child.material[i].dispose()
         }
         newMaterials.forEach((m: MeshPhongMaterial) => {
-          m.shininess = 0
           m.visible = !prop.userData.notVisible
         })
         child.material = newMaterials
@@ -689,7 +688,6 @@ export class PropActionService {
           child.material[i].dispose()
         }
         newMaterials.forEach((m: MeshPhongMaterial) => {
-          m.shininess = 0
           m.visible = !prop.userData.notVisible
         })
         child.material = newMaterials
@@ -753,7 +751,6 @@ export class PropActionService {
           m.dispose()
         })
         newMaterials.forEach((m: MeshPhongMaterial) => {
-          m.shininess = 0
           m.visible = !prop.userData.notVisible
         })
         child.material = newMaterials
