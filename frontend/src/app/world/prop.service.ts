@@ -1,19 +1,19 @@
 import {Observable, Subject} from 'rxjs'
 import {computed, effect, Injectable, signal} from '@angular/core'
 import {
-  Group,
-  Mesh,
   BufferAttribute,
   BufferGeometry,
+  Group,
   LoadingManager,
+  Mesh,
   MeshBasicMaterial,
   SRGBColorSpace
 } from 'three'
-import RWXLoader, {RWXMaterialManager, flattenGroup} from 'three-rwx-loader'
+import RWXLoader, {flattenGroup, RWXMaterialManager} from 'three-rwx-loader'
 import * as fflate from 'fflate'
 import {Utils} from '../utils'
 
-const propCtls = [
+export type PropCtl = [
   'nop',
   'forward',
   'backward',
@@ -32,8 +32,7 @@ const propCtls = [
   'rotReset',
   'snapGrid',
   'deselect'
-] as const
-export type PropCtl = (typeof propCtls)[number]
+][number]
 
 @Injectable({providedIn: 'root'})
 export class PropService {
@@ -47,9 +46,9 @@ export class PropService {
   private unknown: Group
   private rwxPropLoader = new RWXLoader(new LoadingManager())
   private basicLoader = new RWXLoader(new LoadingManager())
-  private objects: Map<string, Observable<Group>> = new Map()
-  private avatars: Map<string, Observable<Group>> = new Map()
-  private geomCache: Map<string, BufferGeometry> = new Map()
+  private objects = new Map<string, Observable<Group>>()
+  private avatars = new Map<string, Observable<Group>>()
+  private geomCache = new Map<string, BufferGeometry>()
 
   constructor() {
     const unknownGeometry = new BufferGeometry()

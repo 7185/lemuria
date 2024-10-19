@@ -26,7 +26,9 @@ describe(AppController.name, () => {
       } as unknown as FastifyReply
       appController.notImplemented(responseMock)
       expect(responseMock.status).toHaveBeenCalledWith(404)
-      expect(statusResponseMock.send).toHaveBeenCalledWith({error: 'Not found'})
+      expect(statusResponseMock.send).toHaveBeenCalledWith({
+        error: 'Not found'
+      })
     })
   })
 })

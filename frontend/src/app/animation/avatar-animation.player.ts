@@ -1,6 +1,6 @@
 import {Group, Quaternion, Vector3} from 'three'
 import type {AvatarAnimationManager} from './avatar-animation.manager'
-import type {ThreeSequence, StepState} from './avatar-animation.service'
+import type {StepState, ThreeSequence} from './avatar-animation.service'
 import {interpolateThreeFrames} from './avatar-animation.service'
 
 interface AnimationEntry {
@@ -16,7 +16,10 @@ const transitionDuration = 0.1
 
 export class AvatarAnimationPlayer {
   private avatarView = {}
-  private currentState: AnimationEntry = {name: 'idle', velocityMultiplier: 1}
+  private currentState: AnimationEntry = {
+    name: 'idle',
+    velocityMultiplier: 1
+  }
   private currentStepState: StepState | null = null
   private lastPlayedFrame = this.makeNullFrame()
   private currentTransition: ThreeSequence | null = null

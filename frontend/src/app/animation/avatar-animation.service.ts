@@ -1,4 +1,4 @@
-import {Injectable, effect, inject} from '@angular/core'
+import {effect, inject, Injectable} from '@angular/core'
 import parseSequence, {FileType, getJointTag} from 'aw-sequence-parser'
 import {EngineService} from '../engine/engine.service'
 import {PropService} from '../world/prop.service'
@@ -79,11 +79,11 @@ export const interpolateThreeFrames = (
 
 @Injectable({providedIn: 'root'})
 export class AvatarAnimationService {
-  private sequences: Map<string, Promise<ThreeSequence> | null> = new Map()
-  private avatarAnimationManagers: Map<
+  private sequences = new Map<string, Promise<ThreeSequence> | null>()
+  private avatarAnimationManagers = new Map<
     string,
     Promise<AvatarAnimationManager>
-  > = new Map()
+  >()
   private sequenceParserOpts: {fileType: FileType; fflate: unknown} = {
     fileType: FileType.AUTO,
     fflate
@@ -110,7 +110,7 @@ export class AvatarAnimationService {
       const parsedSeq = this.interpolate(this.toThree(seq))
       this.sequences.set(name, Promise.resolve(parsedSeq))
       return parsedSeq
-    } catch (e) {
+    } catch (_) {
       // This sequence name is considered invalid, so keeping a null entry in the registry map
       // ensures the service won't try to load it each time it is referenced
       this.sequences.set(name, null)
@@ -179,7 +179,7 @@ export class AvatarAnimationService {
           `${this.propSvc.path()}/seqs/${filename}${extension}`
         )
         implicitSequences.set(key, seq)
-      } catch (e) {
+      } catch (_) {
         implicitSequences.set(key, null)
       }
     }
@@ -191,7 +191,7 @@ export class AvatarAnimationService {
           `${this.propSvc.path()}/seqs/${filename}${extension}`
         )
         explicitSequences.set(key, seq)
-      } catch (e) {
+      } catch (_) {
         explicitSequences.set(key, null)
       }
     }

@@ -44,7 +44,10 @@ describe(WsGateway.name, () => {
 
   describe('handleDisconnect', () => {
     it('close connection', () => {
-      const clientMock = {close: jest.fn((x) => x), send: jest.fn((x) => x)}
+      const clientMock = {
+        close: jest.fn((x) => x),
+        send: jest.fn((x) => x)
+      }
       expect(gateway.handleDisconnect(clientMock)).toStrictEqual(undefined)
     })
   })

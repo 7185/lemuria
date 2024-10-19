@@ -11,7 +11,13 @@ describe('ProxyController', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [HttpModule],
       controllers: [ProxyController],
-      providers: [ProxyService, {provide: CACHE_MANAGER, useFactory: jest.fn()}]
+      providers: [
+        ProxyService,
+        {
+          provide: CACHE_MANAGER,
+          useFactory: jest.fn()
+        }
+      ]
     }).compile()
 
     controller = module.get<ProxyController>(ProxyController)

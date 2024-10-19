@@ -5,132 +5,251 @@
   <mat-tab-group dynamicHeight>
     <mat-tab>
       <ng-template mat-tab-label>
-        <fa-icon [icon]="faMound" [fixedWidth]="true" pull="left"/>
+        <fa-icon [icon]="faMound" [fixedWidth]="true" pull="left" />
         Ground
       </ng-template>
       <div class="tab-content">
-        <mat-checkbox [ngModel]="terrain()" (ngModelChange)="terrain.set($event)">Enable Terrain</mat-checkbox>
+        <mat-checkbox
+          [ngModel]="terrain()"
+          (ngModelChange)="terrain.set($event)"
+        >Enable Terrain</mat-checkbox>
         <mat-form-field appearance="outline">
           <mat-label>Terrain elevation offset</mat-label>
-          <input matInput type="number" [ngModel]="terrainOffset()" (ngModelChange)="terrainOffset.set($event)">
+          <input
+            matInput
+            type="number"
+            [ngModel]="terrainOffset()"
+            (ngModelChange)="terrainOffset.set($event)"
+          />
         </mat-form-field>
       </div>
     </mat-tab>
     <mat-tab>
       <ng-template mat-tab-label>
-        <fa-icon [icon]="faSun" [fixedWidth]="true" pull="left"/>
+        <fa-icon [icon]="faSun" [fixedWidth]="true" pull="left" />
         Lighting
       </ng-template>
       <div class="tab-content">
-        <mat-checkbox [ngModel]="terrain()" [ngModel]="fog()" (ngModelChange)="fog.set($event)">Enable Fog</mat-checkbox>
+        <mat-checkbox
+          [ngModel]="terrain()"
+          [ngModel]="fog()"
+          (ngModelChange)="fog.set($event)"
+        >Enable Fog</mat-checkbox>
         <mat-form-field appearance="outline">
           <mat-label>Color</mat-label>
-          <input matInput type="color" [ngModel]="fogColor()" (ngModelChange)="fogColor.set($event)">
+          <input
+            matInput
+            type="color"
+            [ngModel]="fogColor()"
+            (ngModelChange)="fogColor.set($event)"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Fog Min</mat-label>
-          <input matInput type="number" [ngModel]="fogMin()" (ngModelChange)="fogMin.set($event)">
+          <input
+            matInput
+            type="number"
+            [ngModel]="fogMin()"
+            (ngModelChange)="fogMin.set($event)"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Fog distance</mat-label>
-          <input matInput type="number" [ngModel]="fogMax()" (ngModelChange)="fogMax.set($event)">
+          <input
+            matInput
+            type="number"
+            [ngModel]="fogMax()"
+            (ngModelChange)="fogMax.set($event)"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Ambient Light</mat-label>
-          <input matInput type="color" [ngModel]="ambLight()" (ngModelChange)="ambLight.set($event)">
+          <input
+            matInput
+            type="color"
+            [ngModel]="ambLight()"
+            (ngModelChange)="ambLight.set($event)"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Directional Light</mat-label>
-          <input matInput type="color" [ngModel]="dirLight()" (ngModelChange)="dirLight.set($event)">
+          <input
+            matInput
+            type="color"
+            [ngModel]="dirLight()"
+            (ngModelChange)="dirLight.set($event)"
+          />
         </mat-form-field>
         <div>
           <div>
             <mat-label>Light Direction</mat-label>
           </div>
           <mat-slider min="-1000" max="1000" step="1" discrete>
-            <input matSliderThumb [ngModel]="lightDirX()" (ngModelChange)="lightDirX.set($event)">
+            <input
+              matSliderThumb
+              [ngModel]="lightDirX()"
+              (ngModelChange)="lightDirX.set($event)"
+            />
           </mat-slider>
           <mat-slider min="-1000" max="1000" step="1" discrete>
-            <input matSliderThumb [ngModel]="lightDirY()" (ngModelChange)="lightDirY.set($event)">
+            <input
+              matSliderThumb
+              [ngModel]="lightDirY()"
+              (ngModelChange)="lightDirY.set($event)"
+            />
           </mat-slider>
           <mat-slider min="-1000" max="1000" step="1" discrete>
-            <input matSliderThumb [ngModel]="lightDirZ()" (ngModelChange)="lightDirZ.set($event)">
+            <input
+              matSliderThumb
+              [ngModel]="lightDirZ()"
+              (ngModelChange)="lightDirZ.set($event)"
+            />
           </mat-slider>
         </div>
       </div>
     </mat-tab>
     <mat-tab>
       <ng-template mat-tab-label>
-        <fa-icon [icon]="faPanorama" [fixedWidth]="true" pull="left"/>
+        <fa-icon [icon]="faPanorama" [fixedWidth]="true" pull="left" />
         Sky
       </ng-template>
       <div class="tab-content">
         <mat-form-field appearance="outline">
           <mat-label>Skybox</mat-label>
-          <input matInput type='text' [ngModel]="worldSvc.skybox()" (ngModelChange)="worldSvc.skybox.set($event)">
+          <input
+            matInput
+            type="text"
+            [ngModel]="worldSvc.skybox()"
+            (ngModelChange)="worldSvc.skybox.set($event)"
+          />
         </mat-form-field>
         <div>
           <mat-form-field appearance="outline">
             <mat-label>Top</mat-label>
-            <input matInput type="color" [ngModel]="worldSvc.skyTop()" (ngModelChange)="worldSvc.skyTop.set($event)">
+            <input
+              matInput
+              type="color"
+              [ngModel]="worldSvc.skyTop()"
+              (ngModelChange)="worldSvc.skyTop.set($event)"
+            />
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Bottom</mat-label>
-            <input matInput type="color" [ngModel]="worldSvc.skyBottom()" (ngModelChange)="worldSvc.skyBottom.set($event)">
+            <input
+              matInput
+              type="color"
+              [ngModel]="worldSvc.skyBottom()"
+              (ngModelChange)="worldSvc.skyBottom.set($event)"
+            />
           </mat-form-field>
-        </div>  
+        </div>
         <div>
           <mat-form-field appearance="outline">
             <mat-label>North</mat-label>
-            <input matInput type="color" [ngModel]="worldSvc.skyNorth()" (ngModelChange)="worldSvc.skyNorth.set($event)">
+            <input
+              matInput
+              type="color"
+              [ngModel]="worldSvc.skyNorth()"
+              (ngModelChange)="worldSvc.skyNorth.set($event)"
+            />
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>South</mat-label>
-            <input matInput type="color" [ngModel]="worldSvc.skySouth()" (ngModelChange)="worldSvc.skySouth.set($event)">
+            <input
+              matInput
+              type="color"
+              [ngModel]="worldSvc.skySouth()"
+              (ngModelChange)="worldSvc.skySouth.set($event)"
+            />
           </mat-form-field>
         </div>
         <div>
           <mat-form-field appearance="outline">
             <mat-label>East</mat-label>
-            <input matInput type="color" [ngModel]="worldSvc.skyEast()" (ngModelChange)="worldSvc.skyEast.set($event)">
+            <input
+              matInput
+              type="color"
+              [ngModel]="worldSvc.skyEast()"
+              (ngModelChange)="worldSvc.skyEast.set($event)"
+            />
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>West</mat-label>
-            <input matInput type="color" [ngModel]="worldSvc.skyWest()" (ngModelChange)="worldSvc.skyWest.set($event)">
+            <input
+              matInput
+              type="color"
+              [ngModel]="worldSvc.skyWest()"
+              (ngModelChange)="worldSvc.skyWest.set($event)"
+            />
           </mat-form-field>
         </div>
       </div>
     </mat-tab>
     <mat-tab>
       <ng-template mat-tab-label>
-        <fa-icon [icon]="faWater" [fixedWidth]="true" pull="left"/>
+        <fa-icon [icon]="faWater" [fixedWidth]="true" pull="left" />
         Water
       </ng-template>
       <div class="tab-content">
-        <mat-checkbox [ngModel]="water()" (ngModelChange)="water.set($event)">Enable water</mat-checkbox>
+        <mat-checkbox
+          [ngModel]="water()"
+          (ngModelChange)="water.set($event)"
+        >Enable water</mat-checkbox>
         <mat-form-field appearance="outline">
           <mat-label>Top texture</mat-label>
-          <input matInput type='text' [ngModel]="waterTextureTop()" (ngModelChange)="waterTextureTop.set($event)">
+          <input
+            matInput
+            type="text"
+            [ngModel]="waterTextureTop()"
+            (ngModelChange)="waterTextureTop.set($event)"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Bottom texture</mat-label>
-          <input matInput type="text" [ngModel]="waterTextureBottom()" (ngModelChange)="waterTextureBottom.set($event)">
+          <input
+            matInput
+            type="text"
+            [ngModel]="waterTextureBottom()"
+            (ngModelChange)="waterTextureBottom.set($event)"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Color</mat-label>
-          <input matInput type="color" [ngModel]="waterColor()" (ngModelChange)="waterColor.set($event)">
+          <input
+            matInput
+            type="color"
+            [ngModel]="waterColor()"
+            (ngModelChange)="waterColor.set($event)"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Opacity</mat-label>
-          <input matInput type="number" min="0" max="255" [ngModel]="waterOpacity()" (ngModelChange)="waterOpacity.set($event)">
+          <input
+            matInput
+            type="number"
+            min="0"
+            max="255"
+            [ngModel]="waterOpacity()"
+            (ngModelChange)="waterOpacity.set($event)"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Water Level</mat-label>
-          <input matInput type="number" [ngModel]="waterLevel()" (ngModelChange)="waterLevel.set($event)">
+          <input
+            matInput
+            type="number"
+            [ngModel]="waterLevel()"
+            (ngModelChange)="waterLevel.set($event)"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Underwater view distance</mat-label>
-          <input matInput type="number" [ngModel]="waterUnderView()" (ngModelChange)="waterUnderView.set($event)">
+          <input
+            matInput
+            type="number"
+            [ngModel]="waterUnderView()"
+            (ngModelChange)="waterUnderView.set($event)"
+          />
         </mat-form-field>
       </div>
     </mat-tab>

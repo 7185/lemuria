@@ -16,7 +16,12 @@ export class World {
   entry?: string = '0N 0W'
   objects?: any
   light?: {
-    fog?: {color?: number[]; enabled?: boolean; min?: number; max?: number}
+    fog?: {
+      color?: number[]
+      enabled?: boolean
+      min?: number
+      max?: number
+    }
     dir_color?: number[]
     amb_color?: number[]
     dir?: {x?: number; y?: number; z?: number}

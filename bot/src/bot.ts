@@ -225,13 +225,14 @@ class Bot extends User {
       const response: AxiosResponse<WorldData[]> = await axios.get(
         `${this.webUrl}/world/`,
         {
-          headers: {Cookie: `${AUTH_COOKIE}=${this.cookiejar[AUTH_COOKIE]}`}
+          headers: {
+            Cookie: `${AUTH_COOKIE}=${this.cookiejar[AUTH_COOKIE]}`
+          }
         }
       )
-      this.worldlist = {}
-      for (const w of response.data) {
-        this.worldlist[w.id] = {name: w.name, users: w.users}
-      }
+      this.worldlist = Object.fromEntries(
+        response.data.map((w) => [w.id, {name: w.name, users: w.users}])
+      )
     } catch (error) {
       console.error('Failed to get world list:', error)
     }
@@ -242,7 +243,9 @@ class Bot extends User {
       const response: AxiosResponse<{id: number}> = await axios.get(
         `${this.webUrl}/world/${worldId}`,
         {
-          headers: {Cookie: `${AUTH_COOKIE}=${this.cookiejar[AUTH_COOKIE]}`}
+          headers: {
+            Cookie: `${AUTH_COOKIE}=${this.cookiejar[AUTH_COOKIE]}`
+          }
         }
       )
       this.world = response.data.id
@@ -256,7 +259,9 @@ class Bot extends User {
     await this.getWorldList()
 
     this.ws = new WebSocket(this.wsUrl, {
-      headers: {Cookie: `${AUTH_COOKIE}=${this.cookiejar[AUTH_COOKIE]}`}
+      headers: {
+        Cookie: `${AUTH_COOKIE}=${this.cookiejar[AUTH_COOKIE]}`
+      }
     })
 
     this.ws.on('open', async () => {
@@ -286,4 +291,4 @@ class Bot extends User {
   }
 }
 
-export {User, Bot}
+export {Bot, User}

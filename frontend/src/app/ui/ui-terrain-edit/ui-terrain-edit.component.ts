@@ -10,9 +10,9 @@ import {MatFormFieldModule} from '@angular/material/form-field'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {BuildService} from '../../engine/build.service'
 import {
-  faArrowsUpDown,
   faArrowRotateLeft,
   faArrowRotateRight,
+  faArrowsUpDown,
   faClipboard,
   faClone,
   faSquare

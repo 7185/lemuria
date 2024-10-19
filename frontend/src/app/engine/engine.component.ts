@@ -1,11 +1,11 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ViewEncapsulation,
   inject,
-  viewChild
+  viewChild,
+  ViewEncapsulation
 } from '@angular/core'
-import type {AfterViewInit, ElementRef, OnInit, OnDestroy} from '@angular/core'
+import type {AfterViewInit, ElementRef, OnDestroy, OnInit} from '@angular/core'
 import {EngineService} from './engine.service'
 import {WorldService} from '../world/world.service'
 

@@ -56,7 +56,7 @@ export class InputSystemService {
     })
   )
 
-  private readonly defaultKeymap: Map<string, PressedKey> = new Map([
+  private readonly defaultKeymap = new Map<string, PressedKey>([
     ['ArrowUp', 'moveFwd'],
     ['KeyW', 'moveFwd'],
     ['ArrowDown', 'moveBck'],

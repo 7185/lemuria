@@ -9,7 +9,13 @@ describe('ProxyService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [HttpModule],
-      providers: [ProxyService, {provide: CACHE_MANAGER, useFactory: jest.fn()}]
+      providers: [
+        ProxyService,
+        {
+          provide: CACHE_MANAGER,
+          useFactory: jest.fn()
+        }
+      ]
     }).compile()
 
     service = module.get<ProxyService>(ProxyService)

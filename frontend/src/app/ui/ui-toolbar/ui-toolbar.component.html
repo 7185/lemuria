@@ -128,8 +128,8 @@
   <span class="spacer"></span>
 
   <div class="info">
-    {{strPos}}<br />
-    {{strAlt}}m
+    {{ strPos }}<br/>
+    {{ strAlt }}m
   </div>
   <span class="spacer"></span>
   <button mat-icon-button class="btn-circle" (click)="compassClick(true)" (contextmenu)="compassClick(false)" type="button">
@@ -157,9 +157,9 @@
           <fa-icon [icon]="faUser"/>
           {{u.name}}
           @if (u.id !== userId && u.world === worldSvc.worldId) {
-          <span (click)="joinUser(u.id)" title="Join user">
+          <button (click)="joinUser(u.id)" title="Join user">
             <fa-icon [icon]="faBolt"/>
-          </span>
+          </button>
           }
         </button>
       }

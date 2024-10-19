@@ -1,4 +1,4 @@
-import {Vector3, Box3, Ray} from 'three'
+import {Box3, Ray, Vector3} from 'three'
 import type {Group, Mesh, Triangle} from 'three'
 import {flattenGroup} from 'three-rwx-loader'
 import {MeshBVH, MeshBVHHelper} from 'three-mesh-bvh'

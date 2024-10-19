@@ -10,7 +10,7 @@ import {
   Component,
   inject
 } from '@angular/core'
-import {Subject, takeUntil, take, timeout} from 'rxjs'
+import {Subject, take, takeUntil, timeout} from 'rxjs'
 
 @Component({
   standalone: true,
@@ -43,15 +43,15 @@ export class UiControlsComponent implements OnInit {
 
   private readonly inputSysSvc = inject(InputSystemService)
   private readonly cdRef = inject(ChangeDetectorRef)
-  private cancel: Subject<boolean> | null = null
+  private cancel: Subject<void> | null = null
   private oldKey = 'nop'
 
-  setKey(key: number, pos: number) {
+  setKey(key: number, pos: number): void {
     if (this.cancel != null) {
       // Mapping already in progress, cancel it
       this.controlsKeymap[this.activeKey[0]][this.activeKey[1]] = this.oldKey
       this.activeKey = [null, null]
-      this.cancel.next(true)
+      this.cancel.next()
       this.cancel.complete()
     }
     this.activeKey = [key, pos]
@@ -59,7 +59,7 @@ export class UiControlsComponent implements OnInit {
     this.controlsKeymap[key][pos] = 'Press key...'
     this.cancel = new Subject()
     this.inputSysSvc.keyDownEvent
-      .pipe(takeUntil(this.cancel), take(1), timeout(5000))
+      .pipe(take(1), timeout(5000), takeUntil(this.cancel))
       .subscribe({
         next: (e: KeyboardEvent) => {
           this.controlsKeymap[key][pos] = e.code
@@ -83,12 +83,12 @@ export class UiControlsComponent implements OnInit {
       })
   }
 
-  setDefault() {
+  setDefault(): void {
     this.inputSysSvc.setDefault()
     this.getKeymap()
   }
 
-  getKeymap() {
+  getKeymap(): void {
     this.controlsKeymap = []
     for (const l of this.controlsLabels) {
       const newKeys: [string | null, string | null] = [null, null]
@@ -104,7 +104,7 @@ export class UiControlsComponent implements OnInit {
     }
   }
 
-  setKeymap() {
+  setKeymap(): void {
     this.inputSysSvc.clearKeys()
     this.controlsKeymap.forEach((keys: string[], index) => {
       keys
@@ -115,7 +115,7 @@ export class UiControlsComponent implements OnInit {
     })
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.getKeymap()
   }
 }

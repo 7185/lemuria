@@ -1,4 +1,4 @@
-import {createToken, Lexer, CstParser} from 'chevrotain'
+import {createToken, CstParser, Lexer} from 'chevrotain'
 import type {CstNode, IParserConfig, ITokenConfig, TokenType} from 'chevrotain'
 
 // Tokens
@@ -111,8 +111,16 @@ const Size = addToken({
   pattern: /\bsize\b/i,
   categories: [Resource]
 })
-const Tag = addToken({name: 'Tag', pattern: /\btag\b/i, categories: [Resource]})
-const Url = addToken({name: 'Url', pattern: /\burl\b/i, categories: [Resource]})
+const Tag = addToken({
+  name: 'Tag',
+  pattern: /\btag\b/i,
+  categories: [Resource]
+})
+const Url = addToken({
+  name: 'Url',
+  pattern: /\burl\b/i,
+  categories: [Resource]
+})
 const Time = addToken({
   name: 'Time',
   pattern: /\btime\b/i,

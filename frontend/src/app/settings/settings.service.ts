@@ -3,20 +3,20 @@ import {BehaviorSubject} from 'rxjs'
 
 @Injectable({providedIn: 'root'})
 export class SettingsService {
-  updated = new BehaviorSubject(true)
+  updated = new BehaviorSubject<void>(null)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   set(key: string, value: any): void {
-    window.localStorage.setItem(key, JSON.stringify(value))
-    this.updated.next(true)
+    globalThis.localStorage.setItem(key, JSON.stringify(value))
+    this.updated.next()
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get(key: string): any {
-    return JSON.parse(window.localStorage.getItem(key))
+    return JSON.parse(globalThis.localStorage.getItem(key))
   }
 
   clear() {
-    window.localStorage.clear()
+    globalThis.localStorage.clear()
   }
 }

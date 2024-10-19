@@ -16,7 +16,7 @@ interface Message {
 
 @Injectable({providedIn: 'root'})
 export class SocketService {
-  messages: Subject<Message> = new Subject()
+  messages = new Subject<Message>()
   connected = false
 
   private readonly engineSvc = inject(EngineService)

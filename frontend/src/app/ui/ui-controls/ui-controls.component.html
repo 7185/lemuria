@@ -6,26 +6,39 @@
         <th scope="col"></th>
         <th scope="col"></th>
         <th scope="col">
-          <button mat-flat-button (click)="setDefault()" color="primary">Default</button></th>
+          <button
+            mat-flat-button
+            (click)="setDefault()"
+            color="primary"
+          >
+            Default
+          </button>
+        </th>
       </tr>
     </thead>
     <tbody>
       @for (item of controlsKeymap; track item; let i = $index) {
-      <tr>
-        <th scope="row">{{ controlsLabels[i][0] }}</th>
-        <td>
-          <button mat-flat-button (click)="setKey(i, 0)"
-                  [color]="activeKey[0] === i && activeKey[1] === 0 ? 'accent' : ''">
-                  {{ item[0] || 'None' }}
-          </button>
-        </td>
-        <td>
-          <button mat-flat-button (click)="setKey(i, 1)"
-                  [color]="activeKey[0] === i && activeKey[1] === 1 ? 'accent' : ''">
-                  {{ item[1] || 'None' }}
-          </button>
-        </td>
-      </tr>
+        <tr>
+          <th scope="row">{{ controlsLabels[i][0] }}</th>
+          <td>
+            <button
+              mat-flat-button
+              (click)="setKey(i, 0)"
+              [color]="activeKey[0] === i && activeKey[1] === 0 ? 'accent' : ''"
+            >
+              {{ item[0] || 'None' }}
+            </button>
+          </td>
+          <td>
+            <button
+              mat-flat-button
+              (click)="setKey(i, 1)"
+              [color]="activeKey[0] === i && activeKey[1] === 1 ? 'accent' : ''"
+            >
+              {{ item[1] || 'None' }}
+            </button>
+          </td>
+        </tr>
       }
     </tbody>
   </table>

@@ -1,24 +1,24 @@
 import {BehaviorSubject, fromEvent, Subject, timer} from 'rxjs'
-import {effect, Injectable, inject, signal} from '@angular/core'
+import {effect, inject, Injectable, signal} from '@angular/core'
 import type {ElementRef} from '@angular/core'
 import {
   BufferGeometry,
   Cache,
   Clock,
+  Color,
   Fog,
+  Group,
+  Mesh,
+  Object3D,
   PerspectiveCamera,
+  PointLight,
   Raycaster,
   Scene,
-  Group,
+  Spherical,
+  SRGBColorSpace,
   Vector2,
   Vector3,
-  WebGLRenderer,
-  Object3D,
-  Spherical,
-  Mesh,
-  SRGBColorSpace,
-  Color,
-  PointLight
+  WebGLRenderer
 } from 'three'
 import {
   CSS2DObject,
@@ -75,7 +75,7 @@ const nearestChunkPattern = [
 
 @Injectable({providedIn: 'root'})
 export class EngineService {
-  compassSub: Subject<{pos: Vector3; theta: number}> = new Subject()
+  compassSub = new Subject<{pos: Vector3; theta: number}>()
   fpsSub = new BehaviorSubject<string>('0')
   maxFps = signal(60)
   maxLights = signal(6)
@@ -99,7 +99,7 @@ export class EngineService {
   private labelZone: HTMLDivElement
   private renderer: WebGLRenderer
   private labelRenderer: CSS2DRenderer
-  private labelMap: Map<string, CSS2DObject> = new Map()
+  private labelMap = new Map<string, CSS2DObject>()
   private clock: Clock
   private camera: PerspectiveCamera
   private thirdCamera: PerspectiveCamera
@@ -129,10 +129,10 @@ export class EngineService {
   private worldNode = new Group()
   private objectsNode = new Group()
   private buildNode = new Group()
-  private sprites: Set<Group> = new Set()
-  private animatedObjects: Set<Group> = new Set()
-  private litObjects: Set<Group> = new Set()
-  private sonicObjects: Set<Group> = new Set()
+  private sprites = new Set<Group>()
+  private animatedObjects = new Set<Group>()
+  private litObjects = new Set<Group>()
+  private sonicObjects = new Set<Group>()
   private pointLights: PointLight[] = []
 
   private mouseIdle = 0
@@ -140,7 +140,7 @@ export class EngineService {
 
   private chunkTile: [number, number] = [0, 0]
 
-  private keyControlMap: Map<PressedKey, PropCtl> = new Map([
+  private keyControlMap = new Map<PressedKey, PropCtl>([
     ['moveFwd', 'forward'],
     ['turnRgt', 'right'],
     ['moveRgt', 'right'],
@@ -199,8 +199,8 @@ export class EngineService {
       antialias: true, // smooth edges
       stencil: false
     })
-    this.renderer.setPixelRatio(window.devicePixelRatio)
-    this.renderer.setSize(window.innerWidth, window.innerHeight)
+    this.renderer.setPixelRatio(globalThis.devicePixelRatio)
+    this.renderer.setSize(globalThis.innerWidth, globalThis.innerHeight)
     this.renderer.shadowMap.enabled = false
     this.renderer.outputColorSpace = SRGBColorSpace
     this.renderer.autoClear = false
@@ -209,7 +209,7 @@ export class EngineService {
       this.renderer.debug.checkShaderErrors = false
     }
     this.labelRenderer = new CSS2DRenderer({element: this.labelZone})
-    this.labelRenderer.setSize(window.innerWidth, window.innerHeight)
+    this.labelRenderer.setSize(globalThis.innerWidth, globalThis.innerHeight)
 
     this.scene = new Scene()
     this.buildScene = new Scene()
@@ -219,7 +219,7 @@ export class EngineService {
 
     this.camera = new PerspectiveCamera(
       50,
-      window.innerWidth / window.innerHeight,
+      globalThis.innerWidth / globalThis.innerHeight,
       0.1,
       1000
     )
@@ -231,7 +231,7 @@ export class EngineService {
 
     this.thirdCamera = new PerspectiveCamera(
       50,
-      window.innerWidth / window.innerHeight,
+      globalThis.innerWidth / globalThis.innerHeight,
       0.1,
       1000
     )
@@ -242,7 +242,7 @@ export class EngineService {
 
     this.thirdFrontCamera = new PerspectiveCamera(
       50,
-      window.innerWidth / window.innerHeight,
+      globalThis.innerWidth / globalThis.innerHeight,
       0.1,
       1000
     )
@@ -484,9 +484,7 @@ export class EngineService {
       light.dispose()
     })
     this.pointLights = Array.from({length}, () => new PointLight(0, 0))
-    for (const l of this.pointLights) {
-      this.scene.add(l)
-    }
+    this.scene.add(...this.pointLights)
   }
 
   removeWorldObject(group: Group) {
@@ -537,10 +535,10 @@ export class EngineService {
     if (document.readyState !== 'loading') {
       this.render()
     } else {
-      fromEvent(window, 'DOMContentLoaded').subscribe(() => this.render())
+      fromEvent(globalThis, 'DOMContentLoaded').subscribe(() => this.render())
     }
-    fromEvent(window, 'resize').subscribe(() => this.resize())
-    fromEvent(window, 'visibilitychange').subscribe(() => {
+    fromEvent(globalThis, 'resize').subscribe(() => this.resize())
+    fromEvent(globalThis, 'visibilitychange').subscribe(() => {
       if (document.visibilityState === 'visible') {
         this.clock.start()
       } else {
@@ -552,8 +550,8 @@ export class EngineService {
     )
     fromEvent(this.canvas, 'mousemove').subscribe((e: MouseEvent) => {
       this.mouseIdle = 0
-      this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1
-      this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1
+      this.mouse.x = (e.clientX / globalThis.innerWidth) * 2 - 1
+      this.mouse.y = -(e.clientY / globalThis.innerHeight) * 2 + 1
     })
     fromEvent(this.canvas, 'mousedown').subscribe((e: MouseEvent) => {
       if (e.button === 0) {
@@ -600,13 +598,14 @@ export class EngineService {
           if (prop?.userData?.desc) {
             this.labelDesc.style.display = 'block'
             this.labelDesc.innerHTML = prop.userData.desc.replace(
+              // eslint-disable-next-line no-control-regex
               /[\u0000-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u00FF]/g,
               (c: string) => '&#' + `000${c.charCodeAt(0)}`.slice(-4) + ';'
             )
             this.labelDesc.style.left =
-              ((this.mouse.x + 1) / 2) * window.innerWidth + 'px'
+              ((this.mouse.x + 1) / 2) * globalThis.innerWidth + 'px'
             this.labelDesc.style.top =
-              (-(this.mouse.y - 1) / 2) * window.innerHeight + 'px'
+              (-(this.mouse.y - 1) / 2) * globalThis.innerHeight + 'px'
           }
         }
         this.mouseIdle = 5
@@ -734,7 +733,7 @@ export class EngineService {
           child.userData.onHide(() => {
             this.handleHiddenProp(child)
           })
-          child.userData.onUpdate = () => {}
+          child.userData.onUpdate = () => null
         })
       }
     }
@@ -777,8 +776,8 @@ export class EngineService {
   }
 
   private resize(): void {
-    const width = window.innerWidth
-    const height = window.innerHeight
+    const width = globalThis.innerWidth
+    const height = globalThis.innerHeight
 
     this.camera.aspect =
       this.thirdCamera.aspect =

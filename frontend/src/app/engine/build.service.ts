@@ -11,7 +11,7 @@ import {
   LineSegments,
   Vector3
 } from 'three'
-import type {Object3D, Material, Mesh} from 'three'
+import type {Material, Mesh, Object3D} from 'three'
 import type {PropCtl} from '../world/prop.service'
 import {InputSystemService} from './inputsystem.service'
 import {PropActionService} from '../world/prop-action.service'

@@ -7,7 +7,7 @@ $color-config: mat.m2-get-color-config($lemuria-theme);
 
 $primary-palette: map.get($color-config, 'primary');
 
-.pill{
+.pill {
   background-color: mat.m2-get-color-from-palette($primary-palette, 500);
   color: mat.m2-get-color-from-palette($primary-palette, '500-contrast');
   border-radius: 10px;

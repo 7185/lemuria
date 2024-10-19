@@ -86,7 +86,7 @@ export class AuthComponent implements OnInit {
       })
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loginForm.setValue({
       username: localStorage.getItem('login') ?? '',
       password: ''

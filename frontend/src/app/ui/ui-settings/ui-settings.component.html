@@ -3,13 +3,33 @@
   <mat-checkbox [(ngModel)]="archivedMedia">Find forgotten media</mat-checkbox>
   <mat-form-field appearance="outline">
     <mat-label>Maximum FPS</mat-label>
-    <input matInput type='text' minlength="1" pattern="[0-9]*" [(ngModel)]="maxFps">
+    <input
+      matInput
+      type="text"
+      minlength="1"
+      pattern="[0-9]*"
+      [(ngModel)]="maxFps"
+    />
   </mat-form-field>
   <mat-form-field appearance="outline">
     <mat-label>Maximum lights</mat-label>
-    <input matInput type='text' minlength="1" pattern="[0-9]*" [(ngModel)]="maxLights">
+    <input
+      matInput
+      type="text"
+      minlength="1"
+      pattern="[0-9]*"
+      [(ngModel)]="maxLights"
+    />
   </mat-form-field>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button mat-flat-button [mat-dialog-close]="true" cdkFocusInitial color="primary" (click)="save()">Save</button>
+  <button
+    mat-flat-button
+    [mat-dialog-close]="true"
+    cdkFocusInitial
+    color="primary"
+    (click)="save()"
+  >
+    Save
+  </button>
 </mat-dialog-actions>

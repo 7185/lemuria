@@ -13,8 +13,8 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {LinkifyPipe} from '../../utils'
 import {faComments} from '@fortawesome/free-solid-svg-icons'
 import {
-  VirtualScrollerModule,
-  VirtualScrollerComponent
+  VirtualScrollerComponent,
+  VirtualScrollerModule
 } from '@iharbeck/ngx-virtual-scroller'
 import type {OnInit} from '@angular/core'
 import {SocketService} from '../../network/socket.service'

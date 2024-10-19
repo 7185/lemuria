@@ -1,4 +1,4 @@
-import {Injectable, inject} from '@angular/core'
+import {inject, Injectable} from '@angular/core'
 import {
   catchError,
   EMPTY,
@@ -14,15 +14,15 @@ import type {Observable} from 'rxjs'
 import {
   AdditiveBlending,
   AudioLoader,
-  Mesh,
-  Group,
   CanvasTexture,
-  TextureLoader,
-  SRGBColorSpace,
   Color,
+  Group,
+  Mesh,
   RepeatWrapping,
   Sprite,
   SpriteMaterial,
+  SRGBColorSpace,
+  TextureLoader,
   Vector3
 } from 'three'
 import type {MeshPhongMaterial, Object3D, Texture} from 'three'
@@ -101,10 +101,9 @@ export class PropActionService {
    * @param prop
    */
   parseActions(prop: Group) {
-    const result = this.actionParser.parse(prop.userData.act)
-    for (const trigger of Object.keys(result)) {
-      this.parseAction(prop, trigger, result[trigger])
-    }
+    Object.entries(this.actionParser.parse(prop.userData.act)).forEach(
+      ([trigger, action]) => this.parseAction(prop, trigger, action)
+    )
   }
 
   /**
@@ -511,7 +510,11 @@ export class PropActionService {
         // Error, usually 404
         if (remote && fallbackArchive && this.settings.get('archivedMedia')) {
           // Send to archive queue
-          this.archiveApiQueue.next({prop: prop, url: remote, type: 'picture'})
+          this.archiveApiQueue.next({
+            prop: prop,
+            url: remote,
+            type: 'picture'
+          })
         }
       }
     )
@@ -595,7 +598,9 @@ export class PropActionService {
             newMaterials[i].userData = {
               collision: child.material[i].userData.collision,
               ratio: child.material[i].userData.ratio,
-              rwx: {material: child.material[i].userData.rwx.material}
+              rwx: {
+                material: child.material[i].userData.rwx.material
+              }
             }
             newMaterials[i].color = new Color(1, 1, 1)
             newMaterials[i].map = picture
@@ -666,7 +671,9 @@ export class PropActionService {
             newMaterials[i].userData = {
               collision: child.material[i].userData.collision,
               ratio: child.material[i].userData.ratio,
-              rwx: {material: child.material[i].userData.rwx.material}
+              rwx: {
+                material: child.material[i].userData.rwx.material
+              }
             }
             newMaterials[i].color = new Color(1, 1, 1)
             newMaterials[i].map = new CanvasTexture(
@@ -769,9 +776,9 @@ export class PropActionService {
       return
     }
 
-    const textureUrl = `${this.propSvc.resPath()}/${
-      prop.userData.corona.texture
-    }${prop.userData.corona.texture.endsWith('.jpg') ? '' : '.jpg'}`
+    const textureUrl = `${this.propSvc.resPath()}/${prop.userData.corona.texture}${
+      prop.userData.corona.texture.endsWith('.jpg') ? '' : '.jpg'
+    }`
     const size = prop.userData.corona?.size / 100 || 1
     const color = prop.userData.light?.color ?? 0xffffff
     this.textureLoader.load(textureUrl, (texture) => {
@@ -815,7 +822,11 @@ export class PropActionService {
         // Error, usually 404
         if (remote && fallbackArchive && this.settings.get('archivedMedia')) {
           // Send to archive queue
-          this.archiveApiQueue.next({prop, url: remote, type: 'noise'})
+          this.archiveApiQueue.next({
+            prop,
+            url: remote,
+            type: 'noise'
+          })
         }
       }
     )
@@ -838,13 +849,18 @@ export class PropActionService {
     this.audioSvc.bgUrl = prop.userData.sound
     this.audioLoader.load(
       url,
-      (sound) => this.audioSvc.playSound(sound, url, volume),
+      (sound) => this.audioSvc.playSound(sound, volume),
       null,
       () => {
         // Error, usually 404
         if (remote && fallbackArchive && this.settings.get('archivedMedia')) {
           // Send to archive queue
-          this.archiveApiQueue.next({prop, url: remote, volume, type: 'sound'})
+          this.archiveApiQueue.next({
+            prop,
+            url: remote,
+            volume,
+            type: 'sound'
+          })
         }
       }
     )

@@ -86,7 +86,11 @@ export class UserService {
       type: 'pos',
       user: user.id,
       data: {
-        pos: {x: user.position[0], y: user.position[1], z: user.position[2]},
+        pos: {
+          x: user.position[0],
+          y: user.position[1],
+          z: user.position[2]
+        },
         ori: {
           x: user.orientation[0],
           y: user.orientation[1],
@@ -104,7 +108,7 @@ export class UserService {
       try {
         const userId = this.jwtService.verify(authCookie[1])['id']
         return this.getUser(userId)
-      } catch (error) {
+      } catch (_) {
         return new User()
       }
     }

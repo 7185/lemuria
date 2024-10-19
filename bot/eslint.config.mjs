@@ -36,9 +36,9 @@ export default [
     },
 
     rules: {
-      indent: ['error', 2, { 'SwitchCase': 1 }],
+      indent: ['error', 2, {SwitchCase: 1}],
       'linebreak-style': ['error', 'unix'],
-      quotes: ['error', 'single', { avoidEscape: true }],
+      quotes: ['error', 'single', {avoidEscape: true}],
       semi: ['error', 'never'],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-member-accessibility': [

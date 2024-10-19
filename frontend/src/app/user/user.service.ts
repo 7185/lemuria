@@ -8,7 +8,7 @@ import {User} from './user.model'
 @Injectable({providedIn: 'root'})
 export class UserService {
   userList: WritableSignal<User[]> = signal([])
-  avatarChanged: Subject<User> = new Subject()
+  avatarChanged = new Subject<User>()
   currentName = 'Anonymous'
 
   private readonly http = inject(HttpService)
@@ -38,7 +38,12 @@ export class UserService {
         continue
       }
       newList.push(
-        new User({id: u.id, name: u.name, avatar: u.avatar, world: u.world})
+        new User({
+          id: u.id,
+          name: u.name,
+          avatar: u.avatar,
+          world: u.world
+        })
       )
     }
     this.userList.set([...newList])

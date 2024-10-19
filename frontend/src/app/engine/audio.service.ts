@@ -20,7 +20,7 @@ export class AudioService {
     }
   }
 
-  playSound(buffer: AudioBuffer, url: string, volume: number) {
+  playSound(buffer: AudioBuffer, volume: number) {
     this.stopSound()
     this.bgAudio.setBuffer(buffer)
     this.bgAudio.setLoop(true)

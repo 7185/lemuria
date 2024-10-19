@@ -1,4 +1,4 @@
-import {WebSocketServer, WebSocketGateway} from '@nestjs/websockets'
+import {WebSocketGateway, WebSocketServer} from '@nestjs/websockets'
 import {timer} from 'rxjs'
 import type {IncomingMessage} from 'http'
 import {Server, WebSocket} from 'ws'
@@ -13,7 +13,8 @@ export interface Message {
 
 @WebSocketGateway({path: '/api/v1/ws'})
 export class WsGateway {
-  @WebSocketServer() server: Server
+  @WebSocketServer()
+  server: Server
   constructor(private readonly userSvc: UserService) {}
 
   afterInit() {
@@ -92,7 +93,10 @@ export class WsGateway {
           if (user.websockets.size === 0) {
             user.positionTimer?.unsubscribe()
             user.connected = false
-            this.userSvc.broadcast({type: 'part', data: user.name})
+            this.userSvc.broadcast({
+              type: 'part',
+              data: user.name
+            })
             this.userSvc.broadcastUserlist()
           }
         }

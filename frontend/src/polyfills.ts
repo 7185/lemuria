@@ -1,2 +1,2 @@
 // poly2tri
-window.global = window
+globalThis.global = globalThis

@@ -33,7 +33,12 @@ describe(WorldController.name, () => {
     }
     const mockUser = {
       authorizedUsers: new Set([
-        new User({id: 'dummy', name: 'alice', world: 1, connected: true})
+        new User({
+          id: 'dummy',
+          name: 'alice',
+          world: 1,
+          connected: true
+        })
       ]),
       getUserFromAccessCookie: () => new User({id: 'dummy'}),
       broadcastUserlist: () => Promise.resolve()
@@ -130,10 +135,20 @@ describe(WorldController.name, () => {
           west_color: [0, 0, 0],
           bottom_color: [0, 0, 0]
         },
-        terrain: {enabled: false, ambient: 0.2, diffuse: 1, offset: 0},
+        terrain: {
+          enabled: false,
+          ambient: 0.2,
+          diffuse: 1,
+          offset: 0
+        },
         light: {
           dir: {x: -0.8, y: -0.5, z: -0.2},
-          fog: {enabled: false, color: [0, 0, 127], min: 0, max: 120},
+          fog: {
+            enabled: false,
+            color: [0, 0, 127],
+            min: 0,
+            max: 120
+          },
           amb_color: [255, 255, 255],
           dir_color: [255, 255, 255]
         },

@@ -1,24 +1,24 @@
-import {inject, Injectable, effect, signal} from '@angular/core'
+import {effect, inject, Injectable, signal} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
-import {EMPTY, Subject, throwError, from, of, firstValueFrom} from 'rxjs'
+import {EMPTY, firstValueFrom, from, of, Subject, throwError} from 'rxjs'
 import type {Observable, Subscription} from 'rxjs'
 import {
-  mergeMap,
-  concatMap,
   bufferCount,
   catchError,
-  debounceTime
+  concatMap,
+  debounceTime,
+  mergeMap
 } from 'rxjs/operators'
 import {
-  Euler,
-  Mesh,
-  Group,
-  Vector3,
-  LOD,
-  BufferGeometry,
-  MeshBasicMaterial,
   Box3,
-  BufferAttribute
+  BufferAttribute,
+  BufferGeometry,
+  Euler,
+  Group,
+  LOD,
+  Mesh,
+  MeshBasicMaterial,
+  Vector3
 } from 'three'
 import type {Object3D} from 'three'
 import {SRGBToLinear} from 'three/src/math/ColorManagement.js'
@@ -422,7 +422,7 @@ export class WorldService {
       this.propActionSvc.clickProp(g)
       clicked()
     }
-    g.userData.onUpdate = () => {}
+    g.userData.onUpdate = () => null
 
     g.updateMatrix()
     return g

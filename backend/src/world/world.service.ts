@@ -1,4 +1,4 @@
-import {Injectable, Inject} from '@nestjs/common'
+import {Inject, Injectable} from '@nestjs/common'
 import {CACHE_MANAGER} from '@nestjs/cache-manager'
 import {Cache} from 'cache-manager'
 import {DbService} from '../db/db.service'
@@ -103,7 +103,9 @@ export class WorldService {
           textures: true,
           heights: true
         },
-        where: {AND: [{wid}, {page_x: pageX}, {page_z: pageZ}]}
+        where: {
+          AND: [{wid}, {page_x: pageX}, {page_z: pageZ}]
+        }
       })) {
         const width = elev.radius * 2
         const textures = (elev.textures ?? '')

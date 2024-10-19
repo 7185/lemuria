@@ -2,8 +2,8 @@ import {inject, Injectable} from '@angular/core'
 import {
   BufferAttribute,
   Color,
-  Mesh,
   Group,
+  Mesh,
   MeshLambertMaterial,
   PlaneGeometry,
   RepeatWrapping,

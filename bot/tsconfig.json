@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "strict": true,
     "strictNullChecks": true,
-    "allowImportingTsExtensions": false,
+    "allowImportingTsExtensions": false
   },
   "ts-node": {
     "esm": true,

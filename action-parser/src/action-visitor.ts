@@ -81,10 +81,8 @@ class ActionVisitor extends BaseActionVisitor {
       targetName: params.shift(),
       animation: params.shift()
     })
-    for (const value of params) {
-      if (!/^\d+$/.test(value)) {
-        return {}
-      }
+    if (params.some((value) => !/^\d+$/.test(value))) {
+      return {}
     }
     Object.assign(res, {
       imageCount: parseInt(params.shift() as string),
@@ -484,60 +482,41 @@ class ActionVisitor extends BaseActionVisitor {
   // Command args
 
   coronaArgs(ctx: CoronaArgsCtx) {
-    const args = []
-    if (ctx.maskParameter) {
-      args.push(this.visit(ctx.maskParameter))
-    }
-    if (ctx.nameParameter) {
-      args.push(this.visit(ctx.nameParameter))
-    }
-    if (ctx.sizeParameter) {
-      args.push(this.visit(ctx.sizeParameter))
-    }
-    return args
+    const parameters: (keyof CoronaArgsCtx)[] = [
+      'maskParameter',
+      'nameParameter',
+      'sizeParameter'
+    ]
+    return parameters
+      .filter((param) => ctx[param])
+      .map((param) => this.visit(ctx[param] ?? []))
   }
 
   lightArgs(ctx: LightArgsCtx) {
-    const args = []
-    if (ctx.angleParameter) {
-      args.push(this.visit(ctx.angleParameter))
-    }
-    if (ctx.brightnessParameter) {
-      args.push(this.visit(ctx.brightnessParameter))
-    }
-    if (ctx.colorParameter) {
-      args.push(this.visit(ctx.colorParameter))
-    }
-    if (ctx.fxParameter) {
-      args.push(this.visit(ctx.fxParameter))
-    }
-    if (ctx.nameParameter) {
-      args.push(this.visit(ctx.nameParameter))
-    }
-    if (ctx.pitchParameter) {
-      args.push(this.visit(ctx.pitchParameter))
-    }
-    if (ctx.radiusParameter) {
-      args.push(this.visit(ctx.radiusParameter))
-    }
-    if (ctx.timeParameter) {
-      args.push(this.visit(ctx.timeParameter))
-    }
-    if (ctx.typeParameter) {
-      args.push(this.visit(ctx.typeParameter))
-    }
-    return args
+    const parameters: (keyof LightArgsCtx)[] = [
+      'angleParameter',
+      'brightnessParameter',
+      'colorParameter',
+      'fxParameter',
+      'nameParameter',
+      'pitchParameter',
+      'radiusParameter',
+      'timeParameter',
+      'typeParameter'
+    ]
+    return parameters
+      .filter((param) => ctx[param])
+      .map((param) => this.visit(ctx[param] ?? []))
   }
 
   mediaArgs(ctx: MediaArgsCtx) {
-    const args = []
-    if (ctx.radiusParameter) {
-      args.push(this.visit(ctx.radiusParameter))
-    }
-    if (ctx.nameParameter) {
-      args.push(this.visit(ctx.nameParameter))
-    }
-    return args
+    const parameters: (keyof MediaArgsCtx)[] = [
+      'nameParameter',
+      'radiusParameter'
+    ]
+    return parameters
+      .filter((param) => ctx[param])
+      .map((param) => this.visit(ctx[param] ?? []))
   }
 
   moveArgs(ctx: MoveArgsCtx) {
@@ -552,54 +531,53 @@ class ActionVisitor extends BaseActionVisitor {
       args.push(this.visit(ctx.nameParameter))
     }
     if (ctx.Loop) {
-      args.push({loop: !ctx.Loop[0].image.toLowerCase().startsWith('no')})
+      args.push({
+        loop: !ctx.Loop[0].image.toLowerCase().startsWith('no')
+      })
     }
     if (ctx.Reset) {
-      args.push({reset: !ctx.Reset[0].image.toLowerCase().startsWith('no')})
+      args.push({
+        reset: !ctx.Reset[0].image.toLowerCase().startsWith('no')
+      })
     }
     if (ctx.Sync) {
-      args.push({sync: !ctx.Sync[0].image.toLowerCase().startsWith('no')})
+      args.push({
+        sync: !ctx.Sync[0].image.toLowerCase().startsWith('no')
+      })
     }
     return args
   }
 
   pictureArgs(ctx: PictureArgsCtx) {
-    const args = []
-    if (ctx.nameParameter) {
-      args.push(this.visit(ctx.nameParameter))
-    }
-    if (ctx.updateParameter) {
-      args.push(this.visit(ctx.updateParameter))
-    }
-    return args
+    const parameters: (keyof PictureArgsCtx)[] = [
+      'nameParameter',
+      'updateParameter'
+    ]
+    return parameters
+      .filter((param) => ctx[param])
+      .map((param) => this.visit(ctx[param] ?? []))
   }
 
   signArgs(ctx: SignArgsCtx) {
-    const args = []
-    if (ctx.colorParameter) {
-      args.push(this.visit(ctx.colorParameter))
-    }
-    if (ctx.bcolorParameter) {
-      args.push(this.visit(ctx.bcolorParameter))
-    }
-    if (ctx.nameParameter) {
-      args.push(this.visit(ctx.nameParameter))
-    }
-    return args
+    const parameters: (keyof SignArgsCtx)[] = [
+      'colorParameter',
+      'bcolorParameter',
+      'nameParameter'
+    ]
+    return parameters
+      .filter((param) => ctx[param])
+      .map((param) => this.visit(ctx[param] ?? []))
   }
 
   textureArgs(ctx: TextureArgsCtx) {
-    const args = []
-    if (ctx.maskParameter) {
-      args.push(this.visit(ctx.maskParameter))
-    }
-    if (ctx.nameParameter) {
-      args.push(this.visit(ctx.nameParameter))
-    }
-    if (ctx.tagParameter) {
-      args.push(this.visit(ctx.tagParameter))
-    }
-    return args
+    const parameters: (keyof TextureArgsCtx)[] = [
+      'maskParameter',
+      'nameParameter',
+      'tagParameter'
+    ]
+    return parameters
+      .filter((param) => ctx[param])
+      .map((param) => this.visit(ctx[param] ?? []))
   }
 
   // Generic visitors
@@ -671,11 +649,12 @@ class ActionVisitor extends BaseActionVisitor {
 
     // Filter out duplicate actions of the same type, keeping only the first one
     const actionsMap = new Map<string, object>()
-    for (const action of actions) {
-      if (!actionsMap.has(Object.keys(action)[0])) {
-        actionsMap.set(Object.keys(action)[0], action)
+    actions.forEach((action) => {
+      const [key] = Object.keys(action)
+      if (!actionsMap.has(key)) {
+        actionsMap.set(key, action)
       }
-    }
+    })
 
     return Object.assign({}, ...actionsMap.values())
   }

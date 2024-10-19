@@ -1,13 +1,12 @@
 import {BehaviorSubject, throwError} from 'rxjs'
 import type {Observable} from 'rxjs'
-import {Injectable, inject} from '@angular/core'
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import {inject, Injectable} from '@angular/core'
 import {HttpClient, HttpHandler} from '@angular/common/http'
 import type {HttpResponse} from '@angular/common/http'
 import {Router} from '@angular/router'
 import {environment} from '../../environments/environment'
 import {User} from '../user'
-import {catchError, tap, map} from 'rxjs/operators'
+import {catchError, map, tap} from 'rxjs/operators'
 
 @Injectable({providedIn: 'root'})
 export class HttpService extends HttpClient {
