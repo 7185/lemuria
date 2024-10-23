@@ -410,20 +410,7 @@ export class WorldService {
     if (act && g.userData?.isError !== true) {
       this.propActionSvc.parseActions(g)
     }
-    g.userData.onShow = (shown: () => void) => {
-      this.propActionSvc.showProp(g)
-      shown()
-    }
-    g.userData.onHide = (hidden: () => void) => {
-      this.propActionSvc.hideProp(g)
-      hidden()
-    }
-    g.userData.onClick = (clicked: () => void) => {
-      this.propActionSvc.clickProp(g)
-      clicked()
-    }
-    g.userData.onUpdate = () => null
-
+    this.buildSvc.initPropCallbacks(g)
     g.updateMatrix()
     return g
   }

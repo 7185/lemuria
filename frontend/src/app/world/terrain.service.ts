@@ -10,6 +10,7 @@ import {
   SRGBColorSpace,
   TextureLoader
 } from 'three'
+import type {Texture} from 'three'
 import {PlayerCollider} from '../engine/player-collider'
 import {EngineService} from '../engine/engine.service'
 import {PropService} from './prop.service'
@@ -92,8 +93,7 @@ export class TerrainService {
         `${this.propSvc.path()}/textures/${water.texture_bottom}.jpg`
       )
       bottomTexture.colorSpace = SRGBColorSpace
-      bottomTexture.wrapS = RepeatWrapping
-      bottomTexture.wrapT = RepeatWrapping
+      bottomTexture.wrapS = bottomTexture.wrapT = RepeatWrapping
       bottomTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
       waterMaterialBottom.map = bottomTexture
     }
@@ -103,8 +103,7 @@ export class TerrainService {
         `${this.propSvc.path()}/textures/${water.texture_top}.jpg`
       )
       topTexture.colorSpace = SRGBColorSpace
-      topTexture.wrapS = RepeatWrapping
-      topTexture.wrapT = RepeatWrapping
+      topTexture.wrapS = topTexture.wrapT = RepeatWrapping
       topTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
       waterMaterialTop.map = topTexture
     }
@@ -132,16 +131,21 @@ export class TerrainService {
     this.terrain.name = 'terrain'
     this.terrainMaterials = []
 
+    const baseTextures: Texture[] = []
+    for (let j = 0; j < 63; j++) {
+      const baseTexture = this.textureLoader.load(
+        `${this.propSvc.path()}/textures/terrain${j}.jpg`
+      )
+      baseTexture.colorSpace = SRGBColorSpace
+      baseTexture.wrapS = baseTexture.wrapT = RepeatWrapping
+      baseTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
+      baseTextures.push(baseTexture)
+    }
+
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 64; j++) {
-        const terrainTexture = this.textureLoader.load(
-          `${this.propSvc.path()}/textures/terrain${j}.jpg`
-        )
-        terrainTexture.colorSpace = SRGBColorSpace
-        terrainTexture.wrapS = RepeatWrapping
-        terrainTexture.wrapT = RepeatWrapping
-        terrainTexture.rotation = (i * Math.PI) / 2
-        terrainTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
+        const terrainTexture = j < 63 ? baseTextures[j].clone() : null
+        if (terrainTexture) terrainTexture.rotation = (i * Math.PI) / 2
         this.terrainMaterials.push(
           new MeshLambertMaterial({map: terrainTexture})
         )
@@ -190,9 +194,6 @@ export class TerrainService {
       ) {
         this.setTerrainPage(page[0], page[1])
       }
-    })
-
-    pages.forEach((page) => {
       if (
         !this.water?.children?.find(
           (m) => m.name === `${page[0]}_${page[1]}`

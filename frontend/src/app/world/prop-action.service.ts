@@ -582,8 +582,7 @@ export class PropActionService {
    */
   private pictureToProp(prop: Group, picture: Texture) {
     picture.colorSpace = SRGBColorSpace
-    picture.wrapS = RepeatWrapping
-    picture.wrapT = RepeatWrapping
+    picture.wrapS = picture.wrapT = RepeatWrapping
     prop.traverse((child: Object3D) => {
       if (
         child instanceof Mesh &&

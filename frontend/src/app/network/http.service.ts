@@ -1,7 +1,7 @@
 import {BehaviorSubject, throwError} from 'rxjs'
 import type {Observable} from 'rxjs'
 import {inject, Injectable} from '@angular/core'
-import {HttpClient, HttpHandler} from '@angular/common/http'
+import {HttpClient} from '@angular/common/http'
 import type {HttpResponse} from '@angular/common/http'
 import {Router} from '@angular/router'
 import {environment} from '../../environments/environment'
@@ -17,10 +17,6 @@ export class HttpService extends HttpClient {
   #expiration = parseInt(localStorage.getItem('expiration') ?? '0', 10)
 
   private readonly router = inject(Router)
-
-  constructor(private httpHandler: HttpHandler) {
-    super(httpHandler)
-  }
 
   get expiration(): number {
     return this.#expiration

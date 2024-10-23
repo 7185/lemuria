@@ -733,7 +733,7 @@ export class EngineService {
           child.userData.onHide(() => {
             this.handleHiddenProp(child)
           })
-          child.userData.onUpdate = () => null
+          child.userData.onUpdate = () => Function.prototype
         })
       }
     }

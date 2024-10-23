@@ -36,6 +36,22 @@ export class BuildService {
   private readonly inputSysSvc = inject(InputSystemService)
   private readonly propActionSvc = inject(PropActionService)
 
+  initPropCallbacks(prop: Group) {
+    prop.userData.onShow = (shown: () => void) => {
+      this.propActionSvc.showProp(prop)
+      shown()
+    }
+    prop.userData.onHide = (hidden: () => void) => {
+      this.propActionSvc.hideProp(prop)
+      hidden()
+    }
+    prop.userData.onClick = (clicked: () => void) => {
+      this.propActionSvc.clickProp(prop)
+      clicked()
+    }
+    prop.userData.onUpdate = () => Function.prototype
+  }
+
   selectProp(prop: Group, buildNode: Group) {
     if (this.cellSelection != null) {
       this.deselectCell(buildNode)
@@ -206,6 +222,7 @@ export class BuildService {
       case 'copy': {
         const {parent} = this.selectedProp
         this.selectedProp = this.selectedProp.clone()
+        this.initPropCallbacks(this.selectedProp)
         this.selectedProp.position.add(v.multiplyScalar(moveStep))
         parent.add(this.selectedProp)
         this.updatePropSelectionBox()

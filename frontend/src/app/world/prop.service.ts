@@ -1,5 +1,6 @@
-import {Observable, Subject} from 'rxjs'
+import * as fflate from 'fflate'
 import {computed, effect, Injectable, signal} from '@angular/core'
+import {Observable, Subject} from 'rxjs'
 import {
   BufferAttribute,
   BufferGeometry,
@@ -10,7 +11,6 @@ import {
   SRGBColorSpace
 } from 'three'
 import RWXLoader, {flattenGroup, RWXMaterialManager} from 'three-rwx-loader'
-import * as fflate from 'fflate'
 import {Utils} from '../utils'
 
 export type PropCtl = [
