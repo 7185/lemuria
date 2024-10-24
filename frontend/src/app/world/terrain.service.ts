@@ -17,6 +17,20 @@ import {PropService} from './prop.service'
 import {HttpService} from '../network'
 import {TERRAIN_PAGE_SIZE, Utils} from '../utils'
 
+export interface WaterData {
+  enabled?: boolean
+  color?: number[]
+  offset?: number
+  opacity?: number
+  texture_bottom?: string
+  texture_top?: string
+  under_view?: number
+}
+
+export interface TerrainData {
+  enabled: boolean
+  offset: number
+}
 @Injectable({providedIn: 'root'})
 export class TerrainService {
   terrain: Group
@@ -33,15 +47,7 @@ export class TerrainService {
   private worldId = 0
   private loadingPages = new Set()
 
-  setWater(water: {
-    enabled?: boolean
-    color?: number[]
-    offset?: number
-    opacity?: number
-    texture_bottom?: string
-    texture_top?: string
-    under_view?: number
-  }) {
+  setWater(water: WaterData) {
     if (this.water != null) {
       this.engineSvc.removeWorldObject(this.water)
     }
@@ -117,7 +123,7 @@ export class TerrainService {
     this.engineSvc.addWorldObject(this.water)
   }
 
-  setTerrain(terrain: {enabled: boolean; offset: number}, worldId: number) {
+  setTerrain(terrain: TerrainData, worldId: number) {
     this.worldId = worldId
     if (this.terrain != null) {
       this.engineSvc.removeWorldObject(this.terrain)

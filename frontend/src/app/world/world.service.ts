@@ -1,5 +1,4 @@
 import {effect, inject, Injectable, signal} from '@angular/core'
-import type {WritableSignal} from '@angular/core'
 import {EMPTY, firstValueFrom, from, of, Subject, throwError} from 'rxjs'
 import type {Observable, Subscription} from 'rxjs'
 import {
@@ -9,24 +8,14 @@ import {
   debounceTime,
   mergeMap
 } from 'rxjs/operators'
-import {
-  Box3,
-  BufferAttribute,
-  BufferGeometry,
-  Euler,
-  Group,
-  LOD,
-  Mesh,
-  MeshBasicMaterial,
-  Vector3
-} from 'three'
+import {Box3, Euler, Group, LOD, Vector3} from 'three'
 import type {Object3D} from 'three'
-import {SRGBToLinear} from 'three/src/math/ColorManagement.js'
 import {UserService} from '../user'
 import type {User} from '../user'
 import {SettingsService} from '../settings/settings.service'
 import {EngineService} from '../engine/engine.service'
 import {TerrainService} from './terrain.service'
+import type {TerrainData, WaterData} from './terrain.service'
 import {TeleportService} from '../engine/teleport.service'
 import {PlayerCollider} from '../engine/player-collider'
 import type {PropCtl} from './prop.service'
@@ -35,33 +24,38 @@ import {PropActionService} from './prop-action.service'
 import {SocketService} from '../network/socket.service'
 import {AvatarAnimationService} from '../animation'
 import type {AvatarAnimationManager} from '../animation'
+import type {Avatar} from '../network'
 import {HttpService} from '../network'
 import {environment} from '../../environments/environment'
 import {DEG, Utils} from '../utils'
 import {BuildService} from '../engine/build.service'
+import type {LightData} from './lighting.service'
 import {LightingService} from './lighting.service'
+import type {SkyData} from './sky.service'
+import {SkyService} from './sky.service'
+
+interface WorldData {
+  id: number
+  name: string
+  sky: SkyData
+  path: string
+  welcome?: string
+  terrain?: TerrainData
+  entry?: string
+  water?: WaterData
+  light: LightData
+}
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
-  avatarList: {
-    name: string
-    geometry: string
-    implicit: Map<string, string>
-    explicit: Map<string, string>
-  }[] = []
+  avatarList: Avatar[] = []
   avatarSub = new Subject<number>()
   gestures = signal<Map<string, string>>(new Map())
   worldId = 0
   worldList = []
-  skybox = signal('')
-  skyTop: WritableSignal<string>
-  skyNorth: WritableSignal<string>
-  skyEast: WritableSignal<string>
-  skySouth: WritableSignal<string>
-  skyWest: WritableSignal<string>
-  skyBottom: WritableSignal<string>
 
   private readonly engineSvc = inject(EngineService)
+  private readonly skySvc = inject(SkyService)
   private readonly lightingSvc = inject(LightingService)
   private readonly terrainSvc = inject(TerrainService)
   private readonly userSvc = inject(UserService)
@@ -90,12 +84,6 @@ export class WorldService {
   private avatarListener: Subscription
 
   constructor() {
-    this.skyTop = signal(Utils.colorHexToStr(0))
-    this.skyNorth = signal(Utils.colorHexToStr(0))
-    this.skyEast = signal(Utils.colorHexToStr(0))
-    this.skySouth = signal(Utils.colorHexToStr(0))
-    this.skyWest = signal(Utils.colorHexToStr(0))
-    this.skyBottom = signal(Utils.colorHexToStr(0))
     // Effect for teleport
     effect(() => {
       const {world, position, isNew} = this.teleportSvc.teleport()
@@ -126,21 +114,9 @@ export class WorldService {
         return
       }
 
-      this.http.world(targetWorld.id).subscribe((w: any) => {
+      this.http.world(targetWorld.id).subscribe((w: WorldData) => {
         this.teleportSvc.teleportFrom(this.worldName, currentPos, isNew)
         this.setWorld(w, position)
-      })
-    })
-
-    // Effect for skybox
-    effect(() => {
-      this.createSkybox(this.skybox(), {
-        top: Utils.hexToRgb(Utils.colorStrToHex(this.skyTop())),
-        north: Utils.hexToRgb(Utils.colorStrToHex(this.skyNorth())),
-        east: Utils.hexToRgb(Utils.colorStrToHex(this.skyEast())),
-        south: Utils.hexToRgb(Utils.colorStrToHex(this.skySouth())),
-        west: Utils.hexToRgb(Utils.colorStrToHex(this.skyWest())),
-        bottom: Utils.hexToRgb(Utils.colorStrToHex(this.skyBottom()))
       })
     })
 
@@ -289,84 +265,6 @@ export class WorldService {
         this.engineSvc.yaw
       )
     }
-  }
-
-  private createSkybox(
-    skybox: string,
-    skyColors: {
-      top: number[]
-      north: number[]
-      east: number[]
-      south: number[]
-      west: number[]
-      bottom: number[]
-    } = {
-      top: [0, 0, 0],
-      north: [0, 0, 0],
-      east: [0, 0, 0],
-      south: [0, 0, 0],
-      west: [0, 0, 0],
-      bottom: [0, 0, 0]
-    }
-  ) {
-    const skyboxGroup = new Group()
-    skyboxGroup.renderOrder = -1
-    const octGeom = new BufferGeometry()
-
-    // 6 vertices to make an octahedron
-    // prettier-ignore
-    const positions = [
-       0,  0,  1, // north vertex (0)
-      -1,  0,  0, // east vertex (1)
-       0,  0, -1, // south vertex (2)
-       1,  0,  0, // west vertex (3)
-       0,  1,  0, // top vertex (4)
-       0, -1,  0  // bottom vertex (5)
-    ]
-
-    const colors = ['north', 'east', 'south', 'west', 'top', 'bottom']
-      .flatMap((attr) => skyColors[attr])
-      .map((c: number) => SRGBToLinear(c / 255))
-
-    octGeom.setAttribute(
-      'position',
-      new BufferAttribute(new Float32Array(positions), 3)
-    )
-    octGeom.setAttribute(
-      'color',
-      new BufferAttribute(new Float32Array(colors), 3)
-    )
-
-    // 8 triangle faces to make an octahedron
-    // prettier-ignore
-    octGeom.setIndex([
-      4, 0, 1, // top north east face
-      4, 1, 2, // top south east face
-      4, 2, 3, // top south west face
-      4, 3, 0, // top north west face
-      5, 1, 0, // bottom north east face
-      5, 2, 1, // bottom south east face
-      5, 3, 2, // bottom south west face
-      5, 0, 3  // bottom north west face
-    ])
-
-    octGeom.addGroup(0, octGeom.getIndex().count, 0)
-
-    const oct = new Mesh(octGeom, [
-      new MeshBasicMaterial({vertexColors: true, depthWrite: false})
-    ])
-    skyboxGroup.add(oct)
-
-    if (skybox) {
-      this.propSvc.loadModel(skybox, true).subscribe((s) => {
-        const skyboxRwx = s.clone()
-        const box = new Box3().setFromObject(skyboxRwx)
-        const center = box.getCenter(new Vector3())
-        skyboxRwx.position.set(0, -center.y, 0)
-        skyboxGroup.add(skyboxRwx)
-      })
-    }
-    this.engineSvc.setSkybox(skyboxGroup)
   }
 
   private resetChunks() {
@@ -645,7 +543,7 @@ export class WorldService {
    * @param entry Teleport string
    * @returns Nothing
    */
-  private setWorld(world: any, entry: string | null) {
+  private setWorld(world: WorldData, entry: string | null) {
     if (!entry && world.entry) {
       entry = world.entry
     }
@@ -665,56 +563,8 @@ export class WorldService {
     this.propSvc.path.set(world.path)
     this.terrainSvc.setTerrain(world?.terrain, world.id)
     this.terrainSvc.setWater(world?.water)
-    this.skybox.set(world.sky.skybox)
-    this.skyTop.set(
-      Utils.colorHexToStr(
-        Utils.rgbToHex(...(world.sky.top_color as [number, number, number]))
-      )
-    )
-    this.skyNorth.set(
-      Utils.colorHexToStr(
-        Utils.rgbToHex(...(world.sky.north_color as [number, number, number]))
-      )
-    )
-    this.skyEast.set(
-      Utils.colorHexToStr(
-        Utils.rgbToHex(...(world.sky.east_color as [number, number, number]))
-      )
-    )
-    this.skySouth.set(
-      Utils.colorHexToStr(
-        Utils.rgbToHex(...(world.sky.south_color as [number, number, number]))
-      )
-    )
-    this.skyWest.set(
-      Utils.colorHexToStr(
-        Utils.rgbToHex(...(world.sky.west_color as [number, number, number]))
-      )
-    )
-    this.skyBottom.set(
-      Utils.colorHexToStr(
-        Utils.rgbToHex(...(world.sky.bottom_color as [number, number, number]))
-      )
-    )
-    this.lightingSvc.ambLightColor = Utils.rgbToHex(
-      ...(world.light.amb_color as [number, number, number])
-    )
-    this.lightingSvc.dirLightColor = Utils.rgbToHex(
-      ...(world.light.dir_color as [number, number, number])
-    )
-    this.lightingSvc.dirLightTarget = [
-      world.light.dir.x * 100,
-      world.light.dir.y * 100,
-      world.light.dir.z * 100
-    ]
-    this.lightingSvc.worldFog = {
-      color: Utils.rgbToHex(
-        ...(world.light.fog.color as [number, number, number])
-      ),
-      near: world.light.fog.min,
-      far: world.light.fog.max,
-      enabled: world.light.fog.enabled
-    }
+    this.skySvc.setSkybox(world.sky)
+    this.lightingSvc.setLighting(world.light)
 
     this.http.avatars(this.propSvc.path()).subscribe((list) => {
       this.avatarList = list

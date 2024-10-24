@@ -74,7 +74,7 @@ export class Utils {
    * @param hex Color number
    * @returns RGB values array
    */
-  static hexToRgb(hex: number): number[] {
+  static hexToRgb(hex: number): [number, number, number] {
     return [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255]
   }
 

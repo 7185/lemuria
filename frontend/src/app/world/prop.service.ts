@@ -7,8 +7,7 @@ import {
   Group,
   LoadingManager,
   Mesh,
-  MeshBasicMaterial,
-  SRGBColorSpace
+  MeshBasicMaterial
 } from 'three'
 import RWXLoader, {flattenGroup, RWXMaterialManager} from 'three-rwx-loader'
 import {Utils} from '../utils'
@@ -43,7 +42,7 @@ export class PropService {
   audioPath = computed(() => `${this.path()}/sounds`)
   resPath = computed(() => `${this.path()}/textures`)
   private rwxPath = computed(() => `${this.path()}/rwx`)
-  private unknown: Group
+  private unknown = this.createUnknownProp()
   private rwxPropLoader = new RWXLoader(new LoadingManager())
   private basicLoader = new RWXLoader(new LoadingManager())
   private objects = new Map<string, Observable<Group>>()
@@ -51,33 +50,14 @@ export class PropService {
   private geomCache = new Map<string, BufferGeometry>()
 
   constructor() {
-    const unknownGeometry = new BufferGeometry()
-    const positions = [-0.2, 0, 0, 0.2, 0, 0, 0, 0.2, 0]
-    unknownGeometry.setAttribute(
-      'position',
-      new BufferAttribute(new Float32Array(positions), 3)
-    )
-    unknownGeometry.setIndex([0, 1, 2])
-    unknownGeometry.clearGroups()
-    unknownGeometry.addGroup(0, unknownGeometry.getIndex().count, 0)
-    this.unknown = new Group().add(
-      new Mesh(unknownGeometry, [new MeshBasicMaterial({color: 0x000000})])
-    )
-    this.unknown.userData.isError = true
     this.rwxMaterialManager = new RWXMaterialManager(
       this.path(),
       '.jpg',
       '.zip',
-      fflate,
-      false,
-      SRGBColorSpace
+      fflate
     )
     this.rwxPropLoader.setRWXMaterialManager(this.rwxMaterialManager)
-    this.basicLoader
-      .setFflate(fflate)
-      .setFlatten(true)
-      .setUseBasicMaterial(true)
-      .setTextureColorSpace(SRGBColorSpace)
+    this.basicLoader.setFflate(fflate).setUseBasicMaterial(true)
 
     effect(() => {
       this.rwxMaterialManager.folder = this.resPath()
@@ -112,6 +92,23 @@ export class PropService {
         m.needsUpdate = true
       }
     }
+  }
+
+  private createUnknownProp() {
+    const unknownGeometry = new BufferGeometry()
+    const positions = [-0.2, 0, 0, 0.2, 0, 0, 0, 0.2, 0]
+    unknownGeometry.setAttribute(
+      'position',
+      new BufferAttribute(new Float32Array(positions), 3)
+    )
+    unknownGeometry.setIndex([0, 1, 2])
+    unknownGeometry.clearGroups()
+    unknownGeometry.addGroup(0, unknownGeometry.getIndex().count, 0)
+    const unknown = new Group().add(
+      new Mesh(unknownGeometry, [new MeshBasicMaterial({color: 0x000000})])
+    )
+    unknown.userData.isError = true
+    return unknown
   }
 
   /**

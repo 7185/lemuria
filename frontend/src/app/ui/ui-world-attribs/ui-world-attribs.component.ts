@@ -15,6 +15,7 @@ import {MatSliderModule} from '@angular/material/slider'
 import {MatTabsModule} from '@angular/material/tabs'
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
 import {Utils} from '../../utils'
+import {SkyService} from '../../world/sky.service'
 import {WorldService} from '../../world/world.service'
 import {TerrainService} from '../../world/terrain.service'
 import {LightingService} from '../../world/lighting.service'
@@ -69,7 +70,8 @@ export class UiWorldAttribsComponent {
 
   private readonly terrainSvc = inject(TerrainService)
   private readonly lightingSvc = inject(LightingService)
-  readonly worldSvc = inject(WorldService)
+  private readonly worldSvc = inject(WorldService)
+  readonly skySvc = inject(SkyService)
 
   constructor() {
     this.terrain = signal(this.terrainSvc.terrain != null)
@@ -135,7 +137,7 @@ export class UiWorldAttribsComponent {
     effect(() => {
       this.terrainSvc.setWater({
         enabled: this.water(),
-        color: [...Utils.hexToRgb(Utils.colorStrToHex(this.waterColor()))],
+        color: Utils.hexToRgb(Utils.colorStrToHex(this.waterColor())),
         offset: this.waterLevel(),
         opacity: this.waterOpacity(),
         texture_bottom: this.waterTextureBottom(),

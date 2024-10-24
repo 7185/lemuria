@@ -1,6 +1,19 @@
 import {inject, Injectable} from '@angular/core'
 import {AmbientLight, Color, DirectionalLight, Object3D} from 'three'
 import {EngineService} from '../engine/engine.service'
+import {Utils} from '../utils'
+
+export interface LightData {
+  amb_color: [number, number, number]
+  dir_color: [number, number, number]
+  dir: {x: number; y: number; z: number}
+  fog: {
+    enabled: boolean
+    min: number
+    max: number
+    color: [number, number, number]
+  }
+}
 
 @Injectable({providedIn: 'root'})
 export class LightingService {
@@ -66,5 +79,21 @@ export class LightingService {
 
   get worldFog() {
     return this.engineSvc.worldFog
+  }
+
+  setLighting(light: LightData) {
+    this.ambLightColor = Utils.rgbToHex(...light.amb_color)
+    this.dirLightColor = Utils.rgbToHex(...light.dir_color)
+    this.dirLightTarget = [
+      light.dir.x * 100,
+      light.dir.y * 100,
+      light.dir.z * 100
+    ]
+    this.worldFog = {
+      color: Utils.rgbToHex(...light.fog.color),
+      near: light.fog.min,
+      far: light.fog.max,
+      enabled: light.fog.enabled
+    }
   }
 }

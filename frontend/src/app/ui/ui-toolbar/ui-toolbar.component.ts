@@ -128,6 +128,31 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       })
       this.cdRef.detectChanges()
     })
+
+    effect(() => {
+      const u = this.http.getLogged()()
+      this.userId = u.id
+      this.name = u.name
+      this.userSvc.currentName = u.name
+      if (u.id != null) {
+        this.http
+          .worlds()
+          .subscribe((w: {id: number; name: string; data: unknown}[]) => {
+            this.worldSvc.worldList = w
+            const home = this.settings.get('home')
+            this.home = {
+              world: home?.world,
+              position: home?.position,
+              isNew: true
+            }
+            if (this.home.world || this.home.position) {
+              this.teleportSvc.teleport.set(this.home)
+            }
+            this.cdRef.detectChanges()
+          })
+      }
+      this.cdRef.detectChanges()
+    })
   }
 
   changeVisibility(visibility: number) {
@@ -216,29 +241,6 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.worldSvc.avatarSub.subscribe((avatarId) => (this.avatarId = avatarId))
-    this.http.getLogged().subscribe((u: User) => {
-      this.userId = u.id
-      this.name = u.name
-      this.userSvc.currentName = u.name
-      if (u.id != null) {
-        this.http
-          .worlds()
-          .subscribe((w: {id: number; name: string; data: unknown}[]) => {
-            this.worldSvc.worldList = w
-            const home = this.settings.get('home')
-            this.home = {
-              world: home?.world,
-              position: home?.position,
-              isNew: true
-            }
-            if (this.home.world || this.home.position) {
-              this.teleportSvc.teleport.set(this.home)
-            }
-            this.cdRef.detectChanges()
-          })
-      }
-      this.cdRef.detectChanges()
-    })
     this.settings.updated.subscribe(() => {
       const home = this.settings.get('home')
       this.home = {
@@ -280,7 +282,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       })
 
     if (this.debug) {
-      this.engineSvc.fpsSub.pipe(throttleTime(1000)).subscribe((fps) => {
+      this.engineSvc.fpsObs.pipe(throttleTime(1000)).subscribe((fps) => {
         const memInfo = this.engineSvc.getMemInfo()
         this.strFps = `${fps} FPS ${memInfo[1]} draws`
         this.strMem = `${memInfo[0].geometries} Geom. ${memInfo[0].textures} Text.`

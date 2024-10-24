@@ -1,4 +1,5 @@
-import {BehaviorSubject, fromEvent, Subject, timer} from 'rxjs'
+import {fromEvent, Subject, timer} from 'rxjs'
+import {toObservable} from '@angular/core/rxjs-interop'
 import {effect, inject, Injectable, signal} from '@angular/core'
 import type {ElementRef} from '@angular/core'
 import {
@@ -76,7 +77,8 @@ const nearestChunkPattern = [
 @Injectable({providedIn: 'root'})
 export class EngineService {
   compassSub = new Subject<{pos: Vector3; theta: number}>()
-  fpsSub = new BehaviorSubject<string>('0')
+  fpsSignal = signal('0')
+  fpsObs = toObservable(this.fpsSignal)
   maxFps = signal(60)
   maxLights = signal(6)
   texturesAnimation = signal(0)
@@ -747,7 +749,7 @@ export class EngineService {
     if (this.deltaFps <= 1 / this.maxFps()) {
       return
     }
-    this.fpsSub.next((1 / this.deltaFps).toFixed())
+    this.fpsSignal.set((1 / this.deltaFps).toFixed())
     this.deltaSinceLastFrame = this.deltaFps
     this.deltaFps = (this.deltaFps % 1) / this.maxFps()
     this.renderer.clear()

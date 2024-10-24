@@ -119,8 +119,8 @@
           <input
             matInput
             type="text"
-            [ngModel]="worldSvc.skybox()"
-            (ngModelChange)="worldSvc.skybox.set($event)"
+            [ngModel]="skySvc.skybox()"
+            (ngModelChange)="skySvc.skybox.set($event)"
           />
         </mat-form-field>
         <div>
@@ -129,8 +129,8 @@
             <input
               matInput
               type="color"
-              [ngModel]="worldSvc.skyTop()"
-              (ngModelChange)="worldSvc.skyTop.set($event)"
+              [ngModel]="skySvc.skyTop()"
+              (ngModelChange)="skySvc.skyTop.set($event)"
             />
           </mat-form-field>
           <mat-form-field appearance="outline">
@@ -138,8 +138,8 @@
             <input
               matInput
               type="color"
-              [ngModel]="worldSvc.skyBottom()"
-              (ngModelChange)="worldSvc.skyBottom.set($event)"
+              [ngModel]="skySvc.skyBottom()"
+              (ngModelChange)="skySvc.skyBottom.set($event)"
             />
           </mat-form-field>
         </div>
@@ -149,8 +149,8 @@
             <input
               matInput
               type="color"
-              [ngModel]="worldSvc.skyNorth()"
-              (ngModelChange)="worldSvc.skyNorth.set($event)"
+              [ngModel]="skySvc.skyNorth()"
+              (ngModelChange)="skySvc.skyNorth.set($event)"
             />
           </mat-form-field>
           <mat-form-field appearance="outline">
@@ -158,8 +158,8 @@
             <input
               matInput
               type="color"
-              [ngModel]="worldSvc.skySouth()"
-              (ngModelChange)="worldSvc.skySouth.set($event)"
+              [ngModel]="skySvc.skySouth()"
+              (ngModelChange)="skySvc.skySouth.set($event)"
             />
           </mat-form-field>
         </div>
@@ -169,8 +169,8 @@
             <input
               matInput
               type="color"
-              [ngModel]="worldSvc.skyEast()"
-              (ngModelChange)="worldSvc.skyEast.set($event)"
+              [ngModel]="skySvc.skyEast()"
+              (ngModelChange)="skySvc.skyEast.set($event)"
             />
           </mat-form-field>
           <mat-form-field appearance="outline">
@@ -178,8 +178,8 @@
             <input
               matInput
               type="color"
-              [ngModel]="worldSvc.skyWest()"
-              (ngModelChange)="worldSvc.skyWest.set($event)"
+              [ngModel]="skySvc.skyWest()"
+              (ngModelChange)="skySvc.skyWest.set($event)"
             />
           </mat-form-field>
         </div>

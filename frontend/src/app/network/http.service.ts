@@ -1,6 +1,6 @@
-import {BehaviorSubject, throwError} from 'rxjs'
-import type {Observable} from 'rxjs'
-import {inject, Injectable} from '@angular/core'
+import {throwError} from 'rxjs'
+import {inject, Injectable, signal} from '@angular/core'
+import type {WritableSignal} from '@angular/core'
 import {HttpClient} from '@angular/common/http'
 import type {HttpResponse} from '@angular/common/http'
 import {Router} from '@angular/router'
@@ -8,12 +8,17 @@ import {environment} from '../../environments/environment'
 import {User} from '../user'
 import {catchError, map, tap} from 'rxjs/operators'
 
+export interface Avatar {
+  name: string
+  geometry: string
+  implicit: Map<string, string>
+  explicit: Map<string, string>
+}
+
 @Injectable({providedIn: 'root'})
 export class HttpService extends HttpClient {
   private baseUrl = environment.url.server
-  private userLogged: BehaviorSubject<User> = new BehaviorSubject<User>(
-    new User()
-  )
+  private userLogged = signal<User>(new User())
   #expiration = parseInt(localStorage.getItem('expiration') ?? '0', 10)
 
   private readonly router = inject(Router)
@@ -39,14 +44,14 @@ export class HttpService extends HttpClient {
   }
 
   setLogged(logged: User): void {
-    this.userLogged.next(logged)
+    this.userLogged.set(logged)
   }
 
-  getLogged(): Observable<User> {
-    if (this.userLogged.value.id == null) {
+  getLogged(): WritableSignal<User> {
+    if (this.userLogged().id == null) {
       this.session().subscribe()
     }
-    return this.userLogged.asObservable()
+    return this.userLogged
   }
 
   login(login: string, password: string) {
@@ -79,48 +84,43 @@ export class HttpService extends HttpClient {
   }
 
   avatars(path: string) {
-    const list: {
-      name: string
-      geometry: string
-      implicit: Map<string, string>
-      explicit: Map<string, string>
-    }[] = []
+    const list: Avatar[] = []
     let [readImp, readExp] = [false, false]
     return this.get(`${path}/avatars/avatars.dat`, {responseType: 'text'}).pipe(
-      map((a: string) => {
-        a.split('\n')
-          .map((l: string) => l.trim())
-          .forEach((line: string) => {
-            const i = list.length - 1
-            if (line === 'avatar') {
-              list.push({
-                name: '',
-                geometry: '',
-                implicit: new Map(),
-                explicit: new Map()
-              })
-            } else if (line.startsWith('name=')) {
-              list[i].name = line.substring(5)
-            } else if (line.startsWith('geometry=')) {
-              list[i].geometry = line.substring(9)
+      map((fileContent: string) => {
+        fileContent.split('\n').forEach((line: string) => {
+          line = line.trim()
+          const i = list.length - 1
+          if (line === 'avatar') {
+            list.push({
+              name: '',
+              geometry: '',
+              implicit: new Map<string, string>(),
+              explicit: new Map<string, string>()
+            })
+            return
+          }
+          if (line.startsWith('name=')) {
+            list[i].name = line.substring(5)
+          } else if (line.startsWith('geometry=')) {
+            list[i].geometry = line.substring(9)
+          } else if (line.startsWith('beginimp')) {
+            readImp = true
+          } else if (line.startsWith('endimp')) {
+            readImp = false
+          } else if (line.startsWith('beginexp')) {
+            readExp = true
+          } else if (line.startsWith('endexp')) {
+            readExp = false
+          } else {
+            const values = line.split('=')
+            if (readImp && values.length === 2) {
+              list[i].implicit.set(values[0], values[1])
+            } else if (readExp && values.length === 2) {
+              list[i].explicit.set(values[0], values[1])
             }
-            if (line.startsWith('beginimp')) {
-              readImp = true
-            } else if (line.startsWith('endimp')) {
-              readImp = false
-            } else if (line.startsWith('beginexp')) {
-              readExp = true
-            } else if (line.startsWith('endexp')) {
-              readExp = false
-            } else {
-              const values = line.split('=')
-              if (readImp && values.length === 2) {
-                list[i].implicit.set(values[0], values[1])
-              } else if (readExp && values.length === 2) {
-                list[i].explicit.set(values[0], values[1])
-              }
-            }
-          })
+          }
+        })
         return list
       })
     )

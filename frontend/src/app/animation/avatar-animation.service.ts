@@ -6,11 +6,6 @@ import {AvatarAnimationManager} from './avatar-animation.manager'
 import {Quaternion, Vector3} from 'three'
 import * as fflate from 'fflate'
 
-export interface AvatarSequences {
-  implicit: Map<string, string>
-  explicit: Map<string, string>
-}
-
 export interface ThreeSequence {
   original: ParsedSequence | null
   frames: {joints: Record<string, Quaternion>; location: Vector3}[]
