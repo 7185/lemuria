@@ -3,11 +3,14 @@ import type {WritableSignal} from '@angular/core'
 import {DecimalPipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
 import {CdkDrag, CdkDragHandle} from '@angular/cdk/drag-drop'
-import {MatButtonModule} from '@angular/material/button'
-import {MatCheckboxModule} from '@angular/material/checkbox'
-import {MatInputModule} from '@angular/material/input'
-import {MatFormFieldModule} from '@angular/material/form-field'
-import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
+import {MatIconButton} from '@angular/material/button'
+import {MatCheckbox} from '@angular/material/checkbox'
+import {MatInput, MatLabel} from '@angular/material/input'
+import {MatFormField} from '@angular/material/form-field'
+import {
+  FaIconComponent,
+  FaLayersComponent
+} from '@fortawesome/angular-fontawesome'
 import {BuildService} from '../../engine/build.service'
 import {
   faArrowRotateLeft,
@@ -22,13 +25,15 @@ import {
   standalone: true,
   imports: [
     FormsModule,
-    FontAwesomeModule,
+    FaIconComponent,
+    FaLayersComponent,
     CdkDrag,
     CdkDragHandle,
-    MatButtonModule,
-    MatCheckboxModule,
-    MatInputModule,
-    MatFormFieldModule,
+    MatIconButton,
+    MatCheckbox,
+    MatInput,
+    MatLabel,
+    MatFormField,
     DecimalPipe
   ],
   selector: 'app-ui-terrain-edit',

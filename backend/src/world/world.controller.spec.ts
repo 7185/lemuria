@@ -25,7 +25,7 @@ describe(WorldController.name, () => {
       },
       prop: {
         findMany: () =>
-          Promise.resolve([[0, 'tracteur1', 0, 0, 0, 0, 0, 0, null, null]])
+          Promise.resolve([[0, 0, 'tracteur1', 0, 0, 0, 0, 0, 0, null, null]])
       },
       elev: {
         findMany: () => Promise.resolve([])
@@ -177,13 +177,13 @@ describe(WorldController.name, () => {
           max_z: '0'
         })
       ).toStrictEqual({
-        entries: [[0, 'tracteur1', 0, 0, 0, 0, 0, 0, null, null]]
+        entries: [[0, 0, 'tracteur1', 0, 0, 0, 0, 0, 0, null, null]]
       })
     })
 
     it('should return all world 1 props', async () => {
       expect(await controller.worldProps('1', {})).toStrictEqual({
-        entries: [[0, 'tracteur1', 0, 0, 0, 0, 0, 0, null, null]]
+        entries: [[0, 0, 'tracteur1', 0, 0, 0, 0, 0, 0, null, null]]
       })
     })
   })

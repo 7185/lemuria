@@ -1,11 +1,21 @@
 import {KeyValuePipe} from '@angular/common'
-import {MatBadgeModule} from '@angular/material/badge'
-import {MatButtonModule} from '@angular/material/button'
-import {MatDialog, MatDialogModule} from '@angular/material/dialog'
-import {MatDividerModule} from '@angular/material/divider'
-import {MatMenuModule} from '@angular/material/menu'
-import {MatToolbarModule} from '@angular/material/toolbar'
-import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
+import {toObservable} from '@angular/core/rxjs-interop'
+import {MatBadge} from '@angular/material/badge'
+import {MatIconButton} from '@angular/material/button'
+import {MatDialog} from '@angular/material/dialog'
+import {MatDivider} from '@angular/material/divider'
+import {
+  MatMenu,
+  MatMenuContent,
+  MatMenuItem,
+  MatMenuTrigger
+} from '@angular/material/menu'
+import {MatToolbar} from '@angular/material/toolbar'
+import {
+  FaIconComponent,
+  FaLayersComponent,
+  FaLayersTextComponent
+} from '@fortawesome/angular-fontawesome'
 import {HttpService} from '../../network'
 import {EngineService} from '../../engine/engine.service'
 import {SettingsService} from '../../settings/settings.service'
@@ -22,7 +32,7 @@ import {
   signal,
   viewChild
 } from '@angular/core'
-import type {AfterViewInit, ElementRef, OnInit} from '@angular/core'
+import type {ElementRef, OnInit} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import type {User} from '../../user'
 import {environment} from '../../../environments/environment'
@@ -53,21 +63,25 @@ import {
 @Component({
   standalone: true,
   imports: [
-    MatBadgeModule,
-    MatButtonModule,
-    MatDialogModule,
-    MatDividerModule,
-    MatMenuModule,
-    MatToolbarModule,
+    MatBadge,
+    MatIconButton,
+    MatDivider,
+    MatMenu,
+    MatMenuContent,
+    MatMenuItem,
+    MatMenuTrigger,
+    MatToolbar,
     KeyValuePipe,
-    FontAwesomeModule
+    FaIconComponent,
+    FaLayersComponent,
+    FaLayersTextComponent
   ],
   selector: 'app-ui-toolbar',
   templateUrl: './ui-toolbar.component.html',
   styleUrl: './ui-toolbar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UiToolbarComponent implements OnInit, AfterViewInit {
+export class UiToolbarComponent implements OnInit {
   faArrowLeft = faArrowLeft
   faArrowRight = faArrowRight
   faBolt = faBolt
@@ -99,8 +113,8 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
     .fill(40)
     .map((n, i) => n + i * 20)
   visibility = environment.world.lod.maxDistance
-  strPos: string
-  strAlt: string
+  strPos = signal(Utils.posToStringSimple(new Vector3()))
+  strAlt = signal(Utils.altToString(new Vector3()))
   strFps = '0 FPS 0 draws'
   strMem = '0 Geom. 0 Text.'
 
@@ -137,7 +151,7 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       if (u.id != null) {
         this.http
           .worlds()
-          .subscribe((w: {id: number; name: string; data: unknown}[]) => {
+          .subscribe((w: {id: number; name: string; users: number}[]) => {
             this.worldSvc.worldList = w
             const home = this.settings.get('home')
             this.home = {
@@ -153,6 +167,38 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       }
       this.cdRef.detectChanges()
     })
+
+    toObservable(this.engineSvc.compassSignal)
+      .pipe(
+        throttleTime(100),
+        distinctUntilChanged(
+          (
+            prev: {pos: Vector3; theta: number},
+            curr: {pos: Vector3; theta: number}
+          ) =>
+            prev.pos.x === curr.pos.x &&
+            prev.pos.y === curr.pos.y &&
+            prev.pos.z === curr.pos.z &&
+            prev.theta === curr.theta
+        )
+      )
+      .subscribe((o: {pos: Vector3; theta: number}) => {
+        this.strPos.set(Utils.posToStringSimple(o.pos))
+        this.strAlt.set(Utils.altToString(o.pos))
+        this.renderer.setStyle(
+          this.compass().nativeElement,
+          'transform',
+          `rotate(${o.theta}deg)`
+        )
+      })
+
+    if (this.debug) {
+      this.engineSvc.fpsObs.pipe(throttleTime(1000)).subscribe((fps) => {
+        const memInfo = this.engineSvc.getMemInfo()
+        this.strFps = `${fps} FPS ${memInfo[1]} draws`
+        this.strMem = `${memInfo[0].geometries} Geom. ${memInfo[0].textures} Text.`
+      })
+    }
   }
 
   changeVisibility(visibility: number) {
@@ -253,40 +299,5 @@ export class UiToolbarComponent implements OnInit, AfterViewInit {
       this.engineSvc.setCamera(this.cameraType)
       this.cdRef.detectChanges()
     })
-  }
-
-  ngAfterViewInit(): void {
-    this.engineSvc.compassSub
-      .pipe(
-        throttleTime(100),
-        distinctUntilChanged(
-          (
-            prev: {pos: Vector3; theta: number},
-            curr: {pos: Vector3; theta: number}
-          ) =>
-            prev.pos.x === curr.pos.x &&
-            prev.pos.y === curr.pos.y &&
-            prev.pos.z === curr.pos.z &&
-            prev.theta === curr.theta
-        )
-      )
-      .subscribe((o: {pos: Vector3; theta: number}) => {
-        this.strPos = Utils.posToStringSimple(o.pos)
-        this.strAlt = Utils.altToString(o.pos)
-        this.renderer.setStyle(
-          this.compass().nativeElement,
-          'transform',
-          `rotate(${o.theta}deg)`
-        )
-        this.cdRef.detectChanges()
-      })
-
-    if (this.debug) {
-      this.engineSvc.fpsObs.pipe(throttleTime(1000)).subscribe((fps) => {
-        const memInfo = this.engineSvc.getMemInfo()
-        this.strFps = `${fps} FPS ${memInfo[1]} draws`
-        this.strMem = `${memInfo[0].geometries} Geom. ${memInfo[0].textures} Text.`
-      })
-    }
   }
 }

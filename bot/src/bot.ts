@@ -67,7 +67,7 @@ class Bot extends User {
   ws: WebSocket | null
   loggingEnabled: boolean
   connected: boolean
-  handlers: Record<string, any>
+  handlers: Record<string, () => void>
   userlist: Record<string, User>
   worldlist: Record<number, {name: string; users: number}>
   cookiejar: Record<string, string>
@@ -92,13 +92,13 @@ class Bot extends User {
     console.log(txt)
   }
 
-  async _callback(name: string, ...parameters: any[]): Promise<void> {
+  async _callback(name: string, ...parameters: unknown[]): Promise<void> {
     const instances = [this, ...Object.values(this.handlers)]
     for (const inst of instances) {
-      const f = (inst as any)[name]
+      const f = (inst as unknown as {[key: string]: unknown})[name]
       if (typeof f !== 'function') continue
       if (DEBUG) {
-        this.log(`calling ${name}() on instance ${inst}`)
+        this.log(`calling ${name}() on instance ${inst.name}`)
       }
       if (f) {
         await f.apply(inst, parameters)
@@ -164,7 +164,7 @@ class Bot extends User {
     }
   }
 
-  async send(msg: any): Promise<void> {
+  async send(msg: unknown): Promise<void> {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(msg))
       this.log(`< ${JSON.stringify(msg)}`)

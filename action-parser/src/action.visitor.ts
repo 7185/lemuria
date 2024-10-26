@@ -1,6 +1,6 @@
 import {CstNode, IToken, Lexer} from 'chevrotain'
-import {colorStringToRGB, visitCoords} from './action-utils'
-import {ActionParser, allTokens} from './action-parser'
+import {colorStringToRGB, visitCoords} from './action.utils'
+import {ActionParser, allTokens} from './action.parser'
 import type {
   ActionCtx,
   ActionsCtx,
@@ -49,7 +49,7 @@ import type {
   VisibleCommandCtx,
   WaitParameterCtx,
   WarpCommandCtx
-} from './action-models'
+} from './action.interfaces'
 
 const parserInstance = new ActionParser()
 const BaseActionVisitor = parserInstance.getBaseCstVisitorConstructor()
@@ -489,7 +489,7 @@ class ActionVisitor extends BaseActionVisitor {
     ]
     return parameters
       .filter((param) => ctx[param])
-      .map((param) => this.visit(ctx[param] ?? []))
+      .map((param) => this.visit(ctx[param]!))
   }
 
   lightArgs(ctx: LightArgsCtx) {
@@ -506,7 +506,7 @@ class ActionVisitor extends BaseActionVisitor {
     ]
     return parameters
       .filter((param) => ctx[param])
-      .map((param) => this.visit(ctx[param] ?? []))
+      .map((param) => this.visit(ctx[param]!))
   }
 
   mediaArgs(ctx: MediaArgsCtx) {
@@ -516,7 +516,7 @@ class ActionVisitor extends BaseActionVisitor {
     ]
     return parameters
       .filter((param) => ctx[param])
-      .map((param) => this.visit(ctx[param] ?? []))
+      .map((param) => this.visit(ctx[param]!))
   }
 
   moveArgs(ctx: MoveArgsCtx) {
@@ -555,7 +555,7 @@ class ActionVisitor extends BaseActionVisitor {
     ]
     return parameters
       .filter((param) => ctx[param])
-      .map((param) => this.visit(ctx[param] ?? []))
+      .map((param) => this.visit(ctx[param]!))
   }
 
   signArgs(ctx: SignArgsCtx) {
@@ -566,7 +566,7 @@ class ActionVisitor extends BaseActionVisitor {
     ]
     return parameters
       .filter((param) => ctx[param])
-      .map((param) => this.visit(ctx[param] ?? []))
+      .map((param) => this.visit(ctx[param]!))
   }
 
   textureArgs(ctx: TextureArgsCtx) {
@@ -577,7 +577,7 @@ class ActionVisitor extends BaseActionVisitor {
     ]
     return parameters
       .filter((param) => ctx[param])
-      .map((param) => this.visit(ctx[param] ?? []))
+      .map((param) => this.visit(ctx[param]!))
   }
 
   // Generic visitors

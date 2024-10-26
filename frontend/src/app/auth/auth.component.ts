@@ -3,10 +3,10 @@ import type {OnInit} from '@angular/core'
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms'
 import type {FormControl, FormGroup} from '@angular/forms'
 import {ActivatedRoute, Router} from '@angular/router'
-import {MatButtonModule} from '@angular/material/button'
-import {MatInputModule} from '@angular/material/input'
-import {MatFormFieldModule} from '@angular/material/form-field'
-import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
+import {MatButton, MatIconButton} from '@angular/material/button'
+import {MatError, MatInput, MatSuffix} from '@angular/material/input'
+import {MatFormField, MatLabel} from '@angular/material/form-field'
+import {FaIconComponent} from '@fortawesome/angular-fontawesome'
 import {finalize} from 'rxjs/operators'
 import {HttpService} from '../network'
 import {LogoComponent} from '../logo/logo.component'
@@ -21,11 +21,15 @@ import {
 @Component({
   standalone: true,
   imports: [
-    FontAwesomeModule,
     ReactiveFormsModule,
-    MatButtonModule,
-    MatInputModule,
-    MatFormFieldModule,
+    MatButton,
+    MatIconButton,
+    MatError,
+    MatInput,
+    MatLabel,
+    MatFormField,
+    MatSuffix,
+    FaIconComponent,
     LogoComponent
   ],
   selector: 'app-auth',

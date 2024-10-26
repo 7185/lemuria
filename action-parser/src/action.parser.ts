@@ -256,6 +256,7 @@ addToken({
 })
 
 export class ActionParser extends CstParser {
+  cmdCache?: {ALT: () => CstNode}[]
   constructor(config?: IParserConfig) {
     super(allTokens, config)
     this.performSelfAnalysis()
@@ -626,29 +627,32 @@ export class ActionParser extends CstParser {
   })
 
   command = this.RULE('command', () => {
-    this.OR([
-      {ALT: () => this.SUBRULE(this.animateCommand)},
-      {ALT: () => this.SUBRULE(this.astartCommand)},
-      {ALT: () => this.SUBRULE(this.astopCommand)},
-      {ALT: () => this.SUBRULE(this.colorCommand)},
-      {ALT: () => this.SUBRULE(this.coronaCommand)},
-      {ALT: () => this.SUBRULE(this.examineCommand)},
-      {ALT: () => this.SUBRULE(this.lightCommand)},
-      {ALT: () => this.SUBRULE(this.mediaCommand)},
-      {ALT: () => this.SUBRULE(this.moveCommand)},
-      {ALT: () => this.SUBRULE(this.nameCommand)},
-      {ALT: () => this.SUBRULE(this.noiseCommand)},
-      {ALT: () => this.SUBRULE(this.pictureCommand)},
-      {ALT: () => this.SUBRULE(this.rotateCommand)},
-      {ALT: () => this.SUBRULE(this.signCommand)},
-      {ALT: () => this.SUBRULE(this.solidCommand)},
-      {ALT: () => this.SUBRULE(this.soundCommand)},
-      {ALT: () => this.SUBRULE(this.teleportCommand)},
-      {ALT: () => this.SUBRULE(this.textureCommand)},
-      {ALT: () => this.SUBRULE(this.urlCommand)},
-      {ALT: () => this.SUBRULE(this.visibleCommand)},
-      {ALT: () => this.SUBRULE(this.warpCommand)}
-    ])
+    this.OR(
+      this.cmdCache ||
+        (this.cmdCache = [
+          {ALT: () => this.SUBRULE(this.animateCommand)},
+          {ALT: () => this.SUBRULE(this.astartCommand)},
+          {ALT: () => this.SUBRULE(this.astopCommand)},
+          {ALT: () => this.SUBRULE(this.colorCommand)},
+          {ALT: () => this.SUBRULE(this.coronaCommand)},
+          {ALT: () => this.SUBRULE(this.examineCommand)},
+          {ALT: () => this.SUBRULE(this.lightCommand)},
+          {ALT: () => this.SUBRULE(this.mediaCommand)},
+          {ALT: () => this.SUBRULE(this.moveCommand)},
+          {ALT: () => this.SUBRULE(this.nameCommand)},
+          {ALT: () => this.SUBRULE(this.noiseCommand)},
+          {ALT: () => this.SUBRULE(this.pictureCommand)},
+          {ALT: () => this.SUBRULE(this.rotateCommand)},
+          {ALT: () => this.SUBRULE(this.signCommand)},
+          {ALT: () => this.SUBRULE(this.solidCommand)},
+          {ALT: () => this.SUBRULE(this.soundCommand)},
+          {ALT: () => this.SUBRULE(this.teleportCommand)},
+          {ALT: () => this.SUBRULE(this.textureCommand)},
+          {ALT: () => this.SUBRULE(this.urlCommand)},
+          {ALT: () => this.SUBRULE(this.visibleCommand)},
+          {ALT: () => this.SUBRULE(this.warpCommand)}
+        ])
+    )
   })
 
   trigger = this.RULE('trigger', () => {

@@ -1,4 +1,4 @@
-import {CstNode, IToken} from 'chevrotain'
+import type {CstNode, IToken} from 'chevrotain'
 
 // Commands
 

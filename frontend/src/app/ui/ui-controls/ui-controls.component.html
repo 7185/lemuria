@@ -17,7 +17,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (item of controlsKeymap; track item; let i = $index) {
+      @for (item of controlsKeymap; track $index; let i = $index) {
         <tr>
           <th scope="row">{{ controlsLabels[i][0] }}</th>
           <td>

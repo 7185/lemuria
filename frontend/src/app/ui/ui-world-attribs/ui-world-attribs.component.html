@@ -9,17 +9,15 @@
         Ground
       </ng-template>
       <div class="tab-content">
-        <mat-checkbox
-          [ngModel]="terrain()"
-          (ngModelChange)="terrain.set($event)"
-        >Enable Terrain</mat-checkbox>
+        <mat-checkbox [(ngModel)]="terrain">
+          Enable Terrain
+        </mat-checkbox>
         <mat-form-field appearance="outline">
           <mat-label>Terrain elevation offset</mat-label>
           <input
             matInput
             type="number"
-            [ngModel]="terrainOffset()"
-            (ngModelChange)="terrainOffset.set($event)"
+            [(ngModel)]="terrainOffset"
           />
         </mat-form-field>
       </div>
@@ -30,18 +28,15 @@
         Lighting
       </ng-template>
       <div class="tab-content">
-        <mat-checkbox
-          [ngModel]="terrain()"
-          [ngModel]="fog()"
-          (ngModelChange)="fog.set($event)"
-        >Enable Fog</mat-checkbox>
+        <mat-checkbox [(ngModel)]="fog">
+          Enable Fog
+        </mat-checkbox>
         <mat-form-field appearance="outline">
           <mat-label>Color</mat-label>
           <input
             matInput
             type="color"
-            [ngModel]="fogColor()"
-            (ngModelChange)="fogColor.set($event)"
+            [(ngModel)]="fogColor"
           />
         </mat-form-field>
         <mat-form-field appearance="outline">
@@ -49,8 +44,7 @@
           <input
             matInput
             type="number"
-            [ngModel]="fogMin()"
-            (ngModelChange)="fogMin.set($event)"
+            [(ngModel)]="fogMin"
           />
         </mat-form-field>
         <mat-form-field appearance="outline">
@@ -58,8 +52,7 @@
           <input
             matInput
             type="number"
-            [ngModel]="fogMax()"
-            (ngModelChange)="fogMax.set($event)"
+            [(ngModel)]="fogMax"
           />
         </mat-form-field>
         <mat-form-field appearance="outline">
@@ -67,8 +60,7 @@
           <input
             matInput
             type="color"
-            [ngModel]="ambLight()"
-            (ngModelChange)="ambLight.set($event)"
+            [(ngModel)]="ambLight"
           />
         </mat-form-field>
         <mat-form-field appearance="outline">
@@ -76,8 +68,7 @@
           <input
             matInput
             type="color"
-            [ngModel]="dirLight()"
-            (ngModelChange)="dirLight.set($event)"
+            [(ngModel)]="dirLight"
           />
         </mat-form-field>
         <div>
@@ -87,22 +78,19 @@
           <mat-slider min="-1000" max="1000" step="1" discrete>
             <input
               matSliderThumb
-              [ngModel]="lightDirX()"
-              (ngModelChange)="lightDirX.set($event)"
+              [(ngModel)]="lightDirX"
             />
           </mat-slider>
           <mat-slider min="-1000" max="1000" step="1" discrete>
             <input
               matSliderThumb
-              [ngModel]="lightDirY()"
-              (ngModelChange)="lightDirY.set($event)"
+              [(ngModel)]="lightDirY"
             />
           </mat-slider>
           <mat-slider min="-1000" max="1000" step="1" discrete>
             <input
               matSliderThumb
-              [ngModel]="lightDirZ()"
-              (ngModelChange)="lightDirZ.set($event)"
+              [(ngModel)]="lightDirZ"
             />
           </mat-slider>
         </div>
@@ -119,8 +107,7 @@
           <input
             matInput
             type="text"
-            [ngModel]="skySvc.skybox()"
-            (ngModelChange)="skySvc.skybox.set($event)"
+            [(ngModel)]="skySvc.skybox"
           />
         </mat-form-field>
         <div>
@@ -129,8 +116,7 @@
             <input
               matInput
               type="color"
-              [ngModel]="skySvc.skyTop()"
-              (ngModelChange)="skySvc.skyTop.set($event)"
+              [(ngModel)]="skySvc.skyTop"
             />
           </mat-form-field>
           <mat-form-field appearance="outline">
@@ -138,8 +124,7 @@
             <input
               matInput
               type="color"
-              [ngModel]="skySvc.skyBottom()"
-              (ngModelChange)="skySvc.skyBottom.set($event)"
+              [(ngModel)]="skySvc.skyBottom"
             />
           </mat-form-field>
         </div>
@@ -149,8 +134,7 @@
             <input
               matInput
               type="color"
-              [ngModel]="skySvc.skyNorth()"
-              (ngModelChange)="skySvc.skyNorth.set($event)"
+              [(ngModel)]="skySvc.skyNorth"
             />
           </mat-form-field>
           <mat-form-field appearance="outline">
@@ -158,8 +142,7 @@
             <input
               matInput
               type="color"
-              [ngModel]="skySvc.skySouth()"
-              (ngModelChange)="skySvc.skySouth.set($event)"
+              [(ngModel)]="skySvc.skySouth"
             />
           </mat-form-field>
         </div>
@@ -169,17 +152,15 @@
             <input
               matInput
               type="color"
-              [ngModel]="skySvc.skyEast()"
-              (ngModelChange)="skySvc.skyEast.set($event)"
-            />
+              [(ngModel)]="skySvc.skyEast"
+              />
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>West</mat-label>
             <input
               matInput
               type="color"
-              [ngModel]="skySvc.skyWest()"
-              (ngModelChange)="skySvc.skyWest.set($event)"
+              [(ngModel)]="skySvc.skyWest"
             />
           </mat-form-field>
         </div>
@@ -192,16 +173,14 @@
       </ng-template>
       <div class="tab-content">
         <mat-checkbox
-          [ngModel]="water()"
-          (ngModelChange)="water.set($event)"
+          [(ngModel)]="water"
         >Enable water</mat-checkbox>
         <mat-form-field appearance="outline">
           <mat-label>Top texture</mat-label>
           <input
             matInput
             type="text"
-            [ngModel]="waterTextureTop()"
-            (ngModelChange)="waterTextureTop.set($event)"
+            [(ngModel)]="waterTextureTop"
           />
         </mat-form-field>
         <mat-form-field appearance="outline">
@@ -209,8 +188,7 @@
           <input
             matInput
             type="text"
-            [ngModel]="waterTextureBottom()"
-            (ngModelChange)="waterTextureBottom.set($event)"
+            [(ngModel)]="waterTextureBottom"
           />
         </mat-form-field>
         <mat-form-field appearance="outline">
@@ -218,8 +196,7 @@
           <input
             matInput
             type="color"
-            [ngModel]="waterColor()"
-            (ngModelChange)="waterColor.set($event)"
+            [(ngModel)]="waterColor"
           />
         </mat-form-field>
         <mat-form-field appearance="outline">
@@ -229,8 +206,7 @@
             type="number"
             min="0"
             max="255"
-            [ngModel]="waterOpacity()"
-            (ngModelChange)="waterOpacity.set($event)"
+            [(ngModel)]="waterOpacity"
           />
         </mat-form-field>
         <mat-form-field appearance="outline">
@@ -238,8 +214,7 @@
           <input
             matInput
             type="number"
-            [ngModel]="waterLevel()"
-            (ngModelChange)="waterLevel.set($event)"
+            [(ngModel)]="waterLevel"
           />
         </mat-form-field>
         <mat-form-field appearance="outline">
@@ -247,8 +222,7 @@
           <input
             matInput
             type="number"
-            [ngModel]="waterUnderView()"
-            (ngModelChange)="waterUnderView.set($event)"
+            [(ngModel)]="waterUnderView"
           />
         </mat-form-field>
       </div>

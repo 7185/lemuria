@@ -7,13 +7,13 @@ import {
 } from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import {FormsModule} from '@angular/forms'
-import {MatCheckboxModule} from '@angular/material/checkbox'
-import {MatDialogModule} from '@angular/material/dialog'
-import {MatFormFieldModule} from '@angular/material/form-field'
-import {MatInputModule} from '@angular/material/input'
-import {MatSliderModule} from '@angular/material/slider'
-import {MatTabsModule} from '@angular/material/tabs'
-import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
+import {MatCheckbox} from '@angular/material/checkbox'
+import {MatDialogContent, MatDialogTitle} from '@angular/material/dialog'
+import {MatFormField} from '@angular/material/form-field'
+import {MatInput, MatLabel} from '@angular/material/input'
+import {MatSlider, MatSliderThumb} from '@angular/material/slider'
+import {MatTab, MatTabGroup, MatTabLabel} from '@angular/material/tabs'
+import {FaIconComponent} from '@fortawesome/angular-fontawesome'
 import {Utils} from '../../utils'
 import {SkyService} from '../../world/sky.service'
 import {WorldService} from '../../world/world.service'
@@ -30,13 +30,18 @@ import {
   standalone: true,
   imports: [
     FormsModule,
-    MatCheckboxModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSliderModule,
-    MatTabsModule,
-    FontAwesomeModule
+    MatCheckbox,
+    MatDialogContent,
+    MatDialogTitle,
+    MatFormField,
+    MatInput,
+    MatLabel,
+    MatSlider,
+    MatSliderThumb,
+    MatTab,
+    MatTabGroup,
+    MatTabLabel,
+    FaIconComponent
   ],
   selector: 'app-ui-world-attribs',
   templateUrl: './ui-world-attribs.component.html',

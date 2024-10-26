@@ -1,10 +1,16 @@
 import {ChangeDetectionStrategy, Component, effect, inject} from '@angular/core'
 import type {OnInit} from '@angular/core'
-import {MatButtonModule} from '@angular/material/button'
-import {MatCheckboxModule} from '@angular/material/checkbox'
-import {MatDialogModule, MatDialogRef} from '@angular/material/dialog'
-import {MatFormFieldModule} from '@angular/material/form-field'
-import {MatInputModule} from '@angular/material/input'
+import {MatButton} from '@angular/material/button'
+import {MatCheckbox} from '@angular/material/checkbox'
+import {
+  MatDialogActions,
+  MatDialogClose,
+  MatDialogContent,
+  MatDialogRef,
+  MatDialogTitle
+} from '@angular/material/dialog'
+import {MatFormField} from '@angular/material/form-field'
+import {MatInput, MatLabel} from '@angular/material/input'
 import {FormsModule} from '@angular/forms'
 import {EngineService} from '../../engine/engine.service'
 import {SettingsService} from '../../settings/settings.service'
@@ -13,11 +19,15 @@ import {SettingsService} from '../../settings/settings.service'
   standalone: true,
   imports: [
     FormsModule,
-    MatButtonModule,
-    MatCheckboxModule,
-    MatDialogModule,
-    MatInputModule,
-    MatFormFieldModule
+    MatButton,
+    MatCheckbox,
+    MatDialogActions,
+    MatDialogClose,
+    MatDialogContent,
+    MatDialogTitle,
+    MatInput,
+    MatLabel,
+    MatFormField
   ],
   selector: 'app-ui-settings',
   templateUrl: './ui-settings.component.html',

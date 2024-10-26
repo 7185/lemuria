@@ -1,4 +1,4 @@
-import {fromEvent, Subject, timer} from 'rxjs'
+import {fromEvent, timer} from 'rxjs'
 import {toObservable} from '@angular/core/rxjs-interop'
 import {effect, inject, Injectable, signal} from '@angular/core'
 import type {ElementRef} from '@angular/core'
@@ -76,7 +76,10 @@ const nearestChunkPattern = [
 
 @Injectable({providedIn: 'root'})
 export class EngineService {
-  compassSub = new Subject<{pos: Vector3; theta: number}>()
+  compassSignal = signal<{pos: Vector3; theta: number}>({
+    pos: new Vector3(),
+    theta: 0
+  })
   fpsSignal = signal('0')
   fpsObs = toObservable(this.fpsSignal)
   maxFps = signal(60)
@@ -529,6 +532,9 @@ export class EngineService {
   }
 
   getMemInfo(): [{geometries: number; textures: number}, number] {
+    if (this.renderer == null) {
+      return [{geometries: 0, textures: 0}, 0]
+    }
     return [this.renderer.info.memory, this.renderer.info.render.calls]
   }
 
@@ -1089,7 +1095,7 @@ export class EngineService {
 
     // compass
     this.compass.setFromVector3(this.cameraDirection)
-    this.compassSub.next({
+    this.compassSignal.set({
       pos: new Vector3(
         Math.round(this.player.position.x * 100) / 100,
         Math.round(this.player.position.y * 100) / 100,

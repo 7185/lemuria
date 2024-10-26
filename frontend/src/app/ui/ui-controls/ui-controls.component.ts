@@ -1,6 +1,6 @@
 import {NgClass} from '@angular/common'
-import {MatButtonModule} from '@angular/material/button'
-import {MatDialogModule} from '@angular/material/dialog'
+import {MatButton} from '@angular/material/button'
+import {MatDialogContent, MatDialogTitle} from '@angular/material/dialog'
 import type {PressedKey} from '../../engine/inputsystem.service'
 import {InputSystemService} from '../../engine/inputsystem.service'
 import type {OnInit} from '@angular/core'
@@ -14,7 +14,7 @@ import {Subject, take, takeUntil, timeout} from 'rxjs'
 
 @Component({
   standalone: true,
-  imports: [NgClass, MatButtonModule, MatDialogModule],
+  imports: [NgClass, MatButton, MatDialogContent, MatDialogTitle],
   selector: 'app-ui-controls',
   templateUrl: './ui-controls.component.html',
   styleUrl: './ui-controls.component.scss',

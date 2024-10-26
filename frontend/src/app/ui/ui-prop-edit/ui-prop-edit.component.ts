@@ -3,10 +3,14 @@ import type {WritableSignal} from '@angular/core'
 import {DatePipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
 import {CdkDrag, CdkDragHandle} from '@angular/cdk/drag-drop'
-import {MatButtonModule} from '@angular/material/button'
-import {MatInputModule} from '@angular/material/input'
-import {MatFormFieldModule} from '@angular/material/form-field'
-import {FontAwesomeModule} from '@fortawesome/angular-fontawesome'
+import {MatIconButton} from '@angular/material/button'
+import {MatInput, MatLabel} from '@angular/material/input'
+import {MatFormField} from '@angular/material/form-field'
+import {
+  FaIconComponent,
+  FaLayersComponent,
+  FaLayersTextComponent
+} from '@fortawesome/angular-fontawesome'
 import type {Group} from 'three'
 import {PropService} from '../../world/prop.service'
 import type {PropCtl} from '../../world/prop.service'
@@ -29,12 +33,15 @@ import {
   standalone: true,
   imports: [
     FormsModule,
-    FontAwesomeModule,
+    FaIconComponent,
+    FaLayersComponent,
+    FaLayersTextComponent,
     CdkDrag,
     CdkDragHandle,
-    MatButtonModule,
-    MatInputModule,
-    MatFormFieldModule,
+    MatIconButton,
+    MatInput,
+    MatLabel,
+    MatFormField,
     DatePipe
   ],
   selector: 'app-ui-prop-edit',

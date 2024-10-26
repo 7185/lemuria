@@ -29,7 +29,7 @@ export class SkyService {
   private readonly engineSvc = inject(EngineService)
   private readonly propSvc = inject(PropService)
 
-  skybox = signal('')
+  skybox: WritableSignal<string> = signal('')
   skyTop: WritableSignal<string> = signal(Utils.colorHexToStr(0))
   skyNorth: WritableSignal<string> = signal(Utils.colorHexToStr(0))
   skyEast: WritableSignal<string> = signal(Utils.colorHexToStr(0))

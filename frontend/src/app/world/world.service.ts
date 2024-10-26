@@ -46,13 +46,27 @@ interface WorldData {
   light: LightData
 }
 
+type PropEntry = [
+  number,
+  number,
+  string,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  string?,
+  string?
+]
+
 @Injectable({providedIn: 'root'})
 export class WorldService {
   avatarList: Avatar[] = []
   avatarSub = new Subject<number>()
   gestures = signal<Map<string, string>>(new Map())
   worldId = 0
-  worldList = []
+  worldList: {id: number; name: string; users: number}[] = []
 
   private readonly engineSvc = inject(EngineService)
   private readonly skySvc = inject(SkyService)
@@ -395,7 +409,7 @@ export class WorldService {
         next: (chunk: LOD) => {
           this.engineSvc.addChunk(chunk)
         },
-        error: (val: any) => {
+        error: (val) => {
           console.error(val.err)
           if (this.chunkMap.get(val.x)?.has(val.z)) {
             this.chunkMap.get(val.x).delete(val.z)
@@ -431,9 +445,9 @@ export class WorldService {
         z * this.chunkDepth + this.chunkDepth / 2
       )
       .pipe(
-        concatMap((props: any) =>
+        concatMap((props: {entries: PropEntry[]}) =>
           from(props.entries).pipe(
-            mergeMap((prop: any) =>
+            mergeMap((prop: PropEntry) =>
               this.loadProp(
                 prop[0],
                 prop[2],
@@ -462,11 +476,12 @@ export class WorldService {
               chunkGroup.userData.world = {
                 chunk: {x: chunkPos.x, z: chunkPos.z}
               }
-              const bvhUpdate = new Subject()
-              bvhUpdate.pipe(debounceTime(200)).subscribe(() => {
-                PlayerCollider.updateChunkBVH(chunkGroup)
-              })
-              chunkGroup.userData.bvhUpdate = bvhUpdate
+              chunkGroup.userData.bvhUpdate = new Subject()
+              chunkGroup.userData.bvhUpdate
+                .pipe(debounceTime(200))
+                .subscribe(() => {
+                  PlayerCollider.updateChunkBVH(chunkGroup)
+                })
 
               lod.addLevel(chunkGroup, this.maxLodDistance)
               lod.addLevel(new Group(), this.maxLodDistance + 1)
