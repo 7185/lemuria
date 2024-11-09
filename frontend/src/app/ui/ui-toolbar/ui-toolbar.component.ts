@@ -24,12 +24,12 @@ import {WorldService} from '../../world/world.service'
 import {UserService} from '../../user'
 import {
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   effect,
   inject,
   Renderer2,
   signal,
+  untracked,
   viewChild
 } from '@angular/core'
 import type {ElementRef, OnInit} from '@angular/core'
@@ -102,8 +102,7 @@ export class UiToolbarComponent implements OnInit {
   faVideo = faVideo
 
   debug = environment.debug
-  cameraType = 0
-  name = 'Anonymous'
+  cameraType = signal(0)
   home = {world: null, position: null, isNew: true}
   teleports = signal([])
   userId: string
@@ -118,41 +117,39 @@ export class UiToolbarComponent implements OnInit {
   strFps = '0 FPS 0 draws'
   strMem = '0 Geom. 0 Text.'
 
-  readonly dialog = inject(MatDialog)
-  readonly socket = inject(SocketService)
-  readonly worldSvc = inject(WorldService)
-  readonly teleportSvc = inject(TeleportService)
+  protected readonly dialog = inject(MatDialog)
+  protected readonly socket = inject(SocketService)
+  protected readonly worldSvc = inject(WorldService)
+  protected readonly teleportSvc = inject(TeleportService)
+  protected readonly userSvc = inject(UserService)
   private readonly renderer = inject(Renderer2)
-  private readonly cdRef = inject(ChangeDetectorRef)
   private readonly engineSvc = inject(EngineService)
   private readonly http = inject(HttpService)
-  private readonly userSvc = inject(UserService)
   private readonly settings = inject(SettingsService)
   private compass = viewChild.required<ElementRef>('compass')
 
   constructor() {
     effect(() => {
-      this.userList = this.userSvc.userList()
-      this.worldSvc.worldList.forEach((w) => (w.users = 0))
-      this.userList.forEach((u) => {
-        const world = this.worldSvc.worldList.find((w) => u.world === w.id)
+      untracked(this.worldSvc.worldList).forEach((w) => (w.users = 0))
+      this.userSvc.userList().forEach((u) => {
+        const world = untracked(this.worldSvc.worldList).find(
+          (w) => u.world === w.id
+        )
         if (world) {
           world.users++
         }
       })
-      this.cdRef.detectChanges()
     })
 
     effect(() => {
       const u = this.http.getLogged()()
       this.userId = u.id
-      this.name = u.name
       this.userSvc.currentName = u.name
       if (u.id != null) {
         this.http
           .worlds()
           .subscribe((w: {id: number; name: string; users: number}[]) => {
-            this.worldSvc.worldList = w
+            this.worldSvc.worldList.set(w)
             const home = this.settings.get('home')
             this.home = {
               world: home?.world,
@@ -162,10 +159,8 @@ export class UiToolbarComponent implements OnInit {
             if (this.home.world || this.home.position) {
               this.teleportSvc.teleport.set(this.home)
             }
-            this.cdRef.detectChanges()
           })
       }
-      this.cdRef.detectChanges()
     })
 
     toObservable(this.engineSvc.compassSignal)
@@ -270,8 +265,8 @@ export class UiToolbarComponent implements OnInit {
   }
 
   toggleCamera(): void {
-    this.cameraType = (this.cameraType + 1) % 3
-    this.settings.set('camera', this.cameraType)
+    this.cameraType.update((type) => (type + 1) % 3)
+    this.settings.set('camera', this.cameraType())
   }
 
   joinUser(userId: string) {
@@ -295,9 +290,8 @@ export class UiToolbarComponent implements OnInit {
         isNew: true
       }
       this.teleports.set(this.settings.get('teleports') || [])
-      this.cameraType = this.settings.get('camera') || 0
-      this.engineSvc.setCamera(this.cameraType)
-      this.cdRef.detectChanges()
+      this.cameraType.set(this.settings.get('camera') || 0)
+      this.engineSvc.setCamera(this.cameraType())
     })
   }
 }

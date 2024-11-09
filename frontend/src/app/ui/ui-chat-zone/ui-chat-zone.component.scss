@@ -1,4 +1,5 @@
-#chat-zone {
+:host {
+  display: block;
   font-size: 1em;
   pointer-events: none;
   width: 30%;
@@ -50,7 +51,7 @@
   }
 }
 
-#chat-zone.active {
+:host.active {
   pointer-events: all;
   background-color: #00000080;
 }

@@ -15,7 +15,7 @@
   </button>
   <mat-menu #worldsMenu="matMenu">
     <ng-template matMenuContent>
-      @for (w of worldSvc.worldList; track w) {
+      @for (w of worldSvc.worldList(); track w) {
       <button mat-menu-item (click)="teleportWorld(w.name)">
         <div class="world-item">
           <span><fa-icon [icon]="faGlobe"/> {{ w.name }}</span>
@@ -66,7 +66,7 @@
     </ng-template>
   </mat-menu>
   <button mat-icon-button title="Toggle camera" (click)="toggleCamera()">
-    @switch (cameraType) {
+    @switch (cameraType()) {
       @case (0) {
       <fa-icon [icon]="faEye" class="text-indigo" [fixedWidth]="true"/>
       }
@@ -147,12 +147,12 @@
 
   <span class="spacer"></span>
 
-  <button mat-icon-button [matBadge]="userList.length" matBadgePosition="below" matBadgeSize="small" [matMenuTriggerFor]="usersMenu" title="Users">
+  <button mat-icon-button [matBadge]="userSvc.userList().length" matBadgePosition="below" matBadgeSize="small" [matMenuTriggerFor]="usersMenu" title="Users">
     <fa-icon [icon]="faUsers" class="text-purple" [fixedWidth]="true"/>
   </button>
   <mat-menu #usersMenu="matMenu">
     <ng-template matMenuContent>
-      @for (u of userList; track u.id) {
+      @for (u of userSvc.userList(); track u.id) {
         <button mat-menu-item>
           <fa-icon [icon]="faUser"/>
           {{u.name}}

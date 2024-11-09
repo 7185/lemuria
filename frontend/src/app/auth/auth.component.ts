@@ -52,7 +52,7 @@ export class AuthComponent implements OnInit {
   passwordCtl: FormControl<string | null>
   private returnUrl: string
 
-  private readonly http = inject(HttpService)
+  protected readonly http = inject(HttpService)
   private readonly fb = inject(FormBuilder)
   private readonly router = inject(Router)
   private readonly route = inject(ActivatedRoute)

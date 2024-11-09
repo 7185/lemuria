@@ -1,20 +1,14 @@
-import {NgClass} from '@angular/common'
 import {MatButton} from '@angular/material/button'
 import {MatDialogContent, MatDialogTitle} from '@angular/material/dialog'
 import type {PressedKey} from '../../engine/inputsystem.service'
 import {InputSystemService} from '../../engine/inputsystem.service'
 import type {OnInit} from '@angular/core'
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  inject
-} from '@angular/core'
+import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
 import {Subject, take, takeUntil, timeout} from 'rxjs'
 
 @Component({
   standalone: true,
-  imports: [NgClass, MatButton, MatDialogContent, MatDialogTitle],
+  imports: [MatButton, MatDialogContent, MatDialogTitle],
   selector: 'app-ui-controls',
   templateUrl: './ui-controls.component.html',
   styleUrl: './ui-controls.component.scss',
@@ -38,11 +32,10 @@ export class UiControlsComponent implements OnInit {
     ['Pass Through', 'clip']
   ]
 
-  controlsKeymap = Array(this.controlsLabels.length).fill([null, null])
-  activeKey: [number | null, number | null] = [null, null]
+  protected controlsKeymap = Array(this.controlsLabels.length).fill([null, null])
+  protected activeKey = signal<[number | null, number | null]>([null, null])
 
   private readonly inputSysSvc = inject(InputSystemService)
-  private readonly cdRef = inject(ChangeDetectorRef)
   private cancel: Subject<void> | null = null
   private oldKey = 'nop'
 
@@ -50,11 +43,11 @@ export class UiControlsComponent implements OnInit {
     if (this.cancel != null) {
       // Mapping already in progress, cancel it
       this.controlsKeymap[this.activeKey[0]][this.activeKey[1]] = this.oldKey
-      this.activeKey = [null, null]
+      this.activeKey.set([null, null])
       this.cancel.next()
       this.cancel.complete()
     }
-    this.activeKey = [key, pos]
+    this.activeKey.set([key, pos])
     this.oldKey = this.controlsKeymap[key][pos]
     this.controlsKeymap[key][pos] = 'Press key...'
     this.cancel = new Subject()
@@ -64,21 +57,19 @@ export class UiControlsComponent implements OnInit {
         next: (e: KeyboardEvent) => {
           this.controlsKeymap[key][pos] = e.code
           this.setKeymap()
-          this.activeKey = [null, null]
+          this.activeKey.set([null, null])
           if (this.cancel != null) {
             this.cancel.complete()
             this.cancel = null
           }
-          this.cdRef.detectChanges()
         },
         error: () => {
           this.controlsKeymap[key][pos] = this.oldKey
-          this.activeKey = [null, null]
+          this.activeKey.set([null, null])
           if (this.cancel != null) {
             this.cancel.complete()
             this.cancel = null
           }
-          this.cdRef.detectChanges()
         }
       })
   }

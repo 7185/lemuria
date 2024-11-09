@@ -13,10 +13,6 @@ export class UserService {
 
   private readonly http = inject(HttpService)
 
-  currentUser() {
-    return this.http.getLogged()
-  }
-
   getUser(id: string) {
     return this.userList().find((user) => user.id === id) ?? new User()
   }

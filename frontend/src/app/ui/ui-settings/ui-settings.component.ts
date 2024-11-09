@@ -1,5 +1,4 @@
-import {ChangeDetectionStrategy, Component, effect, inject} from '@angular/core'
-import type {OnInit} from '@angular/core'
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core'
 import {MatButton} from '@angular/material/button'
 import {MatCheckbox} from '@angular/material/checkbox'
 import {
@@ -34,18 +33,19 @@ import {SettingsService} from '../../settings/settings.service'
   styleUrl: './ui-settings.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UiSettingsComponent implements OnInit {
+export class UiSettingsComponent {
   maxFps: number
   maxLights: number
-  archivedMedia = false
-  readonly dialogRef = inject(MatDialogRef<UiSettingsComponent>)
+  protected archivedMedia = false
+  protected readonly dialogRef = inject(MatDialogRef<UiSettingsComponent>)
   private readonly engineSvc = inject(EngineService)
   private readonly settings = inject(SettingsService)
 
   constructor() {
-    effect(() => {
-      this.maxFps = this.engineSvc.maxFps()
-      this.maxLights = this.engineSvc.maxLights()
+    this.maxFps = this.engineSvc.maxFps()
+    this.maxLights = this.engineSvc.maxLights()
+    this.settings.updated.subscribe(() => {
+      this.archivedMedia = this.settings.get('archivedMedia')
     })
   }
 
@@ -53,11 +53,5 @@ export class UiSettingsComponent implements OnInit {
     this.engineSvc.maxFps.set(this.maxFps)
     this.engineSvc.maxLights.set(this.maxLights)
     this.settings.set('archivedMedia', this.archivedMedia)
-  }
-
-  ngOnInit(): void {
-    this.settings.updated.subscribe(() => {
-      this.archivedMedia = this.settings.get('archivedMedia')
-    })
   }
 }

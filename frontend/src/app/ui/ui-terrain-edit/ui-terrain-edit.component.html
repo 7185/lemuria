@@ -1,37 +1,35 @@
-<div id="terrain-zone" cdkDrag [class.d-none]="selectedCell().height === undefined">
-  <hr cdkDragHandle/>
-  <div class="buttons">
-    <button mat-icon-button type="button" (click)="trigger($event)" title="Rotate Left">
-      <fa-icon [icon]="faArrowRotateRight" class="text-green" [fixedWidth]="true"/>
-    </button>
-    <button mat-icon-button type="button" (click)="trigger($event)" title="Rotate Right">
-      <fa-icon [icon]="faArrowRotateLeft" class="text-green" [fixedWidth]="true"/>
-    </button>
-    <button mat-icon-button type="button" (click)="trigger($event)" title="Copy">
-      <fa-icon [icon]="faClone" class="text-red" [fixedWidth]="true"/>
-    </button>
-    <button mat-icon-button type="button" (click)="trigger($event)" title="Paste Elevation">
-      <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faClipboard" [fixedWidth]="true"/>
-        <fa-icon [icon]="faArrowsUpDown" class="text-yellow" [fixedWidth]="true" transform="shrink-2 right-8 down-6"/>
-      </fa-layers>
-    </button>
-    <button mat-icon-button type="button" (click)="trigger($event)" title="Paste Texture">
-      <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faClipboard" [fixedWidth]="true"/>
-        <fa-icon [icon]="faSquare" class="text-green" [fixedWidth]="true" transform="shrink-2 right-8 down-6"/>
-      </fa-layers>
-    </button>
-  </div>
-  <div class="terrain-form">
-    <mat-form-field appearance="outline">
-      <mat-label>Elevation</mat-label>
-      <input matInput type="number" [ngModel]="selectedCell().height | number:'1.2-2'" min="-328" max="328" step="0.01">
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>Texture</mat-label>
-      <input matInput type="number" [(ngModel)]="selectedCell().texture" min="0" max="62">
-    </mat-form-field>
-    <mat-checkbox [(ngModel)]="selectedCell().hole">Hole</mat-checkbox>
-  </div>
+<hr cdkDragHandle/>
+<div class="buttons">
+  <button mat-icon-button type="button" (click)="trigger($event)" title="Rotate Left">
+    <fa-icon [icon]="faArrowRotateRight" class="text-green" [fixedWidth]="true"/>
+  </button>
+  <button mat-icon-button type="button" (click)="trigger($event)" title="Rotate Right">
+    <fa-icon [icon]="faArrowRotateLeft" class="text-green" [fixedWidth]="true"/>
+  </button>
+  <button mat-icon-button type="button" (click)="trigger($event)" title="Copy">
+    <fa-icon [icon]="faClone" class="text-red" [fixedWidth]="true"/>
+  </button>
+  <button mat-icon-button type="button" (click)="trigger($event)" title="Paste Elevation">
+    <fa-layers [fixedWidth]="true">
+      <fa-icon [icon]="faClipboard" [fixedWidth]="true"/>
+      <fa-icon [icon]="faArrowsUpDown" class="text-yellow" [fixedWidth]="true" transform="shrink-2 right-8 down-6"/>
+    </fa-layers>
+  </button>
+  <button mat-icon-button type="button" (click)="trigger($event)" title="Paste Texture">
+    <fa-layers [fixedWidth]="true">
+      <fa-icon [icon]="faClipboard" [fixedWidth]="true"/>
+      <fa-icon [icon]="faSquare" class="text-green" [fixedWidth]="true" transform="shrink-2 right-8 down-6"/>
+    </fa-layers>
+  </button>
+</div>
+<div class="terrain-form">
+  <mat-form-field appearance="outline">
+    <mat-label>Elevation</mat-label>
+    <input matInput type="number" [ngModel]="height() | number:'1.2-2'" min="-328" max="328" step="0.01">
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Texture</mat-label>
+    <input matInput type="number" [(ngModel)]="selectedCell().texture" min="0" max="62">
+  </mat-form-field>
+  <mat-checkbox [(ngModel)]="selectedCell().hole">Hole</mat-checkbox>
 </div>

@@ -5,7 +5,7 @@ import {
   viewChild,
   ViewEncapsulation
 } from '@angular/core'
-import type {AfterViewInit, ElementRef, OnDestroy, OnInit} from '@angular/core'
+import type {ElementRef, OnDestroy, OnInit} from '@angular/core'
 import {EngineService} from './engine.service'
 import {WorldService} from '../world/world.service'
 
@@ -17,7 +17,7 @@ import {WorldService} from '../world/world.service'
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {
+export class EngineComponent implements OnInit, OnDestroy {
   rendererCanvas =
     viewChild.required<ElementRef<HTMLCanvasElement>>('rendererCanvas')
   labelZone = viewChild.required<ElementRef<HTMLDivElement>>('labelZone')
@@ -32,9 +32,6 @@ export class EngineComponent implements OnInit, OnDestroy, AfterViewInit {
       this.labelZone(),
       this.labelDesc()
     )
-  }
-
-  ngAfterViewInit(): void {
     this.world.initWorld()
     this.engineSvc.animate()
   }

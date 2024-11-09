@@ -1,4 +1,4 @@
-import {effect, inject, Injectable, signal} from '@angular/core'
+import {effect, inject, Injectable, signal, untracked} from '@angular/core'
 import {EMPTY, firstValueFrom, from, of, Subject, throwError} from 'rxjs'
 import type {Observable, Subscription} from 'rxjs'
 import {
@@ -66,7 +66,7 @@ export class WorldService {
   avatarSub = new Subject<number>()
   gestures = signal<Map<string, string>>(new Map())
   worldId = 0
-  worldList: {id: number; name: string; users: number}[] = []
+  worldList = signal<{id: number; name: string; users: number}[]>([])
 
   private readonly engineSvc = inject(EngineService)
   private readonly skySvc = inject(SkyService)
@@ -117,7 +117,7 @@ export class WorldService {
         return
       }
 
-      const targetWorld = this.worldList.find(
+      const targetWorld = untracked(this.worldList).find(
         (w) => w.name.toLowerCase() === world.toLowerCase()
       )
       if (!targetWorld) {

@@ -1,5 +1,5 @@
 import {throwError} from 'rxjs'
-import {inject, Injectable, signal} from '@angular/core'
+import {computed, inject, Injectable, signal} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import {HttpClient} from '@angular/common/http'
 import type {HttpResponse} from '@angular/common/http'
@@ -19,16 +19,17 @@ export interface Avatar {
 export class HttpService extends HttpClient {
   private baseUrl = environment.url.server
   private userLogged = signal<User>(new User())
-  #expiration = parseInt(localStorage.getItem('expiration') ?? '0', 10)
+  #expiration = signal(parseInt(localStorage.getItem('expiration') ?? '0', 10))
+  isLogged = computed(() => Math.floor(Date.now() / 1000) < this.#expiration())
 
   private readonly router = inject(Router)
 
   get expiration(): number {
-    return this.#expiration
+    return this.#expiration()
   }
 
   set expiration(value: number) {
-    this.#expiration = value
+    this.#expiration.set(value)
     localStorage.setItem('expiration', value.toString())
   }
 
@@ -37,14 +38,6 @@ export class HttpService extends HttpClient {
       document.cookie
     )
     return c ? c.pop() : ''
-  }
-
-  isLogged(): boolean {
-    return !this.hasExpired()
-  }
-
-  setLogged(logged: User): void {
-    this.userLogged.set(logged)
   }
 
   getLogged(): WritableSignal<User> {
@@ -58,7 +51,7 @@ export class HttpService extends HttpClient {
     return this.post(`${this.baseUrl}/auth/`, {login, password}).pipe(
       tap((data) => {
         this.expiration = Math.floor(new Date().getTime() / 1000) + 36000
-        this.setLogged(new User(data))
+        this.userLogged.set(new User(data))
       })
     )
   }
@@ -67,7 +60,7 @@ export class HttpService extends HttpClient {
     this.expiration = 0
     return this.delete(`${this.baseUrl}/auth/`).pipe(
       tap(() => {
-        this.setLogged(new User())
+        this.userLogged.set(new User())
         this.router.navigate(['login'])
       })
     )
@@ -79,7 +72,7 @@ export class HttpService extends HttpClient {
         this.logout().subscribe()
         return throwError(() => error)
       }),
-      tap((data) => this.setLogged(new User(data)))
+      tap((data) => this.userLogged.set(new User(data)))
     )
   }
 
@@ -183,11 +176,5 @@ export class HttpService extends HttpClient {
     return this.get(`${this.baseUrl}/world/${worldId}/terrain`, {
       params: {page_x: pageX, page_z: pageZ}
     })
-  }
-
-  private hasExpired(): boolean {
-    return (
-      this.expiration === 0 || Math.floor(Date.now() / 1000) >= this.expiration
-    )
   }
 }

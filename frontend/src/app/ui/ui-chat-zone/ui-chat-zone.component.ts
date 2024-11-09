@@ -34,6 +34,9 @@ import {UserService} from '../../user'
     VirtualScrollerModule,
     LinkifyPipe
   ],
+  host: {
+    '[class.active]': 'chatActive'
+  },
   selector: 'app-ui-chat-zone',
   templateUrl: './ui-chat-zone.component.html',
   styleUrl: './ui-chat-zone.component.scss',
@@ -44,13 +47,13 @@ export class UiChatZoneComponent implements OnInit {
     VirtualScrollerComponent
   )
 
-  readonly socket = inject(SocketService)
-  readonly usrSvc = inject(UserService)
+  protected readonly socket = inject(SocketService)
+  protected readonly usrSvc = inject(UserService)
   faComments = faComments
   data = []
   message = ''
   chatActive = false
-  colors = {}
+  protected colors = {}
 
   activeChat() {
     this.chatActive = !this.chatActive

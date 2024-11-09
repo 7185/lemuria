@@ -1,4 +1,9 @@
-import {ChangeDetectionStrategy, Component, inject} from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject
+} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import {DatePipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
@@ -36,7 +41,6 @@ import {
     FaIconComponent,
     FaLayersComponent,
     FaLayersTextComponent,
-    CdkDrag,
     CdkDragHandle,
     MatIconButton,
     MatInput,
@@ -44,6 +48,10 @@ import {
     MatFormField,
     DatePipe
   ],
+  host: {
+    '[class.d-none]': 'displayed()'
+  },
+  hostDirectives: [CdkDrag],
   selector: 'app-ui-prop-edit',
   templateUrl: './ui-prop-edit.component.html',
   styleUrl: './ui-prop-edit.component.scss',
@@ -62,7 +70,8 @@ export class UiPropEditComponent {
   faRotate = faRotate
   faTrashCan = faTrashCan
 
-  selectedProp: WritableSignal<Group>
+  protected selectedProp: WritableSignal<Group>
+  protected displayed = computed(() => this.selectedProp() === null)
 
   private readonly buildSvc = inject(BuildService)
   private readonly propSvc = inject(PropService)

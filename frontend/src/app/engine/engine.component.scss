@@ -1,4 +1,5 @@
-.engine-wrapper {
+:host {
+  display: block;
   inset: 0;
   z-index: 0;
   pointer-events: all;

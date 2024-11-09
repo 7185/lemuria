@@ -1,4 +1,9 @@
-import {ChangeDetectionStrategy, Component, effect, inject} from '@angular/core'
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject
+} from '@angular/core'
 import type {WritableSignal} from '@angular/core'
 import {DecimalPipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
@@ -27,7 +32,6 @@ import {
     FormsModule,
     FaIconComponent,
     FaLayersComponent,
-    CdkDrag,
     CdkDragHandle,
     MatIconButton,
     MatCheckbox,
@@ -36,6 +40,10 @@ import {
     MatFormField,
     DecimalPipe
   ],
+  host: {
+    '[class.d-none]': 'displayed()'
+  },
+  hostDirectives: [CdkDrag],
   selector: 'app-ui-terrain-edit',
   templateUrl: './ui-terrain-edit.component.html',
   styleUrl: './ui-terrain-edit.component.scss',
@@ -54,14 +62,14 @@ export class UiTerrainEditComponent {
     texture?: number
     hole?: boolean
   }>
-  height = 0
+  height = computed(() => this.selectedCell().height ?? 0)
+
+  protected displayed = computed(() => this.selectedCell().height === undefined)
+
   private readonly buildSvc = inject(BuildService)
 
   constructor() {
     this.selectedCell = this.buildSvc.selectedCellSignal
-    effect(() => {
-      this.height = this.selectedCell().height
-    })
   }
 
   trigger(event: MouseEvent) {

@@ -73,10 +73,10 @@ export class UiWorldAttribsComponent {
   waterOpacity: WritableSignal<number>
   waterUnderView: WritableSignal<number>
 
+  protected readonly skySvc = inject(SkyService)
   private readonly terrainSvc = inject(TerrainService)
   private readonly lightingSvc = inject(LightingService)
   private readonly worldSvc = inject(WorldService)
-  readonly skySvc = inject(SkyService)
 
   constructor() {
     this.terrain = signal(this.terrainSvc.terrain != null)

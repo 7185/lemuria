@@ -1,45 +1,43 @@
-<div id="chat-zone" [class.active]="chatActive">
-  <virtual-scroller #scroll [items]="data">
-    @for (m of scroll.viewPortItems; track m) {
-      <p class="line">
-        @if (m.type === 'msg') {
-          <b [ngStyle]="{ 'color': colors[m.user] }">{{ m.user }}</b>:
-          <span [innerHTML]="m.data | linkify"></span>
-        }
-        @if (m.type === 'join') {
-          <b class="text-green">{{ m.data }} joined</b>
-        }
-        @if (m.type === 'part') {
-          <b class="text-red">{{ m.data }} left</b>
-        }
-        @if (m.type === 'err') {
-          <b class="text-red">{{ m.data }}</b>
-        }
-        @if (m.type === 'info') {
-          <em class="text-cyan">{{ m.data }}</em>
-        }
-      </p>
-    }
-  </virtual-scroller>
-  <mat-form-field appearance="outline" class="chat-input">
-    <mat-label>Message</mat-label>
-    <input
-      matInput
-      type="text"
-      class="text-input"
-      [(ngModel)]="message"
-      (keydown.enter)="send()"
-      type="text"
-      [disabled]="!socket.connected"
-    />
-    <button
-      mat-icon-button
-      type="button"
-      matPrefix
-      (click)="activeChat()"
-      color="accent"
-    >
-      <fa-icon [icon]="faComments" [fixedWidth]="true" />
-    </button>
-  </mat-form-field>
-</div>
+<virtual-scroller #scroll [items]="data">
+  @for (m of scroll.viewPortItems; track m) {
+    <p class="line">
+      @if (m.type === 'msg') {
+        <b [ngStyle]="{ 'color': colors[m.user] }">{{ m.user }}</b>:
+        <span [innerHTML]="m.data | linkify"></span>
+      }
+      @if (m.type === 'join') {
+        <b class="text-green">{{ m.data }} joined</b>
+      }
+      @if (m.type === 'part') {
+        <b class="text-red">{{ m.data }} left</b>
+      }
+      @if (m.type === 'err') {
+        <b class="text-red">{{ m.data }}</b>
+      }
+      @if (m.type === 'info') {
+        <em class="text-cyan">{{ m.data }}</em>
+      }
+    </p>
+  }
+</virtual-scroller>
+<mat-form-field appearance="outline" class="chat-input">
+  <mat-label>Message</mat-label>
+  <input
+    matInput
+    type="text"
+    class="text-input"
+    [(ngModel)]="message"
+    (keydown.enter)="send()"
+    type="text"
+    [disabled]="!socket.connected"
+  />
+  <button
+    mat-icon-button
+    type="button"
+    matPrefix
+    (click)="activeChat()"
+    color="accent"
+  >
+    <fa-icon [icon]="faComments" [fixedWidth]="true" />
+  </button>
+</mat-form-field>

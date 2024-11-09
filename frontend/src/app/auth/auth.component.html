@@ -1,4 +1,4 @@
-<div class="container">
+@defer (when !http.isLogged()) {
   <form class="form-signin" (ngSubmit)="onLogin()" [formGroup]="loginForm">
     <app-logo />
     <mat-form-field appearance="outline">
@@ -78,4 +78,4 @@
       </button>
     }
   </form>
-</div>
+}

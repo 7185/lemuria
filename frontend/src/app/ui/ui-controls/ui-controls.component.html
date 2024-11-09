@@ -24,7 +24,7 @@
             <button
               mat-flat-button
               (click)="setKey(i, 0)"
-              [color]="activeKey[0] === i && activeKey[1] === 0 ? 'accent' : ''"
+              [color]="activeKey()[0] === i && activeKey()[1] === 0 ? 'accent' : ''"
             >
               {{ item[0] || 'None' }}
             </button>
@@ -33,7 +33,7 @@
             <button
               mat-flat-button
               (click)="setKey(i, 1)"
-              [color]="activeKey[0] === i && activeKey[1] === 1 ? 'accent' : ''"
+              [color]="activeKey()[0] === i && activeKey()[1] === 1 ? 'accent' : ''"
             >
               {{ item[1] || 'None' }}
             </button>

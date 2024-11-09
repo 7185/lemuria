@@ -43,7 +43,7 @@ html, body, app-root {
 }
 
 .d-none {
-  display: none;
+  display: none !important;
 }
 
 .fw-bold {
