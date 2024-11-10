@@ -7,7 +7,6 @@ import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
 import {Subject, take, takeUntil, timeout} from 'rxjs'
 
 @Component({
-  standalone: true,
   imports: [MatButton, MatDialogContent, MatDialogTitle],
   selector: 'app-ui-controls',
   templateUrl: './ui-controls.component.html',
@@ -32,17 +31,20 @@ export class UiControlsComponent implements OnInit {
     ['Pass Through', 'clip']
   ]
 
-  protected controlsKeymap = Array(this.controlsLabels.length).fill([null, null])
+  protected controlsKeymap: [string | null, string | null][] = Array(
+    this.controlsLabels.length
+  ).fill([null, null])
   protected activeKey = signal<[number | null, number | null]>([null, null])
 
   private readonly inputSysSvc = inject(InputSystemService)
   private cancel: Subject<void> | null = null
-  private oldKey = 'nop'
+  private oldKey: string | null = 'nop'
 
   setKey(key: number, pos: number): void {
     if (this.cancel != null) {
       // Mapping already in progress, cancel it
-      this.controlsKeymap[this.activeKey[0]][this.activeKey[1]] = this.oldKey
+      this.controlsKeymap[this.activeKey()[0]!][this.activeKey()[1]!] =
+        this.oldKey
       this.activeKey.set([null, null])
       this.cancel.next()
       this.cancel.complete()
@@ -97,13 +99,15 @@ export class UiControlsComponent implements OnInit {
 
   setKeymap(): void {
     this.inputSysSvc.clearKeys()
-    this.controlsKeymap.forEach((keys: string[], index) => {
-      keys
-        .filter((k) => k !== null)
-        .forEach((k) =>
-          this.inputSysSvc.mapKey(k, this.controlsLabels[index][1])
-        )
-    })
+    this.controlsKeymap.forEach(
+      (keys: [string | null, string | null], index) => {
+        keys
+          .filter((k) => k !== null)
+          .forEach((k) =>
+            this.inputSysSvc.mapKey(k, this.controlsLabels[index][1])
+          )
+      }
+    )
   }
 
   ngOnInit(): void {

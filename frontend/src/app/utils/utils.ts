@@ -121,7 +121,7 @@ export class Utils {
    * @returns List of matching objects
    */
   static getObjectsByUserData(node: Object3D, key: string, value: string) {
-    const objs = []
+    const objs: Object3D[] = []
     node.traverse((obj: Object3D) => {
       if (obj.userData[key] === value) {
         objs.push(obj)
@@ -136,7 +136,7 @@ export class Utils {
    * @param children Array of the children (empty by default)
    * @returns Array of children
    */
-  static getMeshes(object: Object3D, children = []) {
+  static getMeshes(object: Object3D, children: Mesh[] = []) {
     if (object instanceof Mesh) {
       children.push(object)
     }

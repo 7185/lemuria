@@ -20,7 +20,7 @@ export class TextCanvas {
 
     canvas.width = canvasWidth
     canvas.height = canvasHeight
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d')!
     ctx.fillStyle = `rgb(${bcolor.r},${bcolor.g},${bcolor.b})`
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`

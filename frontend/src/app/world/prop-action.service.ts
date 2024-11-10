@@ -261,13 +261,13 @@ export class PropActionService {
           })
           break
         case 'url':
-          if (['create', 'adone'].indexOf(trigger) === -1) {
+          if (!['create', 'adone'].includes(trigger)) {
             prop.userData[trigger].url = {address: cmd.resource}
           }
           break
 
         case 'teleport':
-          if (['create', 'adone'].indexOf(trigger) === -1) {
+          if (!['create', 'adone'].includes(trigger)) {
             prop.userData[trigger].teleport = {...cmd.coordinates}
             prop.userData[trigger].teleport.worldName = cmd.worldName ?? null
           }
@@ -294,14 +294,18 @@ export class PropActionService {
    * @param commandArray
    * @param callback
    */
-  private applyCommand(prop: Group, commandArray: any[], callback) {
+  private applyCommand(
+    prop: Group,
+    commandArray: any[],
+    callback: CallableFunction
+  ) {
     for (const command of commandArray) {
       if (command.targetName == null) {
         callback(prop, command)
         prop.userData.onUpdate()
       } else {
         Utils.getObjectsByUserData(
-          prop.parent.parent.parent,
+          prop.parent!.parent!.parent!,
           'name',
           command.targetName
         ).forEach((child) => {

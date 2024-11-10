@@ -62,17 +62,17 @@ export class PlayerCollider {
     const bvhMesh = flattenGroup(
       chunk,
       (mesh: Mesh) => mesh.userData?.notSolid !== true
-    )
+    ) as Mesh
 
     // If the mesh is empty (no faces): we don't need a bounds tree
-    if (bvhMesh.geometry.getIndex().array.length === 0) {
-      chunk.parent.userData.boundsTree = null
-      chunk.parent.visible = true
+    if (bvhMesh.geometry.getIndex()!.count === 0) {
+      chunk.parent!.userData.boundsTree = null
+      chunk.parent!.visible = true
       return
     }
-    chunk.parent.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
+    chunk.parent!.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
       onProgress: (progress: number) => {
-        chunk.parent.visible = progress === 1
+        chunk.parent!.visible = progress === 1
       }
     })
   }
@@ -83,8 +83,8 @@ export class PlayerCollider {
     }
 
     // If the mesh is empty (no faces): we don't need a bounds tree
-    if (terrainMesh.geometry.getIndex().array.length === 0) {
-      terrainMesh.geometry.boundsTree = null
+    if (terrainMesh.geometry.getIndex()!.array.length === 0) {
+      terrainMesh.geometry.boundsTree = undefined
       return
     }
     // Force indirect (experimental) to avoid messed up faces
@@ -99,7 +99,7 @@ export class PlayerCollider {
       terrainMesh.userData.bvhHelper.update()
     } else {
       terrainMesh.userData.bvhHelper = new MeshBVHHelper(terrainMesh, 20)
-      terrainMesh.parent.add(terrainMesh.userData.bvhHelper)
+      terrainMesh.parent!.add(terrainMesh.userData.bvhHelper)
     }
   }
 

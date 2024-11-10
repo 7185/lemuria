@@ -21,7 +21,6 @@ import {SocketService} from '../../network/socket.service'
 import {UserService} from '../../user'
 
 @Component({
-  standalone: true,
   imports: [
     MatIconButton,
     MatInput,
@@ -48,7 +47,7 @@ export class UiChatZoneComponent implements OnInit {
   )
 
   protected readonly socket = inject(SocketService)
-  protected readonly usrSvc = inject(UserService)
+  protected readonly userSvc = inject(UserService)
   faComments = faComments
   data = []
   message = ''
@@ -68,8 +67,8 @@ export class UiChatZoneComponent implements OnInit {
 
   ngOnInit(): void {
     this.socket.messages.subscribe((msg) => {
-      if (['msg', 'err', 'join', 'part', 'info'].indexOf(msg.type) > -1) {
-        for (const u of this.usrSvc.userList()) {
+      if (['msg', 'err', 'join', 'part', 'info'].includes(msg.type)) {
+        for (const u of this.userSvc.userList()) {
           this.colors[u.name] = '#' + u.id.substring(0, 6)
         }
         this.data.push(msg)

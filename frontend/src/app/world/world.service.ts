@@ -24,7 +24,7 @@ import {PropActionService} from './prop-action.service'
 import {SocketService} from '../network/socket.service'
 import {AvatarAnimationService} from '../animation'
 import type {AvatarAnimationManager} from '../animation'
-import type {Avatar} from '../network'
+import type {Avatar, PropEntry} from '../network'
 import {HttpService} from '../network'
 import {environment} from '../../environments/environment'
 import {DEG, Utils} from '../utils'
@@ -45,20 +45,6 @@ interface WorldData {
   water?: WaterData
   light: LightData
 }
-
-type PropEntry = [
-  number,
-  number,
-  string,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  string?,
-  string?
-]
 
 @Injectable({providedIn: 'root'})
 export class WorldService {
@@ -83,7 +69,7 @@ export class WorldService {
   private readonly buildSvc = inject(BuildService)
 
   private worldName = 'Nowhere'
-  private lastChunk = null
+  private lastChunk: number[] = []
 
   private chunkWidth: number = environment.world.chunk.width // in cm
   private chunkDepth: number = environment.world.chunk.depth // in cm
@@ -176,11 +162,11 @@ export class WorldService {
     effect(() => {
       for (const user of this.engineSvc.users()) {
         if (
-          this.userSvc
+          !this.userSvc
             .userList()
             .filter((u) => u.world === this.worldId)
             .map((u) => u.id)
-            .indexOf(user.name) === -1
+            .includes(user.name)
         ) {
           this.engineSvc.removeUser(user)
         }
@@ -282,7 +268,7 @@ export class WorldService {
   }
 
   private resetChunks() {
-    this.lastChunk = null
+    this.lastChunk = []
     this.chunkMap.clear()
   }
 
@@ -292,8 +278,8 @@ export class WorldService {
     pos: Vector3,
     rot: Vector3,
     date = 0,
-    desc = null,
-    act = null
+    desc: string | null = null,
+    act: string | null = null
   ): Promise<Object3D> {
     prop = Utils.modelName(prop)
     const g = await firstValueFrom(this.propSvc.loadModel(prop))
@@ -339,8 +325,8 @@ export class WorldService {
     name = Utils.modelName(name)
     this.propSvc.loadAvatar(name).subscribe(async (o) => {
       o.rotation.copy(new Euler(0, Math.PI, 0))
-      group.parent.updateMatrixWorld()
-      group.position.setY(group.parent.position.y)
+      group.parent!.updateMatrixWorld()
+      group.position.setY(group.parent!.position.y)
       this.engineSvc.disposeMaterial(group)
       this.engineSvc.disposeGeometry(group)
       group.clear().add(o.clone())
@@ -388,7 +374,7 @@ export class WorldService {
 
     // Do nothing if the current chunk didn't change or if we're nowhere
     if (
-      (this.lastChunk != null &&
+      (this.lastChunk.length &&
         this.lastChunk[0] === chunkX &&
         this.lastChunk[1] === chunkZ) ||
       this.worldId === 0
@@ -412,7 +398,7 @@ export class WorldService {
         error: (val) => {
           console.error(val.err)
           if (this.chunkMap.get(val.x)?.has(val.z)) {
-            this.chunkMap.get(val.x).delete(val.z)
+            this.chunkMap.get(val.x)!.delete(val.z)
           }
         }
       })
@@ -428,7 +414,7 @@ export class WorldService {
     if (!this.chunkMap.has(x)) {
       this.chunkMap.set(x, new Set<number>())
     }
-    this.chunkMap.get(x).add(z)
+    this.chunkMap.get(x)!.add(z)
 
     const chunkPos = this.getChunkCenter(x, z)
 
@@ -488,7 +474,7 @@ export class WorldService {
               lod.position.set(chunkPos.x, 0, chunkPos.z)
               lod.autoUpdate = false
               lod.updateMatrix()
-              chunkGroup.parent.visible = false
+              chunkGroup.parent!.visible = false
               chunkGroup.userData.bvhUpdate.next()
 
               return of(lod)
@@ -500,8 +486,8 @@ export class WorldService {
   }
 
   private setObjectChunk(object: Object3D) {
-    const oldChunk = object.parent as Group
-    const oldLOD = oldChunk.parent
+    const oldChunk = object.parent!
+    const oldLOD = oldChunk.parent!
     const oldChunkPos = oldLOD.position
     const absPos = object.position.clone().add(oldChunkPos)
     const [chunkX, chunkZ] = this.getChunkTile(absPos)

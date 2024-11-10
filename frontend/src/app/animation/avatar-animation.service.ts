@@ -95,7 +95,7 @@ export class AvatarAnimationService {
 
   async loadSequence(name: string, uri: string) {
     if (this.sequences.has(name)) {
-      return this.sequences.get(name)
+      return this.sequences.get(name)!
     }
     try {
       const seq: ParsedSequence = await parseSequence(
@@ -120,7 +120,7 @@ export class AvatarAnimationService {
     extension = '.zip'
   ) {
     if (this.avatarAnimationManagers.has(name)) {
-      return this.avatarAnimationManagers.get(name)
+      return this.avatarAnimationManagers.get(name)!
     }
     const mgrPromise = this.loadAvatarAnimationManager(
       name,

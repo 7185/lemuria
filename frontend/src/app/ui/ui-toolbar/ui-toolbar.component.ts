@@ -61,7 +61,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 @Component({
-  standalone: true,
   imports: [
     MatBadge,
     MatIconButton,
@@ -105,7 +104,7 @@ export class UiToolbarComponent implements OnInit {
   cameraType = signal(0)
   home = {world: null, position: null, isNew: true}
   teleports = signal([])
-  userId: string
+  userId = ''
   avatarId = 0
   userList: User[] = []
   visibilityList = Array.from<number>({length: 11})

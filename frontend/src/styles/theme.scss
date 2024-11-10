@@ -1,4 +1,5 @@
 @use '@angular/material' as mat;
-@import '_variables';
-@include mat.core();
-@include mat.all-component-themes($lemuria-theme);
+@use '_variables' as vars;
+@include mat.elevation-classes();
+@include mat.app-background();
+@include mat.all-component-themes(vars.$lemuria-theme);

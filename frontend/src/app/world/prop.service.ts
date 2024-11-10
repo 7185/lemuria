@@ -103,7 +103,7 @@ export class PropService {
     )
     unknownGeometry.setIndex([0, 1, 2])
     unknownGeometry.clearGroups()
-    unknownGeometry.addGroup(0, unknownGeometry.getIndex().count, 0)
+    unknownGeometry.addGroup(0, unknownGeometry.getIndex()!.count, 0)
     const unknown = new Group().add(
       new Mesh(unknownGeometry, [new MeshBasicMaterial({color: 0x000000})])
     )

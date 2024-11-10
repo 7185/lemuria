@@ -25,6 +25,8 @@ const pressedKeys = [
 ] as const
 export type PressedKey = (typeof pressedKeys)[number]
 
+const ignoredElements = ['INPUT', 'TEXTAREA']
+
 @Injectable({providedIn: 'root'})
 export class InputSystemService {
   controls: Record<PressedKey, boolean> = pressedKeys.reduce(
@@ -37,7 +39,7 @@ export class InputSystemService {
   keyUpEvent = fromEvent<KeyboardEvent>(window, 'keyup').pipe(
     filter(
       (e: KeyboardEvent) =>
-        ['INPUT', 'TEXTAREA'].indexOf((e.target as HTMLElement).nodeName) === -1
+        !ignoredElements.includes((e.target as HTMLElement).nodeName)
     ),
     tap((e: KeyboardEvent) => {
       this.handleKeys(e.code, false)
@@ -48,7 +50,7 @@ export class InputSystemService {
   keyDownEvent = fromEvent<KeyboardEvent>(window, 'keydown').pipe(
     filter(
       (e: KeyboardEvent) =>
-        ['INPUT', 'TEXTAREA'].indexOf((e.target as HTMLElement).nodeName) === -1
+        !ignoredElements.includes((e.target as HTMLElement).nodeName)
     ),
     tap((e: KeyboardEvent) => {
       this.handleKeys(e.code, true)

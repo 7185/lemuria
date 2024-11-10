@@ -33,21 +33,21 @@ export interface TerrainData {
 }
 @Injectable({providedIn: 'root'})
 export class TerrainService {
-  terrain: Group
-  water: Group
+  terrain: Group | null = null
+  water: Group | null = null
   private readonly engineSvc = inject(EngineService)
   private readonly http = inject(HttpService)
   private readonly propSvc = inject(PropService)
   private textureLoader = new TextureLoader()
-  private terrainMaterials = []
-  private waterBottomGeom: PlaneGeometry
-  private waterTopGeom: PlaneGeometry
-  private waterBottomMaterials = []
-  private waterTopMaterials = []
+  private terrainMaterials: MeshLambertMaterial[] = []
+  private waterBottomGeom: PlaneGeometry | null = null
+  private waterTopGeom: PlaneGeometry | null = null
+  private waterBottomMaterials: MeshLambertMaterial[] = []
+  private waterTopMaterials: MeshLambertMaterial[] = []
   private worldId = 0
   private loadingPages = new Set()
 
-  setWater(water: WaterData) {
+  setWater(water: WaterData | null = null) {
     if (this.water != null) {
       this.engineSvc.removeWorldObject(this.water)
     }
@@ -72,7 +72,7 @@ export class TerrainService {
       TERRAIN_PAGE_SIZE
     )
     this.waterTopGeom.rotateX(-Math.PI / 2)
-    this.waterTopGeom.addGroup(0, this.waterTopGeom.getIndex().count, 0)
+    this.waterTopGeom.addGroup(0, this.waterTopGeom.getIndex()!.count, 0)
     this.waterBottomGeom = new PlaneGeometry(
       TERRAIN_PAGE_SIZE * 10,
       TERRAIN_PAGE_SIZE * 10,
@@ -80,7 +80,7 @@ export class TerrainService {
       TERRAIN_PAGE_SIZE
     )
     this.waterBottomGeom.rotateX(Math.PI / 2)
-    this.waterBottomGeom.addGroup(0, this.waterBottomGeom.getIndex().count, 0)
+    this.waterBottomGeom.addGroup(0, this.waterBottomGeom.getIndex()!.count, 0)
 
     const waterMaterialBottom = new MeshLambertMaterial({
       transparent: true,
@@ -123,7 +123,7 @@ export class TerrainService {
     this.engineSvc.addWorldObject(this.water)
   }
 
-  setTerrain(terrain: TerrainData, worldId: number) {
+  setTerrain(terrain: TerrainData | null = null, worldId: number) {
     this.worldId = worldId
     if (this.terrain != null) {
       this.engineSvc.removeWorldObject(this.terrain)
@@ -241,7 +241,7 @@ export class TerrainService {
       }
       geometry.setAttribute('position', new BufferAttribute(positions, 3))
 
-      const indices = new Uint16Array(geometry.getIndex().array)
+      const indices = new Uint16Array(geometry.getIndex()!.array)
       let changeTexture = 0
       let currTexture = 0
       for (let k = 0; k < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE; k++) {
@@ -262,7 +262,7 @@ export class TerrainService {
       geometry.setIndex(new BufferAttribute(indices, 1))
       geometry.addGroup(
         changeTexture,
-        geometry.getIndex().count - changeTexture,
+        geometry.getIndex()!.count - changeTexture,
         currTexture
       )
       geometry.computeVertexNormals()
@@ -274,7 +274,7 @@ export class TerrainService {
         0,
         zPage * TERRAIN_PAGE_SIZE * 10
       )
-      this.terrain.add(terrainMesh)
+      this.terrain!.add(terrainMesh)
       this.fixPageGaps(terrainMesh, xPage, zPage)
       this.loadingPages.delete(`${xPage}_${zPage}`)
     })
@@ -289,32 +289,32 @@ export class TerrainService {
    * @param zPage Z coordinate for page
    */
   private fixPageGaps(page: Mesh, xPage: number, zPage: number) {
-    const northPage = this.terrain.getObjectByName(
+    const northPage = this.terrain!.getObjectByName(
       `${xPage}_${zPage + 1}`
     ) as Mesh
-    const westPage = this.terrain.getObjectByName(
+    const westPage = this.terrain!.getObjectByName(
       `${xPage + 1}_${zPage}`
     ) as Mesh
-    const southPage = this.terrain.getObjectByName(
+    const southPage = this.terrain!.getObjectByName(
       `${xPage}_${zPage - 1}`
     ) as Mesh
-    const eastPage = this.terrain.getObjectByName(
+    const eastPage = this.terrain!.getObjectByName(
       `${xPage - 1}_${zPage}`
     ) as Mesh
-    const northWestPage = this.terrain.getObjectByName(
+    const northWestPage = this.terrain!.getObjectByName(
       `${xPage + 1}_${zPage + 1}`
     ) as Mesh
-    const southEastPage = this.terrain.getObjectByName(
+    const southEastPage = this.terrain!.getObjectByName(
       `${xPage - 1}_${zPage - 1}`
     ) as Mesh
     const lastFaceIndex = TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE * 2 - 1
 
     const positions = page.geometry.getAttribute('position')
-    const indices = page.geometry.getIndex()
+    const indices = page.geometry.getIndex()!
 
     if (northPage) {
       const northPositions = northPage.geometry.getAttribute('position')
-      const northIndices = northPage.geometry.getIndex()
+      const northIndices = northPage.geometry.getIndex()!
       // Get north page's south
       const south = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
         northPositions.getY(northIndices.getX(i * 2 * 3))
@@ -334,7 +334,7 @@ export class TerrainService {
     }
     if (westPage) {
       const westPositions = westPage.geometry.getAttribute('position')
-      const westIndices = westPage.geometry.getIndex()
+      const westIndices = westPage.geometry.getIndex()!
       // Get west page's east
       const east = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
         westPositions.getY(westIndices.getX(i * TERRAIN_PAGE_SIZE * 2 * 3))
@@ -354,7 +354,7 @@ export class TerrainService {
     }
     if (southPage) {
       const southPositions = southPage.geometry.getAttribute('position')
-      const southIndices = southPage.geometry.getIndex()
+      const southIndices = southPage.geometry.getIndex()!
       // Get current south
       const south = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
         positions.getY(indices.getX(i * 2 * 3))
@@ -375,7 +375,7 @@ export class TerrainService {
     }
     if (eastPage) {
       const eastPositions = eastPage.geometry.getAttribute('position')
-      const eastIndices = eastPage.geometry.getIndex()
+      const eastIndices = eastPage.geometry.getIndex()!
       // Get current east
       const east = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
         positions.getY(indices.getX(i * TERRAIN_PAGE_SIZE * 2 * 3))
@@ -397,7 +397,7 @@ export class TerrainService {
     if (northWestPage) {
       // We can fix current north-west corner
       const nwPositions = northWestPage.geometry.getAttribute('position')
-      const nwIndices = northWestPage.geometry.getIndex()
+      const nwIndices = northWestPage.geometry.getIndex()!
       // Get north west page's south east corner (0 = first face)
       const seCorner = nwPositions.getY(nwIndices.getX(0))
       // Set corner
@@ -408,7 +408,7 @@ export class TerrainService {
     if (southEastPage) {
       // We can fix south-east page's north-west corner
       const sePositions = southEastPage.geometry.getAttribute('position')
-      const seIndices = southEastPage.geometry.getIndex()
+      const seIndices = southEastPage.geometry.getIndex()!
       // Get current south east corner (0 = first face)
       const seCorner = positions.getY(indices.getX(0))
       // Set corner
@@ -429,8 +429,8 @@ export class TerrainService {
     const waterPage = new Group()
     waterPage.name = `${xPage}_${zPage}`
     waterPage.add(
-      new Mesh(this.waterTopGeom, this.waterTopMaterials),
-      new Mesh(this.waterBottomGeom, this.waterBottomMaterials)
+      new Mesh(this.waterTopGeom!, this.waterTopMaterials),
+      new Mesh(this.waterBottomGeom!, this.waterBottomMaterials)
     )
     waterPage.position.set(
       xPage * TERRAIN_PAGE_SIZE * 10,

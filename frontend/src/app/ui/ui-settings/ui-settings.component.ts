@@ -15,7 +15,6 @@ import {EngineService} from '../../engine/engine.service'
 import {SettingsService} from '../../settings/settings.service'
 
 @Component({
-  standalone: true,
   imports: [
     FormsModule,
     MatButton,

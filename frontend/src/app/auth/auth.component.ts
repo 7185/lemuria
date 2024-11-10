@@ -19,7 +19,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 @Component({
-  standalone: true,
   imports: [
     ReactiveFormsModule,
     MatButton,

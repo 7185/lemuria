@@ -1,5 +1,5 @@
 export class User {
-  id?: string
+  id? = ''
   name?: string
   x? = 0
   y? = 0

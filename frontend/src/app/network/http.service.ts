@@ -8,6 +8,20 @@ import {environment} from '../../environments/environment'
 import {User} from '../user'
 import {catchError, map, tap} from 'rxjs/operators'
 
+export type PropEntry = [
+  number,
+  number,
+  string,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  string?,
+  string?
+]
+
 export interface Avatar {
   name: string
   geometry: string
@@ -165,7 +179,10 @@ export class HttpService extends HttpClient {
       opts.params.max_z = maxZ
     }
 
-    return this.get(`${this.baseUrl}/world/${worldId}/props`, opts)
+    return this.get<{entries: PropEntry[]}>(
+      `${this.baseUrl}/world/${worldId}/props`,
+      opts
+    )
   }
 
   worlds() {

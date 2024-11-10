@@ -35,7 +35,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 @Component({
-  standalone: true,
   imports: [
     FormsModule,
     FaIconComponent,

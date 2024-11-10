@@ -348,7 +348,7 @@ export class ActionParser extends CstParser {
     this.CONSUME(Sign)
     this.MANY({
       GATE: () =>
-        ['Name', 'Color', 'Bcolor'].indexOf(this.LA(1).tokenType.name) === -1,
+        !['Name', 'Color', 'Bcolor'].includes(this.LA(1).tokenType.name),
       DEF: () => this.CONSUME(Resource)
     })
     this.OPTION1(() => this.SUBRULE(this.signArgs))
@@ -357,8 +357,7 @@ export class ActionParser extends CstParser {
   solidCommand = this.RULE('solidCommand', () => {
     this.CONSUME(Solid)
     this.OPTION({
-      GATE: () =>
-        ['Enabled', 'Disabled'].indexOf(this.LA(2).tokenType.name) > -1,
+      GATE: () => ['Enabled', 'Disabled'].includes(this.LA(2).tokenType.name),
       DEF: () => this.CONSUME(Resource)
     })
     this.SUBRULE(this.boolean)
@@ -397,8 +396,7 @@ export class ActionParser extends CstParser {
   visibleCommand = this.RULE('visibleCommand', () => {
     this.CONSUME(Visible)
     this.OPTION({
-      GATE: () =>
-        ['Enabled', 'Disabled'].indexOf(this.LA(2).tokenType.name) > -1,
+      GATE: () => ['Enabled', 'Disabled'].includes(this.LA(2).tokenType.name),
       DEF: () => this.CONSUME(Resource)
     })
     this.SUBRULE(this.boolean)

@@ -24,7 +24,7 @@ export class UserService {
   refreshList(list: User[]) {
     // Remove unlisted users
     const newList = this.userList().filter(
-      (u) => list.map((c) => c.id).indexOf(u.id) > -1
+      (u) => !list.map((c) => c.id).includes(u.id)
     )
     for (const u of list) {
       // Still update world for listed users

@@ -13,7 +13,6 @@ import {UiTerrainEditComponent} from './ui-terrain-edit/ui-terrain-edit.componen
 import {BuildService} from '../engine/build.service'
 
 @Component({
-  standalone: true,
   imports: [
     EngineComponent,
     UiToolbarComponent,

@@ -119,7 +119,7 @@ export class SkyService {
           5, 0, 3  // bottom north west face
         ])
 
-    octGeom.addGroup(0, octGeom.getIndex().count, 0)
+    octGeom.addGroup(0, octGeom.getIndex()!.count, 0)
 
     const oct = new Mesh(octGeom, [
       new MeshBasicMaterial({vertexColors: true, depthWrite: false})

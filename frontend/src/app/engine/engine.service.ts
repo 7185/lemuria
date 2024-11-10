@@ -54,7 +54,7 @@ Mesh.prototype.raycast = acceleratedRaycast
 // the render loop
 const _updateMatrixWorld = Object3D.prototype.updateMatrixWorld
 Object3D.prototype.updateMatrixWorld = function () {
-  if (this.name.endsWith('.rwx') && !this.parent.visible) {
+  if (this.name.endsWith('.rwx') && !this.parent?.visible) {
     return
   }
   _updateMatrixWorld.apply(this)
@@ -141,7 +141,7 @@ export class EngineService {
   private pointLights: PointLight[] = []
 
   private mouseIdle = 0
-  private labelDesc: HTMLDivElement
+  private labelDesc: HTMLDivElement | undefined
 
   private chunkTile: [number, number] = [0, 0]
 
@@ -179,12 +179,10 @@ export class EngineService {
     if (this.frameId != null) {
       cancelAnimationFrame(this.frameId)
     }
-    if (this.renderer != null) {
-      this.renderer.dispose()
-      this.renderer.forceContextLoss()
-      this.renderer = null
-      this.canvas = null
-    }
+    this.renderer?.dispose()
+    this.renderer?.forceContextLoss()
+    this.renderer = null
+    this.canvas = null
   }
 
   createScene(
@@ -297,9 +295,7 @@ export class EngineService {
     this.scene.traverse((child: Object3D) => {
       this.disposeGeometry(child as Group)
       this.disposeMaterial(child as Group)
-      if (child.parent) {
-        child.parent.remove()
-      }
+      child.parent?.remove(child)
     })
   }
 
@@ -415,7 +411,7 @@ export class EngineService {
     const div = document.createElement('div')
     div.className = 'text-label'
     const user = this.userSvc.getUser(group.name)
-    div.textContent = user ? user.name : ''
+    div.textContent = user?.name ?? ''
 
     const label = new CSS2DObject(div)
     this.labelMap.set(group.name, label)
@@ -445,12 +441,8 @@ export class EngineService {
     group.traverse((child: Object3D) => {
       if (child instanceof Mesh) {
         for (const m of child.material) {
-          if (m.alphaMap != null) {
-            m.alphaMap.dispose()
-          }
-          if (m.map != null) {
-            m.map.dispose()
-          }
+          m.alphaMap?.dispose()
+          m.map?.dispose()
           m.dispose()
         }
       }
@@ -700,7 +692,7 @@ export class EngineService {
     }
     if (group.userData.notSolid === true) {
       // Regenerate boundsTree
-      group.parent.userData.bvhUpdate.next()
+      group.parent!.userData.bvhUpdate.next()
     }
   }
 
@@ -708,7 +700,7 @@ export class EngineService {
    * Update LODs
    * @param newChunk Optional parameter if the chunk is new
    */
-  private updateLODs(newChunk: LOD = null) {
+  private updateLODs(newChunk: LOD | null = null) {
     // We trick the LOD into acting like the camera is always on the ground,
     // this avoids having chunks disappearing if we get too high/far on the Y axis
     this.lodCamera.position.set(
@@ -729,17 +721,17 @@ export class EngineService {
       }
       if (newLevel === 0) {
         // We display a previously hidden chunk
-        lod.levels[0].object.children.forEach((child: Group) => {
+        lod.levels[0].object.children.forEach((child: Object3D) => {
           child.userData.onShow(() => {
-            this.handleShownProp(child)
+            this.handleShownProp(child as Group)
           })
-          child.userData.onUpdate = () => this.handleShownProp(child)
+          child.userData.onUpdate = () => this.handleShownProp(child as Group)
         })
       } else {
         // The chunk is being hidden
-        lod.levels[0].object.children.forEach((child: Group) => {
+        lod.levels[0].object.children.forEach((child: Object3D) => {
           child.userData.onHide(() => {
-            this.handleHiddenProp(child)
+            this.handleHiddenProp(child as Group)
           })
           child.userData.onUpdate = () => Function.prototype
         })
@@ -807,12 +799,15 @@ export class EngineService {
     )
     for (const i of intersects) {
       let obj = i.object
-      while (obj.parent !== this.terrain && !obj.parent.userData.world?.chunk) {
-        obj = obj.parent
+      while (
+        obj.parent !== this.terrain &&
+        !obj.parent!.userData.world?.chunk
+      ) {
+        obj = obj.parent!
       }
       if (
         obj.name.endsWith('.rwx') &&
-        obj.parent.visible &&
+        obj.parent!.visible &&
         !obj?.userData?.notVisible
       ) {
         return {obj: obj as Group, faceIndex: i.faceIndex}
@@ -846,7 +841,7 @@ export class EngineService {
       )
     }
 
-    prop.userData.onClick(() => {
+    prop?.userData.onClick(() => {
       // Needed since the prop's state might have just changed
       this.handleShownProp(prop)
     })
@@ -858,7 +853,7 @@ export class EngineService {
     if (obj == null) {
       return
     }
-    if (obj.parent != null && obj.parent.name === 'terrain') {
+    if (obj.parent?.name === 'terrain') {
       this.buildSvc.selectCell(obj, faceIndex, this.buildNode)
     } else {
       this.buildSvc.selectProp(obj, this.buildNode)
@@ -866,12 +861,12 @@ export class EngineService {
   }
 
   private updateSound() {
-    const heard = []
+    const heard: {dist: number; obj: Group; pos: Vector3}[] = []
     this.sonicObjects.forEach((obj) => {
-      if (!obj.parent.visible) {
+      if (!obj.parent!.visible) {
         return
       }
-      const objPos = obj.position.clone().add(obj.parent.parent.position)
+      const objPos = obj.position.clone().add(obj.parent!.parent!.position)
       heard.push({
         dist: this.player.position.distanceToSquared(objPos),
         obj: obj,
@@ -891,9 +886,9 @@ export class EngineService {
   }
 
   private updatePointLights() {
-    const seen = []
+    const seen: {dist: number; obj: Group; pos: Vector3}[] = []
     this.litObjects.forEach((obj) => {
-      const objPos = obj.position.clone().add(obj.parent.parent.position)
+      const objPos = obj.position.clone().add(obj.parent!.parent!.position)
       seen.push({
         dist: this.player.position.distanceToSquared(objPos),
         obj: obj,
@@ -1070,9 +1065,7 @@ export class EngineService {
       this.rotateSprites()
       this.updateLODs()
     }
-    this.player.inWater.set(
-      this.water != null && this.water.position.y >= this.cameraPosition.y
-    )
+    this.player.inWater.set(this.water?.position.y >= this.cameraPosition.y)
     this.activeCamera.getWorldPosition(this.cameraPosition)
 
     this.skybox.position.copy(this.player.position)
@@ -1087,9 +1080,9 @@ export class EngineService {
       // raycasting just to check corona visibility
       this.objectsNode
         .getObjectsByProperty('name', 'corona')
-        .filter((corona: Sprite) => corona.parent.parent.visible)
-        .forEach((corona: Sprite) => {
-          corona.visible = this.isCoronaVisible(corona)
+        .filter((corona: Object3D) => corona.parent!.parent!.visible)
+        .forEach((corona: Object3D) => {
+          corona.visible = this.isCoronaVisible(corona as Sprite)
         })
     }
 
@@ -1184,11 +1177,11 @@ export class EngineService {
     this.raycaster.set(cameraPosition, cameraToSpriteDirection)
 
     // Ignore the current prop during raycasting to prevent self-intersection
-    const ignoreList = Utils.getMeshes(corona.parent)
+    const ignoreList = Utils.getMeshes(corona.parent!)
     const intersects = this.raycaster
       .intersectObjects(
         this.objectsNode.children
-          .filter((obj) => obj.parent.visible)
+          .filter((obj) => obj.parent!.visible)
           .concat(
             this.usersNode.children,
             this.player.avatar,
@@ -1196,7 +1189,7 @@ export class EngineService {
           ),
         true
       )
-      .filter((intersect) => !ignoreList.includes(intersect.object))
+      .filter((intersect) => !ignoreList.includes(intersect.object as Mesh))
 
     const closestIntersection = intersects[0]
 

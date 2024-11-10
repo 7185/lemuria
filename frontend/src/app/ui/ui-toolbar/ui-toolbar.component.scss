@@ -1,9 +1,8 @@
 @use 'sass:map';
 @use '@angular/material' as mat;
+@use '../../../styles/_variables' as vars;
 
-@import '../../../styles/_variables';
-
-$color-config: mat.m2-get-color-config($lemuria-theme);
+$color-config: mat.m2-get-color-config(vars.$lemuria-theme);
 
 $primary-palette: map.get($color-config, 'primary');
 

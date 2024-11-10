@@ -15,7 +15,6 @@ import {SettingsService} from '../../settings/settings.service'
 import {WorldService} from '../../world/world.service'
 
 @Component({
-  standalone: true,
   imports: [
     FormsModule,
     MatButton,
