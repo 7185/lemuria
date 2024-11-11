@@ -708,10 +708,10 @@ export class PropActionService {
 
   private applyTexture(
     prop: Group,
-    textureName: string = null,
-    maskName: string = null,
-    tag: string = null,
-    color: {r: number; g: number; b: number} = null
+    textureName: string | null = null,
+    maskName: string | null = null,
+    tag: string | null = null,
+    color: {r: number; g: number; b: number} | null = null
   ): Observable<unknown> {
     const promises: Observable<unknown>[] = []
     let currentTag = null

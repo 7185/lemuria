@@ -1,5 +1,4 @@
 import {effect, inject, Injectable, signal} from '@angular/core'
-import type {WritableSignal} from '@angular/core'
 import {Utils} from '../utils'
 import {
   Box3,
@@ -29,13 +28,13 @@ export class SkyService {
   private readonly engineSvc = inject(EngineService)
   private readonly propSvc = inject(PropService)
 
-  skybox: WritableSignal<string> = signal('')
-  skyTop: WritableSignal<string> = signal(Utils.colorHexToStr(0))
-  skyNorth: WritableSignal<string> = signal(Utils.colorHexToStr(0))
-  skyEast: WritableSignal<string> = signal(Utils.colorHexToStr(0))
-  skySouth: WritableSignal<string> = signal(Utils.colorHexToStr(0))
-  skyWest: WritableSignal<string> = signal(Utils.colorHexToStr(0))
-  skyBottom: WritableSignal<string> = signal(Utils.colorHexToStr(0))
+  skybox = signal('')
+  skyTop = signal(Utils.colorHexToStr(0))
+  skyNorth = signal(Utils.colorHexToStr(0))
+  skyEast = signal(Utils.colorHexToStr(0))
+  skySouth = signal(Utils.colorHexToStr(0))
+  skyWest = signal(Utils.colorHexToStr(0))
+  skyBottom = signal(Utils.colorHexToStr(0))
 
   constructor() {
     effect(() => {

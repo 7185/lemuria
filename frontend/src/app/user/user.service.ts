@@ -1,5 +1,4 @@
 import {inject, Injectable, signal} from '@angular/core'
-import type {WritableSignal} from '@angular/core'
 import type {Vector3} from 'three'
 import {Subject} from 'rxjs'
 import {HttpService} from '../network'
@@ -7,7 +6,7 @@ import {User} from './user.model'
 
 @Injectable({providedIn: 'root'})
 export class UserService {
-  userList: WritableSignal<User[]> = signal([])
+  userList = signal<User[]>([])
   avatarChanged = new Subject<User>()
   currentName = 'Anonymous'
 

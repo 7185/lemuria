@@ -76,10 +76,7 @@ const nearestChunkPattern = [
 
 @Injectable({providedIn: 'root'})
 export class EngineService {
-  compassSignal = signal<{pos: Vector3; theta: number}>({
-    pos: new Vector3(),
-    theta: 0
-  })
+  compassSignal = signal({pos: new Vector3(), theta: 0})
   fpsSignal = signal('0')
   fpsObs = toObservable(this.fpsSignal)
   maxFps = signal(60)
