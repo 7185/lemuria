@@ -143,7 +143,6 @@ export class UiToolbarComponent implements OnInit {
     effect(() => {
       const u = this.http.getLogged()()
       this.userId = u.id
-      this.userSvc.currentName = u.name
       if (u.id != null) {
         this.http
           .worlds()

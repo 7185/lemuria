@@ -8,7 +8,6 @@ import {User} from './user.model'
 export class UserService {
   userList = signal<User[]>([])
   avatarChanged = new Subject<User>()
-  currentName = 'Anonymous'
 
   private readonly http = inject(HttpService)
 
@@ -22,8 +21,8 @@ export class UserService {
 
   refreshList(list: User[]) {
     // Remove unlisted users
-    const newList = this.userList().filter(
-      (u) => list.map((c) => c.id).includes(u.id)
+    const newList = this.userList().filter((u) =>
+      list.map((c) => c.id).includes(u.id)
     )
     for (const u of list) {
       // Still update world for listed users
@@ -46,7 +45,7 @@ export class UserService {
 
   setAvatar(userId: string, avatarId: number) {
     const user = this.getUser(userId)
-    if (user != null && user.name !== this.currentName) {
+    if (user?.id !== this.http.getLogged()().id) {
       user.avatar = avatarId
       this.avatarChanged.next(user)
     }

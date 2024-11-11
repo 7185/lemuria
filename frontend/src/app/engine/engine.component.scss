@@ -4,45 +4,46 @@
   z-index: 0;
   pointer-events: all;
   background-color: #111;
-
-  #render-canvas {
-    width: 100%;
-    height: 100%;
-    touch-action: none;
-  }
-
-  #render-canvas:focus {
-    outline: none;
-  }
-
-  #label-zone {
-    top: 0;
-    position: absolute;
-    pointer-events: none;
-    color: #fff;
-    text-shadow:
-      #000 2px 0 0,
-      #000 1.7552px 0.9589px 0,
-      #000 1.0806px 1.6829px 0,
-      #000 0.1415px 1.9950px 0,
-      #000 -0.8323px 1.8186px 0,
-      #000 -1.6023px 1.1969px 0,
-      #000 -1.9800px 0.2822px 0,
-      #000 -1.8729px -0.7016px 0,
-      #000 -1.3073px -1.5136px 0,
-      #000 -0.4216px -1.9551px 0,
-      #000 0.5673px -1.9179px 0,
-      #000 1.4173px -1.4111px 0,
-      #000 1.9203px -0.5588px 0;
-  }
-
-  #label-desc {
-    position: absolute;
-    display: none;
-    background-color: rgba(0 0 0 / 40%);
-    color: #fff;
-    padding: 2px;
-    border-radius: 6px;
-    max-width: 20vw;
-  }
 }
+
+#render-canvas {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+#render-canvas:focus {
+  outline: none;
+}
+
+#label-zone {
+  top: 0;
+  position: absolute;
+  pointer-events: none;
+  color: #fff;
+  text-shadow:
+    #000 2px 0 0,
+    #000 1.7552px 0.9589px 0,
+    #000 1.0806px 1.6829px 0,
+    #000 0.1415px 1.9950px 0,
+    #000 -0.8323px 1.8186px 0,
+    #000 -1.6023px 1.1969px 0,
+    #000 -1.9800px 0.2822px 0,
+    #000 -1.8729px -0.7016px 0,
+    #000 -1.3073px -1.5136px 0,
+    #000 -0.4216px -1.9551px 0,
+    #000 0.5673px -1.9179px 0,
+    #000 1.4173px -1.4111px 0,
+    #000 1.9203px -0.5588px 0;
+}
+
+#label-desc {
+  position: absolute;
+  display: none;
+  background-color: rgba(0 0 0 / 40%);
+  color: #fff;
+  padding: 2px;
+  border-radius: 6px;
+  max-width: 20vw;
+}
+

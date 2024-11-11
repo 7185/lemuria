@@ -174,12 +174,13 @@ export class WorldService {
       for (const u of this.userSvc.userList()) {
         const user = this.engineSvc.users().find((o) => o.name === u.id)
         if (
-          user == null &&
-          this.avatarList.length > 0 &&
-          u.world === this.worldId
+          user != null ||
+          this.avatarList.length == 0 ||
+          u.world !== this.worldId
         ) {
-          this.addUser(u)
+          continue
         }
+        this.addUser(u)
       }
     })
 
@@ -576,7 +577,7 @@ export class WorldService {
           ? new Map<number, number>(savedAvatars)
           : new Map<number, number>()
       this.avatarSub.next(avatarMap.get(this.worldId) || 0)
-      // Trigger list update to create users
+      // Force list update to create users now that avatars are known
       this.userSvc.userList.set([...this.userSvc.userList()])
     })
 
@@ -585,23 +586,24 @@ export class WorldService {
   }
 
   private addUser(user: User) {
-    if (user.name !== this.userSvc.currentName) {
-      const group = new Group()
-      group.name = user.id
-      group.position.set(user.x, user.y, user.z)
-      group.rotation.set(user.roll, user.yaw, user.pitch)
-      group.userData.player = true
-      const avatarEntry = this.avatarList[user.avatar]
-      this.setAvatar(
-        this.avatarList[user.avatar].geometry,
-        this.anmSvc.getAvatarAnimationManager(
-          avatarEntry.name,
-          avatarEntry.implicit,
-          avatarEntry.explicit
-        ),
-        group
-      )
-      this.engineSvc.addUser(group)
+    if (user.id === this.http.getLogged()().id) {
+      return
     }
+    const group = new Group()
+    group.name = user.id
+    group.position.set(user.x, user.y, user.z)
+    group.rotation.set(user.roll, user.yaw, user.pitch)
+    group.userData.player = true
+    const avatarEntry = this.avatarList[user.avatar]
+    this.setAvatar(
+      this.avatarList[user.avatar].geometry,
+      this.anmSvc.getAvatarAnimationManager(
+        avatarEntry.name,
+        avatarEntry.implicit,
+        avatarEntry.explicit
+      ),
+      group
+    )
+    this.engineSvc.addUser(group)
   }
 }

@@ -54,7 +54,7 @@ export class HttpService extends HttpClient {
   }
 
   getLogged() {
-    if (this.userLogged().id == null) {
+    if (!this.userLogged().id) {
       this.session().subscribe()
     }
     return this.userLogged
