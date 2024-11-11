@@ -5,7 +5,7 @@ COPY frontend/package.json frontend/angular.json frontend/tsconfig.json frontend
 COPY frontend/public /root/frontend/public
 COPY action-parser/src /root/action-parser/src
 COPY frontend/src /root/frontend/src
-COPY package.json package-lock.json /root
+COPY package.json package-lock.json /root/
 RUN npm -w action-parser -w frontend ci && \
     npm -w frontend run build:prod && \
     rm -r .npm action-parser frontend node_modules
@@ -35,7 +35,7 @@ ENV DATABASE_URL="file:/app.db"
 WORKDIR /root
 COPY backend /root/backend/
 COPY --from=frontend --chown=nobody:nobody /root/static /static
-COPY package.json package-lock.json /root
+COPY package.json package-lock.json /root/
 RUN npm -w backend ci && \
     npx -w backend prisma generate --generator client && \
     npm -w backend run build && \
