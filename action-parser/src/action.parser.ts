@@ -319,7 +319,7 @@ export class ActionParser extends CstParser {
   moveCommand = this.RULE('moveCommand', () => {
     this.CONSUME(Move)
     this.AT_LEAST_ONE({
-      GATE: () => /[+-]?(\d*[.])?\d+/.test(this.LA(1).image),
+      GATE: () => /[+-]?([0-9]*[.])?[0-9]+/.test(this.LA(1).image),
       DEF: () => this.CONSUME(Resource)
     })
     this.OPTION(() => this.SUBRULE(this.moveArgs))
@@ -338,7 +338,7 @@ export class ActionParser extends CstParser {
   rotateCommand = this.RULE('rotateCommand', () => {
     this.CONSUME(Rotate)
     this.AT_LEAST_ONE({
-      GATE: () => /[+-]?(\d*[.])?\d+/.test(this.LA(1).image),
+      GATE: () => /[+-]?([0-9]*[.])?[0-9]+/.test(this.LA(1).image),
       DEF: () => this.CONSUME(Resource)
     })
     this.OPTION(() => this.SUBRULE(this.moveArgs))

@@ -1,7 +1,7 @@
 import type {Routes} from '@angular/router'
 import {AuthGuard} from './auth/auth.guard'
 
-export const APP_ROUTES: Routes = [
+export const appRoutes: Routes = [
   {
     path: 'login',
     title: 'Lemuria | Sign in',

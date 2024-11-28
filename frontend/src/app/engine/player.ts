@@ -67,7 +67,7 @@ export class Player {
       return
     }
     if (typeof pos === 'string') {
-      const yawMatch = /\s(\d+)$/.exec(pos)
+      const yawMatch = /\s([0-9]+)$/.exec(pos)
       yaw = yawMatch ? parseInt(yawMatch[1], 10) : 0
       pos = Utils.stringToPos(pos)
     }

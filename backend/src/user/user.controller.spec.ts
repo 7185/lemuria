@@ -42,12 +42,12 @@ describe(UserController.name, () => {
   describe('authLogin', () => {
     it('should return username and id', () => {
       const statusResponseMock = {
-        send: jest.fn((x) => x)
+        send: vi.fn((x) => x)
       }
       const responseMock = {
-        status: jest.fn().mockReturnValue(statusResponseMock),
-        setCookie: jest.fn(),
-        send: jest.fn((x) => x)
+        status: vi.fn().mockReturnValue(statusResponseMock),
+        setCookie: vi.fn(),
+        send: vi.fn((x) => x)
       } as unknown as FastifyReply
       offlineController.authLogin(
         {
@@ -67,22 +67,22 @@ describe(UserController.name, () => {
   describe('authSession', () => {
     it('should return 401', () => {
       const statusResponseMock = {
-        send: jest.fn((x) => x)
+        send: vi.fn((x) => x)
       }
       const responseMock = {
-        status: jest.fn().mockReturnValue(statusResponseMock),
-        send: jest.fn((x) => x)
+        status: vi.fn().mockReturnValue(statusResponseMock),
+        send: vi.fn((x) => x)
       } as unknown as FastifyReply
       offlineController.authSession('cookie', responseMock)
       expect(responseMock.status).toHaveBeenCalledWith(401)
     })
     it('should return 200', () => {
       const statusResponseMock = {
-        send: jest.fn((x) => x)
+        send: vi.fn((x) => x)
       }
       const responseMock = {
-        status: jest.fn().mockReturnValue(statusResponseMock),
-        send: jest.fn((x) => x)
+        status: vi.fn().mockReturnValue(statusResponseMock),
+        send: vi.fn((x) => x)
       } as unknown as FastifyReply
       expect(controller.authSession('cookie', responseMock)).toStrictEqual({
         id: 'dummy',
@@ -94,12 +94,12 @@ describe(UserController.name, () => {
 
   describe('authLogout', () => {
     const statusResponseMock = {
-      send: jest.fn((x) => x)
+      send: vi.fn((x) => x)
     }
     const responseMock = {
-      status: jest.fn().mockReturnValue(statusResponseMock),
-      clearCookie: jest.fn(),
-      send: jest.fn((x) => x)
+      status: vi.fn().mockReturnValue(statusResponseMock),
+      clearCookie: vi.fn(),
+      send: vi.fn((x) => x)
     } as unknown as FastifyReply
     it('should return empty', () => {
       expect(
@@ -112,23 +112,23 @@ describe(UserController.name, () => {
   describe('authRenew', () => {
     it('should return 401', () => {
       const statusResponseMock = {
-        send: jest.fn((x) => x)
+        send: vi.fn((x) => x)
       }
       const responseMock = {
-        status: jest.fn().mockReturnValue(statusResponseMock),
-        send: jest.fn((x) => x)
+        status: vi.fn().mockReturnValue(statusResponseMock),
+        send: vi.fn((x) => x)
       } as unknown as FastifyReply
       offlineController.authRenew('cookie', responseMock)
       expect(responseMock.status).toHaveBeenCalledWith(401)
     })
     it('should return 200', () => {
       const statusResponseMock = {
-        send: jest.fn((x) => x)
+        send: vi.fn((x) => x)
       }
       const responseMock = {
-        status: jest.fn().mockReturnValue(statusResponseMock),
-        setCookie: jest.fn(),
-        send: jest.fn((x) => x)
+        status: vi.fn().mockReturnValue(statusResponseMock),
+        setCookie: vi.fn(),
+        send: vi.fn((x) => x)
       } as unknown as FastifyReply
       expect(controller.authRenew('cookie', responseMock)).toStrictEqual({
         id: 'dummy',

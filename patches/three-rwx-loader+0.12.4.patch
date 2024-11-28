@@ -1,7 +1,29 @@
 diff --git a/node_modules/three-rwx-loader/src/RWXLoader.js b/node_modules/three-rwx-loader/src/RWXLoader.js
-index a8d9ceb..5a418e8 100644
+index a8d9ceb..490856c 100644
 --- a/node_modules/three-rwx-loader/src/RWXLoader.js
 +++ b/node_modules/three-rwx-loader/src/RWXLoader.js
+@@ -73,9 +73,9 @@ const glossRatio = 0.1;
+ const defaultAlphaTest = 0.2;
+ const defaultSurface = [ 0.69, 0.0, 0.0 ]; // Ambience (recommended AW 2.2), Diffusion, Specularity
+ 
+-const urlRegex = /^https?:\/\/.*$/i;
+-const extensionRegex = /^(.*)(\.[^\\]+)$/i;
+-const isAlphaExtensionRegex = /^\.(tiff|png|webp|gif)$/i;
++const urlRegex = /^https?:\/\//i;
++const extensionRegex = /\.([^.\\]+)$/i;
++const isAlphaExtensionRegex = /^(tiff|png|webp|gif)$/i;
+ 
+ // Perform polygon triangulation by projecting vertices on a 2D plane first
+ function triangulateFaces( vertices, uvs, loop, objectName, forceEarcut = false, verboseWarning = false ) {
+@@ -266,7 +266,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+ 
+ 	}
+ 
+-	if ( extRes && isAlphaExtensionRegex.test( extRes[ 2 ] ) ) {
++	if ( extRes && isAlphaExtensionRegex.test( extRes[ 1 ] ) ) {
+ 
+ 		threeMat.alphaTest = alphaTest;
+ 		threeMat.transparent = true;
 @@ -504,7 +504,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
  		const whiteEmissive = Math.trunc( surface[ 1 ] );
  		materialDict[ 'emissive' ] = ( whiteEmissive << 16 ) + ( whiteEmissive << 8 ) + whiteEmissive;
@@ -11,7 +33,7 @@ index a8d9ceb..5a418e8 100644
  
  	}
  
-@@ -1656,33 +1656,23 @@ class RWXMaterial {
+@@ -1656,33 +1656,33 @@ class RWXMaterial {
  
  	getMatSignature() {
  
@@ -42,31 +64,230 @@ index a8d9ceb..5a418e8 100644
 -			`_${texture}_${mask}_${textureAddressMode}_${collision}_${tag}_${ratio}`;
 -
 -	}
++		// Different from the original signature code but avoids toFixed calls
++		// Faster code, smaller strings, but same end result
 +		return [
-+		  [ Math.round(this.color[0] * 1000) / 1000, Math.round(this.color[1] * 1000) / 1000, Math.round(this.color[2] * 1000) / 1000 ].join(''),
-+		  [ Math.round(this.surface[0] * 1000) / 1000, Math.round(this.surface[1] * 1000) / 1000, Math.round(this.surface[2] * 1000) / 1000 ].join(''),
-+		  Math.round(this.opacity * 1000) / 1000,
-+		  this.lightsampling,
-+		  this.geometrysampling,
-+		  this.texturemodes.join(''),
-+		  this.materialmode,
-+		  this.texture || '',
-+		  this.mask || '',
-+		  this.textureaddressmode,
-+		  this.collision,
-+		  this.tag,
-+		  Math.round(this.ratio * 100) / 100
-+		].join('_');
++		  	[
++				Math.round( this.color[ 0 ] * 1000 ) / 1000,
++				Math.round( this.color[ 1 ] * 1000 ) / 1000,
++				Math.round( this.color[ 2 ] * 1000 ) / 1000
++			].join( '' ),
++			[
++				Math.round( this.surface[ 0 ] * 1000 ) / 1000,
++				Math.round( this.surface[ 1 ] * 1000 ) / 1000,
++				Math.round( this.surface[ 2 ] * 1000 ) / 1000
++			].join( '' ),
++			Math.round( this.opacity * 1000 ) / 1000,
++			this.lightsampling,
++			this.geometrysampling,
++			this.texturemodes.join( '' ),
++			this.materialmode,
++			this.texture || '',
++			this.mask || '',
++			this.textureaddressmode,
++			this.collision ? 1 : 0,
++			this.tag,
++			Math.round( this.ratio * 100 ) / 100
++		].join( '_' );
 +
 +	  }
  
  }
  
-@@ -2515,6 +2505,7 @@ class RWXLoader extends Loader {
+@@ -1878,48 +1878,50 @@ class RWXLoader extends Loader {
+ 
+ 		super( manager );
+ 
++		this.tabsRegex = /\t/g;
++		this.newLineRegex = /[\n\r]+/g;
+ 		this.integerRegex = /([-+]?[0-9]+)/g;
+ 		this.floatRegex = /([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][-+][0-9]+)?)/g;
+-		this.nonCommentRegex = /^(.*)#(?!\!)/g;
+-		this.clumpbeginRegex = /^ *(clumpbegin).*$/i;
+-		this.clumpendRegex = /^ *(clumpend).*$/i;
+-		this.transformbeginRegex = /^ *(transformbegin).*$/i;
+-		this.transformendRegex = /^ *(transformend).*$/i;
+-		this.protobeginRegex = /^ *(protobegin) +([A-Za-z0-9_\-\.]+).*$/i;
+-		this.protoinstanceRegex = /^ *(protoinstance) +([A-Za-z0-9_\-\.]+).*$/i;
+-		this.protoendRegex = /^ *(protoend).*$/i;
+-		this.vertexRegex = /^ *(vertex|vertexext)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3}) *(uv(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){2}))?.*$/i;
+-		this.polygonRegex = /^ *(polygon|polygonext)( +[0-9]+)(( +[0-9]+)+)( +tag +([0-9]+))?.*$/i;
+-		this.quadRegex = /^ *(quad|quadext)(( +([0-9]+)){4})( +tag +([0-9]+))?.*$/i;
+-		this.triangleRegex = /^ *(triangle|triangleext)(( +([0-9]+)){3})( +tag +([0-9]+))?.*$/i;
+-		this.textureRegex = /^ *(texture) +([A-Za-z0-9_\-\/:\.]+)* *(mask *([A-Za-z0-9_\-\/:\.]+))?.*$/i;
+-		this.colorRegex = /^ *(color)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3}).*$/i;
+-		this.opacityRegex = /^ *(opacity)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?).*$/i;
+-		this.identityRegex = /^ *(identity) *$/i;
+-		this.transformRegex = /^ *(transform)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){16}).*$/i;
+-		this.translateRegex = /^ *(translate)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3}).*$/i;
+-		this.scaleRegex = /^ *(scale)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3}).*$/i;
+-		this.rotateRegex = /^ *(rotate)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){4})$/i;
+-		this.surfaceRegex = /^ *(surface)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3}).*$/i;
+-		this.ambientRegex = /^ *(ambient)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?).*$/i;
+-		this.diffuseRegex = /^ *(diffuse)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?).*$/i;
+-		this.specularRegex = /^ *(specular)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?).*$/i;
+-		this.materialModeRegex = /^ *((add)?materialmode(s)?) +([A-Za-z0-9_\-]+).*$/i;
+-		this.collisionRegex = /^ *(collision) +(on|off).*$/i;
+-		this.lightsamplingRegex = /^ *(lightsampling) +(facet|vertex).*$/i;
+-		this.geometrysamplingRegex = /^ *(geometrysampling) +(pointcloud|wireframe|solid).*$/i;
+-		this.texturemodesRegex = /^ *(texturemode(s)?)(( +null)|( +lit| +foreshorten| +filter)+).*$/i;
+-		this.addtexturemodeRegex = /^ *(addtexturemode)( +lit| +foreshorten| +filter).*$/i;
+-		this.removetexturemodeRegex = /^ *(removetexturemode)( +lit| +foreshorten| +filter).*$/i;
+-		this.textureaddressmodeRegex = /^ *(#\!)? *(textureaddressmode) +(wrap|mirror|clamp).*$/i;
+-		this.axisalignmentRegex = /^ *(axisalignment) +(none|zorientx|zorienty|xyz).*$/i;
+-		this.blockRegex = /^ *(block)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3}).*$/i;
+-		this.coneRegex = /^ *(cone)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){2}( +[-+]?[0-9]+)).*$/i;
+-		this.cylinderRegex = /^ *(cylinder)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3}( +[-+]?[0-9]+)).*$/i;
+-		this.discRegex = /^ *(disc)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){2}( +[-+]?[0-9]+)).*$/i;
+-		this.hemisphereRegex = /^ *(hemisphere)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?)( +[-+]?[0-9]+)).*$/i;
+-		this.sphereRegex = /^ *(sphere)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?)( +[-+]?[0-9]+)).*$/i;
+-		this.tagRegex = /^ *(tag)( +[-+]?[0-9]+).*$/i;
++		this.nonCommentRegex = /^([^#]*?)#(?!\!)/;
++		this.clumpbeginRegex = /^clumpbegin/i;
++		this.clumpendRegex = /^clumpend/i;
++		this.transformbeginRegex = /^transformbegin/i;
++		this.transformendRegex = /^transformend/i;
++		this.protobeginRegex = /(protobegin) +([A-Za-z0-9_\-\.]+)/i;
++		this.protoinstanceRegex = /(protoinstance) +([A-Za-z0-9_\-\.]+)/i;
++		this.protoendRegex = /^protoend/i;
++		this.vertexRegex = /(vertex|vertexext)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3}) *(uv(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){2}))?/i;
++		this.polygonRegex = /(polygon|polygonext)( +[0-9]+)(( +[0-9]+)+)( +tag +([0-9]+))?/i;
++		this.quadRegex = /(quad|quadext)(( +([0-9]+)){4})( +tag +([0-9]+))?/i;
++		this.triangleRegex = /(triangle|triangleext)(( +([0-9]+)){3})( +tag +([0-9]+))?/i;
++		this.textureRegex = /(texture) +([A-Za-z0-9_\-\/:\.]+)* *(mask *([A-Za-z0-9_\-\/:\.]+))?/i;
++		this.colorRegex = /(color)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3})/i;
++		this.opacityRegex = /(opacity)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?)/i;
++		this.identityRegex = /^identity$/i;
++		this.transformRegex = /(transform)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){16})/i;
++		this.translateRegex = /(translate)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3})/i;
++		this.scaleRegex = /(scale)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3})/i;
++		this.rotateRegex = /(rotate)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){4})$/i;
++		this.surfaceRegex = /(surface)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3})/i;
++		this.ambientRegex = /(ambient)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?)/i;
++		this.diffuseRegex = /(diffuse)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?)/i;
++		this.specularRegex = /(specular)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?)/i;
++		this.materialModeRegex = /((add)?materialmode(s)?) +([A-Za-z0-9_\-]+)/i;
++		this.collisionRegex = /(collision) +(on|off)/i;
++		this.lightsamplingRegex = /(lightsampling) +(facet|vertex)/i;
++		this.geometrysamplingRegex = /(geometrysampling) +(pointcloud|wireframe|solid)/i;
++		this.texturemodesRegex = /(texturemode(s)?)(( +null)|( +lit| +foreshorten| +filter)+)/i;
++		this.addtexturemodeRegex = /(addtexturemode)( +lit| +foreshorten| +filter)/i;
++		this.removetexturemodeRegex = /(removetexturemode)( +lit| +foreshorten| +filter)/i;
++		this.textureaddressmodeRegex = /(#\!)? *(textureaddressmode) +(wrap|mirror|clamp)/i;
++		this.axisalignmentRegex = /(axisalignment) +(none|zorientx|zorienty|xyz)/i;
++		this.blockRegex = /(block)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3})/i;
++		this.coneRegex = /(cone)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){2}( +[-+]?[0-9]+))/i;
++		this.cylinderRegex = /(cylinder)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3}( +[-+]?[0-9]+))/i;
++		this.discRegex = /(disc)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){2}( +[-+]?[0-9]+))/i;
++		this.hemisphereRegex = /(hemisphere)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?)( +[-+]?[0-9]+))/i;
++		this.sphereRegex = /(sphere)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?)( +[-+]?[0-9]+))/i;
++		this.tagRegex = /(tag)( +[-+]?[0-9]+)/i;
+ 
+ 		this.fflate = null;
+ 		this.textureExtension = '.jpg';
+@@ -2170,7 +2172,7 @@ class RWXLoader extends Loader {
+ 		const scale_ten = new Matrix4();
+ 		scale_ten.makeScale( 10.0, 10.0, 10.0 );
+ 
+-		const lines = str.split( /[\n\r]+/g );
++		const lines = str.split( this.newLineRegex );
+ 
+ 		// Ready root object group
+ 		ctx.rootGroup = new Group();
+@@ -2180,21 +2182,18 @@ class RWXLoader extends Loader {
+ 
+ 		for ( let i = 0, l = lines.length; i < l; i ++ ) {
+ 
+-			let line = lines[ i ];
++			// Replace tabs with spaces
++			let line = lines[ i ].trim().replace( this.tabsRegex, ' ' );
+ 
+ 			// Strip comment away (if any)
+ 			let res = this.nonCommentRegex.exec( line );
  			if ( res != null ) {
+ 
+-				line = res[ 1 ];
++				line = res[ 1 ].trim();
+ 
+ 			}
+ 
+-			// Replace tabs with spaces
+-			line = line.trim().replace( /\t/g, ' ' );
+-
+-			res = this.clumpbeginRegex.exec( line );
+-			if ( res != null ) {
++			if ( this.clumpbeginRegex.test( line ) ) {
+ 
+ 				makeMeshToCurrentGroup( ctx );
+ 				clearGeometry( ctx );
+@@ -2206,8 +2205,7 @@ class RWXLoader extends Loader {
+ 
+ 			}
+ 
+-			res = this.clumpendRegex.exec( line );
+-			if ( res != null ) {
++			if ( this.clumpendRegex.test( line ) ) {
+ 
+ 				makeMeshToCurrentGroup( ctx );
+ 
+@@ -2220,8 +2218,7 @@ class RWXLoader extends Loader {
+ 
+ 			}
+ 
+-			res = this.transformbeginRegex.exec( line );
+-			if ( res != null ) {
++			if ( this.transformbeginRegex.test( line ) ) {
+ 
+ 				saveCurrentTransform( ctx );
+ 
+@@ -2229,8 +2226,7 @@ class RWXLoader extends Loader {
+ 
+ 			}
+ 
+-			res = this.transformendRegex.exec( line );
+-			if ( res != null ) {
++			if ( this.transformendRegex.test( line ) ) {
+ 
+ 				loadCurrentTransform( ctx );
+ 
+@@ -2260,8 +2256,7 @@ class RWXLoader extends Loader {
+ 
+ 			}
+ 
+-			res = this.protoendRegex.exec( line );
+-			if ( res != null ) {
++			if ( this.protoendRegex.test( line ) ) {
+ 
+ 				makeMeshToCurrentGroup( ctx );
+ 
+@@ -2511,10 +2506,10 @@ class RWXLoader extends Loader {
+ 
+ 			}
+ 
+-			res = this.identityRegex.exec( line );
+-			if ( res != null ) {
++			if ( this.identityRegex.test( line ) ) {
  
  				ctx.currentTransform.identity();
 +				continue;
  
  			}
  
+@@ -2761,7 +2756,7 @@ class RWXLoader extends Loader {
+ 			res = this.addtexturemodeRegex.exec( line );
+ 			if ( res != null ) {
+ 
+-				const tm = res[ 2 ].trim().toUpperCase();
++				const tm = res[ 2 ].trimStart().toUpperCase();
+ 
+ 				// Do not push the same texture mode twice
+ 				if ( ! ctx.materialTracker.currentRWXMaterial.texturemodes.includes( TextureMode[ tm ] ) ) {
+@@ -2778,7 +2773,7 @@ class RWXLoader extends Loader {
+ 			res = this.removetexturemodeRegex.exec( line );
+ 			if ( res != null ) {
+ 
+-				const tm = res[ 2 ].trim().toUpperCase();
++				const tm = res[ 2 ].trimStart().toUpperCase();
+ 
+ 				// Cannot remove Filter mode when forcing texture filtering
+ 				if ( this.forceTextureFiltering && TextureMode[ tm ] === TextureMode.FILTER ) continue;

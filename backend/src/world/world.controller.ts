@@ -59,27 +59,27 @@ export class WorldController {
     }
   ) {
     const min_x =
-      query.min_x != null && /^-?\d+$/.test(query.min_x)
+      query.min_x != null && /^-?[0-9]+$/.test(query.min_x)
         ? parseInt(query.min_x)
         : null
     const max_x =
-      query.max_x != null && /^-?\d+$/.test(query.max_x)
+      query.max_x != null && /^-?[0-9]+$/.test(query.max_x)
         ? parseInt(query.max_x)
         : null
     const min_y =
-      query.min_y != null && /^-?\d+$/.test(query.min_y)
+      query.min_y != null && /^-?[0-9]+$/.test(query.min_y)
         ? parseInt(query.min_y)
         : null
     const max_y =
-      query.max_y != null && /^-?\d+$/.test(query.max_y)
+      query.max_y != null && /^-?[0-9]+$/.test(query.max_y)
         ? parseInt(query.max_y)
         : null
     const min_z =
-      query.min_z != null && /^-?\d+$/.test(query.min_z)
+      query.min_z != null && /^-?[0-9]+$/.test(query.min_z)
         ? parseInt(query.min_z)
         : null
     const max_z =
-      query.max_z != null && /^-?\d+$/.test(query.max_z)
+      query.max_z != null && /^-?[0-9]+$/.test(query.max_z)
         ? parseInt(query.max_z)
         : null
 
@@ -108,11 +108,11 @@ export class WorldController {
     }
   ) {
     const pageX =
-      query.page_x != null && /^-?\d+$/.test(query.page_x)
+      query.page_x != null && /^-?[0-9]+$/.test(query.page_x)
         ? parseInt(query.page_x)
         : 0
     const pageZ =
-      query.page_z != null && /^-?\d+$/.test(query.page_z)
+      query.page_z != null && /^-?[0-9]+$/.test(query.page_z)
         ? parseInt(query.page_z)
         : 0
 

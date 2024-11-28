@@ -18,7 +18,7 @@ describe('DbService', () => {
 
   describe('onModuleInit', () => {
     it('should call $connect', async () => {
-      const spy = jest
+      const spy = vi
         .spyOn(DbService.prototype, '$connect')
         .mockImplementation(async () => Promise.resolve())
 

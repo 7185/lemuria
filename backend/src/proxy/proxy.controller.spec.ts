@@ -15,7 +15,7 @@ describe('ProxyController', () => {
         ProxyService,
         {
           provide: CACHE_MANAGER,
-          useFactory: jest.fn()
+          useFactory: vi.fn()
         }
       ]
     }).compile()

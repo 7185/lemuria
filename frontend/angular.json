@@ -15,7 +15,7 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular/build:application",
+          "builder": "@angular-devkit/build-angular:application",
           "options": {
             "outputPath": "../static/",
             "baseHref": "/",
@@ -36,6 +36,9 @@
               "src/styles/theme.scss",
               "src/styles/main.scss"
             ],
+            "security": {
+              "autoCsp": true
+            },
             "scripts": []
           },
           "configurations": {
@@ -69,7 +72,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular/build:dev-server",
+          "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
               "buildTarget": "frontend:build:production"

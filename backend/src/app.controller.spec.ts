@@ -18,11 +18,11 @@ describe(AppController.name, () => {
   describe('unknown api route', () => {
     it('should return a 404 status code', () => {
       const statusResponseMock = {
-        send: jest.fn((x) => x)
+        send: vi.fn((x) => x)
       }
       const responseMock = {
-        status: jest.fn().mockReturnValue(statusResponseMock),
-        send: jest.fn((x) => x)
+        status: vi.fn().mockReturnValue(statusResponseMock),
+        send: vi.fn((x) => x)
       } as unknown as FastifyReply
       appController.notImplemented(responseMock)
       expect(responseMock.status).toHaveBeenCalledWith(404)

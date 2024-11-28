@@ -7,6 +7,7 @@
     "esModuleInterop": true,
     "strict": true,
     "strictNullChecks": true,
-    "allowImportingTsExtensions": false
+    "allowImportingTsExtensions": false,
+    "types": ["vitest/globals"]
   }
 }

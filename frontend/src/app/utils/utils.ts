@@ -29,7 +29,7 @@ export class Utils {
   static stringToPos(pos: string): Vector3 {
     const r = new Vector3()
     const [, zNum, , zHemi, xNum, , xHemi, , yNum] =
-      /([+-]?(\d*\.)?\d+)(N|S)\s([+-]?(\d*\.)?\d+)(W|E)(\s([+-]?(\d*\.)?\d+)a)?/i.exec(
+      /([+-]?([0-9]*\.)?[0-9]+)(N|S)\s([+-]?([0-9]*\.)?[0-9]+)(W|E)(\s([+-]?([0-9]*\.)?[0-9]+)a)?/i.exec(
         pos
       ) || []
     if (zNum && xNum) {

@@ -1,7 +1,7 @@
 import {Test, TestingModule} from '@nestjs/testing'
 import {FastifyAdapter, NestFastifyApplication} from '@nestjs/platform-fastify'
 import {fastifyCookie} from '@fastify/cookie'
-import * as request from 'supertest'
+import request from 'supertest'
 import {UserModule} from '../src/user/user.module'
 import {config} from '../src/app.config'
 

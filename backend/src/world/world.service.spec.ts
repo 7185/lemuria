@@ -11,7 +11,7 @@ describe(WorldService.name, () => {
       providers: [
         WorldService,
         DbService,
-        {provide: CACHE_MANAGER, useFactory: jest.fn()}
+        {provide: CACHE_MANAGER, useFactory: vi.fn()}
       ]
     }).compile()
 

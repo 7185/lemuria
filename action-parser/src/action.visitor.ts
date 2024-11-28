@@ -81,7 +81,7 @@ class ActionVisitor extends BaseActionVisitor {
       targetName: params.shift(),
       animation: params.shift()
     })
-    if (params.some((value) => !/^\d+$/.test(value))) {
+    if (params.some((value) => !/^[0-9]+$/.test(value))) {
       return {}
     }
     Object.assign(res, {
@@ -320,7 +320,7 @@ class ActionVisitor extends BaseActionVisitor {
     const worldName = resource[0]
     let [, coordA, coordB, coordC, coordD] = resource
 
-    if (/^[+-\d]/.test(worldName)) {
+    if (/^[0-9-+]/.test(worldName)) {
       // Relative teleport
       coordD = coordC
       coordC = coordB

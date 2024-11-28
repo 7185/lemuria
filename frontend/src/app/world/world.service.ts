@@ -527,7 +527,7 @@ export class WorldService {
     const entryPoint = new Vector3()
     let entryYaw = 0
     if (entry) {
-      const yawMatch = /\s([-+]?\d+)$/.exec(entry)
+      const yawMatch = /\s([-+]?[0-9]+)$/.exec(entry)
       entryYaw = yawMatch ? parseInt(yawMatch[1], 10) : entryYaw
       entryPoint.copy(Utils.stringToPos(entry))
     }

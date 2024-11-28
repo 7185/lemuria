@@ -28,7 +28,12 @@ html, body, app-root {
 
 // mat menu height
 .cdk-overlay-pane {
-  max-height: 80vh;
+  max-height: 80vh !important;
+}
+
+// mat menu item height
+.mat-mdc-menu-item {
+  min-height: 36px !important;
 }
 
 // mat badge position

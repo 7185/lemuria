@@ -1,7 +1,7 @@
 import {Test, TestingModule} from '@nestjs/testing'
 import {FastifyAdapter, NestFastifyApplication} from '@nestjs/platform-fastify'
 import {CacheModule} from '@nestjs/cache-manager'
-import * as request from 'supertest'
+import request from 'supertest'
 import {WorldModule} from '../src/world/world.module'
 
 describe('AppController (e2e)', () => {

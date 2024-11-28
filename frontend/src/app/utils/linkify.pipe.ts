@@ -3,7 +3,6 @@ import type {PipeTransform} from '@angular/core'
 import linkifyStr from 'linkify-string'
 
 @Pipe({
-  standalone: true,
   name: 'linkify'
 })
 export class LinkifyPipe implements PipeTransform {

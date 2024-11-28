@@ -51,7 +51,7 @@ describe(WorldController.name, () => {
         DbService,
         {
           provide: CACHE_MANAGER,
-          useValue: {get: () => null, set: () => jest.fn()}
+          useValue: {get: () => null, set: () => vi.fn()}
         }
       ]
     })
@@ -74,7 +74,7 @@ describe(WorldController.name, () => {
         DbService,
         {
           provide: CACHE_MANAGER,
-          useValue: {get: () => null, set: () => jest.fn()}
+          useValue: {get: () => null, set: () => vi.fn()}
         }
       ]
     })
@@ -100,11 +100,11 @@ describe(WorldController.name, () => {
   describe('worldGet', () => {
     it('should return none', async () => {
       const statusResponseMock = {
-        send: jest.fn((x) => x)
+        send: vi.fn((x) => x)
       }
       const responseMock = {
-        status: jest.fn().mockReturnValue(statusResponseMock),
-        send: jest.fn((x) => x)
+        status: vi.fn().mockReturnValue(statusResponseMock),
+        send: vi.fn((x) => x)
       } as unknown as FastifyReply
       expect(
         await offlineController.worldGet('cookie', '1', responseMock)
@@ -113,11 +113,11 @@ describe(WorldController.name, () => {
     })
     it('should return world 1', async () => {
       const statusResponseMock = {
-        send: jest.fn((x) => x)
+        send: vi.fn((x) => x)
       }
       const responseMock = {
-        status: jest.fn().mockReturnValue(statusResponseMock),
-        send: jest.fn((x) => x)
+        status: vi.fn().mockReturnValue(statusResponseMock),
+        send: vi.fn((x) => x)
       } as unknown as FastifyReply
       expect(
         await controller.worldGet('cookie', '1', responseMock)

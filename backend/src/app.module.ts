@@ -30,11 +30,11 @@ import {config} from './app.config'
           userAgent: req.headers['user-agent']
         }),
         customLogLevel: function (_req, res, err) {
-          if (res.statusCode >= 400 && res.statusCode < 500) {
-            return 'warn'
-          } else if (res.statusCode >= 500 || err) {
+          if (res.statusCode >= 500 || err) {
             return 'error'
-          } else if (res.statusCode >= 300 && res.statusCode < 400) {
+          } else if (res.statusCode >= 400) {
+            return 'warn'
+          } else if (res.statusCode >= 300) {
             return 'silent'
           }
           return 'info'
