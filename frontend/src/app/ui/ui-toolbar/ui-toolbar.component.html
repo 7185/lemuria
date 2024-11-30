@@ -15,7 +15,7 @@
   </button>
   <mat-menu #worldsMenu="matMenu">
     <ng-template matMenuContent>
-      @for (w of worldSvc.worldList(); track w) {
+      @for (w of worldSvc.worldList(); track w.id) {
       <button mat-menu-item (click)="teleportWorld(w.name)">
         <div class="world-item">
           <span><fa-icon [icon]="faGlobe"/> {{ w.name }}</span>
@@ -46,7 +46,7 @@
   </button>
   <mat-menu #avatarMenu="matMenu" class="dropdown-menu">
     <ng-template matMenuContent>
-      @for (a of worldSvc.avatarList; track a; let index = $index) {
+      @for (a of worldSvc.avatarList; track $index; let index = $index) {
       <button mat-menu-item (click)="changeAvatar(index)">
         <fa-icon [class.invisible]="index !== avatarId" [icon]="faCheck"/> {{ a.name }}
       </button>

@@ -1,13 +1,19 @@
 import {effect, inject, Injectable, signal, untracked} from '@angular/core'
-import {EMPTY, firstValueFrom, from, of, Subject, throwError} from 'rxjs'
-import type {Observable, Subscription} from 'rxjs'
 import {
-  bufferCount,
   catchError,
   concatMap,
   debounceTime,
-  mergeMap
-} from 'rxjs/operators'
+  EMPTY,
+  firstValueFrom,
+  from,
+  map,
+  mergeMap,
+  Subject,
+  takeUntil,
+  throwError,
+  toArray
+} from 'rxjs'
+import type {Observable, Subscription} from 'rxjs'
 import {Box3, Euler, Group, LOD, Vector3} from 'three'
 import type {Object3D} from 'three'
 import {UserService} from '../user'
@@ -68,6 +74,7 @@ export class WorldService {
   private readonly teleportSvc = inject(TeleportService)
   private readonly buildSvc = inject(BuildService)
 
+  private cancelPropsLoading = new Subject<void>()
   private worldName = 'Nowhere'
   private lastChunk: number[] = []
 
@@ -236,17 +243,16 @@ export class WorldService {
         animationManager,
         this.engineSvc.avatar
       )
-      const savedAvatars = this.settings.get('avatar')
-      const avatarMap =
-        savedAvatars != null
-          ? new Map<number, number>(savedAvatars)
-          : new Map<number, number>()
+      const avatarMap = new Map<number, number>(
+        this.settings.get('avatar') || []
+      )
       avatarMap.set(this.worldId, avatarId)
       this.settings.set('avatar', Array.from(avatarMap.entries()))
     })
   }
 
   destroyWorld() {
+    this.cancelPropsLoading.next()
     this.resetChunks()
     this.engineSvc.resetChunkLODMap()
     this.uAvatarListener?.unsubscribe()
@@ -370,15 +376,18 @@ export class WorldService {
 
   // this method is to be called on each position change to update the state of chunks if needed
   private autoUpdateChunks(pos: Vector3) {
+    if (this.worldId === 0) {
+      // Nowhere
+      return
+    }
     const [chunkX, chunkZ] = this.getChunkTile(pos)
     this.engineSvc.currentChunk = [chunkX, chunkZ]
 
-    // Do nothing if the current chunk didn't change or if we're nowhere
+    // Do nothing if the current chunk didn't change
     if (
-      (this.lastChunk.length &&
-        this.lastChunk[0] === chunkX &&
-        this.lastChunk[1] === chunkZ) ||
-      this.worldId === 0
+      this.lastChunk.length &&
+      this.lastChunk[0] === chunkX &&
+      this.lastChunk[1] === chunkZ
     ) {
       return
     }
@@ -432,8 +441,12 @@ export class WorldService {
         z * this.chunkDepth + this.chunkDepth / 2
       )
       .pipe(
-        concatMap((props: {entries: PropEntry[]}) =>
-          from(props.entries).pipe(
+        takeUntil(this.cancelPropsLoading),
+        mergeMap((props: {entries: PropEntry[]}) => {
+          if (props.entries.length === 0) {
+            return EMPTY
+          }
+          return from(props.entries).pipe(
             mergeMap((prop: PropEntry) =>
               this.loadProp(
                 prop[0],
@@ -445,21 +458,18 @@ export class WorldService {
                 prop[10]
               )
             ),
-            mergeMap((prop: Object3D) => {
+            takeUntil(this.cancelPropsLoading),
+            map((prop: Object3D) => {
+              // Adjust position of objects based on the center of the chunk
               const chunkOffset = new Vector3(chunkPos.x, 0, chunkPos.z)
               prop.position.sub(chunkOffset)
               prop.updateMatrix()
-              return of(prop)
-            }), // Adjust position of objects based on the center of the chunk
-            bufferCount(props.entries.length), // Wait for all props to be loaded before proceeding
-            mergeMap((objs: Object3D[]) => {
+              return prop
+            }),
+            toArray(), // Wait for all props to be loaded before proceeding
+            map((objs: Object3D[]) => {
               const chunkGroup = new Group().add(...objs)
               // Set metadata on the chunk
-              const lod = new LOD()
-              lod.userData.rwx = {axisAlignment: 'none'}
-              lod.userData.world = {chunk: {x, z}}
-
-              chunkGroup.userData.rwx = {axisAlignment: 'none'}
               chunkGroup.userData.world = {
                 chunk: {x: chunkPos.x, z: chunkPos.z}
               }
@@ -469,19 +479,19 @@ export class WorldService {
                 .subscribe(() => {
                   PlayerCollider.updateChunkBVH(chunkGroup)
                 })
-
+              chunkGroup.userData.bvhUpdate.next()
+              const lod = new LOD()
+              lod.userData.world = {chunk: {x, z}}
               lod.addLevel(chunkGroup, this.maxLodDistance)
               lod.addLevel(new Group(), this.maxLodDistance + 1)
               lod.position.set(chunkPos.x, 0, chunkPos.z)
               lod.autoUpdate = false
               lod.updateMatrix()
-              chunkGroup.parent!.visible = false
-              chunkGroup.userData.bvhUpdate.next()
-
-              return of(lod)
+              lod.visible = false
+              return lod
             })
           )
-        ),
+        }),
         catchError((err) => throwError(() => ({x, z, err})))
       )
   }
@@ -493,12 +503,13 @@ export class WorldService {
     const absPos = object.position.clone().add(oldChunkPos)
     const [chunkX, chunkZ] = this.getChunkTile(absPos)
 
-    const newLOD = this.engineSvc.getLODs().find((lod) => {
-      return (
-        lod.userData.world.chunk.x === chunkX &&
-        lod.userData.world.chunk.z === chunkZ
+    const newLOD = this.engineSvc
+      .getLODs()
+      .find(
+        (lod) =>
+          lod.userData.world.chunk.x === chunkX &&
+          lod.userData.world.chunk.z === chunkZ
       )
-    })
 
     if (newLOD) {
       oldChunk.remove(object)
@@ -571,11 +582,9 @@ export class WorldService {
     this.http.avatars(this.propSvc.path()).subscribe((list) => {
       this.avatarList = list
       // Set first avatar on self
-      const savedAvatars = this.settings.get('avatar')
-      const avatarMap =
-        savedAvatars != null
-          ? new Map<number, number>(savedAvatars)
-          : new Map<number, number>()
+      const avatarMap = new Map<number, number>(
+        this.settings.get('avatar') || []
+      )
       this.avatarSub.next(avatarMap.get(this.worldId) || 0)
       // Force list update to create users now that avatars are known
       this.userSvc.userList.set([...this.userSvc.userList()])

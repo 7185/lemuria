@@ -40,6 +40,7 @@ import {
     FaIconComponent,
     FaLayersComponent,
     FaLayersTextComponent,
+    CdkDrag,
     CdkDragHandle,
     MatIconButton,
     MatInput,
@@ -50,7 +51,6 @@ import {
   host: {
     '[class.d-none]': 'displayed()'
   },
-  hostDirectives: [CdkDrag],
   selector: 'app-ui-prop-edit',
   templateUrl: './ui-prop-edit.component.html',
   styleUrl: './ui-prop-edit.component.scss',

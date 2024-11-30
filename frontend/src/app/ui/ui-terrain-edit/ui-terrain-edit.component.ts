@@ -31,6 +31,7 @@ import {
     FormsModule,
     FaIconComponent,
     FaLayersComponent,
+    CdkDrag,
     CdkDragHandle,
     MatIconButton,
     MatCheckbox,
@@ -42,7 +43,6 @@ import {
   host: {
     '[class.d-none]': 'displayed()'
   },
-  hostDirectives: [CdkDrag],
   selector: 'app-ui-terrain-edit',
   templateUrl: './ui-terrain-edit.component.html',
   styleUrl: './ui-terrain-edit.component.scss',

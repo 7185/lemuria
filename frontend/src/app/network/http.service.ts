@@ -1,11 +1,10 @@
-import {throwError} from 'rxjs'
+import {catchError, map, tap, throwError} from 'rxjs'
 import {computed, inject, Injectable, signal} from '@angular/core'
 import {HttpClient} from '@angular/common/http'
 import type {HttpResponse} from '@angular/common/http'
 import {Router} from '@angular/router'
 import {environment} from '../../environments/environment'
 import {User} from '../user'
-import {catchError, map, tap} from 'rxjs/operators'
 
 export type PropEntry = [
   number,

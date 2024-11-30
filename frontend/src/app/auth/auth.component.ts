@@ -7,7 +7,7 @@ import {MatButton, MatIconButton} from '@angular/material/button'
 import {MatError, MatInput, MatSuffix} from '@angular/material/input'
 import {MatFormField, MatLabel} from '@angular/material/form-field'
 import {FaIconComponent} from '@fortawesome/angular-fontawesome'
-import {finalize} from 'rxjs/operators'
+import {finalize} from 'rxjs'
 import {HttpService} from '../network'
 import {LogoComponent} from '../logo/logo.component'
 import {

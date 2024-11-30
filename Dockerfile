@@ -23,6 +23,7 @@ RUN apk add --update --no-cache icu-libs && \
     python -m venv /venv && \
     pip install --no-cache-dir -r /backend/requirements.txt && \
     prisma generate --schema /backend/prisma/schema.prisma --generator client-py && \
+    rm -r /root/.cache/prisma /root/.cache/prisma-python/nodeenv /root/.npm && \
     chown nobody: -R /root /backend
 CMD ["hypercorn", "--config", "hypercorn.toml", "app:app"]
 VOLUME ["/app.db"]
@@ -39,9 +40,11 @@ COPY package.json package-lock.json /root/
 RUN npm -w backend ci && \
     npx -w backend prisma generate --generator client && \
     npm -w backend run build && \
+    mv backend/dist / && \
     npm -w backend prune --omit=dev && \
-    rm -r .npm && \
-    cp -r backend/dist / && \
+    npx -y nm-prune --force && \
+    rm package*json && \
+    rm -r .cache .npm backend && \
     chown nobody: -R /root /dist /static
 CMD ["node", "/dist/main"]
 VOLUME ["/app.db"]

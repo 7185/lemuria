@@ -1,6 +1,5 @@
 import {inject, Injectable} from '@angular/core'
-import {fromEvent} from 'rxjs'
-import {filter, tap} from 'rxjs/operators'
+import {filter, fromEvent, tap} from 'rxjs'
 import {SettingsService} from '../settings/settings.service'
 
 const pressedKeys = [

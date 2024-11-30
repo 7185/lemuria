@@ -35,7 +35,7 @@
     "linkify-string": "^4.1.4",
     "linkifyjs": "^4.1.4",
     "rxjs": "~7.8.1",
-    "three": "^0.170.0",
+    "three": "^0.171.0",
     "three-mesh-bvh": "^0.8.3",
     "three-rwx-loader": "^0.12.4",
     "tslib": "^2.8.1"
@@ -48,12 +48,12 @@
     "@types/three": "^0.170.0",
     "@types/webgl2": "^0.0.11",
     "@typescript-eslint/types": "^8.10.0",
-    "angular-eslint": "^18.4.2",
-    "eslint": "^9.15.0",
+    "angular-eslint": "^19.0.0",
+    "eslint": "^9.16.0",
     "patch-package": "^8.0.0",
     "prettier": "^3.4.1",
     "ts-node": "^10.9.2",
-    "typescript": "~5.5.4",
+    "typescript": ">=5.5.0 <5.7.0",
     "typescript-eslint": "^8.16.0"
   }
 }

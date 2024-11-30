@@ -143,10 +143,8 @@ class ActionVisitor extends BaseActionVisitor {
       resource: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
     }
     const args = ctx.coronaArgs?.map((arg) => this.visit(arg))[0]
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
+    if (args) {
+      Object.assign(res, ...args)
     }
     return res
   }
@@ -162,10 +160,8 @@ class ActionVisitor extends BaseActionVisitor {
       commandType: 'light'
     }
     const args = ctx.lightArgs?.map((arg) => this.visit(arg))[0]
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
+    if (args) {
+      Object.assign(res, ...args)
     }
     return res
   }
@@ -176,10 +172,8 @@ class ActionVisitor extends BaseActionVisitor {
       url: ctx.Resource.map((identToken) => identToken.image)[0]
     }
     const args = ctx.mediaArgs?.map((arg) => this.visit(arg))[0]
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
+    if (args) {
+      Object.assign(res, ...args)
     }
     return res
   }
@@ -202,10 +196,8 @@ class ActionVisitor extends BaseActionVisitor {
     }
 
     const args = ctx.moveArgs?.map((arg: CstNode) => this.visit(arg))[0]
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
+    if (args) {
+      Object.assign(res, ...args)
     }
     return res
   }
@@ -230,10 +222,8 @@ class ActionVisitor extends BaseActionVisitor {
       resource: ctx.Resource.map((identToken) => identToken.image)[0]
     }
     const args = ctx.pictureArgs?.map((arg) => this.visit(arg))[0]
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
+    if (args) {
+      Object.assign(res, ...args)
     }
     return res
   }
@@ -256,10 +246,8 @@ class ActionVisitor extends BaseActionVisitor {
     }
 
     const args = ctx.moveArgs?.map((arg: CstNode) => this.visit(arg))[0]
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
+    if (args) {
+      Object.assign(res, ...args)
     }
     return res
   }
@@ -284,10 +272,8 @@ class ActionVisitor extends BaseActionVisitor {
       text = text.replace(/(^"|"$)/g, '')
       Object.assign(res, {text})
     }
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
+    if (args) {
+      Object.assign(res, ...args)
     }
     return res
   }
@@ -344,10 +330,8 @@ class ActionVisitor extends BaseActionVisitor {
       texture: ctx.Resource.map((identToken) => identToken.image)[0]
     }
     const args = ctx.textureArgs?.map((arg) => this.visit(arg))[0]
-    if (args != null) {
-      args.forEach((arg: object) => {
-        Object.assign(res, arg)
-      })
+    if (args) {
+      Object.assign(res, ...args)
     }
     return res
   }
