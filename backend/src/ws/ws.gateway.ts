@@ -50,6 +50,8 @@ export class WsGateway {
                 message.data.ori.y,
                 message.data.ori.z
               ]
+              user.state = message.data.state
+              user.gesture = message.data.gesture
               break
             case 'avatar':
               user.avatar = message.data
