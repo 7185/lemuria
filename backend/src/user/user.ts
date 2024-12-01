@@ -13,6 +13,7 @@ export class User {
   state: string
   gesture: string | null
   positionTimer?: Subscription
+  heartbeat?: Subscription
 
   constructor(params: User | object = {}) {
     this.id = null

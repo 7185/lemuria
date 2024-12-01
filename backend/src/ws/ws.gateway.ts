@@ -1,5 +1,5 @@
 import {WebSocketGateway, WebSocketServer} from '@nestjs/websockets'
-import {timer} from 'rxjs'
+import {noop, timer} from 'rxjs'
 import type {IncomingMessage} from 'http'
 import {Server, WebSocket} from 'ws'
 import {UserService} from '../user/user.service'
@@ -83,6 +83,9 @@ export class WsGateway {
     user.positionTimer = timer(0, config.positionUpdateTick).subscribe(() => {
       this.userSvc.sendPosition(user)
     })
+    user.heartbeat = timer(0, config.heartbeatRate).subscribe(() => {
+      client.ping(noop)
+    })
     this.userSvc.broadcast({type: 'join', data: user.name})
     this.userSvc.broadcastUserlist()
   }
@@ -94,6 +97,7 @@ export class WsGateway {
           user.websockets.delete(client)
           if (user.websockets.size === 0) {
             user.positionTimer?.unsubscribe()
+            user.heartbeat?.unsubscribe()
             user.connected = false
             this.userSvc.broadcast({
               type: 'part',

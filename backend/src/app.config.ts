@@ -14,5 +14,6 @@ export const config: any = {
     refreshPath: '/api/v1/auth/renew'
   },
   positionUpdateTick: 200,
+  heartbeatRate: 60000,
   secret: '**changeme**'
 }
