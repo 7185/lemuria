@@ -186,13 +186,12 @@ class ActionVisitor extends BaseActionVisitor {
 
     if (ctx.Resource.length === 1) {
       res.distance.y = parseFloat(ctx.Resource[0].image)
-    } else if (ctx.Resource.length === 2) {
+    } else {
       res.distance.x = parseFloat(ctx.Resource[0].image)
       res.distance.y = parseFloat(ctx.Resource[1].image)
-    } else if (ctx.Resource.length === 3) {
-      res.distance.x = parseFloat(ctx.Resource[0].image)
-      res.distance.y = parseFloat(ctx.Resource[1].image)
-      res.distance.z = parseFloat(ctx.Resource[2].image)
+      if (ctx.Resource.length === 3) {
+        res.distance.z = parseFloat(ctx.Resource[2].image)
+      }
     }
 
     const args = ctx.moveArgs?.map((arg: CstNode) => this.visit(arg))[0]
@@ -236,13 +235,12 @@ class ActionVisitor extends BaseActionVisitor {
 
     if (ctx.Resource.length === 1) {
       res.speed.y = parseFloat(ctx.Resource[0].image)
-    } else if (ctx.Resource.length === 2) {
+    } else {
       res.speed.x = parseFloat(ctx.Resource[0].image)
       res.speed.y = parseFloat(ctx.Resource[1].image)
-    } else if (ctx.Resource.length === 3) {
-      res.speed.x = parseFloat(ctx.Resource[0].image)
-      res.speed.y = parseFloat(ctx.Resource[1].image)
-      res.speed.z = parseFloat(ctx.Resource[2].image)
+      if (ctx.Resource.length === 3) {
+        res.speed.z = parseFloat(ctx.Resource[2].image)
+      }
     }
 
     const args = ctx.moveArgs?.map((arg: CstNode) => this.visit(arg))[0]

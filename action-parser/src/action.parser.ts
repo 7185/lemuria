@@ -504,24 +504,18 @@ export class ActionParser extends CstParser {
   // Command args
 
   coronaArgs = this.RULE('coronaArgs', () => {
-    const args: CstNode[] = []
     this.MANY(() => {
-      const arg = this.OR([
+      this.OR([
         {ALT: () => this.SUBRULE(this.maskParameter)},
         {ALT: () => this.SUBRULE(this.nameParameter)},
         {ALT: () => this.SUBRULE(this.sizeParameter)}
       ])
-      if (arg) {
-        args.push(arg)
-      }
     })
-    return args
   })
 
   lightArgs = this.RULE('lightArgs', () => {
-    const args: CstNode[] = []
     this.MANY(() => {
-      const arg = this.OR([
+      this.OR([
         {ALT: () => this.SUBRULE(this.angleParameter)},
         {ALT: () => this.SUBRULE(this.brightnessParameter)},
         {ALT: () => this.SUBRULE(this.colorParameter)},
@@ -532,31 +526,21 @@ export class ActionParser extends CstParser {
         {ALT: () => this.SUBRULE(this.timeParameter)},
         {ALT: () => this.SUBRULE(this.typeParameter)}
       ])
-      if (arg) {
-        args.push(arg)
-      }
     })
-    return args
   })
 
   mediaArgs = this.RULE('mediaArgs', () => {
-    const args: CstNode[] = []
     this.MANY(() => {
-      const arg = this.OR([
+      this.OR([
         {ALT: () => this.SUBRULE(this.radiusParameter)},
         {ALT: () => this.SUBRULE(this.nameParameter)}
       ])
-      if (arg) {
-        args.push(arg)
-      }
     })
-    return args
   })
 
   moveArgs = this.RULE('moveArgs', () => {
-    const args: CstNode[] = []
     this.MANY(() => {
-      const arg = this.OR([
+      this.OR([
         {ALT: () => this.SUBRULE(this.timeParameter)},
         {ALT: () => this.SUBRULE(this.waitParameter)},
         {ALT: () => this.SUBRULE(this.nameParameter)},
@@ -564,55 +548,36 @@ export class ActionParser extends CstParser {
         {ALT: () => this.CONSUME(Reset)},
         {ALT: () => this.CONSUME(Sync)}
       ])
-      if (arg) {
-        args.push(arg)
-      }
     })
-    return args
   })
 
   pictureArgs = this.RULE('pictureArgs', () => {
-    const args: CstNode[] = []
-    this.MANY(() => {
-      const arg = this.OR([
+    this.MANY(() =>
+      this.OR([
         {ALT: () => this.SUBRULE(this.nameParameter)},
         {ALT: () => this.SUBRULE(this.updateParameter)}
       ])
-      if (arg) {
-        args.push(arg)
-      }
-    })
-    return args
+    )
   })
 
   signArgs = this.RULE('signArgs', () => {
-    const args: CstNode[] = []
     this.MANY(() => {
-      const arg = this.OR([
+      this.OR([
         {ALT: () => this.SUBRULE(this.colorParameter)},
         {ALT: () => this.SUBRULE(this.bcolorParameter)},
         {ALT: () => this.SUBRULE(this.nameParameter)}
       ])
-      if (arg) {
-        args.push(arg)
-      }
     })
-    return args
   })
 
   textureArgs = this.RULE('textureArgs', () => {
-    const args: CstNode[] = []
     this.MANY(() => {
-      const arg = this.OR([
+      this.OR([
         {ALT: () => this.SUBRULE(this.maskParameter)},
         {ALT: () => this.SUBRULE(this.nameParameter)},
         {ALT: () => this.SUBRULE(this.tagParameter)}
       ])
-      if (arg) {
-        args.push(arg)
-      }
     })
-    return args
   })
 
   // Generic rules
@@ -663,21 +628,19 @@ export class ActionParser extends CstParser {
   })
 
   action = this.RULE('action', () => {
-    const trigger = this.SUBRULE(this.trigger) as unknown
-    const firstCommand = this.SUBRULE(this.command)
-    const commands = [firstCommand]
+    const trigger = this.SUBRULE(this.trigger) as unknown as string
+    const commands = [this.SUBRULE(this.command)]
     this.MANY(() => {
       this.CONSUME(Comma)
       commands.push(this.SUBRULE1(this.command))
     })
     // Optional trailing commas
     this.OPTION(() => this.MANY1(() => this.CONSUME1(Comma)))
-    return {[trigger as string]: commands}
+    return {[trigger]: commands}
   })
 
   actions = this.RULE('actions', () => {
-    const firstAction = this.SUBRULE(this.action)
-    const actionList = [firstAction]
+    const actionList = [this.SUBRULE(this.action)]
     this.MANY(() => {
       this.CONSUME(Semicolon)
       const nextAction = this.SUBRULE1(this.action)

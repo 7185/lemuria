@@ -38,7 +38,6 @@ COPY backend /root/backend/
 COPY --from=frontend --chown=nobody:nobody /root/static /static
 COPY package.json package-lock.json /root/
 RUN npm -w backend ci && \
-    npx -w backend prisma generate --generator client && \
     npm -w backend run build && \
     mv backend/dist / && \
     npm -w backend prune --omit=dev && \

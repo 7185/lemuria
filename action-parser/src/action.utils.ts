@@ -46,23 +46,23 @@ export const colorStringToRGB = (color: string) => {
     return PRESET_COLORS[color as keyof typeof PRESET_COLORS]
   }
   const extractedHex = RegExp(/(^[a-f0-9]+)/).exec(color.toLowerCase())
-  if (extractedHex) {
-    // Get first hexadecimal string match & convert to number
-    const colorValue = parseInt(extractedHex[0], 16)
-    if (colorValue > 18446744073709551615n) {
-      // AW considers everything white at this point
-      return rgb(255, 255, 255)
-    }
-    const red = (colorValue >> 16) % 256
-    const green = (colorValue >> 8) % 256
-    const blue = (colorValue >> 0) % 256
-    return rgb(
-      red < 0 ? red + 256 : red,
-      green < 0 ? green + 256 : green,
-      blue < 0 ? blue + 256 : blue
-    )
+  if (extractedHex == null) {
+    return null
   }
-  return null
+  // Get first hexadecimal string match & convert to number
+  const colorValue = parseInt(extractedHex[0], 16)
+  if (colorValue > 18446744073709551615n) {
+    // AW considers everything white at this point
+    return rgb(255, 255, 255)
+  }
+  const red = (colorValue >> 16) % 256
+  const green = (colorValue >> 8) % 256
+  const blue = (colorValue >> 0) % 256
+  return rgb(
+    red < 0 ? red + 256 : red,
+    green < 0 ? green + 256 : green,
+    blue < 0 ? blue + 256 : blue
+  )
 }
 
 export const visitCoords = (

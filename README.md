@@ -47,9 +47,7 @@ $ npm run build -w frontend
 > There are two different implementations for the backend server: Node or Python.
 
 #### Node backend
-```bash
-$ npx -w backend prisma generate --generator client
-```
+Nothing more is needed after `npm ci` postinstall.
 
 #### Python backend
 ```bash
