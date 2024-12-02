@@ -10,7 +10,7 @@ import {
   MeshBasicMaterial
 } from 'three'
 import RWXLoader, {flattenGroup, RWXMaterialManager} from 'three-rwx-loader'
-import {Utils} from '../utils'
+import {modelName} from '../utils'
 
 export type PropCtl = [
   'nop',
@@ -123,7 +123,7 @@ export class PropService {
     objectCache: Map<string, Observable<Group>>,
     loaderType = 'basic'
   ) {
-    name = Utils.modelName(name)
+    name = modelName(name)
     const object = objectCache.get(name)
     if (object !== undefined) {
       return object

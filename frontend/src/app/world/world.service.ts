@@ -33,7 +33,7 @@ import type {AvatarAnimationManager} from '../animation'
 import type {Avatar, PropEntry} from '../network'
 import {HttpService} from '../network'
 import {environment} from '../../environments/environment'
-import {DEG, Utils} from '../utils'
+import {DEG, modelName, posToString, stringToPos} from '../utils'
 import {BuildService} from '../engine/build.service'
 import type {LightData} from './lighting.service'
 import {LightingService} from './lighting.service'
@@ -267,10 +267,7 @@ export class WorldService {
   get playerLocation() {
     return {
       world: this.worldName,
-      position: Utils.posToString(
-        this.engineSvc.position[0],
-        this.engineSvc.yaw
-      )
+      position: posToString(this.engineSvc.position[0], this.engineSvc.yaw)
     }
   }
 
@@ -288,7 +285,7 @@ export class WorldService {
     desc: string | null = null,
     act: string | null = null
   ): Promise<Object3D> {
-    prop = Utils.modelName(prop)
+    prop = modelName(prop)
     const g = await firstValueFrom(this.propSvc.loadModel(prop))
     g.name = prop
     g.userData.id = id
@@ -329,7 +326,7 @@ export class WorldService {
       // User not within this world
       return
     }
-    name = Utils.modelName(name)
+    name = modelName(name)
     this.propSvc.loadAvatar(name).subscribe(async (o) => {
       o.rotation.copy(new Euler(0, Math.PI, 0))
       group.parent!.updateMatrixWorld()
@@ -540,7 +537,7 @@ export class WorldService {
     if (entry) {
       const yawMatch = /\s([-+]?[0-9]+)$/.exec(entry)
       entryYaw = yawMatch ? parseInt(yawMatch[1], 10) : entryYaw
-      entryPoint.copy(Utils.stringToPos(entry))
+      entryPoint.copy(stringToPos(entry))
     }
 
     // Load a few chunks on world initialization

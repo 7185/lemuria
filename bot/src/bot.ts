@@ -30,28 +30,21 @@ class User {
   state: string
   gesture: string | null
 
-  constructor(name: string = '') {
+  constructor(name = '') {
     this.name = name
     this.world = 0
-    this.x = 0.0
-    this.y = 0.0
-    this.z = 0.0
-    this.roll = 0.0
-    this.yaw = 0.0
-    this.pitch = 0.0
+    this.x = 0
+    this.y = 0
+    this.z = 0
+    this.roll = 0
+    this.yaw = 0
+    this.pitch = 0
     this.avatar = 0
     this.state = 'idle'
     this.gesture = null
   }
 
-  setPosition(
-    x: number = 0.0,
-    y: number = 0.0,
-    z: number = 0.0,
-    roll: number = 0.0,
-    yaw: number = 0.0,
-    pitch: number = 0.0
-  ): void {
+  setPosition(x = 0, y = 0, z = 0, roll = 0, yaw = 0, pitch = 0): void {
     this.x = x
     this.y = y
     this.z = z
@@ -72,7 +65,7 @@ class Bot extends User {
   worldlist: Record<number, {name: string; users: number}>
   cookiejar: Record<string, string>
 
-  constructor(webUrl: string, wsUrl: string, loggingEnabled: boolean = true) {
+  constructor(webUrl: string, wsUrl: string, loggingEnabled = true) {
     super()
     this.webUrl = webUrl
     this.wsUrl = wsUrl
@@ -95,7 +88,7 @@ class Bot extends User {
   async _callback(name: string, ...parameters: unknown[]): Promise<void> {
     const instances = [this, ...Object.values(this.handlers)]
     for (const inst of instances) {
-      const f = (inst as unknown as {[key: string]: unknown})[name]
+      const f = (inst as unknown as Record<string, unknown>)[name]
       if (typeof f !== 'function') continue
       if (DEBUG) {
         this.log(`calling ${name}() on instance ${inst.name}`)

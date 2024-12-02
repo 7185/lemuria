@@ -37,7 +37,7 @@ import type {AvatarAnimationPlayer} from '../animation'
 import type {PressedKey} from './inputsystem.service'
 import {InputSystemService} from './inputsystem.service'
 import {environment} from '../../environments/environment'
-import {DEG, Utils} from '../utils'
+import {DEG, getMeshes, radNormalized, shortestAngle} from '../utils'
 import {Player} from './player'
 import {
   acceleratedRaycast,
@@ -976,7 +976,7 @@ export class EngineService {
           ).multiplyScalar(movSteps)
         )
       } else {
-        this.player.rotation.y = Utils.radNormalized(
+        this.player.rotation.y = radNormalized(
           this.player.rotation.y + reverse * rotSteps
         )
       }
@@ -992,7 +992,7 @@ export class EngineService {
           ).multiplyScalar(movSteps)
         )
       } else {
-        this.player.rotation.y = Utils.radNormalized(
+        this.player.rotation.y = radNormalized(
           this.player.rotation.y - reverse * rotSteps
         )
       }
@@ -1121,8 +1121,8 @@ export class EngineService {
         user.position.setY(user.position.y + user.userData.offsetY)
       }
       user.rotation.set(
-        u.oldRoll + Utils.shortestAngle(u.oldRoll, u.roll) * u.completion,
-        u.oldYaw + Utils.shortestAngle(u.oldYaw, u.yaw) * u.completion,
+        u.oldRoll + shortestAngle(u.oldRoll, u.roll) * u.completion,
+        u.oldYaw + shortestAngle(u.oldYaw, u.yaw) * u.completion,
         0,
         'YZX'
       )
@@ -1174,7 +1174,7 @@ export class EngineService {
     this.raycaster.set(cameraPosition, cameraToSpriteDirection)
 
     // Ignore the current prop during raycasting to prevent self-intersection
-    const ignoreList = Utils.getMeshes(corona.parent!)
+    const ignoreList = getMeshes(corona.parent!)
     const intersects = this.raycaster
       .intersectObjects(
         this.objectsNode.children

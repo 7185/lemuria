@@ -10,25 +10,24 @@
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --inspect --logHeapUsage --no-file-parallelism",
-    "lint": "eslint \"{src,test}/**/*.ts\"",
-    "format": "prettier --write \"**/*.{t,mj}s\""
+    "lint": "eslint --flag unstable_ts_config \"{src,test}/**/*.ts\"",
+    "format": "prettier --write \"{src,test}/**/*.{m,}ts\" \"*.{m,}ts\""
   },
   "license": "MIT",
   "dependencies": {
     "chevrotain": "^11.0.3"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.10.0",
     "@swc/core": "^1.9.3",
-    "@typescript-eslint/eslint-plugin": "^8.10.0",
-    "@typescript-eslint/parser": "^8.10.0",
     "@vitest/coverage-v8": "^2.1.6",
     "eslint": "^9.16.0",
     "globals": "^15.13.0",
+    "jiti": "^2.4.1",
     "prettier": "^3.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8.16.0",
     "unplugin-swc": "^1.5.1",
     "vitest": "^2.1.6"
   }

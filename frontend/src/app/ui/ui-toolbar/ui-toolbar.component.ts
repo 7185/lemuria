@@ -38,7 +38,7 @@ import type {User} from '../../user'
 import {environment} from '../../../environments/environment'
 import {Vector3} from 'three'
 import {distinctUntilChanged, throttleTime} from 'rxjs'
-import {Utils} from '../../utils'
+import {altToString, posToStringSimple} from '../../utils'
 import {
   faArrowLeft,
   faArrowRight,
@@ -111,8 +111,8 @@ export class UiToolbarComponent implements OnInit {
     .fill(40)
     .map((n, i) => n + i * 20)
   visibility = environment.world.lod.maxDistance
-  strPos = signal(Utils.posToStringSimple(new Vector3()))
-  strAlt = signal(Utils.altToString(new Vector3()))
+  strPos = signal(posToStringSimple(new Vector3()))
+  strAlt = signal(altToString(new Vector3()))
   strFps = '0 FPS 0 draws'
   strMem = '0 Geom. 0 Text.'
 
@@ -176,8 +176,8 @@ export class UiToolbarComponent implements OnInit {
         )
       )
       .subscribe((o: {pos: Vector3; theta: number}) => {
-        this.strPos.set(Utils.posToStringSimple(o.pos))
-        this.strAlt.set(Utils.altToString(o.pos))
+        this.strPos.set(posToStringSimple(o.pos))
+        this.strAlt.set(altToString(o.pos))
         this.renderer.setStyle(
           this.compass().nativeElement,
           'transform',

@@ -8,7 +8,7 @@ import {
 } from 'three'
 import type {LOD, Triangle} from 'three'
 import {PlayerCollider} from './player-collider'
-import {DEG, TERRAIN_PAGE_SIZE, Utils} from '../utils'
+import {DEG, radNormalized, stringToPos, TERRAIN_PAGE_SIZE} from '../utils'
 import {environment} from '../../environments/environment'
 import {inject, signal} from '@angular/core'
 import type {AvatarAnimationPlayer} from '../animation'
@@ -69,14 +69,14 @@ export class Player {
     if (typeof pos === 'string') {
       const yawMatch = /\s([0-9]+)$/.exec(pos)
       yaw = yawMatch ? parseInt(yawMatch[1], 10) : 0
-      pos = Utils.stringToPos(pos)
+      pos = stringToPos(pos)
     }
     this.entity.position.copy(pos)
     this.setYaw(yaw)
   }
 
   setYaw(yaw: number) {
-    this.entity.rotation.y = Utils.radNormalized(yaw * DEG + Math.PI)
+    this.entity.rotation.y = radNormalized(yaw * DEG + Math.PI)
   }
 
   createBoundingBox(boxHeight: number) {

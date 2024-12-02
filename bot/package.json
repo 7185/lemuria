@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node --import 'data:text/javascript,import {register} from \"node:module\"; import {pathToFileURL} from \"node:url\"; register(\"ts-node/esm\", pathToFileURL(\"./\"));' src/bonobot.ts",
-    "format": "prettier --write \"**/*.{t,cj}s\"",
-    "lint": "eslint \"src/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\" \"*.{m,}ts\"",
+    "lint": "eslint --flag unstable_ts_config \"src/**/*.ts\""
   },
   "license": "MIT",
   "dependencies": {
@@ -15,16 +15,14 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.10.0",
     "@types/node": "^20.17.7",
     "@types/ws": "^8.5.13",
-    "@typescript-eslint/eslint-plugin": "^8.10.0",
-    "@typescript-eslint/parser": "^8.10.0",
     "eslint": "^9.16.0",
-    "globals": "^15.13.0",
+    "jiti": "^2.4.1",
     "prettier": "^3.4.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.16.0"
   }
 }

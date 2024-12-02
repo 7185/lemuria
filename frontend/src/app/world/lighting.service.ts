@@ -1,7 +1,7 @@
 import {inject, Injectable} from '@angular/core'
 import {AmbientLight, Color, DirectionalLight, Object3D} from 'three'
 import {EngineService} from '../engine/engine.service'
-import {Utils} from '../utils'
+import {rgbToHex} from '../utils'
 
 export interface LightData {
   amb_color: [number, number, number]
@@ -82,15 +82,15 @@ export class LightingService {
   }
 
   setLighting(light: LightData) {
-    this.ambLightColor = Utils.rgbToHex(...light.amb_color)
-    this.dirLightColor = Utils.rgbToHex(...light.dir_color)
+    this.ambLightColor = rgbToHex(...light.amb_color)
+    this.dirLightColor = rgbToHex(...light.dir_color)
     this.dirLightTarget = [
       light.dir.x * 100,
       light.dir.y * 100,
       light.dir.z * 100
     ]
     this.worldFog = {
-      color: Utils.rgbToHex(...light.fog.color),
+      color: rgbToHex(...light.fog.color),
       near: light.fog.min,
       far: light.fog.max,
       enabled: light.fog.enabled

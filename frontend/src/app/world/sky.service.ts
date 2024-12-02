@@ -1,5 +1,5 @@
 import {effect, inject, Injectable, signal} from '@angular/core'
-import {Utils} from '../utils'
+import {colorHexToStr, colorStrToHex, hexToRgb, rgbToHex} from '../utils'
 import {
   Box3,
   BufferAttribute,
@@ -29,34 +29,34 @@ export class SkyService {
   private readonly propSvc = inject(PropService)
 
   skybox = signal('')
-  skyTop = signal(Utils.colorHexToStr(0))
-  skyNorth = signal(Utils.colorHexToStr(0))
-  skyEast = signal(Utils.colorHexToStr(0))
-  skySouth = signal(Utils.colorHexToStr(0))
-  skyWest = signal(Utils.colorHexToStr(0))
-  skyBottom = signal(Utils.colorHexToStr(0))
+  skyTop = signal(colorHexToStr(0))
+  skyNorth = signal(colorHexToStr(0))
+  skyEast = signal(colorHexToStr(0))
+  skySouth = signal(colorHexToStr(0))
+  skyWest = signal(colorHexToStr(0))
+  skyBottom = signal(colorHexToStr(0))
 
   constructor() {
     effect(() => {
       this.createSkybox(this.skybox(), {
-        top: Utils.hexToRgb(Utils.colorStrToHex(this.skyTop())),
-        north: Utils.hexToRgb(Utils.colorStrToHex(this.skyNorth())),
-        east: Utils.hexToRgb(Utils.colorStrToHex(this.skyEast())),
-        south: Utils.hexToRgb(Utils.colorStrToHex(this.skySouth())),
-        west: Utils.hexToRgb(Utils.colorStrToHex(this.skyWest())),
-        bottom: Utils.hexToRgb(Utils.colorStrToHex(this.skyBottom()))
+        top: hexToRgb(colorStrToHex(this.skyTop())),
+        north: hexToRgb(colorStrToHex(this.skyNorth())),
+        east: hexToRgb(colorStrToHex(this.skyEast())),
+        south: hexToRgb(colorStrToHex(this.skySouth())),
+        west: hexToRgb(colorStrToHex(this.skyWest())),
+        bottom: hexToRgb(colorStrToHex(this.skyBottom()))
       })
     })
   }
 
   setSkybox(sky: SkyData) {
     this.skybox.set(sky.skybox)
-    this.skyTop.set(Utils.colorHexToStr(Utils.rgbToHex(...sky.top_color)))
-    this.skyNorth.set(Utils.colorHexToStr(Utils.rgbToHex(...sky.north_color)))
-    this.skyEast.set(Utils.colorHexToStr(Utils.rgbToHex(...sky.east_color)))
-    this.skySouth.set(Utils.colorHexToStr(Utils.rgbToHex(...sky.south_color)))
-    this.skyWest.set(Utils.colorHexToStr(Utils.rgbToHex(...sky.west_color)))
-    this.skyBottom.set(Utils.colorHexToStr(Utils.rgbToHex(...sky.bottom_color)))
+    this.skyTop.set(colorHexToStr(rgbToHex(...sky.top_color)))
+    this.skyNorth.set(colorHexToStr(rgbToHex(...sky.north_color)))
+    this.skyEast.set(colorHexToStr(rgbToHex(...sky.east_color)))
+    this.skySouth.set(colorHexToStr(rgbToHex(...sky.south_color)))
+    this.skyWest.set(colorHexToStr(rgbToHex(...sky.west_color)))
+    this.skyBottom.set(colorHexToStr(rgbToHex(...sky.bottom_color)))
   }
 
   private createSkybox(

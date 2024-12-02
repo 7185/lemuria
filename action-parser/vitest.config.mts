@@ -6,10 +6,7 @@ export default defineConfig({
     globals: true,
     root: './',
     coverage: {
-      exclude: [
-        ...configDefaults.coverage.exclude ?? [],
-        '*/*.interfaces.ts'
-      ]
+      exclude: [...(configDefaults.coverage.exclude ?? []), '*/*.interfaces.ts']
     }
   },
   plugins: [

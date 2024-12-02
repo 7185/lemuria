@@ -30,7 +30,7 @@ import {pictureTag as PICTURE_TAG, signTag as SIGN_TAG} from 'three-rwx-loader'
 import {Action} from '@lemuria/action-parser'
 import {environment} from '../../environments/environment'
 import {HttpService} from '../network'
-import {TextCanvas, Utils} from '../utils'
+import {getObjectsByUserData, posToString, rgbToHex, textCanvas} from '../utils'
 import {SettingsService} from '../settings/settings.service'
 import {AudioService} from '../engine/audio.service'
 import {TeleportService} from '../engine/teleport.service'
@@ -166,7 +166,7 @@ export class PropActionService {
           prop.userData[trigger].light = prop.userData[trigger].light || []
           prop.userData[trigger].light.push({
             color: cmd.color
-              ? Utils.rgbToHex(cmd.color.r, cmd.color.g, cmd.color.b)
+              ? rgbToHex(cmd.color.r, cmd.color.g, cmd.color.b)
               : 0xffffff,
             brightness: cmd.brightness,
             radius: cmd.radius,
@@ -304,7 +304,7 @@ export class PropActionService {
         callback(prop, command)
         prop.userData.onUpdate()
       } else {
-        Utils.getObjectsByUserData(
+        getObjectsByUserData(
           prop.parent!.parent!.parent!,
           'name',
           command.targetName
@@ -680,12 +680,7 @@ export class PropActionService {
             }
             newMaterials[i].color = new Color(1, 1, 1)
             newMaterials[i].map = new CanvasTexture(
-              TextCanvas.textCanvas(
-                text,
-                color,
-                bcolor,
-                newMaterials[i].userData.ratio
-              )
+              textCanvas(text, color, bcolor, newMaterials[i].userData.ratio)
             )
             newMaterials[i].map.colorSpace = SRGBColorSpace
           }
@@ -940,7 +935,7 @@ export class PropActionService {
     this.teleportSvc.teleport.set({
       world: teleport.worldName,
       // Don't send 0 if coordinates are null (world entry point)
-      position: Utils.posToString(new Vector3(newX, newY, newZ), newYaw),
+      position: posToString(new Vector3(newX, newY, newZ), newYaw),
       isNew: true
     })
   }

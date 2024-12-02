@@ -14,7 +14,7 @@ import {MatInput, MatLabel} from '@angular/material/input'
 import {MatSlider, MatSliderThumb} from '@angular/material/slider'
 import {MatTab, MatTabGroup, MatTabLabel} from '@angular/material/tabs'
 import {FaIconComponent} from '@fortawesome/angular-fontawesome'
-import {Utils} from '../../utils'
+import {colorHexToStr, colorStrToHex, hexToRgb} from '../../utils'
 import {SkyService} from '../../world/sky.service'
 import {WorldService} from '../../world/world.service'
 import {TerrainService} from '../../world/terrain.service'
@@ -88,13 +88,13 @@ export class UiWorldAttribsComponent {
     this.lightDirZ = signal(this.lightingSvc.dirLightTarget[2] | 0)
 
     this.fogColor = signal(
-      Utils.colorHexToStr(this.lightingSvc.worldFog?.color ?? 0x00007f)
+      colorHexToStr(this.lightingSvc.worldFog?.color ?? 0x00007f)
     )
-    this.ambLight = signal(Utils.colorHexToStr(this.lightingSvc.ambLightColor))
-    this.dirLight = signal(Utils.colorHexToStr(this.lightingSvc.dirLightColor))
+    this.ambLight = signal(colorHexToStr(this.lightingSvc.ambLightColor))
+    this.dirLight = signal(colorHexToStr(this.lightingSvc.dirLightColor))
     this.water = signal(this.terrainSvc.water != null)
     this.waterColor = signal(
-      Utils.colorHexToStr(this.terrainSvc.water?.userData?.color ?? 0x00ffff)
+      colorHexToStr(this.terrainSvc.water?.userData?.color ?? 0x00ffff)
     )
     this.waterTextureBottom = signal(
       this.terrainSvc.water?.userData?.texture_bottom || ''
@@ -110,17 +110,17 @@ export class UiWorldAttribsComponent {
 
     effect(() => {
       this.lightingSvc.worldFog = {
-        color: Utils.colorStrToHex(this.fogColor()),
+        color: colorStrToHex(this.fogColor()),
         near: this.fogMin(),
         far: this.fogMax(),
         enabled: this.fog()
       }
     })
     effect(() => {
-      this.lightingSvc.ambLightColor = Utils.colorStrToHex(this.ambLight())
+      this.lightingSvc.ambLightColor = colorStrToHex(this.ambLight())
     })
     effect(() => {
-      this.lightingSvc.dirLightColor = Utils.colorStrToHex(this.dirLight())
+      this.lightingSvc.dirLightColor = colorStrToHex(this.dirLight())
     })
     effect(() => {
       this.lightingSvc.dirLightTarget = [
@@ -141,7 +141,7 @@ export class UiWorldAttribsComponent {
     effect(() => {
       this.terrainSvc.setWater({
         enabled: this.water(),
-        color: Utils.hexToRgb(Utils.colorStrToHex(this.waterColor())),
+        color: hexToRgb(colorStrToHex(this.waterColor())),
         offset: this.waterLevel(),
         opacity: this.waterOpacity(),
         texture_bottom: this.waterTextureBottom(),

@@ -15,7 +15,7 @@ import {PlayerCollider} from '../engine/player-collider'
 import {EngineService} from '../engine/engine.service'
 import {PropService} from './prop.service'
 import {HttpService} from '../network'
-import {TERRAIN_PAGE_SIZE, Utils} from '../utils'
+import {rgbToHex, TERRAIN_PAGE_SIZE} from '../utils'
 
 export interface WaterData {
   enabled?: boolean
@@ -58,7 +58,7 @@ export class TerrainService {
     this.water = new Group()
     this.water.name = 'water'
     this.water.userData.under_view = water.under_view ?? 120
-    this.water.userData.color = Utils.rgbToHex(
+    this.water.userData.color = rgbToHex(
       ...((water?.color || [0, 255, 255]) as [number, number, number])
     )
     this.water.userData.texture_bottom = water.texture_bottom
