@@ -5,10 +5,11 @@ COPY frontend/package.json frontend/angular.json frontend/tsconfig.json frontend
 COPY frontend/public /root/frontend/public
 COPY action-parser/src /root/action-parser/src
 COPY frontend/src /root/frontend/src
+COPY patches /root/patches
 COPY package.json package-lock.json /root/
 RUN npm -w action-parser -w frontend ci && \
     npm -w frontend run build:prod && \
-    rm -r .npm action-parser frontend node_modules
+    rm -r .npm action-parser frontend patches node_modules
 
 
 FROM python:3.13-alpine AS python
