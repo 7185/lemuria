@@ -1,5 +1,5 @@
 import {effect, inject, Injectable, signal} from '@angular/core'
-import {colorHexToStr, colorStrToHex, hexToRgb, rgbToHex} from '../utils'
+import {colorHexToStr, colorStrToHex, hexToRgb, rgbToHex} from '../utils/utils'
 import {
   Box3,
   BufferAttribute,

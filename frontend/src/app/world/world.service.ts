@@ -33,7 +33,8 @@ import type {AvatarAnimationManager} from '../animation'
 import type {Avatar, PropEntry} from '../network'
 import {HttpService} from '../network'
 import {environment} from '../../environments/environment'
-import {DEG, modelName, posToString, stringToPos} from '../utils'
+import {DEG} from '../utils/constants'
+import {modelName, posToStringYaw, stringToPos} from '../utils/utils'
 import {BuildService} from '../engine/build.service'
 import type {LightData} from './lighting.service'
 import {LightingService} from './lighting.service'
@@ -267,7 +268,7 @@ export class WorldService {
   get playerLocation() {
     return {
       world: this.worldName,
-      position: posToString(this.engineSvc.position[0], this.engineSvc.yaw)
+      position: posToStringYaw(this.engineSvc.position[0], this.engineSvc.yaw)
     }
   }
 
@@ -310,7 +311,7 @@ export class WorldService {
     g.userData.posOrig = g.position.clone()
     g.userData.rotOrig = g.rotation.clone()
     if (act && g.userData?.isError !== true) {
-      this.propActionSvc.parseActions(g)
+      await this.propActionSvc.parseActions(g)
     }
     this.buildSvc.initPropCallbacks(g)
     g.updateMatrix()

@@ -17,36 +17,38 @@ import {
   CanvasTexture,
   Color,
   Group,
+  ImageBitmapLoader,
   Mesh,
   RepeatWrapping,
   Sprite,
   SpriteMaterial,
   SRGBColorSpace,
-  TextureLoader,
   Vector3
 } from 'three'
-import type {MeshPhongMaterial, Object3D, Texture} from 'three'
+import type {MeshPhongMaterial, Object3D} from 'three'
 import {pictureTag as PICTURE_TAG, signTag as SIGN_TAG} from 'three-rwx-loader'
-import {Action} from '@lemuria/action-parser'
 import {environment} from '../../environments/environment'
 import {HttpService} from '../network'
-import {getObjectsByUserData, posToString, rgbToHex, textCanvas} from '../utils'
+import {getObjectsByUserData, posToStringYaw, rgbToHex} from '../utils/utils'
 import {SettingsService} from '../settings/settings.service'
 import {AudioService} from '../engine/audio.service'
 import {TeleportService} from '../engine/teleport.service'
+import {WorkerService} from '../worker/worker.service'
 import {PropService} from './prop.service'
 
 @Injectable({providedIn: 'root'})
 export class PropActionService {
   private audioLoader = new AudioLoader()
-  private textureLoader = new TextureLoader()
+  private textureLoader = new ImageBitmapLoader().setOptions({
+    imageOrientation: 'flipY'
+  })
   private remoteUrl = /.+\..+\/.+/
-  private actionParser = new Action()
   private readonly teleportSvc = inject(TeleportService)
   private readonly settings = inject(SettingsService)
   private readonly audioSvc = inject(AudioService)
   private readonly propSvc = inject(PropService)
   private readonly http = inject(HttpService)
+  private readonly workerSvc = inject(WorkerService)
   private archiveApiQueue = new Subject<{
     prop: Group
     url: string
@@ -96,14 +98,15 @@ export class PropActionService {
     this.triggerAction(prop, 'activate')
   }
 
-  /**
-   * Parses the action string
-   * @param prop
-   */
-  parseActions(prop: Group) {
-    Object.entries(this.actionParser.parse(prop.userData.act)).forEach(
-      ([trigger, action]) => this.parseAction(prop, trigger, action)
-    )
+  async parseActions(prop: Group) {
+    try {
+      const parsedActions = await this.workerSvc.parseAction(prop.userData.act)
+      Object.entries(parsedActions).forEach(([trigger, action]) =>
+        this.parseAction(prop, trigger, action)
+      )
+    } catch (error) {
+      console.error('Error parsing actions:', error)
+    }
   }
 
   /**
@@ -584,7 +587,8 @@ export class PropActionService {
    * @param prop Prop
    * @param picture Image
    */
-  private pictureToProp(prop: Group, picture: Texture) {
+  private pictureToProp(prop: Group, bitmap: ImageBitmap) {
+    const picture = new CanvasTexture(bitmap)
     picture.colorSpace = SRGBColorSpace
     picture.wrapS = picture.wrapT = RepeatWrapping
     prop.traverse((child: Object3D) => {
@@ -660,7 +664,7 @@ export class PropActionService {
       bcolor = {r: 0, g: 0, b: 255}
     }
 
-    prop.traverse((child: Object3D) => {
+    prop.traverse(async (child: Object3D) => {
       if (
         child instanceof Mesh &&
         Object.keys(child.userData.taggedMaterials).length
@@ -678,11 +682,19 @@ export class PropActionService {
                 material: child.material[i].userData.rwx.material
               }
             }
-            newMaterials[i].color = new Color(1, 1, 1)
-            newMaterials[i].map = new CanvasTexture(
-              textCanvas(text, color, bcolor, newMaterials[i].userData.ratio)
-            )
-            newMaterials[i].map.colorSpace = SRGBColorSpace
+            try {
+              const bitmap = await this.workerSvc.textCanvas(
+                text,
+                color,
+                bcolor,
+                newMaterials[i].userData.ratio
+              )
+              newMaterials[i].color = new Color(1, 1, 1)
+              newMaterials[i].map = new CanvasTexture(bitmap)
+              newMaterials[i].map.colorSpace = SRGBColorSpace
+            } catch (error) {
+              console.error('Error in textCanvas:', error)
+            }
           }
           if (child.material[i].alphaMap != null) {
             child.material[i].alphaMap.dispose()
@@ -779,7 +791,8 @@ export class PropActionService {
     }`
     const size = prop.userData.corona?.size / 100 || 1
     const color = prop.userData.light?.color ?? 0xffffff
-    this.textureLoader.load(textureUrl, (texture) => {
+    this.textureLoader.load(textureUrl, (bitmap) => {
+      const texture = new CanvasTexture(bitmap)
       texture.colorSpace = SRGBColorSpace
       const corona = new Sprite(
         new SpriteMaterial({
@@ -935,7 +948,7 @@ export class PropActionService {
     this.teleportSvc.teleport.set({
       world: teleport.worldName,
       // Don't send 0 if coordinates are null (world entry point)
-      position: posToString(new Vector3(newX, newY, newZ), newYaw),
+      position: posToStringYaw(new Vector3(newX, newY, newZ), newYaw),
       isNew: true
     })
   }

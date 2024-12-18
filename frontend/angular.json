@@ -39,7 +39,8 @@
             "security": {
               "autoCsp": true
             },
-            "scripts": []
+            "scripts": [],
+            "webWorkerTsConfig": "tsconfig.worker.json"
           },
           "configurations": {
             "production": {

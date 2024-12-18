@@ -1,7 +1,7 @@
 import {inject, Injectable} from '@angular/core'
 import {AmbientLight, Color, DirectionalLight, Object3D} from 'three'
 import {EngineService} from '../engine/engine.service'
-import {rgbToHex} from '../utils'
+import {rgbToHex} from '../utils/utils'
 
 export interface LightData {
   amb_color: [number, number, number]

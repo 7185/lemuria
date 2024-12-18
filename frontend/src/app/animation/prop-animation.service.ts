@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core'
 import type {Group} from 'three'
 import {Vector3} from 'three'
-import {RPM, X_AXIS, Y_AXIS, Z_AXIS} from '../utils'
+import {RPM, X_AXIS, Y_AXIS, Z_AXIS} from '../utils/constants'
 
 @Injectable({providedIn: 'root'})
 export class PropAnimationService {

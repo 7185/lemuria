@@ -10,7 +10,7 @@ import {MatIconButton} from '@angular/material/button'
 import {MatInput, MatLabel} from '@angular/material/input'
 import {MatFormField, MatPrefix} from '@angular/material/form-field'
 import {FaIconComponent} from '@fortawesome/angular-fontawesome'
-import {LinkifyPipe} from '../../utils'
+import {LinkifyPipe} from '../../utils/linkify.pipe'
 import {faComments} from '@fortawesome/free-solid-svg-icons'
 import {
   VirtualScrollerComponent,

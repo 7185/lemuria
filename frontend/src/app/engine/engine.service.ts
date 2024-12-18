@@ -37,7 +37,8 @@ import type {AvatarAnimationPlayer} from '../animation'
 import type {PressedKey} from './inputsystem.service'
 import {InputSystemService} from './inputsystem.service'
 import {environment} from '../../environments/environment'
-import {DEG, getMeshes, radNormalized, shortestAngle} from '../utils'
+import {DEG} from '../utils/constants'
+import {getMeshes, radNormalized, shortestAngle} from '../utils/utils'
 import {Player} from './player'
 import {
   acceleratedRaycast,
@@ -54,7 +55,7 @@ Mesh.prototype.raycast = acceleratedRaycast
 // the render loop
 const _updateMatrixWorld = Object3D.prototype.updateMatrixWorld
 Object3D.prototype.updateMatrixWorld = function () {
-  if (this.name.endsWith('.rwx') && !this.parent?.visible) {
+  if (!this.parent?.visible && this.name.slice(-4) === '.rwx') {
     return
   }
   _updateMatrixWorld.apply(this)
@@ -803,7 +804,7 @@ export class EngineService {
         obj = obj.parent!
       }
       if (
-        obj.name.endsWith('.rwx') &&
+        obj.name.slice(-4) === '.rwx' &&
         obj.parent!.visible &&
         !obj?.userData?.notVisible
       ) {

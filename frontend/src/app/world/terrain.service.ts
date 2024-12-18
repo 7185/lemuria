@@ -1,21 +1,25 @@
 import {inject, Injectable} from '@angular/core'
 import {
   BufferAttribute,
+  CanvasTexture,
   Color,
   Group,
+  ImageBitmapLoader,
   Mesh,
   MeshLambertMaterial,
   PlaneGeometry,
   RepeatWrapping,
   SRGBColorSpace,
-  TextureLoader
+  Texture
 } from 'three'
-import type {Texture} from 'three'
+import type {Observable} from 'rxjs'
+import {from, map, forkJoin} from 'rxjs'
 import {PlayerCollider} from '../engine/player-collider'
 import {EngineService} from '../engine/engine.service'
 import {PropService} from './prop.service'
 import {HttpService} from '../network'
-import {rgbToHex, TERRAIN_PAGE_SIZE} from '../utils'
+import {TERRAIN_PAGE_SIZE} from '../utils/constants'
+import {rgbToHex} from '../utils/utils'
 
 export interface WaterData {
   enabled?: boolean
@@ -38,7 +42,9 @@ export class TerrainService {
   private readonly engineSvc = inject(EngineService)
   private readonly http = inject(HttpService)
   private readonly propSvc = inject(PropService)
-  private textureLoader = new TextureLoader()
+  private textureLoader = new ImageBitmapLoader().setOptions({
+    imageOrientation: 'flipY'
+  })
   private terrainMaterials: MeshLambertMaterial[] = []
   private waterBottomGeom: PlaneGeometry | null = null
   private waterTopGeom: PlaneGeometry | null = null
@@ -95,27 +101,40 @@ export class TerrainService {
     })
 
     if (water?.texture_bottom) {
-      const bottomTexture = this.textureLoader.load(
-        `${this.propSvc.path()}/textures/${water.texture_bottom}.jpg`
+      this.textureLoader.load(
+        `${this.propSvc.path()}/textures/${water.texture_bottom}.jpg`,
+        (texture) => {
+          const bottomTexture = new CanvasTexture(
+            texture,
+            Texture.DEFAULT_MAPPING,
+            RepeatWrapping,
+            RepeatWrapping
+          )
+          bottomTexture.colorSpace = SRGBColorSpace
+          bottomTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
+          waterMaterialBottom.map = bottomTexture
+          this.waterBottomMaterials = [waterMaterialBottom]
+        }
       )
-      bottomTexture.colorSpace = SRGBColorSpace
-      bottomTexture.wrapS = bottomTexture.wrapT = RepeatWrapping
-      bottomTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
-      waterMaterialBottom.map = bottomTexture
     }
 
     if (water?.texture_top) {
-      const topTexture = this.textureLoader.load(
-        `${this.propSvc.path()}/textures/${water.texture_top}.jpg`
+      this.textureLoader.load(
+        `${this.propSvc.path()}/textures/${water.texture_top}.jpg`,
+        (texture) => {
+          const topTexture = new CanvasTexture(
+            texture,
+            Texture.DEFAULT_MAPPING,
+            RepeatWrapping,
+            RepeatWrapping
+          )
+          topTexture.colorSpace = SRGBColorSpace
+          topTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
+          waterMaterialTop.map = topTexture
+          this.waterTopMaterials = [waterMaterialTop]
+        }
       )
-      topTexture.colorSpace = SRGBColorSpace
-      topTexture.wrapS = topTexture.wrapT = RepeatWrapping
-      topTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
-      waterMaterialTop.map = topTexture
     }
-
-    this.waterBottomMaterials = [waterMaterialBottom]
-    this.waterTopMaterials = [waterMaterialTop]
 
     if (water?.offset != null) {
       this.water.position.setY(water.offset)
@@ -137,31 +156,49 @@ export class TerrainService {
     this.terrain.name = 'terrain'
     this.terrainMaterials = []
 
-    const baseTextures: Texture[] = []
+    const textureObservables: Observable<Texture>[] = []
+
     for (let j = 0; j < 63; j++) {
-      const baseTexture = this.textureLoader.load(
-        `${this.propSvc.path()}/textures/terrain${j}.jpg`
+      textureObservables.push(
+        from(
+          this.textureLoader.loadAsync(
+            `${this.propSvc.path()}/textures/terrain${j}.jpg`
+          )
+        ).pipe(
+          map((texture) => {
+            const baseTexture = new CanvasTexture(
+              texture,
+              Texture.DEFAULT_MAPPING,
+              RepeatWrapping,
+              RepeatWrapping
+            )
+            baseTexture.colorSpace = SRGBColorSpace
+            baseTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
+            return baseTexture
+          })
+        )
       )
-      baseTexture.colorSpace = SRGBColorSpace
-      baseTexture.wrapS = baseTexture.wrapT = RepeatWrapping
-      baseTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
-      baseTextures.push(baseTexture)
     }
 
-    for (let i = 0; i < 4; i++) {
-      for (let j = 0; j < 64; j++) {
-        const terrainTexture = j < 63 ? baseTextures[j].clone() : null
-        if (terrainTexture) terrainTexture.rotation = (i * Math.PI) / 2
-        this.terrainMaterials.push(
-          new MeshLambertMaterial({map: terrainTexture})
-        )
+    forkJoin(textureObservables).subscribe((baseTextures) => {
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 64; j++) {
+          const terrainTexture = j < 63 ? baseTextures[j].clone() : null
+          if (terrainTexture) {
+            terrainTexture.rotation = (i * Math.PI) / 2
+          }
+          this.terrainMaterials.push(
+            new MeshLambertMaterial({map: terrainTexture})
+          )
+        }
       }
-    }
-    if (terrain?.offset != null) {
-      this.terrain.position.setY(terrain.offset)
-    }
-    this.engineSvc.addWorldObject(this.terrain)
-    this.terrain.updateMatrixWorld()
+
+      if (terrain?.offset != null) {
+        this.terrain.position.setY(terrain.offset)
+      }
+      this.engineSvc.addWorldObject(this.terrain)
+      this.terrain.updateMatrixWorld()
+    })
   }
 
   getTerrainPages(playerX: number, playerZ: number, radius: number) {

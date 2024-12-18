@@ -10,7 +10,7 @@ import {
   MeshBasicMaterial
 } from 'three'
 import RWXLoader, {flattenGroup, RWXMaterialManager} from 'three-rwx-loader'
-import {modelName} from '../utils'
+import {modelName} from '../utils/utils'
 
 export type PropCtl = [
   'nop',

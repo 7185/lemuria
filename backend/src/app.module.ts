@@ -1,12 +1,10 @@
 import {Module} from '@nestjs/common'
 import {CacheModule} from '@nestjs/cache-manager'
-import {ServeStaticModule} from '@nestjs/serve-static'
 import {JwtService} from '@nestjs/jwt'
 import {LoggerModule} from 'nestjs-pino'
 import {AppController} from './app.controller'
 import {AppService} from './app.service'
 import {WsGateway} from './ws/ws.gateway'
-import {join} from 'node:path'
 import {ProxyModule} from './proxy/proxy.module'
 import {UserModule} from './user/user.module'
 import {WorldModule} from './world/world.module'
@@ -19,9 +17,6 @@ import {config} from './app.config'
       ttl: config.cache.timeout * 1000,
       max: config.cache.threshold
     }),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'static', 'browser')
-    }),
     LoggerModule.forRoot({
       pinoHttp: {
         quietReqLogger: true,
@@ -29,7 +24,7 @@ import {config} from './app.config'
           context: 'HTTP',
           userAgent: req.headers['user-agent']
         }),
-        customLogLevel: function (_req, res, err) {
+        customLogLevel: (_req, res, err) => {
           if (res.statusCode >= 500 || err) {
             return 'error'
           } else if (res.statusCode >= 400) {

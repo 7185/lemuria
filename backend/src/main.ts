@@ -1,3 +1,4 @@
+import {join} from 'node:path'
 import {NestFactory} from '@nestjs/core'
 import {FastifyAdapter, NestFastifyApplication} from '@nestjs/platform-fastify'
 import {WsAdapter} from '@nestjs/platform-ws'
@@ -6,7 +7,7 @@ import {AppModule} from './app.module'
 import {config} from './app.config'
 import {Logger} from 'nestjs-pino'
 
-async function bootstrap() {
+const bootstrap = async () => {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
@@ -18,7 +19,10 @@ async function bootstrap() {
       bufferLogs: true
     }
   )
-
+  app.useStaticAssets({
+    root: join(__dirname, '../static', 'browser'),
+    prefixAvoidTrailingSlash: true
+  })
   app.useWebSocketAdapter(new WsAdapter(app))
   app.register(fastifyCookie, {
     secret: config.secret

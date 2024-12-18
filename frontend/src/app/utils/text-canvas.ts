@@ -5,17 +5,17 @@
  * @param ratio The canvas ratio
  * @param color The text color
  * @param bcolor The background color
- * @returns An HTML canvas element
+ * @returns A Promise with an ImageBitmap
  */
-export function textCanvas(
+export const textCanvas = async (
   text: string,
   color: {r: number; g: number; b: number},
   bcolor: {r: number; g: number; b: number},
   ratio = 1
-) {
-  const canvas = document.createElement('canvas')
+) => {
   const canvasWidth = ratio > 1 ? 256 : 256 * ratio
   const canvasHeight = ratio > 1 ? 256 / ratio : 256
+  const canvas = new OffscreenCanvas(canvasWidth, canvasHeight)
 
   canvas.width = canvasWidth
   canvas.height = canvasHeight
@@ -68,7 +68,9 @@ export function textCanvas(
     ctx.fillText(line, startX, y)
   })
 
-  return canvas
+  return await createImageBitmap(canvas.transferToImageBitmap(), {
+    imageOrientation: 'flipY'
+  })
 }
 
 /**
@@ -79,11 +81,11 @@ export function textCanvas(
  * @param maxWidth The maximum width of a line
  * @returns The array of lines
  */
-function breakTextIntoLines(
+const breakTextIntoLines = (
   text: string,
-  ctx: CanvasRenderingContext2D,
+  ctx: OffscreenCanvasRenderingContext2D,
   maxWidth: number
-): string[] {
+): string[] => {
   const lines: string[] = []
   const paragraphs = text.split('\n')
 

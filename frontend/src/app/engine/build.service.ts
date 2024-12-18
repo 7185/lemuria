@@ -14,7 +14,7 @@ import type {Material, Mesh, Object3D} from 'three'
 import type {PropCtl} from '../world/prop.service'
 import {InputSystemService} from './inputsystem.service'
 import {PropActionService} from '../world/prop-action.service'
-import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils'
+import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils/constants'
 
 @Injectable({
   providedIn: 'root'
@@ -87,8 +87,9 @@ export class BuildService {
     if (this.propSelectionBox == null) {
       return
     }
-    this.propActionSvc.parseActions(this.selectedProp)
-    this.propActionSvc.showProp(this.selectedProp)
+    this.propActionSvc
+      .parseActions(this.selectedProp)
+      .then(() => this.propActionSvc.showProp(this.selectedProp))
     this.selectedProp.parent.userData.bvhUpdate.next()
     this.buildMode = false
     this.selectedProp = null

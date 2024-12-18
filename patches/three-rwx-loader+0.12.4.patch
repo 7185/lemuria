@@ -1,8 +1,18 @@
 diff --git a/node_modules/three-rwx-loader/src/RWXLoader.js b/node_modules/three-rwx-loader/src/RWXLoader.js
-index a8d9ceb..490856c 100644
+index a8d9ceb..e16e486 100644
 --- a/node_modules/three-rwx-loader/src/RWXLoader.js
 +++ b/node_modules/three-rwx-loader/src/RWXLoader.js
-@@ -73,9 +73,9 @@ const glossRatio = 0.1;
+@@ -16,7 +16,8 @@ import {
+ 	BufferGeometry,
+ 	Quaternion,
+ 	Plane,
+-	TextureLoader,
++	ImageBitmapLoader,
++	CanvasTexture,
+ 	NearestFilter,
+ 	LinearMipmapNearestFilter,
+ 	RepeatWrapping,
+@@ -73,9 +74,9 @@ const glossRatio = 0.1;
  const defaultAlphaTest = 0.2;
  const defaultSurface = [ 0.69, 0.0, 0.0 ]; // Ambience (recommended AW 2.2), Diffusion, Specularity
  
@@ -15,7 +25,27 @@ index a8d9ceb..490856c 100644
  
  // Perform polygon triangulation by projecting vertices on a 2D plane first
  function triangulateFaces( vertices, uvs, loop, objectName, forceEarcut = false, verboseWarning = false ) {
-@@ -266,7 +266,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+@@ -197,7 +198,9 @@ function makeMaskPromise( bmpURI, threeMat, loader, textureColorSpace = LinearSR
+ 
+ 	return new Promise( ( resolveMask ) => {
+ 
+-		loader.load( bmpURI, ( maskTexture ) => {
++		loader.load( bmpURI, ( bitmap ) => {
++
++			const maskTexture = new CanvasTexture( bitmap );
+ 
+ 			// If the height is nicely divisible by the width: it's an animated mask
+ 			if ( maskTexture.image.height !== maskTexture.image.width && maskTexture.image.height % maskTexture.image.width === 0 ) {
+@@ -236,7 +239,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+ 	maskExtension = '.zip', fflate = null, loadingPromises = [], textureColorSpace = SRGBColorSpace,
+ 	textureWrapping = RepeatWrapping, alphaTest = defaultAlphaTest, textureFiltering = true, allowURLs = true ) {
+ 
+-	let loader = new TextureLoader();
++	let loader = new ImageBitmapLoader().setOptions( { imageOrientation: 'flipY' } );
+ 	let texturePath = null;
+ 
+ 	const urlRes = urlRegex.exec( textureName );
+@@ -266,7 +269,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
  
  	}
  
@@ -24,7 +54,18 @@ index a8d9ceb..490856c 100644
  
  		threeMat.alphaTest = alphaTest;
  		threeMat.transparent = true;
-@@ -504,7 +504,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
+@@ -275,7 +278,9 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+ 
+ 	loadingPromises.push( new Promise( ( resolveTex, rejectTex ) => {
+ 
+-		loader.load( texturePath, ( texture ) => {
++		loader.load( texturePath, ( bitmap ) => {
++
++			const texture = new CanvasTexture( bitmap );
+ 
+ 			texture.wrapS = textureWrapping;
+ 			texture.wrapT = textureWrapping;
+@@ -504,7 +509,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
  		const whiteEmissive = Math.trunc( surface[ 1 ] );
  		materialDict[ 'emissive' ] = ( whiteEmissive << 16 ) + ( whiteEmissive << 8 ) + whiteEmissive;
  
@@ -33,7 +74,7 @@ index a8d9ceb..490856c 100644
  
  	}
  
-@@ -1656,33 +1656,33 @@ class RWXMaterial {
+@@ -1656,33 +1661,33 @@ class RWXMaterial {
  
  	getMatSignature() {
  
@@ -94,7 +135,7 @@ index a8d9ceb..490856c 100644
  
  }
  
-@@ -1878,48 +1878,50 @@ class RWXLoader extends Loader {
+@@ -1878,48 +1883,50 @@ class RWXLoader extends Loader {
  
  		super( manager );
  
@@ -185,7 +226,7 @@ index a8d9ceb..490856c 100644
  
  		this.fflate = null;
  		this.textureExtension = '.jpg';
-@@ -2170,7 +2172,7 @@ class RWXLoader extends Loader {
+@@ -2170,7 +2177,7 @@ class RWXLoader extends Loader {
  		const scale_ten = new Matrix4();
  		scale_ten.makeScale( 10.0, 10.0, 10.0 );
  
@@ -194,7 +235,7 @@ index a8d9ceb..490856c 100644
  
  		// Ready root object group
  		ctx.rootGroup = new Group();
-@@ -2180,21 +2182,18 @@ class RWXLoader extends Loader {
+@@ -2180,21 +2187,18 @@ class RWXLoader extends Loader {
  
  		for ( let i = 0, l = lines.length; i < l; i ++ ) {
  
@@ -220,7 +261,7 @@ index a8d9ceb..490856c 100644
  
  				makeMeshToCurrentGroup( ctx );
  				clearGeometry( ctx );
-@@ -2206,8 +2205,7 @@ class RWXLoader extends Loader {
+@@ -2206,8 +2210,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -230,7 +271,7 @@ index a8d9ceb..490856c 100644
  
  				makeMeshToCurrentGroup( ctx );
  
-@@ -2220,8 +2218,7 @@ class RWXLoader extends Loader {
+@@ -2220,8 +2223,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -240,7 +281,7 @@ index a8d9ceb..490856c 100644
  
  				saveCurrentTransform( ctx );
  
-@@ -2229,8 +2226,7 @@ class RWXLoader extends Loader {
+@@ -2229,8 +2231,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -250,7 +291,7 @@ index a8d9ceb..490856c 100644
  
  				loadCurrentTransform( ctx );
  
-@@ -2260,8 +2256,7 @@ class RWXLoader extends Loader {
+@@ -2260,8 +2261,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -260,7 +301,7 @@ index a8d9ceb..490856c 100644
  
  				makeMeshToCurrentGroup( ctx );
  
-@@ -2511,10 +2506,10 @@ class RWXLoader extends Loader {
+@@ -2511,10 +2511,10 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -273,7 +314,7 @@ index a8d9ceb..490856c 100644
  
  			}
  
-@@ -2761,7 +2756,7 @@ class RWXLoader extends Loader {
+@@ -2761,7 +2761,7 @@ class RWXLoader extends Loader {
  			res = this.addtexturemodeRegex.exec( line );
  			if ( res != null ) {
  
@@ -282,7 +323,7 @@ index a8d9ceb..490856c 100644
  
  				// Do not push the same texture mode twice
  				if ( ! ctx.materialTracker.currentRWXMaterial.texturemodes.includes( TextureMode[ tm ] ) ) {
-@@ -2778,7 +2773,7 @@ class RWXLoader extends Loader {
+@@ -2778,7 +2778,7 @@ class RWXLoader extends Loader {
  			res = this.removetexturemodeRegex.exec( line );
  			if ( res != null ) {
  
