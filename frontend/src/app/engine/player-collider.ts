@@ -1,8 +1,8 @@
 import {Box3, Ray, Vector3} from 'three'
 import type {Group, Mesh, Triangle} from 'three'
 import {flattenGroup} from 'three-rwx-loader'
-import {MeshBVH, MeshBVHHelper} from 'three-mesh-bvh'
-import type {MeshBVHOptions} from 'three-mesh-bvh'
+import {MeshBVHHelper} from 'three-mesh-bvh'
+import type {MeshBVH, MeshBVHOptions} from 'three-mesh-bvh'
 import {environment} from '../../environments/environment'
 
 const playerHalfSide = environment.world.collider.boxSide / 2
@@ -70,7 +70,7 @@ export class PlayerCollider {
       chunk.parent!.visible = true
       return
     }
-    chunk.parent!.userData.boundsTree = new MeshBVH(bvhMesh.geometry, {
+    chunk.parent!.userData.boundsTree = bvhMesh.geometry.computeBoundsTree({
       onProgress: (progress: number) => {
         chunk.parent!.visible = progress === 1
       }
@@ -88,9 +88,7 @@ export class PlayerCollider {
       return
     }
     // Force indirect (experimental) to avoid messed up faces
-    terrainMesh.geometry.boundsTree = new MeshBVH(terrainMesh.geometry, {
-      indirect: true
-    } as MeshBVHOptions)
+    terrainMesh.geometry.computeBoundsTree({indirect: true} as MeshBVHOptions)
     if (!environment.debug) {
       return
     }

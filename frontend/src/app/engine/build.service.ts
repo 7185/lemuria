@@ -87,20 +87,22 @@ export class BuildService {
     if (this.propSelectionBox == null) {
       return
     }
-    this.propActionSvc
-      .parseActions(this.selectedProp)
-      .then(() => this.propActionSvc.showProp(this.selectedProp))
-    this.selectedProp.parent.userData.bvhUpdate.next()
-    this.buildMode = false
-    this.selectedProp = null
-    this.selectedPropSignal.set(null)
-    this.propSelectionBox.geometry.dispose()
-    ;(this.propSelectionBox.material as Material).dispose()
-    this.axesHelper?.dispose()
-    buildNode.remove(this.propSelection)
-    this.propSelectionBox = null
-    this.axesHelper = null
-    this.propSelection = null
+    // Track the parent chunk in case of prop deletion since the code is async
+    const chunk = this.selectedProp.parent
+    this.propActionSvc.parseActions(this.selectedProp).then(() => {
+      this.propActionSvc.showProp(this.selectedProp)
+      chunk.userData.bvhUpdate.next()
+      this.buildMode = false
+      this.selectedProp = null
+      this.selectedPropSignal.set(null)
+      this.propSelectionBox.geometry.dispose()
+      ;(this.propSelectionBox.material as Material).dispose()
+      this.axesHelper?.dispose()
+      buildNode.remove(this.propSelection)
+      this.propSelectionBox = null
+      this.axesHelper = null
+      this.propSelection = null
+    })
   }
 
   moveProp(action: PropCtl, cameraDirection: Vector3, buildNode: Group) {

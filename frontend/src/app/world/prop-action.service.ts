@@ -330,7 +330,8 @@ export class PropActionService {
     trigger: 'activate' | 'adone' | 'bump' | 'create'
   ) {
     const action = prop.userData[trigger]
-    if (action == null) {
+    // A prop with no parent means it's being deleted
+    if (action == null || prop.parent == null) {
       return
     }
     if (action.name != null) {

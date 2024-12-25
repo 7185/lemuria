@@ -317,6 +317,14 @@ export class TerrainService {
     })
   }
 
+  private getPage(xPage: number, zPage: number) {
+    return this.terrain!.getObjectByName(`${xPage}_${zPage}`) as Mesh
+  }
+
+  private getPosAndIndex(page: Mesh) {
+    return [page.geometry.getAttribute('position'), page.geometry.getIndex()!]
+  }
+
   /**
    * Fix the height gaps between the pages
    * Called only once per new page and calculate the BVH (or recalculate for neighbors)
@@ -326,32 +334,20 @@ export class TerrainService {
    * @param zPage Z coordinate for page
    */
   private fixPageGaps(page: Mesh, xPage: number, zPage: number) {
-    const northPage = this.terrain!.getObjectByName(
-      `${xPage}_${zPage + 1}`
-    ) as Mesh
-    const westPage = this.terrain!.getObjectByName(
-      `${xPage + 1}_${zPage}`
-    ) as Mesh
-    const southPage = this.terrain!.getObjectByName(
-      `${xPage}_${zPage - 1}`
-    ) as Mesh
-    const eastPage = this.terrain!.getObjectByName(
-      `${xPage - 1}_${zPage}`
-    ) as Mesh
-    const northWestPage = this.terrain!.getObjectByName(
-      `${xPage + 1}_${zPage + 1}`
-    ) as Mesh
-    const southEastPage = this.terrain!.getObjectByName(
-      `${xPage - 1}_${zPage - 1}`
-    ) as Mesh
+    const pages = {
+      north: this.getPage(xPage, zPage + 1),
+      west: this.getPage(xPage + 1, zPage),
+      south: this.getPage(xPage, zPage - 1),
+      east: this.getPage(xPage - 1, zPage),
+      northWest: this.getPage(xPage + 1, zPage + 1),
+      southEast: this.getPage(xPage - 1, zPage - 1)
+    }
+
     const lastFaceIndex = TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE * 2 - 1
+    const [positions, indices] = this.getPosAndIndex(page)
 
-    const positions = page.geometry.getAttribute('position')
-    const indices = page.geometry.getIndex()!
-
-    if (northPage) {
-      const northPositions = northPage.geometry.getAttribute('position')
-      const northIndices = northPage.geometry.getIndex()!
+    if (pages.north) {
+      const [northPositions, northIndices] = this.getPosAndIndex(pages.north)
       // Get north page's south
       const south = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
         northPositions.getY(northIndices.getX(i * 2 * 3))
@@ -369,9 +365,8 @@ export class TerrainService {
       positions.needsUpdate = true
       page.geometry.computeVertexNormals()
     }
-    if (westPage) {
-      const westPositions = westPage.geometry.getAttribute('position')
-      const westIndices = westPage.geometry.getIndex()!
+    if (pages.west) {
+      const [westPositions, westIndices] = this.getPosAndIndex(pages.west)
       // Get west page's east
       const east = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
         westPositions.getY(westIndices.getX(i * TERRAIN_PAGE_SIZE * 2 * 3))
@@ -389,9 +384,8 @@ export class TerrainService {
       positions.needsUpdate = true
       page.geometry.computeVertexNormals()
     }
-    if (southPage) {
-      const southPositions = southPage.geometry.getAttribute('position')
-      const southIndices = southPage.geometry.getIndex()!
+    if (pages.south) {
+      const [southPositions, southIndices] = this.getPosAndIndex(pages.south)
       // Get current south
       const south = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
         positions.getY(indices.getX(i * 2 * 3))
@@ -407,12 +401,11 @@ export class TerrainService {
         southIndex++
       }
       southPositions.needsUpdate = true
-      southPage.geometry.computeVertexNormals()
-      PlayerCollider.updateTerrainBVH(southPage)
+      pages.south.geometry.computeVertexNormals()
+      PlayerCollider.updateTerrainBVH(pages.south)
     }
-    if (eastPage) {
-      const eastPositions = eastPage.geometry.getAttribute('position')
-      const eastIndices = eastPage.geometry.getIndex()!
+    if (pages.east) {
+      const [eastPositions, eastIndices] = this.getPosAndIndex(pages.east)
       // Get current east
       const east = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
         positions.getY(indices.getX(i * TERRAIN_PAGE_SIZE * 2 * 3))
@@ -428,13 +421,12 @@ export class TerrainService {
         eastIndex++
       }
       eastPositions.needsUpdate = true
-      eastPage.geometry.computeVertexNormals()
-      PlayerCollider.updateTerrainBVH(eastPage)
+      pages.east.geometry.computeVertexNormals()
+      PlayerCollider.updateTerrainBVH(pages.east)
     }
-    if (northWestPage) {
+    if (pages.northWest) {
       // We can fix current north-west corner
-      const nwPositions = northWestPage.geometry.getAttribute('position')
-      const nwIndices = northWestPage.geometry.getIndex()!
+      const [nwPositions, nwIndices] = this.getPosAndIndex(pages.northWest)
       // Get north west page's south east corner (0 = first face)
       const seCorner = nwPositions.getY(nwIndices.getX(0))
       // Set corner
@@ -442,17 +434,16 @@ export class TerrainService {
       positions.needsUpdate = true
       page.geometry.computeVertexNormals()
     }
-    if (southEastPage) {
+    if (pages.southEast) {
       // We can fix south-east page's north-west corner
-      const sePositions = southEastPage.geometry.getAttribute('position')
-      const seIndices = southEastPage.geometry.getIndex()!
+      const [sePositions, seIndices] = this.getPosAndIndex(pages.southEast)
       // Get current south east corner (0 = first face)
       const seCorner = positions.getY(indices.getX(0))
       // Set corner
       sePositions.setY(seIndices.getY(lastFaceIndex * 3), seCorner)
       sePositions.needsUpdate = true
-      southEastPage.geometry.computeVertexNormals()
-      PlayerCollider.updateTerrainBVH(southEastPage)
+      pages.southEast.geometry.computeVertexNormals()
+      PlayerCollider.updateTerrainBVH(pages.southEast)
     }
     PlayerCollider.updateTerrainBVH(page)
   }
