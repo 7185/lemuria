@@ -1,4 +1,5 @@
-import {effect, inject, Injectable, signal, untracked} from '@angular/core'
+import {inject, Injectable, signal} from '@angular/core'
+import {toObservable} from '@angular/core/rxjs-interop'
 import {
   catchError,
   concatMap,
@@ -92,47 +93,44 @@ export class WorldService {
   private avatarListener: Subscription
 
   constructor() {
-    // Effect for teleport
-    effect(() => {
-      const {world, position, isNew} = this.teleportSvc.teleport()
+    toObservable(this.teleportSvc.teleport).subscribe(
+      ({world, position, isNew}) => {
+        // No world joined yet
+        if (world?.toLowerCase() === 'nowhere') {
+          return
+        }
+        // Connect to the socket first
+        this.socket.connect()
 
-      // No world joined yet
-      if (world?.toLowerCase() === 'nowhere') {
-        return
-      }
-      // Connect to the socket first
-      this.socket.connect()
+        const currentPos = this.playerLocation.position
 
-      const currentPos = this.playerLocation.position
+        if (!world || world.toLowerCase() === this.worldName.toLowerCase()) {
+          this.teleportSvc.teleportFrom(this.worldName, currentPos, isNew)
+          this.teleport(position)
+          return
+        }
 
-      if (!world || world.toLowerCase() === this.worldName.toLowerCase()) {
-        this.teleportSvc.teleportFrom(this.worldName, currentPos, isNew)
-        this.teleport(position)
-        return
-      }
+        const targetWorld = this.worldList().find(
+          (w) => w.name.toLowerCase() === world.toLowerCase()
+        )
+        if (!targetWorld) {
+          this.socket.messages.next({
+            type: 'err',
+            data: `World ${world} is not available`
+          })
+          return
+        }
 
-      const targetWorld = untracked(this.worldList).find(
-        (w) => w.name.toLowerCase() === world.toLowerCase()
-      )
-      if (!targetWorld) {
-        this.socket.messages.next({
-          type: 'err',
-          data: `World ${world} is not available`
+        this.http.world(targetWorld.id).subscribe((w: WorldData) => {
+          this.teleportSvc.teleportFrom(this.worldName, currentPos, isNew)
+          this.setWorld(w, position)
         })
-        return
       }
-
-      this.http.world(targetWorld.id).subscribe((w: WorldData) => {
-        this.teleportSvc.teleportFrom(this.worldName, currentPos, isNew)
-        this.setWorld(w, position)
-      })
-    })
+    )
 
     // Register texture animator to the engine
-    effect(() => {
-      if (this.engineSvc.texturesAnimation() > 0) {
-        this.propSvc.texturesNextFrame()
-      }
+    toObservable(this.engineSvc.texturesAnimation).subscribe((animation) => {
+      if (animation > 0) this.propSvc.texturesNextFrame()
     })
 
     for (let i = -this.chunkLoadRadius; i <= this.chunkLoadRadius; i++) {
@@ -155,23 +153,17 @@ export class WorldService {
       return d0 - d1
     })
 
-    // Position update
-    effect(() => {
-      // Register chunk updater to the engine
-      this.autoUpdateChunks(this.engineSvc.playerPosition())
-      this.terrainSvc.getTerrainPages(
-        this.engineSvc.playerPosition().x,
-        this.engineSvc.playerPosition().z,
-        1
-      )
+    // Register chunk updater to the engine
+    toObservable(this.engineSvc.playerPosition).subscribe((position) => {
+      this.autoUpdateChunks(position)
+      this.terrainSvc.getTerrainPages(position.x, position.z, 1)
     })
 
     // User list change
-    effect(() => {
+    toObservable(this.userSvc.userList).subscribe((userList) => {
       for (const user of this.engineSvc.users()) {
         if (
-          !this.userSvc
-            .userList()
+          !userList
             .filter((u) => u.world === this.worldId)
             .map((u) => u.id)
             .includes(user.name)
@@ -179,7 +171,7 @@ export class WorldService {
           this.engineSvc.removeUser(user)
         }
       }
-      for (const u of this.userSvc.userList()) {
+      for (const u of userList) {
         const user = this.engineSvc.users().find((o) => o.name === u.id)
         if (
           user != null ||
@@ -206,7 +198,7 @@ export class WorldService {
           'copy'
         ].includes(action)
       ) {
-        this.setObjectChunk(this.buildSvc.selectedProp)
+        this.setObjectChunk(this.buildSvc.selectedProp())
       }
     })
   }
@@ -509,22 +501,22 @@ export class WorldService {
           lod.userData.world.chunk.z === chunkZ
       )
 
-    if (newLOD) {
-      oldChunk.remove(object)
-
-      // Regenerate boundsTree for source LOD, if it's different from the destination one
-      if (oldLOD !== newLOD) {
-        oldChunk.userData.bvhUpdate.next()
-      }
-
-      const chunk = newLOD.levels[0].object
-      chunk.add(object)
-      object.position.add(oldChunkPos).sub(newLOD.position)
+    if (newLOD == null) {
+      console.log(
+        `Warning: Trying to move object ${object.name} to an uninitialized chunk (${chunkX}, ${chunkZ})`
+      )
       return
     }
-    console.log(
-      `Warning: Trying to move object ${object.name} to an uninitialized chunk (${chunkX}, ${chunkZ})`
-    )
+    oldChunk.remove(object)
+
+    // Regenerate boundsTree for source LOD, if it's different from the destination one
+    if (oldLOD !== newLOD) {
+      oldChunk.userData.bvhUpdate.next()
+    }
+
+    const chunk = newLOD.levels[0].object
+    chunk.add(object)
+    object.position.add(oldChunkPos).sub(newLOD.position)
   }
 
   /**

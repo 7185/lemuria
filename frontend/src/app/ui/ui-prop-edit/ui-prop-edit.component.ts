@@ -4,7 +4,6 @@ import {
   computed,
   inject
 } from '@angular/core'
-import type {WritableSignal} from '@angular/core'
 import {DatePipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
 import {CdkDrag, CdkDragHandle} from '@angular/cdk/drag-drop'
@@ -16,7 +15,6 @@ import {
   FaLayersComponent,
   FaLayersTextComponent
 } from '@fortawesome/angular-fontawesome'
-import type {Group} from 'three'
 import {PropService} from '../../world/prop.service'
 import type {PropCtl} from '../../world/prop.service'
 import {BuildService} from '../../engine/build.service'
@@ -69,21 +67,16 @@ export class UiPropEditComponent {
   faRotate = faRotate
   faTrashCan = faTrashCan
 
-  protected selectedProp: WritableSignal<Group>
-  protected displayed = computed(() => this.selectedProp() === null)
+  protected displayed = computed(() => this.buildSvc.selectedProp() === null)
 
-  private readonly buildSvc = inject(BuildService)
+  protected readonly buildSvc = inject(BuildService)
   private readonly propSvc = inject(PropService)
 
-  constructor() {
-    this.selectedProp = this.buildSvc.selectedPropSignal
-  }
-
   updateName(name: string) {
-    if (this.selectedProp() == null) {
+    if (this.buildSvc.selectedProp() == null) {
       return
     }
-    this.selectedProp().name = name
+    this.buildSvc.selectedProp().name = name
   }
 
   trigger(event: MouseEvent, control: PropCtl) {

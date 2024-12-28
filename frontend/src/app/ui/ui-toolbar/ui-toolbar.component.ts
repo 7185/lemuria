@@ -25,11 +25,9 @@ import {UserService} from '../../user'
 import {
   ChangeDetectionStrategy,
   Component,
-  effect,
   inject,
   Renderer2,
   signal,
-  untracked,
   viewChild
 } from '@angular/core'
 import type {ElementRef, OnInit} from '@angular/core'
@@ -128,20 +126,16 @@ export class UiToolbarComponent implements OnInit {
   private compass = viewChild.required<ElementRef>('compass')
 
   constructor() {
-    effect(() => {
-      untracked(this.worldSvc.worldList).forEach((w) => (w.users = 0))
-      this.userSvc.userList().forEach((u) => {
-        const world = untracked(this.worldSvc.worldList).find(
-          (w) => u.world === w.id
-        )
+    toObservable(this.userSvc.userList).subscribe((list) => {
+      this.worldSvc.worldList().forEach((w) => (w.users = 0))
+      list.forEach((u) => {
+        const world = this.worldSvc.worldList().find((w) => u.world === w.id)
         if (world) {
           world.users++
         }
       })
     })
-
-    effect(() => {
-      const u = this.http.getLogged()()
+    toObservable(this.http.getLogged()).subscribe((u) => {
       this.userId = u.id
       if (u.id != null) {
         this.http
@@ -160,7 +154,6 @@ export class UiToolbarComponent implements OnInit {
           })
       }
     })
-
     toObservable(this.engineSvc.compassSignal)
       .pipe(
         throttleTime(100),
@@ -186,11 +179,13 @@ export class UiToolbarComponent implements OnInit {
       })
 
     if (this.debug) {
-      this.engineSvc.fpsObs.pipe(throttleTime(1000)).subscribe((fps) => {
-        const memInfo = this.engineSvc.getMemInfo()
-        this.strFps = `${fps} FPS ${memInfo[1]} draws`
-        this.strMem = `${memInfo[0].geometries} Geom. ${memInfo[0].textures} Text.`
-      })
+      toObservable(this.engineSvc.fps)
+        .pipe(throttleTime(1000))
+        .subscribe((fps) => {
+          const memInfo = this.engineSvc.getMemInfo()
+          this.strFps = `${fps} FPS ${memInfo[1]} draws`
+          this.strMem = `${memInfo[0].geometries} Geom. ${memInfo[0].textures} Text.`
+        })
     }
   }
 

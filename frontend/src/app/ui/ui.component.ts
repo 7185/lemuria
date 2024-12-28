@@ -33,10 +33,10 @@ export class UiComponent {
 
   constructor() {
     this.loadPropEdit = computed(
-      () => this.buildSvc.selectedPropSignal()?.name != null
+      () => this.buildSvc.selectedProp()?.name != null
     )
     this.loadTerrainEdit = computed(
-      () => this.buildSvc.selectedCellSignal()?.height != null
+      () => this.buildSvc.selectedCell()?.height != null
     )
   }
 }

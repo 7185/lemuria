@@ -30,8 +30,8 @@
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>Texture</mat-label>
-      <input matInput type="number" [(ngModel)]="selectedCell().texture" min="0" max="62">
+      <input matInput type="number" [(ngModel)]="buildSvc.selectedCell().texture" min="0" max="62">
     </mat-form-field>
-    <mat-checkbox [(ngModel)]="selectedCell().hole">Hole</mat-checkbox>
+    <mat-checkbox [(ngModel)]="buildSvc.selectedCell().hole">Hole</mat-checkbox>
   </div>
 </div>

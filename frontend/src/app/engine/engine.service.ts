@@ -1,6 +1,6 @@
 import {fromEvent, timer} from 'rxjs'
 import {toObservable} from '@angular/core/rxjs-interop'
-import {effect, inject, Injectable, signal} from '@angular/core'
+import {inject, Injectable, signal} from '@angular/core'
 import type {ElementRef} from '@angular/core'
 import {
   BufferGeometry,
@@ -78,8 +78,7 @@ const nearestChunkPattern = [
 @Injectable({providedIn: 'root'})
 export class EngineService {
   compassSignal = signal({pos: new Vector3(), theta: 0})
-  fpsSignal = signal('0')
-  fpsObs = toObservable(this.fpsSignal)
+  fps = signal(0)
   maxFps = signal(60)
   maxLights = signal(6)
   texturesAnimation = signal(0)
@@ -165,12 +164,10 @@ export class EngineService {
 
   constructor() {
     this.raycaster.firstHitOnly = true
-    effect(() => {
-      this.refreshLights(this.maxLights())
-    })
-    effect(() => {
-      this.updateFog(this.player.inWater())
-    })
+    toObservable(this.maxLights).subscribe((lights) =>
+      this.refreshLights(lights)
+    )
+    toObservable(this.player.inWater).subscribe(() => this.updateFog())
   }
 
   cancel(): void {
@@ -271,7 +268,7 @@ export class EngineService {
   }
 
   clearObjects() {
-    this.buildSvc.deselectProp(this.buildNode)
+    this.buildSvc.deselectProp()
     // Children is a dynamic iterable, we need a copy to get all of them
     for (const prop of [...this.objectsNode.children]) {
       this.removeObject(prop as Group)
@@ -286,7 +283,7 @@ export class EngineService {
   }
 
   clearScene() {
-    this.buildSvc.deselectProp(this.buildNode)
+    this.buildSvc.deselectProp()
     for (const prop of [...this.worldNode.children]) {
       this.removeWorldObject(prop as Group)
     }
@@ -348,8 +345,8 @@ export class EngineService {
     return this.chunkTile
   }
 
-  updateFog(inWater = this.player.inWater()) {
-    if (inWater) {
+  updateFog() {
+    if (this.player.inWater()) {
       this.fog.color = new Color(this.water?.userData?.color ?? 0x00ffff)
       this.fog.near = 0
       this.fog.far = this.water?.userData?.under_view ?? 120
@@ -406,9 +403,9 @@ export class EngineService {
   }
 
   addUser(group: Group) {
+    const user = this.userSvc.getUser(group.name)
     const div = document.createElement('div')
     div.className = 'text-label'
-    const user = this.userSvc.getUser(group.name)
     div.textContent = user?.name ?? ''
 
     const label = new CSS2DObject(div)
@@ -448,8 +445,8 @@ export class EngineService {
   }
 
   removeObject(group: Group) {
-    if (group === this.buildSvc.selectedProp) {
-      this.buildSvc.deselectProp(this.buildNode)
+    if (group === this.buildSvc.selectedProp()) {
+      this.buildSvc.deselectProp()
     }
     this.handleHiddenProp(group)
     this.disposeMaterial(group)
@@ -474,12 +471,16 @@ export class EngineService {
     if (this.scene == null) {
       return
     }
-    this.pointLights.forEach((light: PointLight) => {
-      this.removeLight(light)
-      light.dispose()
-    })
-    this.pointLights = Array.from({length}, () => new PointLight(0, 0))
-    this.scene.add(...this.pointLights)
+
+    while (this.pointLights.length > length) {
+      const light = this.pointLights.pop()!;
+      this.removeLight(light);
+    }
+    while (this.pointLights.length < length) {
+      const light = new PointLight(0, 0);
+      this.pointLights.push(light)
+      this.scene.add(light)
+    }
   }
 
   removeWorldObject(group: Group) {
@@ -576,11 +577,11 @@ export class EngineService {
       }
       if (act === 'delete') {
         // Remove prop from scene and do nothing else
-        this.removeObject(this.buildSvc.selectedProp)
+        this.removeObject(this.buildSvc.selectedProp())
         return
       }
       // Handle prop moving and duplication
-      this.buildSvc.moveProp(act, this.cameraDirection, this.buildNode)
+      this.buildSvc.moveProp(act, this.cameraDirection)
     })
     timer(0, 100).subscribe(() => {
       this.mouseIdle++
@@ -745,7 +746,7 @@ export class EngineService {
     if (this.deltaFps <= 1 / this.maxFps()) {
       return
     }
-    this.fpsSignal.set((1 / this.deltaFps).toFixed())
+    this.fps.set(Math.round(1 / this.deltaFps))
     this.deltaSinceLastFrame = this.deltaFps
     this.deltaFps = (this.deltaFps % 1) / this.maxFps()
     this.renderer.clear()
@@ -819,9 +820,9 @@ export class EngineService {
   }
 
   private leftClick(_: MouseEvent) {
-    this.buildSvc.deselectCell(this.buildNode)
-    if (this.buildSvc.selectedProp != null) {
-      this.buildSvc.deselectProp(this.buildNode)
+    this.buildSvc.deselectCell()
+    if (this.buildSvc.selectedProp() != null) {
+      this.buildSvc.deselectProp()
       // Left click to exit buildMode, do nothing else
       return
     }

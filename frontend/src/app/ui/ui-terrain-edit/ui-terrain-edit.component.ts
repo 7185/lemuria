@@ -4,7 +4,6 @@ import {
   computed,
   inject
 } from '@angular/core'
-import type {WritableSignal} from '@angular/core'
 import {DecimalPipe} from '@angular/common'
 import {FormsModule} from '@angular/forms'
 import {CdkDrag, CdkDragHandle} from '@angular/cdk/drag-drop'
@@ -56,20 +55,11 @@ export class UiTerrainEditComponent {
   faClone = faClone
   faSquare = faSquare
 
-  selectedCell: WritableSignal<{
-    height?: number
-    texture?: number
-    hole?: boolean
-  }>
-  height = computed(() => this.selectedCell().height ?? 0)
-
-  protected displayed = computed(() => this.selectedCell().height === undefined)
-
-  private readonly buildSvc = inject(BuildService)
-
-  constructor() {
-    this.selectedCell = this.buildSvc.selectedCellSignal
-  }
+  protected height = computed(() => this.buildSvc.selectedCell().height ?? 0)
+  protected displayed = computed(
+    () => this.buildSvc.selectedCell().height === undefined
+  )
+  protected readonly buildSvc = inject(BuildService)
 
   trigger(event: MouseEvent) {
     event.preventDefault()

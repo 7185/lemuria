@@ -21,13 +21,12 @@ import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils/constants'
 })
 export class BuildService {
   buildMode = false
-  selectedProp: Group | null = null
-  selectedCellSignal = signal<{
+  selectedCell = signal<{
     height?: number
     texture?: number
     hole?: boolean
   }>({})
-  selectedPropSignal = signal<Group>(null)
+  selectedProp = signal<Group>(null)
   private axesHelper: AxesHelper | null = null
   private cellSelection: Group | null = null
   private propSelection: Group | null = null
@@ -53,14 +52,13 @@ export class BuildService {
 
   selectProp(prop: Group, buildNode: Group) {
     if (this.cellSelection != null) {
-      this.deselectCell(buildNode)
+      this.deselectCell()
     }
     if (this.propSelection != null) {
-      this.deselectProp(buildNode)
+      this.deselectProp()
     }
     this.buildMode = true
-    this.selectedProp = prop
-    this.selectedPropSignal.set(prop)
+    this.selectedProp.set(prop)
     console.log(prop)
 
     const geometry = new BoxGeometry(
@@ -83,35 +81,38 @@ export class BuildService {
     buildNode.add(this.propSelection)
   }
 
-  deselectProp(buildNode: Group) {
+  deselectProp() {
     if (this.propSelectionBox == null) {
       return
     }
+    this.axesHelper?.dispose()
+    this.propSelection?.parent.remove(this.propSelection)
+    this.axesHelper = null
+    this.propSelection = null
+    this.propSelectionBox?.geometry.dispose()
+    ;(this.propSelectionBox?.material as Material)?.dispose()
+    this.propSelectionBox = null
+    const prop = this.selectedProp()
+    this.selectedProp.set(null)
+    this.buildMode = false
+    if (prop == null) {
+      return
+    }
     // Track the parent chunk in case of prop deletion since the code is async
-    const chunk = this.selectedProp.parent
-    this.propActionSvc.parseActions(this.selectedProp).then(() => {
-      this.propActionSvc.showProp(this.selectedProp)
+    const chunk = prop.parent
+    this.propActionSvc.parseActions(prop).then(() => {
+      this.propActionSvc.showProp(prop)
       chunk.userData.bvhUpdate.next()
-      this.buildMode = false
-      this.selectedProp = null
-      this.selectedPropSignal.set(null)
-      this.propSelectionBox.geometry.dispose()
-      ;(this.propSelectionBox.material as Material).dispose()
-      this.axesHelper?.dispose()
-      buildNode.remove(this.propSelection)
-      this.propSelectionBox = null
-      this.axesHelper = null
-      this.propSelection = null
     })
   }
 
-  moveProp(action: PropCtl, cameraDirection: Vector3, buildNode: Group) {
+  moveProp(action: PropCtl, cameraDirection: Vector3) {
     if (action === 'deselect') {
-      this.deselectProp(buildNode)
+      this.deselectProp()
       return
     }
     const allowRotation =
-      this.selectedProp.userData.rwx?.axisAlignment === 'none'
+      this.selectedProp().userData.rwx?.axisAlignment === 'none'
     let moveStep = 0.5
     let rotStep = Math.PI / 12
     if (this.inputSysSvc.controls['clip']) {
@@ -130,34 +131,34 @@ export class BuildService {
     }
     switch (action) {
       case 'up': {
-        this.selectedProp.position.add(new Vector3(0, moveStep, 0))
+        this.selectedProp().position.add(new Vector3(0, moveStep, 0))
         this.updatePropSelectionBox()
         break
       }
       case 'down': {
-        this.selectedProp.position.add(new Vector3(0, -moveStep, 0))
+        this.selectedProp().position.add(new Vector3(0, -moveStep, 0))
         this.updatePropSelectionBox()
         break
       }
       case 'forward': {
-        this.selectedProp.position.add(v.multiplyScalar(moveStep))
+        this.selectedProp().position.add(v.multiplyScalar(moveStep))
         this.updatePropSelectionBox()
         break
       }
       case 'backward': {
-        this.selectedProp.position.add(v.multiplyScalar(-moveStep))
+        this.selectedProp().position.add(v.multiplyScalar(-moveStep))
         this.updatePropSelectionBox()
         break
       }
       case 'left': {
-        this.selectedProp.position.add(
+        this.selectedProp().position.add(
           new Vector3(v.z * moveStep, 0, v.x * -moveStep)
         )
         this.updatePropSelectionBox()
         break
       }
       case 'right': {
-        this.selectedProp.position.add(
+        this.selectedProp().position.add(
           new Vector3(v.z * -moveStep, 0, v.x * moveStep)
         )
         this.updatePropSelectionBox()
@@ -165,68 +166,68 @@ export class BuildService {
       }
       case 'rotY': {
         if (allowRotation) {
-          this.selectedProp.rotateOnAxis(Y_AXIS, rotStep)
+          this.selectedProp().rotateOnAxis(Y_AXIS, rotStep)
           this.updatePropSelectionBox()
         }
         break
       }
       case 'rotnY': {
         if (allowRotation) {
-          this.selectedProp.rotateOnAxis(Y_AXIS, -rotStep)
+          this.selectedProp().rotateOnAxis(Y_AXIS, -rotStep)
           this.updatePropSelectionBox()
         }
         break
       }
       case 'rotX': {
         if (allowRotation) {
-          this.selectedProp.rotateOnAxis(X_AXIS, rotStep)
+          this.selectedProp().rotateOnAxis(X_AXIS, rotStep)
           this.updatePropSelectionBox()
         }
         break
       }
       case 'rotnX': {
         if (allowRotation) {
-          this.selectedProp.rotateOnAxis(X_AXIS, -rotStep)
+          this.selectedProp().rotateOnAxis(X_AXIS, -rotStep)
           this.updatePropSelectionBox()
         }
         break
       }
       case 'rotZ': {
         if (allowRotation) {
-          this.selectedProp.rotateOnAxis(Z_AXIS, rotStep)
+          this.selectedProp().rotateOnAxis(Z_AXIS, rotStep)
           this.updatePropSelectionBox()
         }
         break
       }
       case 'rotnZ': {
         if (allowRotation) {
-          this.selectedProp.rotateOnAxis(Z_AXIS, -rotStep)
+          this.selectedProp().rotateOnAxis(Z_AXIS, -rotStep)
           this.updatePropSelectionBox()
         }
         break
       }
       case 'snapGrid': {
-        this.selectedProp.position.set(
-          Math.round(this.selectedProp.position.x * 2) / 2,
-          Math.round(this.selectedProp.position.y * 2) / 2,
-          Math.round(this.selectedProp.position.z * 2) / 2
+        this.selectedProp().position.set(
+          Math.round(this.selectedProp().position.x * 2) / 2,
+          Math.round(this.selectedProp().position.y * 2) / 2,
+          Math.round(this.selectedProp().position.z * 2) / 2
         )
         this.updatePropSelectionBox()
         break
       }
       case 'rotReset': {
         if (allowRotation) {
-          this.selectedProp.rotation.set(0, 0, 0)
+          this.selectedProp().rotation.set(0, 0, 0)
           this.updatePropSelectionBox()
         }
         break
       }
       case 'copy': {
-        const {parent} = this.selectedProp
-        this.selectedProp = this.selectedProp.clone()
-        this.initPropCallbacks(this.selectedProp)
-        this.selectedProp.position.add(v.multiplyScalar(moveStep))
-        parent.add(this.selectedProp)
+        const {parent} = this.selectedProp()
+        this.selectedProp.set(this.selectedProp().clone())
+        this.initPropCallbacks(this.selectedProp())
+        this.selectedProp().position.add(v.multiplyScalar(moveStep))
+        parent.add(this.selectedProp())
         this.updatePropSelectionBox()
         break
       }
@@ -236,25 +237,25 @@ export class BuildService {
   }
 
   private updatePropSelectionBox(): void {
-    this.selectedProp.updateMatrix()
-    const chunkData = this.selectedProp.parent.userData.world.chunk
+    this.selectedProp().updateMatrix()
+    const chunkData = this.selectedProp().parent.userData.world.chunk
     const center = new Vector3(
-      this.selectedProp.userData.boxCenter.x,
-      this.selectedProp.userData.boxCenter.y,
-      this.selectedProp.userData.boxCenter.z
+      this.selectedProp().userData.boxCenter.x,
+      this.selectedProp().userData.boxCenter.y,
+      this.selectedProp().userData.boxCenter.z
     )
     this.propSelectionBox.position.copy(center)
-    center.applyAxisAngle(Y_AXIS, this.selectedProp.rotation.y)
-    center.applyAxisAngle(Z_AXIS, this.selectedProp.rotation.z)
-    center.applyAxisAngle(X_AXIS, this.selectedProp.rotation.x)
+    center.applyAxisAngle(Y_AXIS, this.selectedProp().rotation.y)
+    center.applyAxisAngle(Z_AXIS, this.selectedProp().rotation.z)
+    center.applyAxisAngle(X_AXIS, this.selectedProp().rotation.x)
     this.propSelection.position.copy(
       new Vector3(
-        chunkData.x + this.selectedProp.position.x,
-        this.selectedProp.position.y,
-        chunkData.z + this.selectedProp.position.z
+        chunkData.x + this.selectedProp().position.x,
+        this.selectedProp().position.y,
+        chunkData.z + this.selectedProp().position.z
       )
     )
-    this.propSelection.rotation.copy(this.selectedProp.rotation)
+    this.propSelection.rotation.copy(this.selectedProp().rotation)
     this.propSelection.updateMatrix()
   }
 
@@ -275,9 +276,9 @@ export class BuildService {
      *  | /   |   N
      * seZ---seX
      */
-    this.deselectProp(buildNode)
+    this.deselectProp()
     if (this.cellSelection != null) {
-      this.deselectCell(buildNode)
+      this.deselectCell()
     }
 
     this.cellSelection = new Group()
@@ -328,10 +329,10 @@ export class BuildService {
     )
     this.cellSelection.add(cell, square)
     buildNode.add(this.cellSelection)
-    this.selectedCellSignal.set({height: cellSE.y})
+    this.selectedCell.set({height: cellSE.y})
   }
 
-  deselectCell(buildNode: Group) {
+  deselectCell() {
     if (this.cellSelection == null) {
       return
     }
@@ -339,8 +340,8 @@ export class BuildService {
       line.geometry.dispose()
       ;(line.material as Material).dispose()
     }
-    buildNode.remove(this.cellSelection)
+    this.cellSelection.parent.remove(this.cellSelection)
     this.cellSelection = null
-    this.selectedCellSignal.set({})
+    this.selectedCell.set({})
   }
 }

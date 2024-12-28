@@ -1,4 +1,4 @@
-import {effect, inject, Injectable} from '@angular/core'
+import {computed, inject, Injectable} from '@angular/core'
 import parseSequence, {FileType, getJointTag} from 'aw-sequence-parser'
 import {EngineService} from '../engine/engine.service'
 import {PropService} from '../world/prop.service'
@@ -83,15 +83,14 @@ export class AvatarAnimationService {
     fileType: FileType.AUTO,
     fflate
   }
-  private frameRate = 60
   private readonly engineSvc = inject(EngineService)
   private readonly propSvc = inject(PropService)
 
-  constructor() {
-    effect(() => {
-      this.setFrameRate(this.engineSvc.maxFps())
-    })
-  }
+  private frameRate = computed(() => {
+    const newFrameRate = this.engineSvc.maxFps()
+    this.handleFrameRateChange(newFrameRate)
+    return newFrameRate
+  })
 
   async loadSequence(name: string, uri: string) {
     if (this.sequences.has(name)) {
@@ -132,9 +131,7 @@ export class AvatarAnimationService {
     return mgrPromise
   }
 
-  async setFrameRate(frameRate: number) {
-    this.frameRate = frameRate
-
+  async handleFrameRateChange(frameRate: number) {
     if (!this.sequences) {
       return
     }
@@ -244,8 +241,8 @@ export class AvatarAnimationService {
 
   private interpolate(sequence: ThreeSequence): ThreeSequence {
     // Upscale if needed
-    if (sequence.frameRate < this.frameRate) {
-      const ratio = this.frameRate / sequence.frameRate
+    if (sequence.frameRate < this.frameRate()) {
+      const ratio = this.frameRate() / sequence.frameRate
       const threeFrames = Array.from(
         {length: Math.floor(sequence.frames.length * ratio)},
         () => ({joints: {}, location: new Vector3()})
@@ -258,7 +255,7 @@ export class AvatarAnimationService {
         threeFrames[id] = sequence.frames[sequence.keyFrameIDs[index]]
       })
 
-      sequence.frameRate = this.frameRate
+      sequence.frameRate = this.frameRate()
       sequence.frames = threeFrames
       sequence.keyFrameIDs = keyFrameIDs
     }

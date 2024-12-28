@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """App module"""
 
+import quart_flask_patch
 import asyncio
 import tomllib
 
