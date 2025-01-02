@@ -1,6 +1,5 @@
 import {Injectable} from '@angular/core'
 import type {Group} from 'three'
-import {Vector3} from 'three'
 import {RPM, X_AXIS, Y_AXIS, Z_AXIS} from '../utils/constants'
 
 @Injectable({providedIn: 'root'})
@@ -30,11 +29,9 @@ export class PropAnimationService {
       moveData.completion = 0
       if (moveData.reset) {
         // Reset the position to the original position
-        prop.position.copy(
-          new Vector3()
-            .add(prop.userData.posOrig)
-            .sub(prop.parent.parent.position)
-        )
+        prop.position
+          .copy(prop.userData.posOrig)
+          .sub(prop.parent.parent.position)
       }
 
       if (moveData.direction < 0) {
@@ -44,11 +41,9 @@ export class PropAnimationService {
           return
         }
         // Move is complete for this loop so we can force the initial position back to avoid drifting issues
-        prop.position.copy(
-          new Vector3()
-            .add(prop.userData.posOrig)
-            .sub(prop.parent.parent.position)
-        )
+        prop.position
+          .copy(prop.userData.posOrig)
+          .sub(prop.parent.parent.position)
       }
       // Switch direction
       moveData.direction *= -1

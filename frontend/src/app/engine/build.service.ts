@@ -131,78 +131,71 @@ export class BuildService {
     }
     switch (action) {
       case 'up': {
-        this.selectedProp().position.add(new Vector3(0, moveStep, 0))
-        this.updatePropSelectionBox()
+        this.selectedProp().position.add({x: 0, y: moveStep, z: 0})
         break
       }
       case 'down': {
-        this.selectedProp().position.add(new Vector3(0, -moveStep, 0))
-        this.updatePropSelectionBox()
+        this.selectedProp().position.add({x: 0, y: -moveStep, z: 0})
         break
       }
       case 'forward': {
         this.selectedProp().position.add(v.multiplyScalar(moveStep))
-        this.updatePropSelectionBox()
         break
       }
       case 'backward': {
         this.selectedProp().position.add(v.multiplyScalar(-moveStep))
-        this.updatePropSelectionBox()
         break
       }
       case 'left': {
-        this.selectedProp().position.add(
-          new Vector3(v.z * moveStep, 0, v.x * -moveStep)
-        )
+        this.selectedProp().position.add({
+          x: v.z * moveStep,
+          y: 0,
+          z: v.x * -moveStep
+        })
         this.updatePropSelectionBox()
         break
       }
       case 'right': {
-        this.selectedProp().position.add(
-          new Vector3(v.z * -moveStep, 0, v.x * moveStep)
-        )
-        this.updatePropSelectionBox()
+        this.selectedProp().position.add({
+          x: v.z * -moveStep,
+          y: 0,
+          z: v.x * moveStep
+        })
         break
       }
       case 'rotY': {
         if (allowRotation) {
           this.selectedProp().rotateOnAxis(Y_AXIS, rotStep)
-          this.updatePropSelectionBox()
         }
         break
       }
       case 'rotnY': {
         if (allowRotation) {
           this.selectedProp().rotateOnAxis(Y_AXIS, -rotStep)
-          this.updatePropSelectionBox()
         }
         break
       }
       case 'rotX': {
         if (allowRotation) {
           this.selectedProp().rotateOnAxis(X_AXIS, rotStep)
-          this.updatePropSelectionBox()
         }
         break
       }
       case 'rotnX': {
         if (allowRotation) {
           this.selectedProp().rotateOnAxis(X_AXIS, -rotStep)
-          this.updatePropSelectionBox()
         }
         break
       }
       case 'rotZ': {
         if (allowRotation) {
           this.selectedProp().rotateOnAxis(Z_AXIS, rotStep)
-          this.updatePropSelectionBox()
         }
         break
       }
       case 'rotnZ': {
         if (allowRotation) {
           this.selectedProp().rotateOnAxis(Z_AXIS, -rotStep)
-          this.updatePropSelectionBox()
         }
         break
       }
@@ -212,13 +205,11 @@ export class BuildService {
           Math.round(this.selectedProp().position.y * 2) / 2,
           Math.round(this.selectedProp().position.z * 2) / 2
         )
-        this.updatePropSelectionBox()
         break
       }
       case 'rotReset': {
         if (allowRotation) {
           this.selectedProp().rotation.set(0, 0, 0)
-          this.updatePropSelectionBox()
         }
         break
       }
@@ -228,12 +219,12 @@ export class BuildService {
         this.initPropCallbacks(this.selectedProp())
         this.selectedProp().position.add(v.multiplyScalar(moveStep))
         parent.add(this.selectedProp())
-        this.updatePropSelectionBox()
         break
       }
       default:
         return
     }
+    this.updatePropSelectionBox()
   }
 
   private updatePropSelectionBox(): void {
@@ -293,18 +284,18 @@ export class BuildService {
       return
     }
 
-    const cellSE = localPos
-      .clone()
-      .add(new Vector3().fromBufferAttribute(position, index.getX(seIndex * 3)))
-    const cellNE = localPos
-      .clone()
-      .add(new Vector3().fromBufferAttribute(position, index.getY(seIndex * 3)))
-    const cellSW = localPos
-      .clone()
-      .add(new Vector3().fromBufferAttribute(position, index.getZ(seIndex * 3)))
-    const cellNW = localPos
-      .clone()
-      .add(new Vector3().fromBufferAttribute(position, index.getY(nwIndex * 3)))
+    const cellSE = new Vector3()
+      .fromBufferAttribute(position, index.getX(seIndex * 3))
+      .add(localPos)
+    const cellNE = new Vector3()
+      .fromBufferAttribute(position, index.getY(seIndex * 3))
+      .add(localPos)
+    const cellSW = new Vector3()
+      .fromBufferAttribute(position, index.getZ(seIndex * 3))
+      .add(localPos)
+    const cellNW = new Vector3()
+      .fromBufferAttribute(position, index.getY(nwIndex * 3))
+      .add(localPos)
 
     const square = new Line(
       new BufferGeometry().setFromPoints([

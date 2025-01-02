@@ -1,4 +1,5 @@
 import {Injectable} from '@angular/core'
+import type {PerspectiveCamera} from 'three'
 import {Audio, AudioListener} from 'three'
 
 @Injectable({
@@ -10,7 +11,7 @@ export class AudioService {
   private audio = new Audio(this.audioListener)
   bgUrl = ''
 
-  addListener(camera) {
+  addListener(camera: PerspectiveCamera) {
     camera.add(this.audioListener)
   }
 

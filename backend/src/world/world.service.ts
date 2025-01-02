@@ -17,15 +17,15 @@ export class WorldService {
 
   async getWorld(id: number) {
     const world = await this.db.world.findFirst({where: {id}})
-    if (world != null) {
-      const attr = JSON.parse(world.data ?? '{}')
-      return new World({
-        id: world.id,
-        name: world.name,
-        ...attr
-      })
+    if (world == null) {
+      return new World()
     }
-    return new World()
+    const attr = JSON.parse(world.data ?? '{}')
+    return new World({
+      id: world.id,
+      name: world.name,
+      ...attr
+    })
   }
 
   async getProps(

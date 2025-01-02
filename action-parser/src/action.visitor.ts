@@ -65,10 +65,7 @@ class ActionVisitor extends BaseActionVisitor {
   animateCommand(ctx: AnimateCommandCtx) {
     const res = {
       commandType: 'animate',
-      mask: false // default
-    }
-    if (ctx.Mask != null) {
-      res.mask = true
+      mask: ctx.Mask != null
     }
     if (ctx.tagParameter) {
       Object.assign(res, this.visit(ctx.tagParameter))
@@ -134,7 +131,7 @@ class ActionVisitor extends BaseActionVisitor {
         targetName: (ctx.nameParameter[0].children.Resource[0] as IToken).image
       })
     }
-    return res.color == null ? null : res
+    return res.color != null ? res : null
   }
 
   coronaCommand(ctx: CoronaCommandCtx) {
@@ -256,23 +253,17 @@ class ActionVisitor extends BaseActionVisitor {
     }
     const args = ctx.signArgs?.map((arg) => this.visit(arg))[0]
     const resource = ctx.Resource?.map((identToken) => identToken.image)
-    if (resource != null) {
-      let text = ''
-      if (resource.length > 1) {
-        if (!resource[0].startsWith('"')) {
-          // invalid sign
-          return {}
-        }
-        text = resource.join(' ')
-      } else {
-        text = resource[0]
-      }
-      text = text.replace(/(^"|"$)/g, '')
-      Object.assign(res, {text})
-    }
     if (args) {
       Object.assign(res, ...args)
     }
+    if (resource == null) {
+      return res
+    }
+    if (resource.length > 1 && !resource[0].startsWith('"')) {
+      // invalid sign
+      return {}
+    }
+    Object.assign(res, {text: resource.join(' ').replace(/(^"|"$)/g, '')})
     return res
   }
 
@@ -663,10 +654,7 @@ export class Action {
     parserInstance.input = lexResult.tokens
 
     const cst = parserInstance.actions()
-    if (parserInstance.errors.length > 0) {
-      return {}
-    }
-    return this.visitor.visit(cst)
+    return parserInstance.errors.length > 0 ? {} : this.visitor.visit(cst)
   }
 
   debug(inputText: string) {
@@ -674,9 +662,8 @@ export class Action {
     parserInstance.input = lexResult.tokens
 
     parserInstance.actions()
-    if (parserInstance.errors.length > 0) {
-      return parserInstance.errors[0].message
-    }
-    return 'OK'
+    return parserInstance.errors.length > 0
+      ? parserInstance.errors[0].message
+      : 'OK'
   }
 }

@@ -81,7 +81,6 @@ export class Player {
   }
 
   createBoundingBox(boxHeight: number) {
-    const boxPos = new Vector3(0, boxHeight / 2, 0).add(this.position)
     const boundingBox = new Group()
     boundingBox.name = 'boundingBox'
     const mainBoxGeometry = new BoxGeometry(
@@ -111,7 +110,11 @@ export class Player {
     )
     bottomBox.position.set(0, (Player.CLIMB_HEIGHT - boxHeight) / 2, 0)
     boundingBox.add(mainBox, topBox, bottomBox)
-    boundingBox.position.set(boxPos.x, boxPos.y, boxPos.z)
+    boundingBox.position.set(
+      this.position.x,
+      this.position.y + boxHeight / 2,
+      this.position.z
+    )
     boundingBox.userData.mainBox = mainBox
     boundingBox.userData.topBox = topBox
     boundingBox.userData.bottomBox = bottomBox

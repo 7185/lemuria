@@ -461,10 +461,8 @@ export class EngineService {
   }
 
   removeLight(light: PointLight) {
+    light.parent?.remove(light)
     light.dispose()
-    if (light.parent) {
-      light.parent.remove(light)
-    }
   }
 
   refreshLights(length: number) {
@@ -473,11 +471,11 @@ export class EngineService {
     }
 
     while (this.pointLights.length > length) {
-      const light = this.pointLights.pop()!;
-      this.removeLight(light);
+      const light = this.pointLights.pop()!
+      this.removeLight(light)
     }
     while (this.pointLights.length < length) {
-      const light = new PointLight(0, 0);
+      const light = new PointLight(0, 0)
       this.pointLights.push(light)
       this.scene.add(light)
     }
@@ -951,32 +949,26 @@ export class EngineService {
       rotSteps *= 3
     }
     if (this.inputSysSvc.controls['moveFwd']) {
-      this.player.velocity.add(
-        new Vector3(
-          reverse * this.cameraDirection.x,
-          0,
-          reverse * this.cameraDirection.z
-        ).multiplyScalar(movSteps)
-      )
+      this.player.velocity.add({
+        x: reverse * movSteps * this.cameraDirection.x,
+        y: 0,
+        z: reverse * movSteps * this.cameraDirection.z
+      })
     }
     if (this.inputSysSvc.controls['moveBck']) {
-      this.player.velocity.add(
-        new Vector3(
-          reverse * -this.cameraDirection.x,
-          0,
-          reverse * -this.cameraDirection.z
-        ).multiplyScalar(movSteps)
-      )
+      this.player.velocity.add({
+        x: reverse * movSteps * -this.cameraDirection.x,
+        y: 0,
+        z: reverse * movSteps * -this.cameraDirection.z
+      })
     }
     if (this.inputSysSvc.controls['turnLft']) {
       if (this.inputSysSvc.controls['clip']) {
-        this.player.velocity.add(
-          new Vector3(
-            reverse * this.cameraDirection.z,
-            0,
-            reverse * -this.cameraDirection.x
-          ).multiplyScalar(movSteps)
-        )
+        this.player.velocity.add({
+          x: reverse * movSteps * this.cameraDirection.z,
+          y: 0,
+          z: reverse * movSteps * -this.cameraDirection.x
+        })
       } else {
         this.player.rotation.y = radNormalized(
           this.player.rotation.y + reverse * rotSteps
@@ -986,13 +978,11 @@ export class EngineService {
     }
     if (this.inputSysSvc.controls['turnRgt']) {
       if (this.inputSysSvc.controls['clip']) {
-        this.player.velocity.add(
-          new Vector3(
-            reverse * -this.cameraDirection.z,
-            0,
-            reverse * this.cameraDirection.x
-          ).multiplyScalar(movSteps)
-        )
+        this.player.velocity.add({
+          x: reverse * movSteps * -this.cameraDirection.z,
+          y: 0,
+          z: reverse * movSteps * this.cameraDirection.x
+        })
       } else {
         this.player.rotation.y = radNormalized(
           this.player.rotation.y - reverse * rotSteps
@@ -1001,22 +991,18 @@ export class EngineService {
       this.rotateSprites()
     }
     if (this.inputSysSvc.controls['moveLft']) {
-      this.player.velocity.add(
-        new Vector3(
-          reverse * this.cameraDirection.z,
-          0,
-          reverse * -this.cameraDirection.x
-        ).multiplyScalar(movSteps)
-      )
+      this.player.velocity.add({
+        x: reverse * movSteps * this.cameraDirection.z,
+        y: 0,
+        z: reverse * movSteps * -this.cameraDirection.x
+      })
     }
     if (this.inputSysSvc.controls['moveRgt']) {
-      this.player.velocity.add(
-        new Vector3(
-          reverse * -this.cameraDirection.z,
-          0,
-          reverse * this.cameraDirection.x
-        ).multiplyScalar(movSteps)
-      )
+      this.player.velocity.add({
+        x: reverse * movSteps * -this.cameraDirection.z,
+        y: 0,
+        z: reverse * movSteps * this.cameraDirection.x
+      })
     }
     if (
       this.inputSysSvc.controls['lookUp'] &&
@@ -1032,11 +1018,11 @@ export class EngineService {
     }
     if (this.inputSysSvc.controls['moveUp']) {
       this.player.isFlying = true
-      this.player.velocity.add(new Vector3(0, 1, 0).multiplyScalar(movSteps))
+      this.player.velocity.add({x: 0, y: movSteps, z: 0})
     }
     if (this.inputSysSvc.controls['moveDwn']) {
       this.player.isFlying = true
-      this.player.velocity.add(new Vector3(0, 1, 0).multiplyScalar(-movSteps))
+      this.player.velocity.add({x: 0, y: -movSteps, z: 0})
     }
     if (this.inputSysSvc.controls['jmp'] && this.player.isOnFloor) {
       this.player.position.setY(this.player.position.y + Player.CLIMB_HEIGHT)
@@ -1167,13 +1153,12 @@ export class EngineService {
   }
 
   private isCoronaVisible(corona: Sprite) {
-    const cameraPosition = this.activeCamera.getWorldPosition(new Vector3())
     const spritePosition = corona.getWorldPosition(new Vector3())
     const cameraToSpriteDirection = new Vector3()
-      .subVectors(spritePosition, cameraPosition)
+      .subVectors(spritePosition, this.cameraPosition)
       .normalize()
 
-    this.raycaster.set(cameraPosition, cameraToSpriteDirection)
+    this.raycaster.set(this.cameraPosition, cameraToSpriteDirection)
 
     // Ignore the current prop during raycasting to prevent self-intersection
     const ignoreList = getMeshes(corona.parent!)
@@ -1195,7 +1180,8 @@ export class EngineService {
     // Check if there is an intersection and it is in front of the sprite
     return (
       !closestIntersection ||
-      closestIntersection.distance >= cameraPosition.distanceTo(spritePosition)
+      closestIntersection.distance >=
+        this.cameraPosition.distanceTo(spritePosition)
     )
   }
 }

@@ -438,11 +438,9 @@ export class PropActionService {
         target.userData.animation = prop.userData.animation || {}
         target.userData.animation.move = JSON.parse(JSON.stringify(command))
         // Reset on show
-        target.position.copy(
-          new Vector3()
-            .add(target.userData.posOrig)
-            .sub(target.parent.parent.position)
-        )
+        target.position
+          .copy(target.userData.posOrig)
+          .sub(target.parent.parent.position)
       })
     }
     if (action.rotate != null) {
@@ -459,9 +457,7 @@ export class PropActionService {
     if (prop.userData.animate == null) {
       return
     }
-    if (prop.userData.animateSub != null) {
-      prop.userData.animateSub.unsubscribe()
-    }
+    prop.userData.animateSub?.unsubscribe()
     prop.userData.animateSub = interval(prop.userData.animate.frameDelay)
       .pipe(
         take(prop.userData.animate.frameList.length),
@@ -487,9 +483,7 @@ export class PropActionService {
     if (prop.userData.animate == null) {
       return
     }
-    if (prop.userData.animateSub != null) {
-      prop.userData.animateSub.unsubscribe()
-    }
+    prop.userData.animateSub?.unsubscribe()
   }
 
   /**
@@ -628,12 +622,8 @@ export class PropActionService {
             }
             newMaterials[i].needsUpdate = true
           }
-          if (child.material[i].alphaMap != null) {
-            child.material[i].alphaMap.dispose()
-          }
-          if (child.material[i].map != null) {
-            child.material[i].map.dispose()
-          }
+          child.material[i].alphaMap?.dispose()
+          child.material[i].map?.dispose()
           child.material[i].dispose()
         }
         newMaterials.forEach((m: MeshPhongMaterial) => {
@@ -655,15 +645,9 @@ export class PropActionService {
       return
     }
 
-    if (text == null) {
-      text = prop.userData.desc ?? ''
-    }
-    if (color == null) {
-      color = {r: 255, g: 255, b: 255}
-    }
-    if (bcolor == null) {
-      bcolor = {r: 0, g: 0, b: 255}
-    }
+    text ??= prop.userData.desc ?? ''
+    color ??= {r: 255, g: 255, b: 255}
+    bcolor ??= {r: 0, g: 0, b: 255}
 
     prop.traverse(async (child: Object3D) => {
       if (
@@ -697,12 +681,8 @@ export class PropActionService {
               console.error('Error in textCanvas:', error)
             }
           }
-          if (child.material[i].alphaMap != null) {
-            child.material[i].alphaMap.dispose()
-          }
-          if (child.material[i].map != null) {
-            child.material[i].map.dispose()
-          }
+          child.material[i].alphaMap?.dispose()
+          child.material[i].map?.dispose()
           child.material[i].dispose()
         }
         newMaterials.forEach((m: MeshPhongMaterial) => {
@@ -760,12 +740,8 @@ export class PropActionService {
             newMaterials.push(curMat.threeMat)
             promises.push(forkJoin(curMat.loadingPromises))
           }
-          if (m.alphaMap != null) {
-            m.alphaMap.dispose()
-          }
-          if (m.map != null) {
-            m.map.dispose()
-          }
+          m.alphaMap?.dispose()
+          m.map?.dispose()
           m.dispose()
         })
         newMaterials.forEach((m: MeshPhongMaterial) => {

@@ -451,8 +451,7 @@ export class WorldService {
             takeUntil(this.cancelPropsLoading),
             map((prop: Object3D) => {
               // Adjust position of objects based on the center of the chunk
-              const chunkOffset = new Vector3(chunkPos.x, 0, chunkPos.z)
-              prop.position.sub(chunkOffset)
+              prop.position.sub({x: chunkPos.x, y: 0, z: chunkPos.z})
               prop.updateMatrix()
               return prop
             }),

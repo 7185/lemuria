@@ -110,21 +110,21 @@ export const visitCoords = (
 
   if (/a$/i.test(coordC)) {
     res.coordinates.altitude = parseFloat(coordC.slice(0, -1))
-
-    // Fourth value can only be direction at this point
-    if (coordD != null) {
-      res.coordinates.direction = parseFloat(coordD)
-
-      // But invalid if types are not the same
-      if (
-        (/^[+-]/.test(coordD) && res.coordinates.type === 'absolute') ||
-        (!/^[+-]/.test(coordD) && res.coordinates.type === 'relative')
-      ) {
-        delete res.commandType
-        delete res.coordinates
-      }
+    if (coordD == null) {
+      // No more values
+      return
     }
+    // Fourth value can only be direction at this point
+    res.coordinates.direction = parseFloat(coordD)
 
+    // But invalid if types are not the same
+    if (
+      (/^[+-]/.test(coordD) && res.coordinates.type === 'absolute') ||
+      (!/^[+-]/.test(coordD) && res.coordinates.type === 'relative')
+    ) {
+      delete res.commandType
+      delete res.coordinates
+    }
     return
   }
   // No altitude, so third value is direction
