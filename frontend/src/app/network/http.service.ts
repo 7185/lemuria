@@ -119,11 +119,10 @@ export class HttpService extends HttpClient {
             readExp = false
           } else {
             const values = line.split('=')
-            if (readImp && values.length === 2) {
-              list[i].implicit.set(values[0], values[1])
-            } else if (readExp && values.length === 2) {
-              list[i].explicit.set(values[0], values[1])
+            if ((!readImp && !readExp) || values.length !== 2) {
+              return
             }
+            list[i][readImp ? 'implicit' : 'explicit'].set(values[0], values[1])
           }
         })
         return list

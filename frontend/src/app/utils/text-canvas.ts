@@ -49,7 +49,7 @@ export const textCanvas = async (
       fontFit = true
     } else {
       // Keep the size even
-      fontSize -= adjustment + (adjustment % 2) || 2
+      fontSize -= adjustment & ~1 || 2
     }
   }
 

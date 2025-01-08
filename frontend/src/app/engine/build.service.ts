@@ -276,8 +276,8 @@ export class BuildService {
 
     const {position} = (terrainPage as Mesh).geometry.attributes
     const localPos = (terrainPage as Mesh).getWorldPosition(new Vector3())
-    const seIndex = faceIndex % 2 === 0 ? faceIndex : faceIndex - 1
-    const nwIndex = faceIndex % 2 !== 0 ? faceIndex : faceIndex + 1
+    const seIndex = faceIndex & ~1
+    const nwIndex = seIndex + 1
     const index = (terrainPage as Mesh).geometry.getIndex()
 
     if (index == null) {

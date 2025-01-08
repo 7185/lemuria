@@ -14,12 +14,14 @@ import {
 } from 'three'
 import type {Observable} from 'rxjs'
 import {from, map, forkJoin} from 'rxjs'
-import {PlayerCollider} from '../engine/player-collider'
+import {MeshBVHHelper} from 'three-mesh-bvh'
+import type {MeshBVHOptions} from 'three-mesh-bvh'
 import {EngineService} from '../engine/engine.service'
 import {PropService} from './prop.service'
 import {HttpService} from '../network'
 import {TERRAIN_PAGE_SIZE} from '../utils/constants'
 import {rgbToHex} from '../utils/utils'
+import {environment} from '../../environments/environment'
 
 export interface WaterData {
   enabled?: boolean
@@ -402,7 +404,7 @@ export class TerrainService {
       }
       southPositions.needsUpdate = true
       pages.south.geometry.computeVertexNormals()
-      PlayerCollider.updateTerrainBVH(pages.south)
+      this.updateTerrainBVH(pages.south)
     }
     if (pages.east) {
       const [eastPositions, eastIndices] = this.getPosAndIndex(pages.east)
@@ -422,7 +424,7 @@ export class TerrainService {
       }
       eastPositions.needsUpdate = true
       pages.east.geometry.computeVertexNormals()
-      PlayerCollider.updateTerrainBVH(pages.east)
+      this.updateTerrainBVH(pages.east)
     }
     if (pages.northWest) {
       // We can fix current north-west corner
@@ -443,9 +445,9 @@ export class TerrainService {
       sePositions.setY(seIndices.getY(lastFaceIndex * 3), seCorner)
       sePositions.needsUpdate = true
       pages.southEast.geometry.computeVertexNormals()
-      PlayerCollider.updateTerrainBVH(pages.southEast)
+      this.updateTerrainBVH(pages.southEast)
     }
-    PlayerCollider.updateTerrainBVH(page)
+    this.updateTerrainBVH(page)
   }
 
   private setWaterPage(xPage: number, zPage: number) {
@@ -466,5 +468,29 @@ export class TerrainService {
       zPage * TERRAIN_PAGE_SIZE * 10
     )
     this.water.add(waterPage)
+  }
+
+  private updateTerrainBVH(terrainMesh: Mesh) {
+    if (terrainMesh == null) {
+      return
+    }
+
+    // If the mesh is empty (no faces): we don't need a bounds tree
+    if (terrainMesh.geometry.getIndex()!.array.length === 0) {
+      terrainMesh.geometry.boundsTree = undefined
+      return
+    }
+    // Force indirect (experimental) to avoid messed up faces
+    terrainMesh.geometry.computeBoundsTree({indirect: true} as MeshBVHOptions)
+    if (!environment.debug) {
+      return
+    }
+    // Display BVH
+    if (terrainMesh.userData.bvhHelper != null) {
+      terrainMesh.userData.bvhHelper.update()
+    } else {
+      terrainMesh.userData.bvhHelper = new MeshBVHHelper(terrainMesh, 20)
+      terrainMesh.parent!.add(terrainMesh.userData.bvhHelper)
+    }
   }
 }

@@ -1,18 +1,32 @@
-import {Box3, Ray, Vector3} from 'three'
-import type {Group, Mesh, Triangle} from 'three'
+import {
+  Box3,
+  BoxGeometry,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  Ray,
+  Vector3
+} from 'three'
+import type {Triangle} from 'three'
 import {flattenGroup} from 'three-rwx-loader'
-import {MeshBVHHelper} from 'three-mesh-bvh'
-import type {MeshBVH, MeshBVHOptions} from 'three-mesh-bvh'
+import type {MeshBVH} from 'three-mesh-bvh'
 import {environment} from '../../environments/environment'
 
+const playerBoxSide = environment.world.collider.boxSide
 const playerHalfSide = environment.world.collider.boxSide / 2
 const playerClimbHeight = environment.world.collider.climbHeight
 
 export class PlayerCollider {
   boxHeight: number
   mainBox: Box3
-  private topBox: Box3
-  private bottomBox: Box3
+  topBox: Box3
+  bottomBox: Box3
+  colliderBox: Group
+  boxMaterial = new MeshBasicMaterial({
+    color: 0x00ff00,
+    wireframe: true
+  })
+
   private rays: Ray[]
   private currentPos = new Vector3()
 
@@ -77,36 +91,37 @@ export class PlayerCollider {
     })
   }
 
-  static updateTerrainBVH(terrainMesh: Mesh) {
-    if (terrainMesh == null) {
-      return
-    }
+  createBoundingBox(boxHeight: number, position: Vector3) {
+    const boundingBox = new Group()
+    boundingBox.name = 'boundingBox'
+    const mainBoxGeometry = new BoxGeometry(
+      playerBoxSide,
+      boxHeight,
+      playerBoxSide
+    )
+    const topBoxGeometry = new BoxGeometry(
+      playerBoxSide,
+      boxHeight - playerClimbHeight,
+      playerBoxSide
+    )
+    const bottomBoxGeometry = new BoxGeometry(
+      playerBoxSide,
+      playerClimbHeight,
+      playerBoxSide
+    )
+    const materials = Array(6).fill(this.boxMaterial)
+    const mainBox = new Mesh(mainBoxGeometry, materials)
+    const topBox = new Mesh(topBoxGeometry, materials)
+    const bottomBox = new Mesh(bottomBoxGeometry, materials)
 
-    // If the mesh is empty (no faces): we don't need a bounds tree
-    if (terrainMesh.geometry.getIndex()!.array.length === 0) {
-      terrainMesh.geometry.boundsTree = undefined
-      return
-    }
-    // Force indirect (experimental) to avoid messed up faces
-    terrainMesh.geometry.computeBoundsTree({indirect: true} as MeshBVHOptions)
-    if (!environment.debug) {
-      return
-    }
-    // Display BVH
-    if (terrainMesh.userData.bvhHelper != null) {
-      terrainMesh.userData.bvhHelper.update()
-    } else {
-      terrainMesh.userData.bvhHelper = new MeshBVHHelper(terrainMesh, 20)
-      terrainMesh.parent!.add(terrainMesh.userData.bvhHelper)
-    }
-  }
-
-  topBoxIntersectsTriangle(tri: Triangle): boolean {
-    return this.topBox.intersectsTriangle(tri)
-  }
-
-  bottomBoxIntersectsTriangle(tri: Triangle): boolean {
-    return this.bottomBox.intersectsTriangle(tri)
+    topBox.position.set(0, (boxHeight - (boxHeight - playerClimbHeight)) / 2, 0)
+    bottomBox.position.set(0, (playerClimbHeight - boxHeight) / 2, 0)
+    boundingBox.add(mainBox, topBox, bottomBox)
+    boundingBox.position.set(position.x, position.y + boxHeight / 2, position.z)
+    boundingBox.userData.mainBox = mainBox
+    boundingBox.userData.topBox = topBox
+    boundingBox.userData.bottomBox = bottomBox
+    this.colliderBox = boundingBox
   }
 
   raysIntersectTriangle(tri: Triangle): Vector3 {
@@ -146,8 +161,7 @@ export class PlayerCollider {
   }
 
   copyPos(pos: Vector3): void {
-    const delta = pos.clone().sub(this.currentPos)
-    this.translate(delta)
+    this.translate(this.currentPos.subVectors(pos, this.currentPos))
     this.currentPos.copy(pos)
   }
 }

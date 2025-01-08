@@ -58,12 +58,15 @@ $ prisma generate --schema backend/prisma/schema.prisma --generator client-py
 ```
 ### Create an empty database and import the dump files
 
+> [!CAUTION]
+> If the database already exists, the world data will be overwritten.
+> 
 #### Node backend
 ```bash
 $ npx -w backend prisma db push --skip-generate
+$ cd backend
+$ node --import 'data:text/javascript,import {register} from "node:module"; import {pathToFileURL} from "node:url"; register("ts-node/esm", pathToFileURL("./"));' src/tools/import-lemuria.mts 
 ```
-> [!WARNING]
-> There is no node script to import worlds yet, so you have to use the python one instead.
 
 #### Python backend
 ```bash
@@ -74,8 +77,6 @@ $ python tools/import_lemuria.py
 ```
 
 This will create and init the database `backend/app.db` using the data in `dumps/atlemuria.txt` and `dumps/proplemuria.txt`.
-> [!CAUTION]
-> If the database already exists, the world data will be overwritten.
 
 ### Serve the world resource files
 

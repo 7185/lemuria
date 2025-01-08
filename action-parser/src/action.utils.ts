@@ -55,13 +55,10 @@ export const colorStringToRGB = (color: string) => {
     // AW considers everything white at this point
     return rgb(255, 255, 255)
   }
-  const red = (colorValue >> 16) % 256
-  const green = (colorValue >> 8) % 256
-  const blue = (colorValue >> 0) % 256
   return rgb(
-    red < 0 ? red + 256 : red,
-    green < 0 ? green + 256 : green,
-    blue < 0 ? blue + 256 : blue
+    (colorValue >> 16) & 255,
+    (colorValue >> 8) & 255,
+    colorValue & 255
   )
 }
 

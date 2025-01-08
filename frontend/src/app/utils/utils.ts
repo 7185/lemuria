@@ -95,19 +95,18 @@ export const colorHexToStr = (color: number): string => {
   return '#' + `00000${color.toString(16)}`.slice(-6)
 }
 
+/**
+ * Calculate the shortest angle between oldValue and newValue
+ * @param oldValue First value
+ * @param newValue Second value
+ * @returns The result in the range [-PI, PI]
+ */
 export const shortestAngle = (oldValue: number, newValue: number): number => {
-  // Work within [0, 2*PI] instead of [-Pi, Pi] for the original values
-  let diff = newValue - oldValue + Math.PI
-
-  // /!\ Careful there: the modulo ( % ) operator doesn't change anything on negative values,
-  //     so even the difference itself needs to fit into [0, 2*PI]
-  if (diff < 0) {
-    diff += 2 * Math.PI
-  }
-
-  // The final result still needs to be expressed within [-Pi, Pi],
-  // so we translate the result back into it.
-  return (diff % (2 * Math.PI)) - Math.PI
+  return (
+    ((((newValue - oldValue + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) %
+      (2 * Math.PI)) -
+    Math.PI
+  )
 }
 
 /**

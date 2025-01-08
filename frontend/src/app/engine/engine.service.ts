@@ -25,7 +25,7 @@ import {
   CSS2DObject,
   CSS2DRenderer
 } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
-import type {DirectionalLight, LOD, Sprite} from 'three'
+import type {DirectionalLight, LOD, Sprite, Vector3Like} from 'three'
 import {AudioService} from './audio.service'
 import {BuildService} from './build.service'
 import {UserService} from '../user'
@@ -82,7 +82,7 @@ export class EngineService {
   maxFps = signal(60)
   maxLights = signal(6)
   texturesAnimation = signal(0)
-  playerPosition = signal(new Vector3())
+  playerPosition = signal({x: 0, y: 0, z: 0})
   worldFog = {color: 0x00007f, near: 0, far: 120, enabled: false}
 
   private readonly userSvc = inject(UserService)
@@ -161,6 +161,9 @@ export class EngineService {
     ['cpy', 'copy'],
     ['del', 'delete']
   ])
+
+  private tmpObjPos = new Vector3()
+  private tmpPrevUserPos = new Vector3()
 
   constructor() {
     this.raycaster.firstHitOnly = true
@@ -283,10 +286,7 @@ export class EngineService {
   }
 
   clearScene() {
-    this.buildSvc.deselectProp()
-    for (const prop of [...this.worldNode.children]) {
-      this.removeWorldObject(prop as Group)
-    }
+    this.clearObjects()
     this.scene.traverse((child: Object3D) => {
       this.disposeGeometry(child as Group)
       this.disposeMaterial(child as Group)
@@ -308,17 +308,14 @@ export class EngineService {
       this.disposeMaterial(prop as Group)
       this.worldNode.remove(prop)
     }
-    this.player.createBoundingBox(boxHeight)
-    this.worldNode.add(this.player.colliderBox)
+    this.player.collider.createBoundingBox(boxHeight, this.player.position)
+    this.worldNode.add(this.player.collider.colliderBox)
   }
 
   get position(): [Vector3, Vector3] {
     return this.player == null
       ? [new Vector3(), new Vector3()]
-      : [
-          this.player.position.clone(),
-          new Vector3().setFromEuler(this.player.rotation)
-        ]
+      : [this.player.position, new Vector3().setFromEuler(this.player.rotation)]
   }
 
   get yaw(): number {
@@ -858,16 +855,15 @@ export class EngineService {
   }
 
   private updateSound() {
-    const heard: {dist: number; obj: Group; pos: Vector3}[] = []
+    const heard: {dist: number; obj: Group}[] = []
     this.sonicObjects.forEach((obj) => {
       if (!obj.parent!.visible) {
         return
       }
-      const objPos = obj.position.clone().add(obj.parent!.parent!.position)
+      this.tmpObjPos.copy(obj.position).add(obj.parent!.parent!.position)
       heard.push({
-        dist: this.player.position.distanceToSquared(objPos),
-        obj: obj,
-        pos: objPos
+        dist: this.player.position.distanceToSquared(this.tmpObjPos),
+        obj: obj
       })
     })
     heard.sort((a, b) => a.dist - b.dist)
@@ -883,13 +879,13 @@ export class EngineService {
   }
 
   private updatePointLights() {
-    const seen: {dist: number; obj: Group; pos: Vector3}[] = []
+    const seen: {dist: number; obj: Group; pos: Vector3Like}[] = []
     this.litObjects.forEach((obj) => {
-      const objPos = obj.position.clone().add(obj.parent!.parent!.position)
+      this.tmpObjPos.copy(obj.position).add(obj.parent!.parent!.position)
       seen.push({
-        dist: this.player.position.distanceToSquared(objPos),
+        dist: this.player.position.distanceToSquared(this.tmpObjPos),
         obj: obj,
-        pos: objPos
+        pos: {x: this.tmpObjPos.x, y: this.tmpObjPos.x, z: this.tmpObjPos.z}
       })
     })
 
@@ -1046,7 +1042,11 @@ export class EngineService {
       Math.abs(this.playerPosition().y - this.player.position.y) > 1e-3 ||
       Math.abs(this.playerPosition().z - this.player.position.z) > 1e-3
     ) {
-      this.playerPosition.set(this.player.position.clone())
+      this.playerPosition.set({
+        x: this.player.position.x,
+        y: this.player.position.y,
+        z: this.player.position.z
+      })
       this.rotateSprites()
       this.updateLODs()
     }
@@ -1098,7 +1098,7 @@ export class EngineService {
         continue
       }
       u.completion = Math.min(1, u.completion + this.deltaSinceLastFrame / 0.2)
-      const previousPos = user.position.clone()
+      this.tmpPrevUserPos.copy(user.position)
       user.position.set(
         u.oldX + (u.x - u.oldX) * u.completion,
         u.oldY + (u.y - u.oldY) * u.completion,
@@ -1119,7 +1119,8 @@ export class EngineService {
       // Velocity is 0 if completion is done
       const velocity =
         u.completion < 1
-          ? previousPos.distanceTo(user.position) / this.deltaSinceLastFrame
+          ? this.tmpPrevUserPos.distanceTo(user.position) /
+            this.deltaSinceLastFrame
           : 0
       // Disable gesture if animation is complete
       if (

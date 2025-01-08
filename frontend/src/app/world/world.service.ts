@@ -16,7 +16,7 @@ import {
 } from 'rxjs'
 import type {Observable, Subscription} from 'rxjs'
 import {Box3, Euler, Group, LOD, Vector3} from 'three'
-import type {Object3D} from 'three'
+import type {Object3D, Vector3Like} from 'three'
 import {UserService} from '../user'
 import type {User} from '../user'
 import {SettingsService} from '../settings/settings.service'
@@ -345,7 +345,7 @@ export class WorldService {
   }
 
   // Get chunk tile X and Z ids from position
-  private getChunkTile(pos: Vector3): [number, number] {
+  private getChunkTile(pos: Vector3Like): [number, number] {
     const tileX = Math.floor(
       (Math.floor(pos.x * 100) + this.chunkWidth / 2) / this.chunkWidth
     )
@@ -365,7 +365,7 @@ export class WorldService {
   }
 
   // this method is to be called on each position change to update the state of chunks if needed
-  private autoUpdateChunks(pos: Vector3) {
+  private autoUpdateChunks(pos: Vector3Like) {
     if (this.worldId === 0) {
       // Nowhere
       return

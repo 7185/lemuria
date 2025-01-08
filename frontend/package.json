@@ -20,11 +20,11 @@
     "@angular/common": "^19.0.5",
     "@angular/compiler": "^19.0.5",
     "@angular/core": "^19.0.5",
-    "@angular/forms": "^19.0.5",
-    "@angular/material": "^19.0.4",
+    "@angular/forms": "^19.0.6",
+    "@angular/material": "^19.0.5",
     "@angular/platform-browser": "^19.0.5",
-    "@angular/platform-browser-dynamic": "^19.0.5",
-    "@angular/router": "^19.0.5",
+    "@angular/platform-browser-dynamic": "^19.0.6",
+    "@angular/router": "^19.0.6",
     "@fontsource/arimo": "^5.1.1",
     "@fortawesome/angular-fontawesome": "^1.0.0",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
@@ -42,11 +42,11 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^19.0.6",
-    "@angular/cli": "^19.0.6",
+    "@angular/cli": "^19.0.7",
     "@angular/compiler-cli": "^19.0.5",
     "@eslint/js": "^9.10.0",
     "@types/node": "^20.17.7",
-    "@types/three": "^0.171.0",
+    "@types/three": "^0.172.0",
     "@types/webgl2": "^0.0.11",
     "@typescript-eslint/types": "^8.10.0",
     "angular-eslint": "^19.0.2",
@@ -55,6 +55,6 @@
     "prettier": "^3.4.2",
     "ts-node": "^10.9.2",
     "typescript": ">=5.5.0 <5.7.0",
-    "typescript-eslint": "^8.19.0"
+    "typescript-eslint": "^8.19.1"
   }
 }
