@@ -16,7 +16,6 @@ import {
   VirtualScrollerComponent,
   VirtualScrollerModule
 } from '@iharbeck/ngx-virtual-scroller'
-import type {OnInit} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import {UserService} from '../../user'
 
@@ -41,7 +40,7 @@ import {UserService} from '../../user'
   styleUrl: './ui-chat-zone.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UiChatZoneComponent implements OnInit {
+export class UiChatZoneComponent {
   private virtualScroller = viewChild.required<VirtualScrollerComponent>(
     VirtualScrollerComponent
   )
@@ -54,18 +53,7 @@ export class UiChatZoneComponent implements OnInit {
   chatActive = false
   protected colors = {}
 
-  activeChat() {
-    this.chatActive = !this.chatActive
-  }
-
-  send(): void {
-    if (this.message.length) {
-      this.socket.sendMessage({type: 'msg', data: this.message})
-      this.message = ''
-    }
-  }
-
-  ngOnInit(): void {
+  constructor() {
     this.socket.messages.subscribe((msg) => {
       if (['msg', 'err', 'join', 'part', 'info'].includes(msg.type)) {
         for (const u of this.userSvc.userList()) {
@@ -75,5 +63,16 @@ export class UiChatZoneComponent implements OnInit {
         this.virtualScroller().scrollInto(msg)
       }
     })
+  }
+
+  activeChat() {
+    this.chatActive = !this.chatActive
+  }
+
+  send() {
+    if (this.message.length) {
+      this.socket.sendMessage({type: 'msg', data: this.message})
+      this.message = ''
+    }
   }
 }

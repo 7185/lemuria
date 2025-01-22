@@ -22,10 +22,9 @@ import {
   RepeatWrapping,
   Sprite,
   SpriteMaterial,
-  SRGBColorSpace,
-  Vector3
+  SRGBColorSpace
 } from 'three'
-import type {MeshPhongMaterial, Object3D} from 'three'
+import type {MeshPhongMaterial, Object3D, Vector3} from 'three'
 import {pictureTag as PICTURE_TAG, signTag as SIGN_TAG} from 'three-rwx-loader'
 import {environment} from '../../environments/environment'
 import {HttpService} from '../network'
@@ -925,7 +924,7 @@ export class PropActionService {
     this.teleportSvc.teleport.set({
       world: teleport.worldName,
       // Don't send 0 if coordinates are null (world entry point)
-      position: posToStringYaw(new Vector3(newX, newY, newZ), newYaw),
+      position: posToStringYaw({x: newX, y: newY, z: newZ}, newYaw),
       isNew: true
     })
   }

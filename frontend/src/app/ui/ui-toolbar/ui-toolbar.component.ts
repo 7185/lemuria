@@ -30,11 +30,11 @@ import {
   signal,
   viewChild
 } from '@angular/core'
-import type {ElementRef, OnInit} from '@angular/core'
+import type {ElementRef} from '@angular/core'
 import {SocketService} from '../../network/socket.service'
 import type {User} from '../../user'
 import {environment} from '../../../environments/environment'
-import {Vector3} from 'three'
+import type {Vector3} from 'three'
 import {distinctUntilChanged, throttleTime} from 'rxjs'
 import {altToString, posToString} from '../../utils/utils'
 import {
@@ -78,7 +78,7 @@ import {
   styleUrl: './ui-toolbar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UiToolbarComponent implements OnInit {
+export class UiToolbarComponent {
   faArrowLeft = faArrowLeft
   faArrowRight = faArrowRight
   faBolt = faBolt
@@ -109,8 +109,8 @@ export class UiToolbarComponent implements OnInit {
     .fill(40)
     .map((n, i) => n + i * 20)
   visibility = environment.world.lod.maxDistance
-  strPos = signal(posToString(new Vector3()))
-  strAlt = signal(altToString(new Vector3()))
+  strPos = signal(posToString({x: 0, y: 0, z: 0}))
+  strAlt = signal(altToString({x: 0, y: 0, z: 0}))
   strFps = '0 FPS 0 draws'
   strMem = '0 Geom. 0 Text.'
 
@@ -177,6 +177,19 @@ export class UiToolbarComponent implements OnInit {
           `rotate(${o.theta}deg)`
         )
       })
+
+    this.worldSvc.avatarSub.subscribe((avatarId) => (this.avatarId = avatarId))
+    this.settings.updated.subscribe(() => {
+      const home = this.settings.get('home')
+      this.home = {
+        world: home?.world,
+        position: home?.position,
+        isNew: true
+      }
+      this.teleports.set(this.settings.get('teleports') || [])
+      this.cameraType.set(this.settings.get('camera') || 0)
+      this.engineSvc.setCamera(this.cameraType())
+    })
 
     if (this.debug) {
       toObservable(this.engineSvc.fps)
@@ -264,27 +277,12 @@ export class UiToolbarComponent implements OnInit {
 
   joinUser(userId: string) {
     const user = this.userSvc.getUser(userId)
-    this.engineSvc.setPlayerPos(new Vector3(user.x, user.y, user.z))
+    this.engineSvc.setPlayerPos({x: user.x, y: user.y, z: user.z})
     this.engineSvc.updateBoundingBox()
   }
 
   compassClick(north: boolean) {
     this.engineSvc.setPlayerYaw((!north && 180) || 0)
     return false
-  }
-
-  ngOnInit(): void {
-    this.worldSvc.avatarSub.subscribe((avatarId) => (this.avatarId = avatarId))
-    this.settings.updated.subscribe(() => {
-      const home = this.settings.get('home')
-      this.home = {
-        world: home?.world,
-        position: home?.position,
-        isNew: true
-      }
-      this.teleports.set(this.settings.get('teleports') || [])
-      this.cameraType.set(this.settings.get('camera') || 0)
-      this.engineSvc.setCamera(this.cameraType())
-    })
   }
 }

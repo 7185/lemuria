@@ -272,8 +272,8 @@ export class WorldService {
   private async loadProp(
     id: number,
     prop: string,
-    pos: Vector3,
-    rot: Vector3,
+    pos: Vector3Like,
+    rot: Vector3Like,
     date = 0,
     desc: string | null = null,
     act: string | null = null
@@ -356,14 +356,6 @@ export class WorldService {
     return [tileX, tileZ]
   }
 
-  // Get chunk position from tile X and Z ids
-  private getChunkCenter(tileX: number, tileZ: number) {
-    const xPos = (tileX * this.chunkWidth) / 100
-    const zPos = (tileZ * this.chunkDepth) / 100
-
-    return new Vector3(xPos, 0, zPos)
-  }
-
   // this method is to be called on each position change to update the state of chunks if needed
   private autoUpdateChunks(pos: Vector3Like) {
     if (this.worldId === 0) {
@@ -416,7 +408,11 @@ export class WorldService {
     }
     this.chunkMap.get(x)!.add(z)
 
-    const chunkPos = this.getChunkCenter(x, z)
+    const chunkPos = {
+      x: (x * this.chunkWidth) / 100,
+      y: 0,
+      z: (z * this.chunkDepth) / 100
+    }
 
     // We first need to fetch the list of props using HttpService, we cannot go further
     // with this chunk if this call fails
@@ -441,8 +437,8 @@ export class WorldService {
               this.loadProp(
                 prop[0],
                 prop[2],
-                new Vector3(prop[3], prop[4], prop[5]),
-                new Vector3(prop[6], prop[7], prop[8]),
+                {x: prop[3], y: prop[4], z: prop[5]},
+                {x: prop[6], y: prop[7], z: prop[8]},
                 prop[1],
                 prop[9],
                 prop[10]
@@ -451,7 +447,7 @@ export class WorldService {
             takeUntil(this.cancelPropsLoading),
             map((prop: Object3D) => {
               // Adjust position of objects based on the center of the chunk
-              prop.position.sub({x: chunkPos.x, y: 0, z: chunkPos.z})
+              prop.position.sub(chunkPos)
               prop.updateMatrix()
               return prop
             }),
@@ -473,7 +469,7 @@ export class WorldService {
               lod.userData.world = {chunk: {x, z}}
               lod.addLevel(chunkGroup, this.maxLodDistance)
               lod.addLevel(new Group(), this.maxLodDistance + 1)
-              lod.position.set(chunkPos.x, 0, chunkPos.z)
+              lod.position.copy(chunkPos)
               lod.autoUpdate = false
               lod.updateMatrix()
               lod.visible = false
@@ -524,12 +520,12 @@ export class WorldService {
    * @param entry Teleport string
    */
   private teleport(entry: string | null) {
-    const entryPoint = new Vector3()
+    const entryPoint = {x: 0, y: 0, z: 0}
     let entryYaw = 0
     if (entry) {
       const yawMatch = /\s([-+]?[0-9]+)$/.exec(entry)
       entryYaw = yawMatch ? parseInt(yawMatch[1], 10) : entryYaw
-      entryPoint.copy(stringToPos(entry))
+      Object.assign(entryPoint, stringToPos(entry))
     }
 
     // Load a few chunks on world initialization

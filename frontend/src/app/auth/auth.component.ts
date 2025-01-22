@@ -1,5 +1,4 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core'
-import type {OnInit} from '@angular/core'
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms'
 import type {FormControl, FormGroup} from '@angular/forms'
 import {ActivatedRoute, Router} from '@angular/router'
@@ -36,7 +35,7 @@ import {
   styleUrl: './auth.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AuthComponent implements OnInit {
+export class AuthComponent {
   faCircleNotch = faCircleNotch
   faEye = faEye
   faEyeSlash = faEyeSlash
@@ -66,6 +65,15 @@ export class AuthComponent implements OnInit {
       username: this.usernameCtl,
       password: this.passwordCtl
     })
+
+    this.loginForm.setValue({
+      username: localStorage.getItem('login') ?? '',
+      password: ''
+    })
+    this.returnUrl = this.route.snapshot.queryParams.next || '/'
+    if (this.http.isLogged()) {
+      this.router.navigate([this.returnUrl])
+    }
   }
 
   onLogin(): void {
@@ -87,16 +95,5 @@ export class AuthComponent implements OnInit {
           this.loginError = true
         }
       })
-  }
-
-  ngOnInit(): void {
-    this.loginForm.setValue({
-      username: localStorage.getItem('login') ?? '',
-      password: ''
-    })
-    this.returnUrl = this.route.snapshot.queryParams.next || '/'
-    if (this.http.isLogged()) {
-      this.router.navigate([this.returnUrl])
-    }
   }
 }

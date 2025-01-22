@@ -2,7 +2,6 @@ import {MatButton} from '@angular/material/button'
 import {MatDialogContent, MatDialogTitle} from '@angular/material/dialog'
 import type {PressedKey} from '../../engine/inputsystem.service'
 import {InputSystemService} from '../../engine/inputsystem.service'
-import type {OnInit} from '@angular/core'
 import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
 import {Subject, take, takeUntil, timeout} from 'rxjs'
 
@@ -13,7 +12,7 @@ import {Subject, take, takeUntil, timeout} from 'rxjs'
   styleUrl: './ui-controls.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UiControlsComponent implements OnInit {
+export class UiControlsComponent {
   controlsLabels: [string, PressedKey][] = [
     ['Move Forward', 'moveFwd'],
     ['Move Backward', 'moveBck'],
@@ -39,6 +38,10 @@ export class UiControlsComponent implements OnInit {
   private readonly inputSysSvc = inject(InputSystemService)
   private cancel: Subject<void> | null = null
   private oldKey: string | null = 'nop'
+
+  constructor() {
+    this.getKeymap()
+  }
 
   setKey(key: number, pos: number): void {
     if (this.cancel != null) {
@@ -108,9 +111,5 @@ export class UiControlsComponent implements OnInit {
           )
       }
     )
-  }
-
-  ngOnInit(): void {
-    this.getKeymap()
   }
 }

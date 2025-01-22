@@ -25,7 +25,7 @@ export class EngineComponent implements OnInit, OnDestroy {
   private readonly engineSvc = inject(EngineService)
   private readonly world = inject(WorldService)
 
-  ngOnInit(): void {
+  ngOnInit() {
     this.engineSvc.createScene(
       this.rendererCanvas(),
       this.labelZone(),
@@ -35,7 +35,7 @@ export class EngineComponent implements OnInit, OnDestroy {
     this.engineSvc.animate()
   }
 
-  ngOnDestroy(): void {
+  ngOnDestroy() {
     this.world.destroyWorld()
     this.engineSvc.clearScene()
     this.engineSvc.cancel()

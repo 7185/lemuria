@@ -1,7 +1,7 @@
-import {Mesh, Vector3} from 'three'
-import type {Object3D} from 'three'
+import {Mesh} from 'three'
+import type {Object3D, Vector3Like} from 'three'
 
-export const posToString = (pos: Vector3): string => {
+export const posToString = (pos: Vector3Like): string => {
   return `${(Math.abs(pos.z) / 10).toFixed(2)}${pos.z >= 0 ? 'N' : 'S'} ${(
     Math.abs(pos.x) / 10
   ).toFixed(2)}${pos.x >= 0 ? 'W' : 'E'}`
@@ -14,27 +14,27 @@ export const posToString = (pos: Vector3): string => {
  * @param yaw Yaw in degrees
  * @returns Position string with optional yaw
  */
-export const posToStringYaw = (pos: Vector3, yaw = 0): string => {
+export const posToStringYaw = (pos: Vector3Like, yaw = 0): string => {
   const position = `${posToString(pos)} ${(Math.abs(pos.y) / 10).toFixed(2)}a`
   return yaw ? `${position} ${yaw}` : position
 }
 
-export const altToString = (pos: Vector3): string => {
+export const altToString = (pos: Vector3Like): string => {
   return pos.y.toFixed(2)
 }
 
-export const stringToPos = (pos: string): Vector3 => {
-  const r = new Vector3()
+export const stringToPos = (pos: string): Vector3Like => {
+  const r = {x: 0, y: 0, z: 0}
   const [, zNum, , zHemi, xNum, , xHemi, , yNum] =
     /([+-]?([0-9]*\.)?[0-9]+)(N|S)\s([+-]?([0-9]*\.)?[0-9]+)(W|E)(\s([+-]?([0-9]*\.)?[0-9]+)a)?/i.exec(
       pos
     ) || []
   if (zNum && xNum) {
-    r.set(
-      Number.parseFloat(xNum) * (xHemi.toUpperCase() === 'W' ? 10 : -10),
-      (Number.parseFloat(yNum) || 0) * 10,
-      Number.parseFloat(zNum) * (zHemi.toUpperCase() === 'N' ? 10 : -10)
-    )
+    Object.assign(r, {
+      x: Number.parseFloat(xNum) * (xHemi.toUpperCase() === 'W' ? 10 : -10),
+      y: (Number.parseFloat(yNum) || 0) * 10,
+      z: Number.parseFloat(zNum) * (zHemi.toUpperCase() === 'N' ? 10 : -10)
+    })
   }
   return r
 }

@@ -7,6 +7,7 @@ import {
   Cache,
   Clock,
   Color,
+  Euler,
   Fog,
   Group,
   Mesh,
@@ -55,10 +56,10 @@ Mesh.prototype.raycast = acceleratedRaycast
 // the render loop
 const _updateMatrixWorld = Object3D.prototype.updateMatrixWorld
 Object3D.prototype.updateMatrixWorld = function () {
-  if (!this.parent?.visible && this.name.slice(-4) === '.rwx') {
+  if (this.name.endsWith('.rwx') && !this.parent?.visible) {
     return
   }
-  _updateMatrixWorld.apply(this)
+  _updateMatrixWorld.call(this)
 }
 
 // This defines which chunks (offset from the current chunk we sit in) we will
@@ -162,6 +163,7 @@ export class EngineService {
     ['del', 'delete']
   ])
 
+  private spriteRotation = new Euler()
   private tmpObjPos = new Vector3()
   private tmpPrevUserPos = new Vector3()
 
@@ -624,7 +626,7 @@ export class EngineService {
     this.player.avatar.visible = this.activeCamera !== this.camera
   }
 
-  setPlayerPos(pos: Vector3 | string, yaw = 0): void {
+  setPlayerPos(pos: Vector3Like | string, yaw = 0): void {
     this.player.setPos(pos, yaw)
     this.player.isOnFloor = true
   }
@@ -800,7 +802,7 @@ export class EngineService {
         obj = obj.parent!
       }
       if (
-        obj.name.slice(-4) === '.rwx' &&
+        obj.name.endsWith('.rwx') &&
         obj.parent!.visible &&
         !obj?.userData?.notVisible
       ) {
@@ -915,10 +917,10 @@ export class EngineService {
           break
         }
         case 'flash':
-          fx = Math.random() > 0.02 ? 0 : 1
+          fx = +(Math.random() <= 0.02)
           break
         case 'flicker':
-          fx = Math.random() > 0.02 ? 1 : 0
+          fx = +(Math.random() > 0.02)
           break
         default:
           break
@@ -1147,8 +1149,9 @@ export class EngineService {
   }
 
   private rotateSprites() {
+    this.spriteRotation.y = this.player.rotation.y
     for (const prop of this.sprites) {
-      prop.rotation.set(0, this.player.rotation.y, 0)
+      prop.rotation.copy(this.spriteRotation)
       prop.updateMatrix()
     }
   }

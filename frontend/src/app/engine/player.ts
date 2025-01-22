@@ -1,5 +1,5 @@
 import {Group, Object3D, Vector3} from 'three'
-import type {LOD, Mesh, Triangle} from 'three'
+import type {LOD, Mesh, Triangle, Vector3Like} from 'three'
 import {PlayerCollider} from './player-collider'
 import {DEG, TERRAIN_PAGE_SIZE} from '../utils/constants'
 import {radNormalized, stringToPos} from '../utils/utils'
@@ -56,7 +56,7 @@ export class Player {
     this.collider = new PlayerCollider(height, this.position)
   }
 
-  setPos(pos: Vector3 | string, yaw = 0): void {
+  setPos(pos: Vector3Like | string, yaw = 0): void {
     if (this.entity == null || pos == null) {
       return
     }

@@ -157,7 +157,7 @@ index a8d9ceb..f2aa05f 100644
 +			this.texture ?? '',
 +			this.mask ?? '',
 +			this.textureaddressmode,
-+			this.collision ? 1 : 0,
++			+this.collision,
 +			this.tag,
 +			Math.round( this.ratio * 100 ) / 100
 +		].join( '_' );
