@@ -16,9 +16,11 @@ import {
   faKey,
   faUser
 } from '@fortawesome/free-solid-svg-icons'
+import {TranslocoModule} from '@jsverse/transloco'
 
 @Component({
   imports: [
+    TranslocoModule,
     ReactiveFormsModule,
     MatButton,
     MatIconButton,

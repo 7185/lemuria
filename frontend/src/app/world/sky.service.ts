@@ -119,17 +119,18 @@ export class SkyService {
         ])
 
     octGeom.addGroup(0, octGeom.getIndex()!.count, 0)
-
-    const oct = new Mesh(octGeom, [
-      new MeshBasicMaterial({vertexColors: true, depthWrite: false})
-    ])
-    skyboxGroup.add(oct)
+    skyboxGroup.add(
+      new Mesh(octGeom, [
+        new MeshBasicMaterial({vertexColors: true, depthWrite: false})
+      ])
+    )
 
     if (skybox) {
       this.propSvc.loadModel(skybox, true).subscribe((s) => {
         const skyboxRwx = s.clone()
-        const box = new Box3().setFromObject(skyboxRwx)
-        const center = box.getCenter(new Vector3())
+        const center = new Box3()
+          .setFromObject(skyboxRwx)
+          .getCenter(new Vector3())
         skyboxRwx.position.set(0, -center.y, 0)
         skyboxGroup.add(skyboxRwx)
       })

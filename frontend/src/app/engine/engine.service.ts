@@ -292,8 +292,11 @@ export class EngineService {
     this.scene.traverse((child: Object3D) => {
       this.disposeGeometry(child as Group)
       this.disposeMaterial(child as Group)
-      child.parent?.remove(child)
     })
+    // Outside of traverse because the children size might change
+    for (const child of this.scene.children) {
+      child.parent.remove(child)
+    }
   }
 
   updateBoundingBox() {

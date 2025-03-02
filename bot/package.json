@@ -11,18 +11,18 @@
   },
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.7.9",
-    "ws": "^8.18.0"
+    "axios": "^1.8.1",
+    "ws": "^8.18.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.10.0",
     "@types/node": "^20.17.14",
-    "@types/ws": "^8.5.13",
-    "eslint": "^9.18.0",
+    "@types/ws": "^8.5.14",
+    "eslint": "^9.21.0",
     "jiti": "^2.4.2",
-    "prettier": "^3.4.2",
+    "prettier": "^3.5.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.21.0"
+    "typescript-eslint": "^8.25.0"
   }
 }

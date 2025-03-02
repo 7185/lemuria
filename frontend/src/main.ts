@@ -11,6 +11,10 @@ import {provideAnimationsAsync} from '@angular/platform-browser/animations/async
 import {AppComponent} from './app/app.component'
 import {appRoutes} from './app/app-routes'
 import {jwtInterceptor} from './app/network'
+import {TranslocoHttpLoader} from './app/i18n/transloco-loader'
+import {provideTransloco} from '@jsverse/transloco'
+import {environment} from './environments/environment'
+import config from '../transloco.config'
 
 bootstrapApplication(AppComponent, {
   providers: [
@@ -18,6 +22,17 @@ bootstrapApplication(AppComponent, {
     provideExperimentalZonelessChangeDetection(),
     provideAnimationsAsync(),
     provideHttpClient(withFetch(), withInterceptors([jwtInterceptor])),
-    {provide: APP_BASE_HREF, useValue: '/'}
+    {provide: APP_BASE_HREF, useValue: '/'},
+    provideHttpClient(),
+    provideTransloco({
+      config: {
+        availableLangs: config.langs,
+        defaultLang: 'en',
+        fallbackLang: 'en',
+        reRenderOnLangChange: true,
+        prodMode: !environment.debug
+      },
+      loader: TranslocoHttpLoader
+    })
   ]
 })

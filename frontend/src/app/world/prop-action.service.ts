@@ -35,6 +35,9 @@ import {TeleportService} from '../engine/teleport.service'
 import {WorkerService} from '../worker/worker.service'
 import {PropService} from './prop.service'
 
+const triggers = ['activate', 'adone', 'bump', 'create'] as const
+type Trigger = (typeof triggers)[number]
+
 @Injectable({providedIn: 'root'})
 export class PropActionService {
   private audioLoader = new AudioLoader()
@@ -98,14 +101,24 @@ export class PropActionService {
   }
 
   async parseActions(prop: Group) {
+    this.resetActions(prop)
     try {
       const parsedActions = await this.workerSvc.parseAction(prop.userData.act)
       Object.entries(parsedActions).forEach(([trigger, action]) =>
-        this.parseAction(prop, trigger, action)
+        this.parseAction(prop, trigger as Trigger, action)
       )
     } catch (error) {
       console.error('Error parsing actions:', error)
     }
+  }
+
+  private resetActions(prop: Group) {
+    triggers.forEach((trigger) => {
+      if (Object.prototype.hasOwnProperty.call(prop.userData, trigger)) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete prop.userData[trigger]
+      }
+    })
   }
 
   /**
@@ -114,7 +127,7 @@ export class PropActionService {
    * @param trigger The trigger string (e.g. create)
    * @param commands The parsed object for this trigger
    */
-  private parseAction(prop: Group, trigger: string, commands: any) {
+  private parseAction(prop: Group, trigger: Trigger, commands: any) {
     prop.userData[trigger] = {}
     for (const cmd of commands) {
       switch (cmd.commandType) {
@@ -324,10 +337,7 @@ export class PropActionService {
    * @param trigger
    * @returns
    */
-  triggerAction(
-    prop: Group,
-    trigger: 'activate' | 'adone' | 'bump' | 'create'
-  ) {
+  triggerAction(prop: Group, trigger: Trigger) {
     const action = prop.userData[trigger]
     // A prop with no parent means it's being deleted
     if (action == null || prop.parent == null) {

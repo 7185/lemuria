@@ -1,11 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   inject,
   viewChild,
   ViewEncapsulation
 } from '@angular/core'
-import type {ElementRef, OnDestroy, OnInit} from '@angular/core'
+import type {ElementRef, OnInit} from '@angular/core'
 import {EngineService} from './engine.service'
 import {WorldService} from '../world/world.service'
 
@@ -16,7 +17,7 @@ import {WorldService} from '../world/world.service'
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EngineComponent implements OnInit, OnDestroy {
+export class EngineComponent implements OnInit {
   rendererCanvas =
     viewChild.required<ElementRef<HTMLCanvasElement>>('rendererCanvas')
   labelZone = viewChild.required<ElementRef<HTMLDivElement>>('labelZone')
@@ -24,6 +25,15 @@ export class EngineComponent implements OnInit, OnDestroy {
 
   private readonly engineSvc = inject(EngineService)
   private readonly world = inject(WorldService)
+  private readonly destroyRef = inject(DestroyRef)
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.world.destroyWorld()
+      this.engineSvc.clearScene()
+      this.engineSvc.cancel()
+    })
+  }
 
   ngOnInit() {
     this.engineSvc.createScene(
@@ -33,11 +43,5 @@ export class EngineComponent implements OnInit, OnDestroy {
     )
     this.world.initWorld()
     this.engineSvc.animate()
-  }
-
-  ngOnDestroy() {
-    this.world.destroyWorld()
-    this.engineSvc.clearScene()
-    this.engineSvc.cancel()
   }
 }

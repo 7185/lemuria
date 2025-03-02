@@ -1,6 +1,4 @@
-<h1 mat-dialog-title>
-  World features
-</h1>
+<h1 mat-dialog-title>World features</h1>
 <mat-dialog-content class="mat-typography">
   <mat-tab-group dynamicHeight>
     <mat-tab>
@@ -9,16 +7,10 @@
         Ground
       </ng-template>
       <div class="tab-content">
-        <mat-checkbox [(ngModel)]="terrain">
-          Enable Terrain
-        </mat-checkbox>
+        <mat-checkbox [(ngModel)]="terrain">Enable Terrain</mat-checkbox>
         <mat-form-field appearance="outline">
           <mat-label>Terrain elevation offset</mat-label>
-          <input
-            matInput
-            type="number"
-            [(ngModel)]="terrainOffset"
-          />
+          <input matInput type="number" [(ngModel)]="terrainOffset" />
         </mat-form-field>
       </div>
     </mat-tab>
@@ -28,70 +20,39 @@
         Lighting
       </ng-template>
       <div class="tab-content">
-        <mat-checkbox [(ngModel)]="fog">
-          Enable Fog
-        </mat-checkbox>
+        <mat-checkbox [(ngModel)]="fog">Enable Fog</mat-checkbox>
         <mat-form-field appearance="outline">
           <mat-label>Color</mat-label>
-          <input
-            matInput
-            type="color"
-            [(ngModel)]="fogColor"
-          />
+          <input matInput type="color" [(ngModel)]="fogColor" />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Fog Min</mat-label>
-          <input
-            matInput
-            type="number"
-            [(ngModel)]="fogMin"
-          />
+          <input matInput type="number" [(ngModel)]="fogMin" />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Fog distance</mat-label>
-          <input
-            matInput
-            type="number"
-            [(ngModel)]="fogMax"
-          />
+          <input matInput type="number" [(ngModel)]="fogMax" />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Ambient Light</mat-label>
-          <input
-            matInput
-            type="color"
-            [(ngModel)]="ambLight"
-          />
+          <input matInput type="color" [(ngModel)]="ambLight" />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Directional Light</mat-label>
-          <input
-            matInput
-            type="color"
-            [(ngModel)]="dirLight"
-          />
+          <input matInput type="color" [(ngModel)]="dirLight" />
         </mat-form-field>
         <div>
           <div>
             <mat-label>Light Direction</mat-label>
           </div>
           <mat-slider min="-1000" max="1000" step="1" discrete>
-            <input
-              matSliderThumb
-              [(ngModel)]="lightDirX"
-            />
+            <input matSliderThumb [(ngModel)]="lightDirX" />
           </mat-slider>
           <mat-slider min="-1000" max="1000" step="1" discrete>
-            <input
-              matSliderThumb
-              [(ngModel)]="lightDirY"
-            />
+            <input matSliderThumb [(ngModel)]="lightDirY" />
           </mat-slider>
           <mat-slider min="-1000" max="1000" step="1" discrete>
-            <input
-              matSliderThumb
-              [(ngModel)]="lightDirZ"
-            />
+            <input matSliderThumb [(ngModel)]="lightDirZ" />
           </mat-slider>
         </div>
       </div>
@@ -104,64 +65,36 @@
       <div class="tab-content">
         <mat-form-field appearance="outline">
           <mat-label>Skybox</mat-label>
-          <input
-            matInput
-            type="text"
-            [(ngModel)]="skySvc.skybox"
-          />
+          <input matInput type="text" [(ngModel)]="skySvc.skybox" />
         </mat-form-field>
         <div>
           <mat-form-field appearance="outline">
             <mat-label>Top</mat-label>
-            <input
-              matInput
-              type="color"
-              [(ngModel)]="skySvc.skyTop"
-            />
+            <input matInput type="color" [(ngModel)]="skySvc.skyTop" />
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Bottom</mat-label>
-            <input
-              matInput
-              type="color"
-              [(ngModel)]="skySvc.skyBottom"
-            />
+            <input matInput type="color" [(ngModel)]="skySvc.skyBottom" />
           </mat-form-field>
         </div>
         <div>
           <mat-form-field appearance="outline">
             <mat-label>North</mat-label>
-            <input
-              matInput
-              type="color"
-              [(ngModel)]="skySvc.skyNorth"
-            />
+            <input matInput type="color" [(ngModel)]="skySvc.skyNorth" />
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>South</mat-label>
-            <input
-              matInput
-              type="color"
-              [(ngModel)]="skySvc.skySouth"
-            />
+            <input matInput type="color" [(ngModel)]="skySvc.skySouth" />
           </mat-form-field>
         </div>
         <div>
           <mat-form-field appearance="outline">
             <mat-label>East</mat-label>
-            <input
-              matInput
-              type="color"
-              [(ngModel)]="skySvc.skyEast"
-              />
+            <input matInput type="color" [(ngModel)]="skySvc.skyEast" />
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>West</mat-label>
-            <input
-              matInput
-              type="color"
-              [(ngModel)]="skySvc.skyWest"
-            />
+            <input matInput type="color" [(ngModel)]="skySvc.skyWest" />
           </mat-form-field>
         </div>
       </div>
@@ -172,32 +105,18 @@
         Water
       </ng-template>
       <div class="tab-content">
-        <mat-checkbox
-          [(ngModel)]="water"
-        >Enable water</mat-checkbox>
+        <mat-checkbox [(ngModel)]="water">Enable water</mat-checkbox>
         <mat-form-field appearance="outline">
           <mat-label>Top texture</mat-label>
-          <input
-            matInput
-            type="text"
-            [(ngModel)]="waterTextureTop"
-          />
+          <input matInput type="text" [(ngModel)]="waterTextureTop" />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Bottom texture</mat-label>
-          <input
-            matInput
-            type="text"
-            [(ngModel)]="waterTextureBottom"
-          />
+          <input matInput type="text" [(ngModel)]="waterTextureBottom" />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Color</mat-label>
-          <input
-            matInput
-            type="color"
-            [(ngModel)]="waterColor"
-          />
+          <input matInput type="color" [(ngModel)]="waterColor" />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Opacity</mat-label>
@@ -211,19 +130,11 @@
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Water Level</mat-label>
-          <input
-            matInput
-            type="number"
-            [(ngModel)]="waterLevel"
-          />
+          <input matInput type="number" [(ngModel)]="waterLevel" />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Underwater view distance</mat-label>
-          <input
-            matInput
-            type="number"
-            [(ngModel)]="waterUnderView"
-          />
+          <input matInput type="number" [(ngModel)]="waterUnderView" />
         </mat-form-field>
       </div>
     </mat-tab>

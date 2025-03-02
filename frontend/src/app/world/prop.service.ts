@@ -41,7 +41,6 @@ export class PropService {
   rwxMaterialManager: RWXMaterialManager
   audioPath = computed(() => `${this.path()}/sounds`)
   resPath = computed(() => `${this.path()}/textures`)
-  private rwxPath = computed(() => `${this.path()}/rwx`)
   private unknown = this.createUnknownProp()
   private rwxPropLoader = new RWXLoader(new LoadingManager())
   private basicLoader = new RWXLoader(new LoadingManager())
@@ -60,9 +59,12 @@ export class PropService {
     this.basicLoader.setFflate(fflate).setUseBasicMaterial(true)
 
     effect(() => {
-      this.rwxMaterialManager.folder = this.resPath()
-      this.basicLoader.setPath(this.rwxPath()).setResourcePath(this.resPath())
-      this.rwxPropLoader.setPath(this.rwxPath()).setResourcePath(this.resPath())
+      const resPath = this.resPath()
+      const rwxPath = `${this.path()}/rwx`
+
+      this.rwxMaterialManager.folder = resPath
+      this.basicLoader.setPath(rwxPath).setResourcePath(resPath)
+      this.rwxPropLoader.setPath(rwxPath).setResourcePath(resPath)
     })
   }
 

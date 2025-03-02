@@ -1,11 +1,16 @@
 @defer (when !http.isLogged()) {
-  <form class="form-signin" (ngSubmit)="onLogin()" [formGroup]="loginForm">
+  <form
+    class="form-signin"
+    (ngSubmit)="onLogin()"
+    [formGroup]="loginForm"
+    *transloco="let t; read: 'auth'"
+  >
     <app-logo />
     <mat-form-field appearance="outline">
-      <mat-label><fa-icon
-          [icon]="faUser"
-          [fixedWidth]="true"
-        />Username</mat-label>
+      <mat-label>
+        <fa-icon [icon]="faUser" [fixedWidth]="true" />
+        <span>{{ t('username') }}</span>
+      </mat-label>
       <input
         matInput
         type="text"
@@ -14,17 +19,17 @@
         required
       />
       @if (loginError) {
-        <mat-error>Wrong login or password</mat-error>
+        <mat-error>{{ t('login-error') }}</mat-error>
       }
       @if (usernameCtl.dirty && usernameCtl.errors?.required) {
-        <mat-error>Username is required</mat-error>
+        <mat-error>{{ t('username-required') }}</mat-error>
       }
     </mat-form-field>
     <mat-form-field appearance="outline">
-      <mat-label><fa-icon
-          [icon]="faKey"
-          [fixedWidth]="true"
-        />Password</mat-label>
+      <mat-label>
+        <fa-icon [icon]="faKey" [fixedWidth]="true" />
+        <span>{{ t('password') }}</span>
+      </mat-label>
       <input
         matInput
         [type]="hide ? 'password' : 'text'"
@@ -48,7 +53,7 @@
         }
       </button>
       @if (passwordCtl.dirty && passwordCtl.errors?.required) {
-        <mat-error>Password is required</mat-error>
+        <mat-error>{{ t('password-required') }}</mat-error>
       }
     </mat-form-field>
     @if (!processing) {
@@ -59,7 +64,7 @@
         type="submit"
         [disabled]="loginForm.invalid"
       >
-        Sign in
+        {{ t('signin') }}
       </button>
     } @else {
       <button
@@ -69,11 +74,7 @@
         type="submit"
         disabled
       >
-        <fa-icon
-          [icon]="faCircleNotch"
-          [fixedWidth]="true"
-          animation="spin"
-        />
+        <fa-icon [icon]="faCircleNotch" [fixedWidth]="true" animation="spin" />
         <span class="sr-only">Loading...</span>
       </button>
     }
