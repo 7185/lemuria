@@ -1,6 +1,6 @@
 @defer (when !http.isLogged()) {
   <form
-    class="form-signin"
+    class="form-sign-in"
     (ngSubmit)="onLogin()"
     [formGroup]="loginForm"
     *transloco="let t; read: 'auth'"
@@ -60,17 +60,17 @@
       <button
         mat-flat-button
         color="primary"
-        class="btn-signin"
+        class="btn-sign-in"
         type="submit"
         [disabled]="loginForm.invalid"
       >
-        {{ t('signin') }}
+        {{ t('sign-in') }}
       </button>
     } @else {
       <button
         mat-flat-button
         color="primary"
-        class="btn-signin"
+        class="btn-sign-in"
         type="submit"
         disabled
       >

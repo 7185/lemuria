@@ -1,0 +1,22 @@
+{
+  "avatar": "Avatar",
+  "controls": "Controls",
+  "distance": "{{ n }} meters",
+  "home": "Home",
+  "gestures": "Gestures",
+  "leave": "Leave",
+  "leaveWorld": "Leave world",
+  "options": "Options",
+  "remember": "Remember",
+  "settings": "Settings",
+  "sign-out": "Sign out",
+  "teleport": "Teleport",
+  "teleportBack": "Teleport Back",
+  "teleportForward": "Teleport Forward",
+  "to": "To",
+  "toggleCamera": "Toggle camera",
+  "users": "Users",
+  "visibility": "Visibility",
+  "worldAttribs": "World features",
+  "worlds": "Worlds"
+}

@@ -8,7 +8,7 @@
     "build": "ng build --configuration development",
     "build:prod": "ng build --configuration production",
     "build:watch": "ng build --configuration development --watch",
-    "format": "prettier --write \"src/**/*.(ts|html)\" \"public/i18n/*.json\" \"*.{m,}ts\"",
+    "format": "prettier --write \"src/**/*.(ts|html)\" \"public/i18n/**/*.json\" \"*.{m,}ts\"",
     "test": "ng test",
     "lint": "eslint",
     "postinstall": "cd ../ && npm run patch:frontend"
@@ -51,12 +51,12 @@
     "@types/three": "^0.174.0",
     "@types/webgl2": "^0.0.11",
     "@typescript-eslint/types": "^8.10.0",
-    "angular-eslint": "^19.1.0",
+    "angular-eslint": "^19.2.0",
     "eslint": "^9.21.0",
     "patch-package": "^8.0.0",
-    "prettier": "^3.5.2",
+    "prettier": "^3.5.3",
     "ts-node": "^10.9.2",
     "typescript": ">=5.5.0 <5.8.0",
-    "typescript-eslint": "^8.25.0"
+    "typescript-eslint": "^8.26.0"
   }
 }

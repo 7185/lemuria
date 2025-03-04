@@ -1,0 +1,5 @@
+{
+  "message": "Message",
+  "userJoined": "{{ user }} joined",
+  "userLeft": "{{ user }} left"
+}

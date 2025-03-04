@@ -1,0 +1,6 @@
+{
+  "ground": "Terrain",
+  "lighting": "Lumière",
+  "sky": "Ciel",
+  "water": "Eau"
+}

@@ -1,4 +1,4 @@
-<mat-toolbar>
+<mat-toolbar *transloco="let t; read: 'toolbar'">
   @if (!debug) {
     <span>Lemuria</span>
   } @else {
@@ -11,7 +11,11 @@
 
   <span class="spacer"></span>
 
-  <button mat-icon-button [matMenuTriggerFor]="worldsMenu" title="Worlds">
+  <button
+    mat-icon-button
+    [matMenuTriggerFor]="worldsMenu"
+    [title]="t('worlds')"
+  >
     <fa-icon [icon]="faGlobe" class="text-green" [fixedWidth]="true" />
   </button>
   <mat-menu #worldsMenu="matMenu">
@@ -29,29 +33,33 @@
       }
     </ng-template>
   </mat-menu>
-  <button mat-icon-button [matMenuTriggerFor]="optionsMenu" title="Options">
+  <button
+    mat-icon-button
+    [matMenuTriggerFor]="optionsMenu"
+    [title]="t('options')"
+  >
     <fa-icon [icon]="faCog" class="text-gray" [fixedWidth]="true" />
   </button>
   <mat-menu #optionsMenu="matMenu">
     <ng-template matMenuContent>
       <button mat-menu-item (click)="openSettings()">
         <fa-icon [icon]="faCog" />
-        Settings...
+        {{ t('settings') }}...
       </button>
       <button mat-menu-item (click)="openControls()">
         <fa-icon [icon]="faKeyboard" />
-        Controls...
+        {{ t('controls') }}...
       </button>
       <button mat-menu-item (click)="openWorldAttribs()">
         <fa-icon [icon]="faGlobe" />
-        World features...
+        {{ t('worldAttribs') }}...
       </button>
     </ng-template>
   </mat-menu>
   <button
     mat-icon-button
     [matMenuTriggerFor]="avatarMenu"
-    title="Avatar"
+    [title]="t('avatar')"
     [disabled]="!socket.connected"
   >
     <fa-icon [icon]="faCircleUser" class="text-orange" [fixedWidth]="true" />
@@ -69,7 +77,7 @@
   <button
     mat-icon-button
     [matMenuTriggerFor]="visibilityMenu"
-    title="Visibility"
+    [title]="t('visibility')"
     [disabled]="!socket.connected"
   >
     <fa-icon [icon]="faMountainSun" class="text-blue" [fixedWidth]="true" />
@@ -79,12 +87,12 @@
       @for (v of visibilityList; track v) {
         <button mat-menu-item (click)="changeVisibility(v)">
           <fa-icon [class.invisible]="v !== visibility" [icon]="faCheck" />
-          {{ v }} meters
+          {{ t('distance', {n: v}) }}
         </button>
       }
     </ng-template>
   </mat-menu>
-  <button mat-icon-button title="Toggle camera" (click)="toggleCamera()">
+  <button mat-icon-button [title]="t('toggleCamera')" (click)="toggleCamera()">
     @switch (cameraType()) {
       @case (0) {
         <fa-icon [icon]="faEye" class="text-indigo" [fixedWidth]="true" />
@@ -100,14 +108,18 @@
 
   <span class="spacer"></span>
 
-  <button mat-icon-button [matMenuTriggerFor]="teleportMenu" title="Teleport">
+  <button
+    mat-icon-button
+    [matMenuTriggerFor]="teleportMenu"
+    [title]="t('teleport')"
+  >
     <fa-icon [icon]="faBolt" class="text-yellow" [fixedWidth]="true" />
   </button>
   <mat-menu #teleportMenu="matMenu">
     <ng-template matMenuContent>
       <button mat-menu-item (click)="openTeleport(0)">
         <fa-icon [icon]="faBolt" />
-        To...
+        {{ t('to') }}...
       </button>
       <button
         mat-menu-item
@@ -115,7 +127,7 @@
         [disabled]="!socket.connected"
       >
         <fa-icon [icon]="faBolt" />
-        Remember...
+        {{ t('remember') }}...
       </button>
       @if (teleports().length) {
         <mat-divider />
@@ -139,7 +151,7 @@
   </mat-menu>
   <button
     mat-icon-button
-    title="Home"
+    [title]="t('home')"
     (click)="teleportSvc.teleport.set(home)"
     [disabled]="!home.world && !home.position"
   >
@@ -147,7 +159,7 @@
   </button>
   <button
     mat-icon-button
-    title="Teleport Back"
+    [title]="t('teleportBack')"
     (click)="teleportSvc.teleportBack()"
     [disabled]="teleportSvc.currentTeleportIndex <= 0"
   >
@@ -155,7 +167,7 @@
   </button>
   <button
     mat-icon-button
-    title="Teleport Forward"
+    [title]="t('teleportForward')"
     (click)="teleportSvc.teleportNext()"
     [disabled]="
       teleportSvc.currentTeleportIndex >= teleportSvc.teleportHistory.length - 1
@@ -167,7 +179,7 @@
   <button
     mat-icon-button
     [matMenuTriggerFor]="gestureMenu"
-    title="Gestures"
+    [title]="t('gestures')"
     [disabled]="worldSvc.gestures().size === 0"
   >
     <fa-icon
@@ -246,7 +258,7 @@
     matBadgePosition="below"
     matBadgeSize="small"
     [matMenuTriggerFor]="usersMenu"
-    title="Users"
+    [title]="t('users')"
   >
     <fa-icon [icon]="faUsers" class="text-purple" [fixedWidth]="true" />
   </button>
@@ -265,7 +277,7 @@
       }
     </ng-template>
   </mat-menu>
-  <button mat-icon-button [matMenuTriggerFor]="leaveMenu" title="Leave">
+  <button mat-icon-button [matMenuTriggerFor]="leaveMenu" [title]="t('leave')">
     <fa-icon [icon]="faRightFromBracket" class="text-red" [fixedWidth]="true" />
   </button>
   <mat-menu #leaveMenu="matMenu">
@@ -273,12 +285,12 @@
       @if (socket.connected) {
         <button mat-menu-item (click)="socket.close()">
           <fa-icon [icon]="faRightFromBracket" />
-          Leave world
+          {{ t('leaveWorld') }}
         </button>
       }
       <button mat-menu-item (click)="logout()">
         <fa-icon [icon]="faRightFromBracket" />
-        Sign out
+        {{ t('signOut') }}
       </button>
     </ng-template>
   </mat-menu>

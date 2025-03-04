@@ -1,0 +1,18 @@
+{
+  "clip": "Traverser",
+  "jmp": "Sauter",
+  "lookDwn": "Regarder en bas",
+  "lookUp": "Regarder en haut",
+  "moveBck": "Reculer",
+  "moveDwn": "Descendre",
+  "moveFwd": "Avancer",
+  "moveLft": "Glisser à gauche",
+  "moveRgt": "Glisser à droite",
+  "moveUp": "Monter (voler)",
+  "pressKey": "Taper une touche",
+  "run": "Courir",
+  "setDefault": "Réinitialiser",
+  "side": "Pas de côté",
+  "turnLft": "Tourner à gauche",
+  "turnRgt": "Tourner à droite"
+}

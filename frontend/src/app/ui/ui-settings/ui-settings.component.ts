@@ -13,9 +13,11 @@ import {MatInput, MatLabel} from '@angular/material/input'
 import {FormsModule} from '@angular/forms'
 import {EngineService} from '../../engine/engine.service'
 import {SettingsService} from '../../settings/settings.service'
+import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
 
 @Component({
   imports: [
+    TranslocoDirective,
     FormsModule,
     MatButton,
     MatCheckbox,
@@ -26,6 +28,9 @@ import {SettingsService} from '../../settings/settings.service'
     MatInput,
     MatLabel,
     MatFormField
+  ],
+  providers: [
+    provideTranslocoScope({scope: 'ui/ui-settings', alias: 'settings'})
   ],
   selector: 'app-ui-settings',
   templateUrl: './ui-settings.component.html',

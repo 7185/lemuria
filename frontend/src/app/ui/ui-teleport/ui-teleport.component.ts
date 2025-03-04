@@ -13,9 +13,11 @@ import {MatInput} from '@angular/material/input'
 import {TeleportService} from '../../engine/teleport.service'
 import {SettingsService} from '../../settings/settings.service'
 import {WorldService} from '../../world/world.service'
+import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
 
 @Component({
   imports: [
+    TranslocoDirective,
     FormsModule,
     MatButton,
     MatDialogActions,
@@ -25,6 +27,9 @@ import {WorldService} from '../../world/world.service'
     MatFormField,
     MatInput,
     MatLabel
+  ],
+  providers: [
+    provideTranslocoScope({scope: 'ui/ui-teleport', alias: 'teleport'})
   ],
   selector: 'app-ui-teleport',
   templateUrl: './ui-teleport.component.html',

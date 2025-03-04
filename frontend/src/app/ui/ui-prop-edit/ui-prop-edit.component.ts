@@ -31,9 +31,11 @@ import {
   faRotate,
   faTrashCan
 } from '@fortawesome/free-solid-svg-icons'
+import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
 
 @Component({
   imports: [
+    TranslocoDirective,
     FormsModule,
     FaIconComponent,
     FaLayersComponent,
@@ -49,6 +51,9 @@ import {
   host: {
     '[class.d-none]': 'displayed()'
   },
+  providers: [
+    provideTranslocoScope({scope: 'ui/ui-prop-edit', alias: 'prop-edit'})
+  ],
   selector: 'app-ui-prop-edit',
   templateUrl: './ui-prop-edit.component.html',
   styleUrl: './ui-prop-edit.component.scss',

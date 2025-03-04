@@ -25,9 +25,11 @@ import {
   faSun,
   faWater
 } from '@fortawesome/free-solid-svg-icons'
+import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
 
 @Component({
   imports: [
+    TranslocoDirective,
     FormsModule,
     MatCheckbox,
     MatDialogContent,
@@ -41,6 +43,12 @@ import {
     MatTabGroup,
     MatTabLabel,
     FaIconComponent
+  ],
+  providers: [
+    provideTranslocoScope({
+      scope: 'ui/ui-world-attribs',
+      alias: 'world-attribs'
+    })
   ],
   selector: 'app-ui-world-attribs',
   templateUrl: './ui-world-attribs.component.html',

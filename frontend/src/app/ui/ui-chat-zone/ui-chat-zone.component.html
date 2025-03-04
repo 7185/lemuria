@@ -1,4 +1,4 @@
-<virtual-scroller #scroll [items]="data">
+<virtual-scroller #scroll [items]="data" *transloco="let t; read: 'chat-zone'">
   @for (m of scroll.viewPortItems; track m) {
     <p class="line">
       @if (m.type === 'msg') {
@@ -7,10 +7,10 @@
         <span [innerHTML]="m.data | linkify"></span>
       }
       @if (m.type === 'join') {
-        <b class="text-green">{{ m.data }} joined</b>
+        <b class="text-green">{{ t('userJoined', {user: m.data}) }}</b>
       }
       @if (m.type === 'part') {
-        <b class="text-red">{{ m.data }} left</b>
+        <b class="text-red">{{ t('userLeft', {user: m.data}) }}</b>
       }
       @if (m.type === 'err') {
         <b class="text-red">{{ m.data }}</b>

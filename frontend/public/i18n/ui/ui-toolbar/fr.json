@@ -1,0 +1,22 @@
+{
+  "avatar": "Avatar",
+  "controls": "Contrôles",
+  "distance": "{{ n }} mètres",
+  "gestures": "Actions",
+  "home": "Retour à la base",
+  "leave": "Quitter",
+  "leaveWorld": "Quitter le monde",
+  "options": "Options",
+  "remember": "Enregistrer",
+  "settings": "Paramètres",
+  "sign-out": "Se déconnecter",
+  "teleport": "Téléportation",
+  "teleportBack": "Téléportation précédente",
+  "teleportForward": "Téléportation suivante",
+  "to": "Atteindre",
+  "toggleCamera": "Changer de caméra",
+  "users": "Utilisateurs",
+  "visibility": "Visibilité",
+  "worldAttribs": "Propriétés du monde",
+  "worlds": "Mondes"
+}

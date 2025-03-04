@@ -24,9 +24,11 @@ import {
   faClone,
   faSquare
 } from '@fortawesome/free-solid-svg-icons'
+import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
 
 @Component({
   imports: [
+    TranslocoDirective,
     FormsModule,
     FaIconComponent,
     FaLayersComponent,
@@ -38,6 +40,9 @@ import {
     MatLabel,
     MatFormField,
     DecimalPipe
+  ],
+  providers: [
+    provideTranslocoScope({scope: 'ui/ui-terrain-edit', alias: 'terrain-edit'})
   ],
   host: {
     '[class.d-none]': 'displayed()'

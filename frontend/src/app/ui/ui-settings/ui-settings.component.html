@@ -1,8 +1,12 @@
-<h1 mat-dialog-title>Settings</h1>
-<mat-dialog-content>
-  <mat-checkbox [(ngModel)]="archivedMedia">Find forgotten media</mat-checkbox>
+<h1 mat-dialog-title *transloco="let t; read: 'toolbar'">
+  {{ t('settings') }}
+</h1>
+<mat-dialog-content *transloco="let t; read: 'settings'">
+  <mat-checkbox [(ngModel)]="archivedMedia">{{
+    t('archivedMedia')
+  }}</mat-checkbox>
   <mat-form-field appearance="outline">
-    <mat-label>Maximum FPS</mat-label>
+    <mat-label>{{ t('maxFps') }}</mat-label>
     <input
       matInput
       type="text"
@@ -12,7 +16,7 @@
     />
   </mat-form-field>
   <mat-form-field appearance="outline">
-    <mat-label>Maximum lights</mat-label>
+    <mat-label>{{ t('maxLights') }}</mat-label>
     <input
       matInput
       type="text"
@@ -22,7 +26,7 @@
     />
   </mat-form-field>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
+<mat-dialog-actions align="end" *transloco="let t; read: 'settings'">
   <button
     mat-flat-button
     [mat-dialog-close]="true"
@@ -30,6 +34,6 @@
     color="primary"
     (click)="save()"
   >
-    Save
+    {{ t('save') }}
   </button>
 </mat-dialog-actions>

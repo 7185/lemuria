@@ -1,0 +1,18 @@
+{
+  "clip": "Pass Through",
+  "jmp": "Jump",
+  "lookDwn": "Look Down",
+  "lookUp": "Look Up",
+  "moveBck": "Move Backward",
+  "moveDwn": "Move Down",
+  "moveFwd": "Move Forward",
+  "moveLft": "Move Left",
+  "moveRgt": "Move Right",
+  "moveUp": "Move Up (Fly)",
+  "pressKey": "Press key",
+  "run": "Run",
+  "setDefault": "Set default",
+  "side": "Sidestep",
+  "turnLft": "Turn Left",
+  "turnRgt": "Turn Right"
+}

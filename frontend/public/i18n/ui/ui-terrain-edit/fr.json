@@ -1,0 +1,10 @@
+{
+  "copy": "Copier",
+  "elevation": "Altitude",
+  "hole": "Libre",
+  "pasteElevation": "Coller Altitude",
+  "pasteTexture": "Coller Texture",
+  "rotateLeft": "Tourner à gauche",
+  "rotateRight": "Tourner à droite",
+  "texture": "Texture"
+}

@@ -18,9 +18,11 @@ import {
 } from '@iharbeck/ngx-virtual-scroller'
 import {SocketService} from '../../network/socket.service'
 import {UserService} from '../../user'
+import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
 
 @Component({
   imports: [
+    TranslocoDirective,
     MatIconButton,
     MatInput,
     MatLabel,
@@ -31,6 +33,9 @@ import {UserService} from '../../user'
     NgStyle,
     VirtualScrollerModule,
     LinkifyPipe
+  ],
+  providers: [
+    provideTranslocoScope({scope: 'ui/ui-chat-zone', alias: 'chat-zone'})
   ],
   host: {
     '[class.active]': 'chatActive'
@@ -60,6 +65,7 @@ export class UiChatZoneComponent {
           this.colors[u.name] = '#' + u.id.substring(0, 6)
         }
         this.data.push(msg)
+        if (this.virtualScroller() == null) return
         this.virtualScroller().scrollInto(msg)
       }
     })

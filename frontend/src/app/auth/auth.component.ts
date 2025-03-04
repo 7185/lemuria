@@ -16,11 +16,11 @@ import {
   faKey,
   faUser
 } from '@fortawesome/free-solid-svg-icons'
-import {TranslocoModule} from '@jsverse/transloco'
+import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
 
 @Component({
   imports: [
-    TranslocoModule,
+    TranslocoDirective,
     ReactiveFormsModule,
     MatButton,
     MatIconButton,
@@ -32,6 +32,7 @@ import {TranslocoModule} from '@jsverse/transloco'
     FaIconComponent,
     LogoComponent
   ],
+  providers: [provideTranslocoScope('auth')],
   selector: 'app-auth',
   templateUrl: './auth.component.html',
   styleUrl: './auth.component.scss',

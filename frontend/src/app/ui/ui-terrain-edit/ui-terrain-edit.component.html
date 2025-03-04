@@ -1,11 +1,16 @@
-<div id="terrain-edit" cdkDrag cdkDragBoundary=".ui-wrapper">
+<div
+  id="terrain-edit"
+  cdkDrag
+  cdkDragBoundary=".ui-wrapper"
+  *transloco="let t; read: 'terrain-edit'"
+>
   <hr cdkDragHandle />
   <div class="buttons">
     <button
       mat-icon-button
       type="button"
       (click)="trigger($event)"
-      title="Rotate Left"
+      [title]="t('rotateLeft')"
     >
       <fa-icon
         [icon]="faArrowRotateRight"
@@ -17,7 +22,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event)"
-      title="Rotate Right"
+      [title]="t('rotateRight')"
     >
       <fa-icon
         [icon]="faArrowRotateLeft"
@@ -29,7 +34,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event)"
-      title="Copy"
+      [title]="t('copy')"
     >
       <fa-icon [icon]="faClone" class="text-red" [fixedWidth]="true" />
     </button>
@@ -37,7 +42,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event)"
-      title="Paste Elevation"
+      [title]="t('pasteElevation')"
     >
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faClipboard" [fixedWidth]="true" />
@@ -53,7 +58,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event)"
-      title="Paste Texture"
+      [title]="t('pasteTexture')"
     >
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faClipboard" [fixedWidth]="true" />
@@ -68,7 +73,7 @@
   </div>
   <div class="terrain-form">
     <mat-form-field appearance="outline">
-      <mat-label>Elevation</mat-label>
+      <mat-label>{{ t('elevation') }}</mat-label>
       <input
         matInput
         type="number"
@@ -79,7 +84,7 @@
       />
     </mat-form-field>
     <mat-form-field appearance="outline">
-      <mat-label>Texture</mat-label>
+      <mat-label>{{ t('texture') }}</mat-label>
       <input
         matInput
         type="number"
@@ -88,6 +93,8 @@
         max="62"
       />
     </mat-form-field>
-    <mat-checkbox [(ngModel)]="buildSvc.selectedCell().hole">Hole</mat-checkbox>
+    <mat-checkbox [(ngModel)]="buildSvc.selectedCell().hole">
+      {{ t('hole') }}
+    </mat-checkbox>
   </div>
 </div>

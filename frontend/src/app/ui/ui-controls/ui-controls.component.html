@@ -1,5 +1,7 @@
-<h1 mat-dialog-title>Controls</h1>
-<mat-dialog-content>
+<h1 mat-dialog-title *transloco="let t; read: 'toolbar'">
+  {{ t('controls') }}
+</h1>
+<mat-dialog-content *transloco="let t; read: 'controls'">
   <table>
     <thead>
       <tr>
@@ -7,7 +9,7 @@
         <th scope="col"></th>
         <th scope="col">
           <button mat-flat-button (click)="setDefault()" color="primary">
-            Default
+            {{ t('setDefault') }}
           </button>
         </th>
       </tr>
@@ -15,7 +17,7 @@
     <tbody>
       @for (item of controlsKeymap; track $index; let i = $index) {
         <tr>
-          <th scope="row">{{ controlsLabels[i][0] }}</th>
+          <th scope="row">{{ t(controlsKeys[i]) }}</th>
           <td>
             <button
               mat-flat-button

@@ -5,6 +5,7 @@ import {interval, Subject} from 'rxjs'
 import type {Subscription} from 'rxjs'
 import {webSocket} from 'rxjs/webSocket'
 import type {WebSocketSubject} from 'rxjs/webSocket'
+import {TranslocoService} from '@jsverse/transloco'
 import {Vector3} from 'three'
 import {environment} from '../../environments/environment'
 
@@ -21,6 +22,7 @@ export class SocketService {
 
   private readonly engineSvc = inject(EngineService)
   private readonly userSvc = inject(UserService)
+  private readonly translocoSvc = inject(TranslocoService)
   private connecting = false
   private socket: WebSocketSubject<unknown> = webSocket({
     url: environment.url.websocket
@@ -42,11 +44,17 @@ export class SocketService {
         this.handleMessage(msg)
       },
       error: () => {
-        this.messages.next({type: 'err', data: 'Connection lost'})
+        this.messages.next({
+          type: 'err',
+          data: this.translocoSvc.translate('connectionLost')
+        })
         this.disconnect()
       },
       complete: () => {
-        this.messages.next({type: 'err', data: 'Disconnected'})
+        this.messages.next({
+          type: 'err',
+          data: this.translocoSvc.translate('disconnected')
+        })
         this.disconnect()
       }
     })

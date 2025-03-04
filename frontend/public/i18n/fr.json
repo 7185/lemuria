@@ -1,10 +1,4 @@
 {
-  "auth": {
-    "login-error": "Utilisateur inconnu ou mauvais mot de passe.",
-    "password": "Mot de passe",
-    "password-required": "Le mot de passe est requis.",
-    "signin": "Connexion",
-    "username": "Nom d'utilisateur",
-    "username-required": "Le nom d'utilisateur est requis."
-  }
+  "connectionLost": "Connexion perdue",
+  "disconnected": "Déconnecté"
 }

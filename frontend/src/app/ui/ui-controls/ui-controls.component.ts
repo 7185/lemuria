@@ -4,38 +4,46 @@ import type {PressedKey} from '../../engine/inputsystem.service'
 import {InputSystemService} from '../../engine/inputsystem.service'
 import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
 import {Subject, take, takeUntil, timeout} from 'rxjs'
+import {
+  provideTranslocoScope,
+  TranslocoDirective,
+  TranslocoService
+} from '@jsverse/transloco'
 
 @Component({
-  imports: [MatButton, MatDialogContent, MatDialogTitle],
+  imports: [TranslocoDirective, MatButton, MatDialogContent, MatDialogTitle],
+  providers: [
+    provideTranslocoScope({scope: 'ui/ui-controls', alias: 'controls'})
+  ],
   selector: 'app-ui-controls',
   templateUrl: './ui-controls.component.html',
   styleUrl: './ui-controls.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiControlsComponent {
-  controlsLabels: [string, PressedKey][] = [
-    ['Move Forward', 'moveFwd'],
-    ['Move Backward', 'moveBck'],
-    ['Turn Left', 'turnLft'],
-    ['Turn Right', 'turnRgt'],
-    ['Move Left', 'moveLft'],
-    ['Move Right', 'moveRgt'],
-    ['Sidestep', 'side'],
-    ['Run', 'run'],
-    ['Jump', 'jmp'],
-    ['Move Up (Fly)', 'moveUp'],
-    ['Move Down', 'moveDwn'],
-    ['Look Up', 'lookUp'],
-    ['Look Down', 'lookDwn'],
-    ['Pass Through', 'clip']
+  protected controlsKeys: PressedKey[] = [
+    'moveFwd',
+    'moveBck',
+    'turnLft',
+    'turnRgt',
+    'moveLft',
+    'moveRgt',
+    'side',
+    'run',
+    'jmp',
+    'moveUp',
+    'moveDwn',
+    'lookUp',
+    'lookDwn',
+    'clip'
   ]
-
   protected controlsKeymap: [string | null, string | null][] = Array(
-    this.controlsLabels.length
+    this.controlsKeys.length
   ).fill([null, null])
   protected activeKey = signal<[number | null, number | null]>([null, null])
 
   private readonly inputSysSvc = inject(InputSystemService)
+  private readonly translocoSvc = inject(TranslocoService)
   private cancel: Subject<void> | null = null
   private oldKey: string | null = 'nop'
 
@@ -54,7 +62,8 @@ export class UiControlsComponent {
     }
     this.activeKey.set([key, pos])
     this.oldKey = this.controlsKeymap[key][pos]
-    this.controlsKeymap[key][pos] = 'Press key...'
+    this.controlsKeymap[key][pos] =
+      `${this.translocoSvc.translate('controls.pressKey')}...`
     this.cancel = new Subject()
     this.inputSysSvc.keyDownEvent
       .pipe(take(1), timeout(5000), takeUntil(this.cancel))
@@ -86,12 +95,12 @@ export class UiControlsComponent {
 
   getKeymap(): void {
     this.controlsKeymap = []
-    for (const l of this.controlsLabels) {
+    for (const key of this.controlsKeys) {
       const newKeys: [string | null, string | null] = [null, null]
       let i = 0
       for (const k of this.inputSysSvc.getKeyMap()) {
         // only 2 values allowed
-        if (k[1] === l[1] && i < 2) {
+        if (k[1] === key && i < 2) {
           newKeys[i] = k[0]
           i++
         }
@@ -106,9 +115,7 @@ export class UiControlsComponent {
       (keys: [string | null, string | null], index) => {
         keys
           .filter((k) => k !== null)
-          .forEach((k) =>
-            this.inputSysSvc.mapKey(k, this.controlsLabels[index][1])
-          )
+          .forEach((k) => this.inputSysSvc.mapKey(k, this.controlsKeys[index]))
       }
     )
   }

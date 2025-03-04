@@ -22,8 +22,6 @@ bootstrapApplication(AppComponent, {
     provideExperimentalZonelessChangeDetection(),
     provideAnimationsAsync(),
     provideHttpClient(withFetch(), withInterceptors([jwtInterceptor])),
-    {provide: APP_BASE_HREF, useValue: '/'},
-    provideHttpClient(),
     provideTransloco({
       config: {
         availableLangs: config.langs,
@@ -33,6 +31,7 @@ bootstrapApplication(AppComponent, {
         prodMode: !environment.debug
       },
       loader: TranslocoHttpLoader
-    })
+    }),
+    {provide: APP_BASE_HREF, useValue: '/'}
   ]
 })

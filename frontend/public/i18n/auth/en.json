@@ -1,0 +1,8 @@
+{
+  "login-error": "Wrong login or password.",
+  "password": "Password",
+  "password-required": "Password is required.",
+  "sign-in": "Sign in",
+  "username": "Username",
+  "username-required": "Username is required."
+}

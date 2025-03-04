@@ -1,10 +1,15 @@
-<h1 mat-dialog-title>World features</h1>
-<mat-dialog-content class="mat-typography">
+<h1 mat-dialog-title *transloco="let t; read: 'toolbar'">
+  {{ t('worldAttribs') }}
+</h1>
+<mat-dialog-content
+  class="mat-typography"
+  *transloco="let t; read: 'world-attribs'"
+>
   <mat-tab-group dynamicHeight>
     <mat-tab>
       <ng-template mat-tab-label>
         <fa-icon [icon]="faMound" [fixedWidth]="true" pull="left" />
-        Ground
+        {{ t('ground') }}
       </ng-template>
       <div class="tab-content">
         <mat-checkbox [(ngModel)]="terrain">Enable Terrain</mat-checkbox>
@@ -17,7 +22,7 @@
     <mat-tab>
       <ng-template mat-tab-label>
         <fa-icon [icon]="faSun" [fixedWidth]="true" pull="left" />
-        Lighting
+        {{ t('lighting') }}
       </ng-template>
       <div class="tab-content">
         <mat-checkbox [(ngModel)]="fog">Enable Fog</mat-checkbox>
@@ -60,7 +65,7 @@
     <mat-tab>
       <ng-template mat-tab-label>
         <fa-icon [icon]="faPanorama" [fixedWidth]="true" pull="left" />
-        Sky
+        {{ t('sky') }}
       </ng-template>
       <div class="tab-content">
         <mat-form-field appearance="outline">
@@ -102,7 +107,7 @@
     <mat-tab>
       <ng-template mat-tab-label>
         <fa-icon [icon]="faWater" [fixedWidth]="true" pull="left" />
-        Water
+        {{ t('water') }}
       </ng-template>
       <div class="tab-content">
         <mat-checkbox [(ngModel)]="water">Enable water</mat-checkbox>

@@ -1,18 +1,18 @@
-<h1 mat-dialog-title>
+<h1 mat-dialog-title *transloco="let t; read: 'teleport'">
   @if (data.type === 0) {
-    Teleport to
+    {{ t('teleportTo') }}
   } @else {
-    Remember
+    {{ t('remember') }}
   }
 </h1>
-<mat-dialog-content>
+<mat-dialog-content *transloco="let t; read: 'teleport'">
   @if (data.type === 0) {
     <mat-form-field appearance="outline">
-      <mat-label>World</mat-label>
+      <mat-label>{{ t('world') }}</mat-label>
       <input matInput type="text" [(ngModel)]="worldName" />
     </mat-form-field>
     <mat-form-field appearance="outline">
-      <mat-label>Coordinates</mat-label>
+      <mat-label>{{ t('coordinates') }}</mat-label>
       <input
         matInput
         type="text"
@@ -23,12 +23,12 @@
   }
   @if (data.type === 1) {
     <mat-form-field appearance="outline">
-      <mat-label>Name</mat-label>
+      <mat-label>{{ t('name') }}</mat-label>
       <input matInput type="text" [(ngModel)]="name" />
     </mat-form-field>
   }
 </mat-dialog-content>
-<mat-dialog-actions align="end">
+<mat-dialog-actions align="end" *transloco="let t; read: 'teleport'">
   @if (data.type === 0) {
     <button
       mat-flat-button
@@ -37,7 +37,7 @@
       color="primary"
       (click)="go()"
     >
-      Go
+      {{ t('go') }}
     </button>
   }
   @if (data.type === 1) {
@@ -47,7 +47,7 @@
       color="accent"
       (click)="makeHome()"
     >
-      Make this my home
+      {{ t('makeHome') }}
     </button>
     <button
       mat-flat-button
@@ -56,7 +56,7 @@
       color="primary"
       (click)="save()"
     >
-      Save
+      {{ t('save') }}
     </button>
   }
 </mat-dialog-actions>

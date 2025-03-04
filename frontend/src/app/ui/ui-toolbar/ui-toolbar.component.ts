@@ -57,9 +57,11 @@ import {
   faUsers,
   faVideo
 } from '@fortawesome/free-solid-svg-icons'
+import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
 
 @Component({
   imports: [
+    TranslocoDirective,
     MatBadge,
     MatIconButton,
     MatDivider,
@@ -72,6 +74,9 @@ import {
     FaIconComponent,
     FaLayersComponent,
     FaLayersTextComponent
+  ],
+  providers: [
+    provideTranslocoScope({scope: 'ui/ui-toolbar', alias: 'toolbar'})
   ],
   selector: 'app-ui-toolbar',
   templateUrl: './ui-toolbar.component.html',
@@ -123,7 +128,7 @@ export class UiToolbarComponent {
   private readonly engineSvc = inject(EngineService)
   private readonly http = inject(HttpService)
   private readonly settings = inject(SettingsService)
-  private compass = viewChild.required<ElementRef>('compass')
+  private compass = viewChild<ElementRef>('compass')
 
   constructor() {
     toObservable(this.userSvc.userList).subscribe((list) => {
@@ -171,6 +176,7 @@ export class UiToolbarComponent {
       .subscribe((o: {pos: Vector3; theta: number}) => {
         this.strPos.set(posToString(o.pos))
         this.strAlt.set(altToString(o.pos))
+        if (this.compass() == null) return
         this.renderer.setStyle(
           this.compass().nativeElement,
           'transform',
