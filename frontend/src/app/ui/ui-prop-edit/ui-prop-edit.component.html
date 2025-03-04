@@ -18,7 +18,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'snapGrid')"
-      title="Snap to Grid"
+      [title]="t('snapToGrid')"
     >
       <fa-icon [icon]="faBorderNone" [fixedWidth]="true" />
     </button>
@@ -26,7 +26,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'forward')"
-      title="Move forward"
+      [title]="t('moveForward')"
     >
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faRoad" class="text-gray" [fixedWidth]="true" />
@@ -41,7 +41,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'backward')"
-      title="Move back"
+      [title]="t('moveBack')"
     >
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faRoad" class="text-gray" [fixedWidth]="true" />
@@ -56,7 +56,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'left')"
-      title="Move left"
+      [title]="t('moveLeft')"
     >
       <fa-icon [icon]="faArrowLeft" class="text-cyan" [fixedWidth]="true" />
     </button>
@@ -64,7 +64,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'right')"
-      title="Move right"
+      [title]="t('moveRight')"
     >
       <fa-icon [icon]="faArrowRight" class="text-cyan" [fixedWidth]="true" />
     </button>
@@ -72,7 +72,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'up')"
-      title="Move up"
+      [title]="t('moveUp')"
     >
       <fa-icon [icon]="faArrowUp" class="text-cyan" [fixedWidth]="true" />
     </button>
@@ -80,7 +80,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'down')"
-      title="Move down"
+      [title]="t('moveDown')"
     >
       <fa-icon [icon]="faArrowDown" class="text-cyan" [fixedWidth]="true" />
     </button>
@@ -97,7 +97,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'rotReset')"
-      title="Reset Rotation"
+      [title]="t('resetRotation')"
     >
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faRotate" [fixedWidth]="true" />
@@ -112,7 +112,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'rotnX')"
-      title="Tilt -X axis"
+      [title]="t('tiltMinusXAxis')"
     >
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true" />
@@ -127,7 +127,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'rotX')"
-      title="Tilt +X axis"
+      [title]="t('tiltXAxis')"
     >
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true" />
@@ -142,7 +142,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'rotnY')"
-      title="Turn left"
+      [title]="t('turnLeft')"
     >
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true" />
@@ -157,7 +157,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'rotY')"
-      title="Turn right"
+      [title]="t('turnRight')"
     >
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true" />
@@ -172,7 +172,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'rotnZ')"
-      title="Roll -Z axis"
+      [title]="t('rollMinusZAxis')"
     >
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true" />
@@ -187,7 +187,7 @@
       mat-icon-button
       type="button"
       (click)="trigger($event, 'rotZ')"
-      title="Roll +Z axis"
+      [title]="t('rollZAxis')"
     >
       <fa-layers [fixedWidth]="true">
         <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true" />
@@ -201,7 +201,7 @@
   </div>
   <div class="prop-form">
     <mat-form-field appearance="outline">
-      <mat-label>Object</mat-label>
+      <mat-label>{{ t('object') }}</mat-label>
       <input
         matInput
         type="text"
@@ -210,7 +210,7 @@
       />
     </mat-form-field>
     <mat-form-field appearance="outline">
-      <mat-label>Description</mat-label>
+      <mat-label>{{ t('description') }}</mat-label>
       <textarea
         matInput
         cdkTextareaAutosize
@@ -220,7 +220,7 @@
       ></textarea>
     </mat-form-field>
     <mat-form-field appearance="outline">
-      <mat-label>Action</mat-label>
+      <mat-label>{{ t('action') }}</mat-label>
       <textarea
         matInput
         cdkTextareaAutosize
@@ -231,7 +231,7 @@
       ></textarea>
     </mat-form-field>
     <mat-form-field appearance="outline">
-      <mat-label>Date</mat-label>
+      <mat-label>{{ t('date') }}</mat-label>
       <input
         matInput
         type="text"

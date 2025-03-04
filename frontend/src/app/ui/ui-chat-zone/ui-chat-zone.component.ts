@@ -46,7 +46,7 @@ import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiChatZoneComponent {
-  private virtualScroller = viewChild.required<VirtualScrollerComponent>(
+  private virtualScroller = viewChild<VirtualScrollerComponent>(
     VirtualScrollerComponent
   )
 

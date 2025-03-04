@@ -1,4 +1,22 @@
 {
+  "action": "Action",
   "copy": "Duplicate",
-  "delete": "Delete"
+  "date": "Date",
+  "delete": "Delete",
+  "description": "Description",
+  "moveBack": "Move back",
+  "moveDown": "Move down",
+  "moveForward": "Move forward",
+  "moveLeft": "Move left",
+  "moveRight": "Move right",
+  "moveUp": "Move up",
+  "object": "Object",
+  "resetRotation": "Reset Rotation",
+  "rollMinusZAxis": "Roll -Z axis",
+  "rollZAxis": "Roll +Z axis",
+  "snapToGrid": "Snap to Grid",
+  "tiltMinusXAxis": "Tilt -X axis",
+  "tiltXAxis": "Tilt +X axis",
+  "turnLeft": "Turn left",
+  "turnRight": "Turn right"
 }

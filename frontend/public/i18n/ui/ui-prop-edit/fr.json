@@ -1,4 +1,22 @@
 {
+  "action": "Action",
   "copy": "Copier",
-  "delete": "Supprimer"
+  "date": "Date",
+  "delete": "Supprimer",
+  "description": "Description",
+  "moveBack": "Reculer",
+  "moveDown": "Descendre",
+  "moveForward": "Avancer",
+  "moveLeft": "Déplacer à gauche",
+  "moveRight": "Déplacer à droite",
+  "moveUp": "Monter",
+  "object": "Objet",
+  "resetRotation": "Réinitialiser la rotation",
+  "rollMinusZAxis": "Rouler à gauche",
+  "rollZAxis": "Rouler à droite",
+  "snapToGrid": "Caler sur la grille",
+  "tiltMinusXAxis": "Tanguer en avant",
+  "tiltXAxis": "Tanguer en arrière",
+  "turnLeft": "Tourner à gauche",
+  "turnRight": "Tourner à droite"
 }
