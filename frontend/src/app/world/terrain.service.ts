@@ -13,9 +13,9 @@ import {
   Texture
 } from 'three'
 import type {Observable} from 'rxjs'
-import {from, map, forkJoin} from 'rxjs'
-import {MeshBVHHelper} from 'three-mesh-bvh'
+import {forkJoin, from, map} from 'rxjs'
 import type {MeshBVHOptions} from 'three-mesh-bvh'
+import {MeshBVHHelper} from 'three-mesh-bvh'
 import {EngineService} from '../engine/engine.service'
 import {PropService} from './prop.service'
 import {HttpService} from '../network'

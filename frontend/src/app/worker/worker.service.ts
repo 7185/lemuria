@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core'
-import {Subject, filter, take} from 'rxjs'
+import {filter, Subject, take} from 'rxjs'
 
 @Injectable({providedIn: 'root'})
 export class WorkerService {

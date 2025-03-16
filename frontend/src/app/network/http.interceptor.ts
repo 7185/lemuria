@@ -1,8 +1,8 @@
 import {inject} from '@angular/core'
-import {HttpErrorResponse, HttpHeaders} from '@angular/common/http'
 import type {HttpInterceptorFn, HttpResponse} from '@angular/common/http'
+import {HttpErrorResponse, HttpHeaders} from '@angular/common/http'
 import {HttpService} from './http.service'
-import {EMPTY, catchError, mergeMap, throwError} from 'rxjs'
+import {catchError, EMPTY, mergeMap, throwError} from 'rxjs'
 import {environment} from '../../environments/environment'
 
 const authUrl = `${environment.url.server}/auth`

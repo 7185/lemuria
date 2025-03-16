@@ -1,3 +1,4 @@
+import type {WritableSignal} from '@angular/core'
 import {
   ChangeDetectionStrategy,
   Component,
@@ -5,7 +6,6 @@ import {
   inject,
   signal
 } from '@angular/core'
-import type {WritableSignal} from '@angular/core'
 import {FormsModule} from '@angular/forms'
 import {MatCheckbox} from '@angular/material/checkbox'
 import {MatDialogContent, MatDialogTitle} from '@angular/material/dialog'

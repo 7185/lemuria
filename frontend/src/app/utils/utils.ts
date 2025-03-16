@@ -1,5 +1,5 @@
-import {Mesh} from 'three'
 import type {Object3D, Vector3Like} from 'three'
+import {Mesh} from 'three'
 
 export const posToString = (pos: Vector3Like): string => {
   return `${(Math.abs(pos.z) / 10).toFixed(2)}${pos.z >= 0 ? 'N' : 'S'} ${(

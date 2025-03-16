@@ -1,7 +1,7 @@
 FROM node:20-alpine AS frontend
 WORKDIR /root
 COPY action-parser/package.json action-parser/tsconfig.json /root/action-parser/
-COPY frontend/package.json frontend/angular.json frontend/tsconfig.json frontend/tsconfig.app.json /root/frontend/
+COPY frontend/package.json frontend/angular.json frontend/tsconfig*.json frontend/transloco.config.ts /root/frontend/
 COPY frontend/public /root/frontend/public
 COPY action-parser/src /root/action-parser/src
 COPY frontend/src /root/frontend/src

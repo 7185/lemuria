@@ -1,3 +1,4 @@
+import type {Triangle} from 'three'
 import {
   Box3,
   BoxGeometry,
@@ -7,7 +8,6 @@ import {
   Ray,
   Vector3
 } from 'three'
-import type {Triangle} from 'three'
 import {flattenGroup} from 'three-rwx-loader'
 import type {MeshBVH} from 'three-mesh-bvh'
 import {environment} from '../../environments/environment'

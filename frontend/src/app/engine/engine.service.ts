@@ -1,7 +1,8 @@
 import {fromEvent, timer} from 'rxjs'
 import {toObservable} from '@angular/core/rxjs-interop'
-import {inject, Injectable, signal} from '@angular/core'
 import type {ElementRef} from '@angular/core'
+import {inject, Injectable, signal} from '@angular/core'
+import type {DirectionalLight, LOD, Sprite, Vector3Like} from 'three'
 import {
   BufferGeometry,
   Cache,
@@ -26,15 +27,14 @@ import {
   CSS2DObject,
   CSS2DRenderer
 } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
-import type {DirectionalLight, LOD, Sprite, Vector3Like} from 'three'
 import {AudioService} from './audio.service'
 import {BuildService} from './build.service'
 import {UserService} from '../user'
 import type {PropCtl} from '../world/prop.service'
 import {PropService} from '../world/prop.service'
 import {PropActionService} from '../world/prop-action.service'
-import {PropAnimationService} from '../animation'
 import type {AvatarAnimationPlayer} from '../animation'
+import {PropAnimationService} from '../animation'
 import type {PressedKey} from './inputsystem.service'
 import {InputSystemService} from './inputsystem.service'
 import {environment} from '../../environments/environment'

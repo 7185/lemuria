@@ -1,5 +1,6 @@
 import {inject, Injectable, signal} from '@angular/core'
 import {toObservable} from '@angular/core/rxjs-interop'
+import type {Observable, Subscription} from 'rxjs'
 import {
   catchError,
   concatMap,
@@ -14,25 +15,23 @@ import {
   throwError,
   toArray
 } from 'rxjs'
-import type {Observable, Subscription} from 'rxjs'
-import {Box3, Euler, Group, LOD, Vector3} from 'three'
 import type {Object3D, Vector3Like} from 'three'
-import {UserService} from '../user'
+import {Box3, Euler, Group, LOD, Vector3} from 'three'
 import type {User} from '../user'
+import {UserService} from '../user'
 import {SettingsService} from '../settings/settings.service'
 import {EngineService} from '../engine/engine.service'
-import {TerrainService} from './terrain.service'
 import type {TerrainData, WaterData} from './terrain.service'
+import {TerrainService} from './terrain.service'
 import {TeleportService} from '../engine/teleport.service'
 import {PlayerCollider} from '../engine/player-collider'
 import type {PropCtl} from './prop.service'
 import {PropService} from './prop.service'
 import {PropActionService} from './prop-action.service'
-import {SocketService} from '../network/socket.service'
-import {AvatarAnimationService} from '../animation'
-import type {AvatarAnimationManager} from '../animation'
 import type {Avatar, PropEntry} from '../network'
-import {HttpService} from '../network'
+import {HttpService, SocketService} from '../network'
+import type {AvatarAnimationManager} from '../animation'
+import {AvatarAnimationService} from '../animation'
 import {environment} from '../../environments/environment'
 import {DEG} from '../utils/constants'
 import {modelName, posToStringYaw, stringToPos} from '../utils/utils'

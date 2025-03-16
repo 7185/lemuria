@@ -21,7 +21,9 @@ import {EngineService} from '../../engine/engine.service'
 import {SettingsService} from '../../settings/settings.service'
 import {TeleportService} from '../../engine/teleport.service'
 import {WorldService} from '../../world/world.service'
+import type {User} from '../../user'
 import {UserService} from '../../user'
+import type {ElementRef} from '@angular/core'
 import {
   ChangeDetectionStrategy,
   Component,
@@ -30,9 +32,7 @@ import {
   signal,
   viewChild
 } from '@angular/core'
-import type {ElementRef} from '@angular/core'
-import {SocketService} from '../../network/socket.service'
-import type {User} from '../../user'
+import {SocketService} from '../../network'
 import {environment} from '../../../environments/environment'
 import type {Vector3} from 'three'
 import {distinctUntilChanged, throttleTime} from 'rxjs'

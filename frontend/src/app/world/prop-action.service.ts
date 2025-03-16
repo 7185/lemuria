@@ -1,4 +1,5 @@
 import {inject, Injectable} from '@angular/core'
+import type {Observable} from 'rxjs'
 import {
   catchError,
   EMPTY,
@@ -10,7 +11,7 @@ import {
   take,
   tap
 } from 'rxjs'
-import type {Observable} from 'rxjs'
+import type {MeshPhongMaterial, Object3D, Vector3} from 'three'
 import {
   AdditiveBlending,
   AudioLoader,
@@ -24,7 +25,6 @@ import {
   SpriteMaterial,
   SRGBColorSpace
 } from 'three'
-import type {MeshPhongMaterial, Object3D, Vector3} from 'three'
 import {pictureTag as PICTURE_TAG, signTag as SIGN_TAG} from 'three-rwx-loader'
 import {environment} from '../../environments/environment'
 import {HttpService} from '../network'

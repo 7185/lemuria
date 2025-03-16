@@ -1,5 +1,5 @@
-import {Group, Object3D, Vector3} from 'three'
 import type {LOD, Mesh, Triangle, Vector3Like} from 'three'
+import {Group, Object3D, Vector3} from 'three'
 import {PlayerCollider} from './player-collider'
 import {DEG, TERRAIN_PAGE_SIZE} from '../utils/constants'
 import {radNormalized, stringToPos} from '../utils/utils'

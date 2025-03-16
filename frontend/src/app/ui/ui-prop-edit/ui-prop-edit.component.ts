@@ -15,8 +15,8 @@ import {
   FaLayersComponent,
   FaLayersTextComponent
 } from '@fortawesome/angular-fontawesome'
-import {PropService} from '../../world/prop.service'
 import type {PropCtl} from '../../world/prop.service'
+import {PropService} from '../../world/prop.service'
 import {BuildService} from '../../engine/build.service'
 import {
   faArrowDown,

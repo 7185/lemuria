@@ -24,11 +24,15 @@ export class AvatarAnimationPlayer {
   private lastPlayedFrame = this.makeNullFrame()
   private currentTransition: ThreeSequence | null = null
   private currentGesture: string | null = null
+  private avatarAnimationManager: AvatarAnimationManager
+  private avatarGroup: Group
 
   constructor(
-    private avatarAnimationManager: AvatarAnimationManager,
-    private avatarGroup: Group
+    avatarAnimationManager: AvatarAnimationManager,
+    avatarGroup: Group
   ) {
+    this.avatarAnimationManager = avatarAnimationManager
+    this.avatarGroup = avatarGroup
     this.populateAvatarViewRecursive(this.avatarGroup)
   }
 

@@ -1,3 +1,4 @@
+import type {ElementRef, OnInit} from '@angular/core'
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,7 +7,6 @@ import {
   viewChild,
   ViewEncapsulation
 } from '@angular/core'
-import type {ElementRef, OnInit} from '@angular/core'
 import {EngineService} from './engine.service'
 import {WorldService} from '../world/world.service'
 

@@ -25,7 +25,8 @@
     ],
     "paths": {
       "@lemuria/action-parser": ["../action-parser/src"]
-    }
+    },
+    "erasableSyntaxOnly": true
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

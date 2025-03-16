@@ -118,8 +118,7 @@ class Bonobot extends Bot {
         break
       }
       case '!speed': {
-        const value = parseInt(args[0]) || 1
-        this.moveSpeed = value
+        this.moveSpeed = parseInt(args[0]) || 1
         await this.sendMsg(`Running at ${this.moveSpeed}`)
         break
       }
