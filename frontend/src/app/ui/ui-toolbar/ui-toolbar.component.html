@@ -66,9 +66,9 @@
   </button>
   <mat-menu #avatarMenu="matMenu" class="dropdown-menu">
     <ng-template matMenuContent>
-      @for (a of worldSvc.avatarList; track $index; let index = $index) {
-        <button mat-menu-item (click)="changeAvatar(index)">
-          <fa-icon [class.invisible]="index !== avatarId" [icon]="faCheck" />
+      @for (a of worldSvc.avatarList; track i; let i = $index) {
+        <button mat-menu-item (click)="changeAvatar(i)">
+          <fa-icon [class.invisible]="i !== avatarId" [icon]="faCheck" />
           {{ a.name }}
         </button>
       }

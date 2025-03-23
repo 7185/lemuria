@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   inject,
+  signal,
   viewChild
 } from '@angular/core'
 import {NgStyle} from '@angular/common'
@@ -16,9 +17,11 @@ import {
   VirtualScrollerComponent,
   VirtualScrollerModule
 } from '@iharbeck/ngx-virtual-scroller'
-import {SocketService} from '../../network/socket.service'
+import type {Message} from '../../network'
+import {SocketService} from '../../network'
 import {UserService} from '../../user'
 import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
+import {SettingsService} from '../../settings/settings.service'
 
 @Component({
   imports: [
@@ -38,7 +41,9 @@ import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
     provideTranslocoScope({scope: 'ui/ui-chat-zone', alias: 'chat-zone'})
   ],
   host: {
-    '[class.active]': 'chatActive'
+    '[class.active]': 'chatActive()',
+    '[class.vertical]': 'verticalChat()',
+    '[class.horizontal]': '!verticalChat()'
   },
   selector: 'app-ui-chat-zone',
   templateUrl: './ui-chat-zone.component.html',
@@ -52,10 +57,12 @@ export class UiChatZoneComponent {
 
   protected readonly socket = inject(SocketService)
   protected readonly userSvc = inject(UserService)
-  faComments = faComments
-  data = []
-  message = ''
-  chatActive = false
+  private readonly settings = inject(SettingsService)
+  protected faComments = faComments
+  protected messages: Message[] = []
+  protected message = ''
+  protected chatActive = signal(false)
+  protected verticalChat = signal(true)
   protected colors = {}
 
   constructor() {
@@ -64,21 +71,23 @@ export class UiChatZoneComponent {
         for (const u of this.userSvc.userList()) {
           this.colors[u.name] = '#' + u.id.substring(0, 6)
         }
-        this.data.push(msg)
+        this.messages.push(msg)
         if (this.virtualScroller() == null) return
         this.virtualScroller().scrollInto(msg)
       }
     })
+    this.settings.updated.subscribe(() => {
+      this.verticalChat.set(this.settings.get('verticalChat') ?? true)
+    })
   }
 
   activeChat() {
-    this.chatActive = !this.chatActive
+    this.chatActive.update((value) => !value)
   }
 
   send() {
-    if (this.message.length) {
-      this.socket.sendMessage({type: 'msg', data: this.message})
-      this.message = ''
-    }
+    if (!this.message.length) return
+    this.socket.sendMessage({type: 'msg', data: this.message})
+    this.message = ''
   }
 }

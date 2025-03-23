@@ -1,4 +1,8 @@
-<virtual-scroller #scroll [items]="data" *transloco="let t; read: 'chat-zone'">
+<virtual-scroller
+  #scroll
+  [items]="messages"
+  *transloco="let t; read: 'chat-zone'"
+>
   @for (m of scroll.viewPortItems; track m) {
     <p class="line">
       @if (m.type === 'msg') {
@@ -29,7 +33,6 @@
     class="text-input"
     [(ngModel)]="message"
     (keydown.enter)="send()"
-    type="text"
     [disabled]="!socket.connected"
   />
   <button

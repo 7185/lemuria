@@ -1,6 +1,8 @@
 {
   "archivedMedia": "Find forgotten media",
+  "language": "Language",
   "maxFps": "Maximum FPS",
   "maxLights": "Maximum lights",
-  "save": "Save"
+  "save": "Save",
+  "verticalChat": "Vertical chat"
 }

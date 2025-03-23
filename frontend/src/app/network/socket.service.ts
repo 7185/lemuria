@@ -9,7 +9,7 @@ import {TranslocoService} from '@jsverse/transloco'
 import {Vector3} from 'three'
 import {environment} from '../../environments/environment'
 
-interface Message {
+export interface Message {
   type: string
   user?: string
   data?: any

@@ -5,6 +5,9 @@
   <mat-checkbox [(ngModel)]="archivedMedia">{{
     t('archivedMedia')
   }}</mat-checkbox>
+  <mat-checkbox [(ngModel)]="verticalChat">{{
+    t('verticalChat')
+  }}</mat-checkbox>
   <mat-form-field appearance="outline">
     <mat-label>{{ t('maxFps') }}</mat-label>
     <input
@@ -24,6 +27,14 @@
       pattern="[0-9]*"
       [(ngModel)]="maxLights"
     />
+  </mat-form-field>
+  <mat-form-field>
+    <mat-label>{{ t('language') }}</mat-label>
+    <mat-select [(value)]="language">
+      @for (lang of languages; track lang.id) {
+        <mat-option [value]="lang.id">{{ lang.label }}</mat-option>
+      }
+    </mat-select>
   </mat-form-field>
 </mat-dialog-content>
 <mat-dialog-actions align="end" *transloco="let t; read: 'settings'">

@@ -1,6 +1,8 @@
 {
   "archivedMedia": "Retrouver les medias oubliés",
+  "language": "Langue",
   "maxFps": "Img/sec maximum",
   "maxLights": "Nombre max. de lumières",
-  "save": "Sauvegarder"
+  "save": "Sauvegarder",
+  "verticalChat": "Chat vertical"
 }

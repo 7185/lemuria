@@ -14,7 +14,6 @@ import {jwtInterceptor} from './app/network'
 import {TranslocoHttpLoader} from './app/i18n/transloco-loader'
 import {provideTransloco} from '@jsverse/transloco'
 import {environment} from './environments/environment'
-import config from '../transloco.config'
 
 bootstrapApplication(AppComponent, {
   providers: [
@@ -24,7 +23,10 @@ bootstrapApplication(AppComponent, {
     provideHttpClient(withFetch(), withInterceptors([jwtInterceptor])),
     provideTransloco({
       config: {
-        availableLangs: config.langs,
+        availableLangs: [
+          {id: 'en', label: 'English'},
+          {id: 'fr', label: 'Français'}
+        ],
         defaultLang: 'en',
         fallbackLang: 'en',
         reRenderOnLangChange: true,
