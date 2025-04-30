@@ -1,12 +1,10 @@
 import fs from 'fs/promises'
 import readline from 'readline'
-import {PrismaClient} from '@prisma/client'
+import {PrismaClient} from '../generated/prisma'
 
 const db = new PrismaClient()
 
-const worldAttr: {
-  [key: number]: string
-} = {
+const worldAttr: Record<number, string> = {
   0: 'name',
   3: 'path',
   11: 'light.fog.color.r',
@@ -264,7 +262,7 @@ const saveAtdump = async (worldName: string, file: string): Promise<void> => {
   }
 
   const attrDict = JSON.parse(world.data ?? '{}')
-  const reverseWorldAttr: {[key: string]: number} = Object.fromEntries(
+  const reverseWorldAttr: Record<string, number> = Object.fromEntries(
     Object.entries(worldAttr).map(([k, v]) => [v, parseInt(k)])
   )
 
@@ -285,7 +283,7 @@ const saveAtdump = async (worldName: string, file: string): Promise<void> => {
 
 export const importWorld = async (
   worldName: string,
-  path: string = '../dumps'
+  path = '../dumps'
 ): Promise<void> => {
   let admin = await db.user.findFirst({where: {name: 'admin'}})
   if (!admin) {
@@ -353,19 +351,16 @@ export const importWorld = async (
 
 export const exportWorld = async (
   worldName: string,
-  path: string = '../dumps'
+  path = '../dumps'
 ): Promise<void> => {
   await saveAtdump(worldName, `${path}/export_at${worldName}.txt`)
   await saveElevdump(worldName, `${path}/export_elev${worldName}.txt`)
   await savePropdump(worldName, `${path}/export_prop${worldName}.txt`)
 }
 
-const flattenDict = (
-  nestedDict: any,
-  separator: string = '.'
-): {[key: string]: any} => {
-  const flatten = (obj: any, prefix: string = ''): {[key: string]: any} => {
-    return Object.keys(obj).reduce((acc: {[key: string]: any}, k: string) => {
+const flattenDict = (nestedDict: any, separator = '.'): Record<string, any> => {
+  const flatten = (obj: any, prefix = ''): Record<string, any> => {
+    return Object.keys(obj).reduce((acc: Record<string, any>, k: string) => {
       const pre = prefix.length ? prefix + separator : ''
       if (
         typeof obj[k] === 'object' &&

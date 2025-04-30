@@ -53,12 +53,14 @@ import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiTerrainEditComponent {
-  faArrowsUpDown = faArrowsUpDown
-  faArrowRotateLeft = faArrowRotateLeft
-  faArrowRotateRight = faArrowRotateRight
-  faClipboard = faClipboard
-  faClone = faClone
-  faSquare = faSquare
+  protected readonly icon = {
+    faArrowsUpDown,
+    faArrowRotateLeft,
+    faArrowRotateRight,
+    faClipboard,
+    faClone,
+    faSquare
+  }
 
   protected height = computed(() => this.buildSvc.selectedCell().height ?? 0)
   protected displayed = computed(

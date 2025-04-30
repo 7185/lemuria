@@ -16,7 +16,7 @@
     [matMenuTriggerFor]="worldsMenu"
     [title]="t('worlds')"
   >
-    <fa-icon [icon]="faGlobe" class="text-green" [fixedWidth]="true" />
+    <fa-icon [icon]="icon.faGlobe" class="text-green" [fixedWidth]="true" />
   </button>
   <mat-menu #worldsMenu="matMenu">
     <ng-template matMenuContent>
@@ -24,7 +24,7 @@
         <button mat-menu-item (click)="teleportWorld(w.name)">
           <div class="world-item">
             <span>
-              <fa-icon [icon]="faGlobe" />
+              <fa-icon [icon]="icon.faGlobe" />
               {{ w.name }}
             </span>
             <span class="pill">{{ w.users }}</span>
@@ -38,20 +38,20 @@
     [matMenuTriggerFor]="optionsMenu"
     [title]="t('options')"
   >
-    <fa-icon [icon]="faCog" class="text-gray" [fixedWidth]="true" />
+    <fa-icon [icon]="icon.faCog" class="text-gray" [fixedWidth]="true" />
   </button>
   <mat-menu #optionsMenu="matMenu">
     <ng-template matMenuContent>
       <button mat-menu-item (click)="openSettings()">
-        <fa-icon [icon]="faCog" />
+        <fa-icon [icon]="icon.faCog" />
         {{ t('settings') }}...
       </button>
       <button mat-menu-item (click)="openControls()">
-        <fa-icon [icon]="faKeyboard" />
+        <fa-icon [icon]="icon.faKeyboard" />
         {{ t('controls') }}...
       </button>
       <button mat-menu-item (click)="openWorldAttribs()">
-        <fa-icon [icon]="faGlobe" />
+        <fa-icon [icon]="icon.faGlobe" />
         {{ t('worldAttribs') }}...
       </button>
     </ng-template>
@@ -62,13 +62,20 @@
     [title]="t('avatar')"
     [disabled]="!socket.connected"
   >
-    <fa-icon [icon]="faCircleUser" class="text-orange" [fixedWidth]="true" />
+    <fa-icon
+      [icon]="icon.faCircleUser"
+      class="text-orange"
+      [fixedWidth]="true"
+    />
   </button>
   <mat-menu #avatarMenu="matMenu" class="dropdown-menu">
     <ng-template matMenuContent>
       @for (a of worldSvc.avatarList; track i; let i = $index) {
         <button mat-menu-item (click)="changeAvatar(i)">
-          <fa-icon [class.invisible]="i !== avatarId" [icon]="faCheck" />
+          <fa-icon
+            [class.invisible]="i !== worldSvc.ownAvatar()"
+            [icon]="icon.faCheck"
+          />
           {{ a.name }}
         </button>
       }
@@ -80,13 +87,17 @@
     [title]="t('visibility')"
     [disabled]="!socket.connected"
   >
-    <fa-icon [icon]="faMountainSun" class="text-blue" [fixedWidth]="true" />
+    <fa-icon
+      [icon]="icon.faMountainSun"
+      class="text-blue"
+      [fixedWidth]="true"
+    />
   </button>
   <mat-menu #visibilityMenu="matMenu">
     <ng-template matMenuContent>
       @for (v of visibilityList; track v) {
         <button mat-menu-item (click)="changeVisibility(v)">
-          <fa-icon [class.invisible]="v !== visibility" [icon]="faCheck" />
+          <fa-icon [class.invisible]="v !== visibility" [icon]="icon.faCheck" />
           {{ t('distance', {n: v}) }}
         </button>
       }
@@ -95,13 +106,21 @@
   <button mat-icon-button [title]="t('toggleCamera')" (click)="toggleCamera()">
     @switch (cameraType()) {
       @case (0) {
-        <fa-icon [icon]="faEye" class="text-indigo" [fixedWidth]="true" />
+        <fa-icon [icon]="icon.faEye" class="text-indigo" [fixedWidth]="true" />
       }
       @case (1) {
-        <fa-icon [icon]="faVideo" class="text-indigo" [fixedWidth]="true" />
+        <fa-icon
+          [icon]="icon.faVideo"
+          class="text-indigo"
+          [fixedWidth]="true"
+        />
       }
       @case (2) {
-        <fa-icon [icon]="faPerson" class="text-indigo" [fixedWidth]="true" />
+        <fa-icon
+          [icon]="icon.faPerson"
+          class="text-indigo"
+          [fixedWidth]="true"
+        />
       }
     }
   </button>
@@ -113,12 +132,12 @@
     [matMenuTriggerFor]="teleportMenu"
     [title]="t('teleport')"
   >
-    <fa-icon [icon]="faBolt" class="text-yellow" [fixedWidth]="true" />
+    <fa-icon [icon]="icon.faBolt" class="text-yellow" [fixedWidth]="true" />
   </button>
   <mat-menu #teleportMenu="matMenu">
     <ng-template matMenuContent>
       <button mat-menu-item (click)="openTeleport(0)">
-        <fa-icon [icon]="faBolt" />
+        <fa-icon [icon]="icon.faBolt" />
         {{ t('to') }}...
       </button>
       <button
@@ -126,7 +145,7 @@
         (click)="openTeleport(1)"
         [disabled]="!socket.connected"
       >
-        <fa-icon [icon]="faBolt" />
+        <fa-icon [icon]="icon.faBolt" />
         {{ t('remember') }}...
       </button>
       @if (teleports().length) {
@@ -143,7 +162,7 @@
             })
           "
         >
-          <fa-icon [icon]="faBolt" />
+          <fa-icon [icon]="icon.faBolt" />
           {{ t.name }}
         </button>
       }
@@ -155,7 +174,7 @@
     (click)="teleportSvc.teleport.set(home)"
     [disabled]="!home.world && !home.position"
   >
-    <fa-icon [icon]="faHouse" class="text-teal" [fixedWidth]="true" />
+    <fa-icon [icon]="icon.faHouse" class="text-teal" [fixedWidth]="true" />
   </button>
   <button
     mat-icon-button
@@ -163,7 +182,7 @@
     (click)="teleportSvc.teleportBack()"
     [disabled]="teleportSvc.currentTeleportIndex <= 0"
   >
-    <fa-icon [icon]="faArrowLeft" class="text-cyan" [fixedWidth]="true" />
+    <fa-icon [icon]="icon.faArrowLeft" class="text-cyan" [fixedWidth]="true" />
   </button>
   <button
     mat-icon-button
@@ -173,7 +192,7 @@
       teleportSvc.currentTeleportIndex >= teleportSvc.teleportHistory.length - 1
     "
   >
-    <fa-icon [icon]="faArrowRight" class="text-cyan" [fixedWidth]="true" />
+    <fa-icon [icon]="icon.faArrowRight" class="text-cyan" [fixedWidth]="true" />
   </button>
 
   <button
@@ -183,7 +202,7 @@
     [disabled]="worldSvc.gestures().size === 0"
   >
     <fa-icon
-      [icon]="faHand"
+      [icon]="icon.faHand"
       class="text-pink"
       [fixedWidth]="true"
       transform="rotate-30"
@@ -214,15 +233,15 @@
     (contextmenu)="compassClick(false)"
     type="button"
   >
-    <div #compass>
+    <div [style.transform]="'rotate(' + compassRot() + 'deg)'">
       <fa-layers [fixedWidth]="true">
         <fa-icon
-          [icon]="faLocationArrow"
+          [icon]="icon.faLocationArrow"
           class="text-gray"
           transform="rotate-135 left-3 shrink-8 down-3"
         />
         <fa-icon
-          [icon]="faLocationArrow"
+          [icon]="icon.faLocationArrow"
           class="text-red"
           transform="rotate-315 left-3 shrink-8 up-2"
         />
@@ -260,17 +279,17 @@
     [matMenuTriggerFor]="usersMenu"
     [title]="t('users')"
   >
-    <fa-icon [icon]="faUsers" class="text-purple" [fixedWidth]="true" />
+    <fa-icon [icon]="icon.faUsers" class="text-purple" [fixedWidth]="true" />
   </button>
   <mat-menu #usersMenu="matMenu">
     <ng-template matMenuContent>
       @for (u of userSvc.userList(); track u.id) {
         <button mat-menu-item>
-          <fa-icon [icon]="faUser" />
+          <fa-icon [icon]="icon.faUser" />
           {{ u.name }}
-          @if (u.id !== userId && u.world === worldSvc.worldId) {
+          @if (u.id !== userId() && u.world === worldSvc.worldId()) {
             <button (click)="joinUser(u.id)" title="Join user">
-              <fa-icon [icon]="faBolt" />
+              <fa-icon [icon]="icon.faBolt" />
             </button>
           }
         </button>
@@ -278,18 +297,22 @@
     </ng-template>
   </mat-menu>
   <button mat-icon-button [matMenuTriggerFor]="leaveMenu" [title]="t('leave')">
-    <fa-icon [icon]="faRightFromBracket" class="text-red" [fixedWidth]="true" />
+    <fa-icon
+      [icon]="icon.faRightFromBracket"
+      class="text-red"
+      [fixedWidth]="true"
+    />
   </button>
   <mat-menu #leaveMenu="matMenu">
     <ng-template matMenuContent>
       @if (socket.connected) {
         <button mat-menu-item (click)="socket.close()">
-          <fa-icon [icon]="faRightFromBracket" />
+          <fa-icon [icon]="icon.faRightFromBracket" />
           {{ t('leaveWorld') }}
         </button>
       }
       <button mat-menu-item (click)="logout()">
-        <fa-icon [icon]="faRightFromBracket" />
+        <fa-icon [icon]="icon.faRightFromBracket" />
         {{ t('signOut') }}
       </button>
     </ng-template>

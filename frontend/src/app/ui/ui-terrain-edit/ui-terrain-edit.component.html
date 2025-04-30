@@ -13,7 +13,7 @@
       [title]="t('rotateLeft')"
     >
       <fa-icon
-        [icon]="faArrowRotateRight"
+        [icon]="icon.faArrowRotateRight"
         class="text-green"
         [fixedWidth]="true"
       />
@@ -25,7 +25,7 @@
       [title]="t('rotateRight')"
     >
       <fa-icon
-        [icon]="faArrowRotateLeft"
+        [icon]="icon.faArrowRotateLeft"
         class="text-green"
         [fixedWidth]="true"
       />
@@ -36,7 +36,7 @@
       (click)="trigger($event)"
       [title]="t('copy')"
     >
-      <fa-icon [icon]="faClone" class="text-red" [fixedWidth]="true" />
+      <fa-icon [icon]="icon.faClone" class="text-red" [fixedWidth]="true" />
     </button>
     <button
       mat-icon-button
@@ -45,9 +45,9 @@
       [title]="t('pasteElevation')"
     >
       <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faClipboard" [fixedWidth]="true" />
+        <fa-icon [icon]="icon.faClipboard" [fixedWidth]="true" />
         <fa-icon
-          [icon]="faArrowsUpDown"
+          [icon]="icon.faArrowsUpDown"
           class="text-yellow"
           [fixedWidth]="true"
           transform="shrink-2 right-8 down-6"
@@ -61,9 +61,9 @@
       [title]="t('pasteTexture')"
     >
       <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faClipboard" [fixedWidth]="true" />
+        <fa-icon [icon]="icon.faClipboard" [fixedWidth]="true" />
         <fa-icon
-          [icon]="faSquare"
+          [icon]="icon.faSquare"
           class="text-green"
           [fixedWidth]="true"
           transform="shrink-2 right-8 down-6"

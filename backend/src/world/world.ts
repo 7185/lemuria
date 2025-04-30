@@ -3,7 +3,6 @@ export class World {
   name?: string
   welcome?: string
   path?: string
-  skybox?: string
   sky?: {
     skybox?: string
     top_color?: number[]
@@ -14,7 +13,6 @@ export class World {
     bottom_color?: number[]
   }
   entry?: string = '0N 0W'
-  objects?: any
   light?: {
     fog?: {
       color?: number[]
@@ -41,10 +39,6 @@ export class World {
     enabled?: boolean
     under_view?: number
   }
-  water_offset?: number
-  water_color?: number[]
-  water_texture_top?: string
-  water_texture_bottom?: string
 
   constructor(params: World = {}) {
     this.entry = '0N 0W'

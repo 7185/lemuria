@@ -58,7 +58,7 @@ export class UiChatZoneComponent {
   protected readonly socket = inject(SocketService)
   protected readonly userSvc = inject(UserService)
   private readonly settings = inject(SettingsService)
-  protected faComments = faComments
+  protected readonly icon = {faComments}
   protected messages: Message[] = []
   protected message = ''
   protected chatActive = signal(false)

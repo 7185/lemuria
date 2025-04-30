@@ -5,6 +5,7 @@ import {HttpClient} from '@angular/common/http'
 import {Router} from '@angular/router'
 import {environment} from '../../environments/environment'
 import {User} from '../user'
+import {SettingsService} from '../settings/settings.service'
 
 export type PropEntry = [
   number,
@@ -31,10 +32,11 @@ export interface Avatar {
 export class HttpService extends HttpClient {
   private baseUrl = environment.url.server
   private userLogged = signal<User>(new User())
-  #expiration = signal(parseInt(localStorage.getItem('expiration') ?? '0', 10))
   isLogged = computed(() => Math.floor(Date.now() / 1000) < this.#expiration())
 
   private readonly router = inject(Router)
+  private readonly settings = inject(SettingsService)
+  #expiration = signal(this.settings.get('expiration') ?? 0)
 
   get expiration(): number {
     return this.#expiration()
@@ -42,7 +44,7 @@ export class HttpService extends HttpClient {
 
   set expiration(value: number) {
     this.#expiration.set(value)
-    localStorage.setItem('expiration', value.toString())
+    this.settings.set('expiration', value)
   }
 
   static getCookie(name: string) {

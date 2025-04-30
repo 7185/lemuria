@@ -48,6 +48,7 @@ Thumbs.db
 static/*
 backend/dist
 backend/coverage
+backend/src/generated
 backend*/static/*
 backend*/app.db
 /venv

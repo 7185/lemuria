@@ -60,17 +60,19 @@ import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiPropEditComponent {
-  faArrowDown = faArrowDown
-  faArrowLeft = faArrowLeft
-  faArrowRight = faArrowRight
-  faArrowRotateLeft = faArrowRotateLeft
-  faArrowRotateRight = faArrowRotateRight
-  faArrowUp = faArrowUp
-  faBorderNone = faBorderNone
-  faClone = faClone
-  faRoad = faRoad
-  faRotate = faRotate
-  faTrashCan = faTrashCan
+  protected readonly icon = {
+    faArrowDown,
+    faArrowLeft,
+    faArrowRight,
+    faArrowRotateLeft,
+    faArrowRotateRight,
+    faArrowUp,
+    faBorderNone,
+    faClone,
+    faRoad,
+    faRotate,
+    faTrashCan
+  }
 
   protected displayed = computed(() => this.buildSvc.selectedProp() === null)
 

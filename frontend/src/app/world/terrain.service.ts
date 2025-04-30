@@ -52,7 +52,6 @@ export class TerrainService {
   private waterTopGeom: PlaneGeometry | null = null
   private waterBottomMaterials: MeshLambertMaterial[] = []
   private waterTopMaterials: MeshLambertMaterial[] = []
-  private worldId = 0
   private loadingPages = new Set()
 
   setWater(water: WaterData | null = null) {
@@ -144,8 +143,7 @@ export class TerrainService {
     this.engineSvc.addWorldObject(this.water)
   }
 
-  setTerrain(terrain: TerrainData | null = null, worldId: number) {
-    this.worldId = worldId
+  setTerrain(terrain: TerrainData | null = null) {
     if (this.terrain != null) {
       this.engineSvc.removeWorldObject(this.terrain)
     }
@@ -203,7 +201,12 @@ export class TerrainService {
     })
   }
 
-  getTerrainPages(playerX: number, playerZ: number, radius: number) {
+  getTerrainPages(
+    playerX: number,
+    playerZ: number,
+    radius: number,
+    worldId: number
+  ) {
     // Since the pages are centered, we need to add an offset
     const centerOffset = (TERRAIN_PAGE_SIZE * 10) / 2
     const pageX: number = Math.floor(
@@ -237,7 +240,7 @@ export class TerrainService {
         ) &&
         !this.loadingPages.has(`${page[0]}_${page[1]}`)
       ) {
-        this.setTerrainPage(page[0], page[1])
+        this.setTerrainPage(page[0], page[1], worldId)
       }
       if (
         !this.water?.children?.find(
@@ -250,7 +253,7 @@ export class TerrainService {
     })
   }
 
-  private setTerrainPage(xPage: number, zPage: number) {
+  private setTerrainPage(xPage: number, zPage: number, worldId: number) {
     if (this.terrain == null) {
       // Terrain is disabled or not ready
       return
@@ -258,7 +261,7 @@ export class TerrainService {
 
     this.loadingPages.add(`${xPage}_${zPage}`)
 
-    this.http.terrain(this.worldId, xPage, zPage).subscribe((elevData) => {
+    this.http.terrain(worldId, xPage, zPage).subscribe((elevData) => {
       const geometry = new PlaneGeometry(
         TERRAIN_PAGE_SIZE * 10,
         TERRAIN_PAGE_SIZE * 10,

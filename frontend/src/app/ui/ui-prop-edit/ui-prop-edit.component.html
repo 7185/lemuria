@@ -12,7 +12,7 @@
       (click)="trigger($event, 'copy')"
       [title]="t('copy')"
     >
-      <fa-icon [icon]="faClone" class="text-yellow" [fixedWidth]="true" />
+      <fa-icon [icon]="icon.faClone" class="text-yellow" [fixedWidth]="true" />
     </button>
     <button
       mat-icon-button
@@ -20,7 +20,7 @@
       (click)="trigger($event, 'snapGrid')"
       [title]="t('snapToGrid')"
     >
-      <fa-icon [icon]="faBorderNone" [fixedWidth]="true" />
+      <fa-icon [icon]="icon.faBorderNone" [fixedWidth]="true" />
     </button>
     <button
       mat-icon-button
@@ -29,10 +29,10 @@
       [title]="t('moveForward')"
     >
       <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faRoad" class="text-gray" [fixedWidth]="true" />
+        <fa-icon [icon]="icon.faRoad" class="text-gray" [fixedWidth]="true" />
         <fa-icon
           class="text-cyan"
-          [icon]="faArrowUp"
+          [icon]="icon.faArrowUp"
           transform="shrink-6 up-8"
         />
       </fa-layers>
@@ -44,10 +44,10 @@
       [title]="t('moveBack')"
     >
       <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faRoad" class="text-gray" [fixedWidth]="true" />
+        <fa-icon [icon]="icon.faRoad" class="text-gray" [fixedWidth]="true" />
         <fa-icon
           class="text-cyan"
-          [icon]="faArrowDown"
+          [icon]="icon.faArrowDown"
           transform="shrink-3 down-8"
         />
       </fa-layers>
@@ -58,7 +58,11 @@
       (click)="trigger($event, 'left')"
       [title]="t('moveLeft')"
     >
-      <fa-icon [icon]="faArrowLeft" class="text-cyan" [fixedWidth]="true" />
+      <fa-icon
+        [icon]="icon.faArrowLeft"
+        class="text-cyan"
+        [fixedWidth]="true"
+      />
     </button>
     <button
       mat-icon-button
@@ -66,7 +70,11 @@
       (click)="trigger($event, 'right')"
       [title]="t('moveRight')"
     >
-      <fa-icon [icon]="faArrowRight" class="text-cyan" [fixedWidth]="true" />
+      <fa-icon
+        [icon]="icon.faArrowRight"
+        class="text-cyan"
+        [fixedWidth]="true"
+      />
     </button>
     <button
       mat-icon-button
@@ -74,7 +82,7 @@
       (click)="trigger($event, 'up')"
       [title]="t('moveUp')"
     >
-      <fa-icon [icon]="faArrowUp" class="text-cyan" [fixedWidth]="true" />
+      <fa-icon [icon]="icon.faArrowUp" class="text-cyan" [fixedWidth]="true" />
     </button>
     <button
       mat-icon-button
@@ -82,7 +90,11 @@
       (click)="trigger($event, 'down')"
       [title]="t('moveDown')"
     >
-      <fa-icon [icon]="faArrowDown" class="text-cyan" [fixedWidth]="true" />
+      <fa-icon
+        [icon]="icon.faArrowDown"
+        class="text-cyan"
+        [fixedWidth]="true"
+      />
     </button>
     <br />
     <button
@@ -91,7 +103,7 @@
       (click)="trigger($event, 'delete')"
       [title]="t('delete')"
     >
-      <fa-icon [icon]="faTrashCan" class="text-red" [fixedWidth]="true" />
+      <fa-icon [icon]="icon.faTrashCan" class="text-red" [fixedWidth]="true" />
     </button>
     <button
       mat-icon-button
@@ -100,7 +112,7 @@
       [title]="t('resetRotation')"
     >
       <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faRotate" [fixedWidth]="true" />
+        <fa-icon [icon]="icon.faRotate" [fixedWidth]="true" />
         <fa-layers-text
           content="0"
           transform="shrink-2 right-8 down-6"
@@ -115,7 +127,7 @@
       [title]="t('tiltMinusXAxis')"
     >
       <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true" />
+        <fa-icon [icon]="icon.faArrowRotateRight" [fixedWidth]="true" />
         <fa-layers-text
           content="X"
           transform="shrink-2 right-8 down-6"
@@ -130,7 +142,7 @@
       [title]="t('tiltXAxis')"
     >
       <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true" />
+        <fa-icon [icon]="icon.faArrowRotateLeft" [fixedWidth]="true" />
         <fa-layers-text
           content="X"
           transform="shrink-2 left-8 down-6"
@@ -145,7 +157,7 @@
       [title]="t('turnLeft')"
     >
       <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true" />
+        <fa-icon [icon]="icon.faArrowRotateRight" [fixedWidth]="true" />
         <fa-layers-text
           content="Y"
           transform="shrink-2 right-8 down-6"
@@ -160,7 +172,7 @@
       [title]="t('turnRight')"
     >
       <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true" />
+        <fa-icon [icon]="icon.faArrowRotateLeft" [fixedWidth]="true" />
         <fa-layers-text
           content="Y"
           transform="shrink-2 left-8 down-6"
@@ -175,7 +187,7 @@
       [title]="t('rollMinusZAxis')"
     >
       <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faArrowRotateRight" [fixedWidth]="true" />
+        <fa-icon [icon]="icon.faArrowRotateRight" [fixedWidth]="true" />
         <fa-layers-text
           content="Z"
           transform="shrink-2 right-8 down-6"
@@ -190,7 +202,7 @@
       [title]="t('rollZAxis')"
     >
       <fa-layers [fixedWidth]="true">
-        <fa-icon [icon]="faArrowRotateLeft" [fixedWidth]="true" />
+        <fa-icon [icon]="icon.faArrowRotateLeft" [fixedWidth]="true" />
         <fa-layers-text
           content="Z"
           transform="shrink-2 left-8 down-6"

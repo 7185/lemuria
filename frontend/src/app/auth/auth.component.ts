@@ -1,5 +1,4 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core'
-import type {FormControl, FormGroup} from '@angular/forms'
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms'
 import {ActivatedRoute, Router} from '@angular/router'
 import {MatButton, MatIconButton} from '@angular/material/button'
@@ -17,6 +16,7 @@ import {
   faUser
 } from '@fortawesome/free-solid-svg-icons'
 import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
+import {SettingsService} from '../settings/settings.service'
 
 @Component({
   imports: [
@@ -39,41 +39,40 @@ import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AuthComponent {
-  faCircleNotch = faCircleNotch
-  faEye = faEye
-  faEyeSlash = faEyeSlash
-  faKey = faKey
-  faUser = faUser
+  protected readonly icon = {
+    faCircleNotch,
+    faEye,
+    faEyeSlash,
+    faKey,
+    faUser
+  }
 
-  hide = true
-  processing = false
-  loginForm: FormGroup
+  protected hide = true
+  protected processing = false
   loginError = false
-  usernameCtl: FormControl<string | null>
-  passwordCtl: FormControl<string | null>
-  private returnUrl: string
 
   protected readonly http = inject(HttpService)
   private readonly fb = inject(FormBuilder)
   private readonly router = inject(Router)
   private readonly route = inject(ActivatedRoute)
+  private readonly settings = inject(SettingsService)
+
+  private readonly returnUrl = this.route.snapshot.queryParams.next || '/'
+  usernameCtl = this.fb.control('', [
+    Validators.required,
+    Validators.minLength(2)
+  ])
+  passwordCtl = this.fb.control('', [Validators.required])
+  loginForm = this.fb.group({
+    username: this.usernameCtl,
+    password: this.passwordCtl
+  })
 
   constructor() {
-    this.usernameCtl = this.fb.control('', [
-      Validators.required,
-      Validators.minLength(2)
-    ])
-    this.passwordCtl = this.fb.control('', [Validators.required])
-    this.loginForm = this.fb.group({
-      username: this.usernameCtl,
-      password: this.passwordCtl
-    })
-
     this.loginForm.setValue({
-      username: localStorage.getItem('login') ?? '',
+      username: this.settings.get('login') ?? '',
       password: ''
     })
-    this.returnUrl = this.route.snapshot.queryParams.next || '/'
     if (this.http.isLogged()) {
       this.router.navigate([this.returnUrl])
     }
@@ -90,7 +89,7 @@ export class AuthComponent {
       )
       .subscribe({
         next: () => {
-          localStorage.setItem('login', this.loginForm.value.username)
+          this.settings.set('login', this.loginForm.value.username)
           this.loginError = false
           this.router.navigate([this.returnUrl])
         },

@@ -1,4 +1,4 @@
-FROM node:20-alpine AS frontend
+FROM node:22-alpine AS frontend
 WORKDIR /root
 COPY action-parser/package.json action-parser/tsconfig.json /root/action-parser/
 COPY frontend/package.json frontend/angular.json frontend/tsconfig*.json frontend/transloco.config.ts /root/frontend/
@@ -30,7 +30,7 @@ CMD ["hypercorn", "--config", "hypercorn.toml", "app:app"]
 VOLUME ["/app.db"]
 USER nobody
 
-FROM node:20-alpine AS node
+FROM node:22-alpine AS node
 EXPOSE 8080
 ENV NODE_PATH="/root/node_modules"
 ENV DATABASE_URL="file:/app.db"
@@ -40,6 +40,7 @@ COPY --from=frontend --chown=nobody:nobody /root/static /static
 COPY package.json package-lock.json /root/
 RUN npm -w backend ci && \
     npm -w backend run build && \
+    mv backend/src/generated/prisma/libquery_engine* backend/dist/generated/prisma/ && \
     mv backend/dist / && \
     npm -w backend prune --omit=dev && \
     npx -y nm-prune --force && \

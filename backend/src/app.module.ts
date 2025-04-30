@@ -1,5 +1,6 @@
 import {Module} from '@nestjs/common'
 import {CacheModule} from '@nestjs/cache-manager'
+import {ConfigModule} from '@nestjs/config'
 import {JwtService} from '@nestjs/jwt'
 import {LoggerModule} from 'nestjs-pino'
 import {AppController} from './app.controller'
@@ -16,6 +17,9 @@ import {config} from './app.config'
       isGlobal: true,
       ttl: config.cache.timeout * 1000,
       max: config.cache.threshold
+    }),
+    ConfigModule.forRoot({
+      isGlobal: true
     }),
     LoggerModule.forRoot({
       pinoHttp: {

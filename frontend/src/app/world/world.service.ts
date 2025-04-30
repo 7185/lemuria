@@ -56,9 +56,9 @@ interface WorldData {
 @Injectable({providedIn: 'root'})
 export class WorldService {
   avatarList: Avatar[] = []
-  avatarSub = new Subject<number>()
+  ownAvatar = signal<number | null>(null)
   gestures = signal<Map<string, string>>(new Map())
-  worldId = 0
+  worldId = signal(0)
   worldList = signal<{id: number; name: string; users: number}[]>([])
 
   private readonly engineSvc = inject(EngineService)
@@ -89,7 +89,6 @@ export class WorldService {
   private maxLodDistance: number = environment.world.lod.maxDistance
 
   private uAvatarListener: Subscription
-  private avatarListener: Subscription
 
   constructor() {
     toObservable(this.teleportSvc.teleport).subscribe(
@@ -155,7 +154,7 @@ export class WorldService {
     // Register chunk updater to the engine
     toObservable(this.engineSvc.playerPosition).subscribe((position) => {
       this.autoUpdateChunks(position)
-      this.terrainSvc.getTerrainPages(position.x, position.z, 1)
+      this.terrainSvc.getTerrainPages(position.x, position.z, 1, this.worldId())
     })
 
     // User list change
@@ -163,7 +162,7 @@ export class WorldService {
       for (const user of this.engineSvc.users()) {
         if (
           !userList
-            .filter((u) => u.world === this.worldId)
+            .filter((u) => u.world === this.worldId())
             .map((u) => u.id)
             .includes(user.name)
         ) {
@@ -175,12 +174,35 @@ export class WorldService {
         if (
           user != null ||
           this.avatarList.length == 0 ||
-          u.world !== this.worldId
+          u.world !== this.worldId()
         ) {
           continue
         }
         this.addUser(u)
       }
+    })
+
+    // own avatar
+    toObservable(this.ownAvatar).subscribe((avatarId: number) => {
+      if (avatarId == null) return
+      this.gestures.set(this.avatarList[avatarId].explicit)
+      const avatarEntry = this.avatarList[avatarId]
+      const animationManager: Promise<AvatarAnimationManager> =
+        this.anmSvc.getAvatarAnimationManager(
+          avatarEntry.name,
+          avatarEntry.implicit,
+          avatarEntry.explicit
+        )
+      this.setAvatar(
+        avatarEntry.geometry,
+        animationManager,
+        this.engineSvc.avatar
+      )
+      const avatarMap = new Map<number, number>(
+        this.settings.get('avatar') || []
+      )
+      avatarMap.set(this.worldId(), avatarId)
+      this.settings.set('avatar', Array.from(avatarMap.entries()))
     })
 
     // Register object chunk updater to the engine
@@ -219,28 +241,6 @@ export class WorldService {
         )
       this.setAvatar(avatarEntry.geometry, animationManager, user)
     })
-
-    // own avatar
-    this.avatarListener = this.avatarSub.subscribe((avatarId: number) => {
-      this.gestures.set(this.avatarList[avatarId].explicit)
-      const avatarEntry = this.avatarList[avatarId]
-      const animationManager: Promise<AvatarAnimationManager> =
-        this.anmSvc.getAvatarAnimationManager(
-          avatarEntry.name,
-          avatarEntry.implicit,
-          avatarEntry.explicit
-        )
-      this.setAvatar(
-        avatarEntry.geometry,
-        animationManager,
-        this.engineSvc.avatar
-      )
-      const avatarMap = new Map<number, number>(
-        this.settings.get('avatar') || []
-      )
-      avatarMap.set(this.worldId, avatarId)
-      this.settings.set('avatar', Array.from(avatarMap.entries()))
-    })
   }
 
   destroyWorld() {
@@ -248,7 +248,6 @@ export class WorldService {
     this.resetChunks()
     this.engineSvc.resetChunkLODMap()
     this.uAvatarListener?.unsubscribe()
-    this.avatarListener?.unsubscribe()
   }
 
   set visibility(visibility: number) {
@@ -357,7 +356,7 @@ export class WorldService {
 
   // this method is to be called on each position change to update the state of chunks if needed
   private autoUpdateChunks(pos: Vector3Like) {
-    if (this.worldId === 0) {
+    if (this.worldId() === 0) {
       // Nowhere
       return
     }
@@ -417,7 +416,7 @@ export class WorldService {
     // with this chunk if this call fails
     return this.http
       .props(
-        this.worldId,
+        this.worldId(),
         x * this.chunkWidth - this.chunkWidth / 2,
         x * this.chunkWidth + this.chunkWidth / 2,
         null,
@@ -545,20 +544,20 @@ export class WorldService {
       entry = world.entry
     }
 
-    if (this.worldId === world.id) {
+    if (this.worldId() === world.id) {
       this.teleport(entry)
       return
     }
 
     this.socket.messages.next({type: 'info', data: world.welcome ?? ''})
 
-    this.worldId = world.id
+    this.worldId.set(world.id)
     this.worldName = world.name
     this.engineSvc.clearObjects()
     this.propSvc.cleanCache()
     this.anmSvc.cleanCache()
     this.propSvc.path.set(world.path)
-    this.terrainSvc.setTerrain(world?.terrain, world.id)
+    this.terrainSvc.setTerrain(world?.terrain)
     this.terrainSvc.setWater(world?.water)
     this.skySvc.setSkybox(world.sky)
     this.lightingSvc.setLighting(world.light)
@@ -569,7 +568,7 @@ export class WorldService {
       const avatarMap = new Map<number, number>(
         this.settings.get('avatar') || []
       )
-      this.avatarSub.next(avatarMap.get(this.worldId) || 0)
+      this.ownAvatar.set(avatarMap.get(this.worldId()) || 0)
       // Force list update to create users now that avatars are known
       this.userSvc.userList.set([...this.userSvc.userList()])
     })

@@ -8,7 +8,7 @@
   <mat-tab-group dynamicHeight>
     <mat-tab>
       <ng-template mat-tab-label>
-        <fa-icon [icon]="faMound" [fixedWidth]="true" pull="left" />
+        <fa-icon [icon]="icon.faMound" [fixedWidth]="true" pull="left" />
         {{ t('ground') }}
       </ng-template>
       <div class="tab-content">
@@ -23,7 +23,7 @@
     </mat-tab>
     <mat-tab>
       <ng-template mat-tab-label>
-        <fa-icon [icon]="faSun" [fixedWidth]="true" pull="left" />
+        <fa-icon [icon]="icon.faSun" [fixedWidth]="true" pull="left" />
         {{ t('lighting') }}
       </ng-template>
       <div class="tab-content">
@@ -66,7 +66,7 @@
     </mat-tab>
     <mat-tab>
       <ng-template mat-tab-label>
-        <fa-icon [icon]="faPanorama" [fixedWidth]="true" pull="left" />
+        <fa-icon [icon]="icon.faPanorama" [fixedWidth]="true" pull="left" />
         {{ t('sky') }}
       </ng-template>
       <div class="tab-content">
@@ -108,7 +108,7 @@
     </mat-tab>
     <mat-tab>
       <ng-template mat-tab-label>
-        <fa-icon [icon]="faWater" [fixedWidth]="true" pull="left" />
+        <fa-icon [icon]="icon.faWater" [fixedWidth]="true" pull="left" />
         {{ t('water') }}
       </ng-template>
       <div class="tab-content">

@@ -1,4 +1,3 @@
-import type {WritableSignal} from '@angular/core'
 import {
   ChangeDetectionStrategy,
   Component,
@@ -16,7 +15,6 @@ import {MatTab, MatTabGroup, MatTabLabel} from '@angular/material/tabs'
 import {FaIconComponent} from '@fortawesome/angular-fontawesome'
 import {colorHexToStr, colorStrToHex, hexToRgb} from '../../utils/utils'
 import {SkyService} from '../../world/sky.service'
-import {WorldService} from '../../world/world.service'
 import {TerrainService} from '../../world/terrain.service'
 import {LightingService} from '../../world/lighting.service'
 import {
@@ -56,66 +54,43 @@ import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiWorldAttribsComponent {
-  faMound = faMound
-  faPanorama = faPanorama
-  faSun = faSun
-  faWater = faWater
-  terrain: WritableSignal<boolean>
-  terrainOffset: WritableSignal<number>
-  ambLight: WritableSignal<string>
-  dirLight: WritableSignal<string>
-  lightDirX: WritableSignal<number>
-  lightDirY: WritableSignal<number>
-  lightDirZ: WritableSignal<number>
-  fog: WritableSignal<boolean>
-  fogColor: WritableSignal<string>
-  fogMin: WritableSignal<number>
-  fogMax: WritableSignal<number>
-  skybox: WritableSignal<string>
-  water: WritableSignal<boolean>
-  waterColor: WritableSignal<string>
-  waterTextureBottom: WritableSignal<string>
-  waterTextureTop: WritableSignal<string>
-  waterLevel: WritableSignal<number>
-  waterOpacity: WritableSignal<number>
-  waterUnderView: WritableSignal<number>
-
+  protected readonly icon = {faMound, faPanorama, faSun, faWater}
   protected readonly skySvc = inject(SkyService)
   private readonly terrainSvc = inject(TerrainService)
   private readonly lightingSvc = inject(LightingService)
-  private readonly worldSvc = inject(WorldService)
+
+  protected terrain = signal(this.terrainSvc.terrain != null)
+  protected fog = signal(this.lightingSvc.worldFog?.enabled ?? false)
+  protected terrainOffset = signal(this.terrainSvc.terrain?.position.y ?? 0)
+  protected fogMin = signal(this.lightingSvc.worldFog?.near ?? 0)
+  protected fogMax = signal(this.lightingSvc.worldFog?.far ?? 120)
+  protected lightDirX = signal(this.lightingSvc.dirLightTarget[0] | 0)
+  protected lightDirY = signal(this.lightingSvc.dirLightTarget[1] | 0)
+  protected lightDirZ = signal(this.lightingSvc.dirLightTarget[2] | 0)
+  protected fogColor = signal(
+    colorHexToStr(this.lightingSvc.worldFog?.color ?? 0x00007f)
+  )
+  protected ambLight = signal(colorHexToStr(this.lightingSvc.ambLightColor))
+  protected dirLight = signal(colorHexToStr(this.lightingSvc.dirLightColor))
+  protected water = signal(this.terrainSvc.water != null)
+  protected waterColor = signal(
+    colorHexToStr(this.terrainSvc.water?.userData?.color ?? 0x00ffff)
+  )
+  protected waterTextureBottom = signal(
+    this.terrainSvc.water?.userData?.texture_bottom || ''
+  )
+  protected waterTextureTop = signal(
+    this.terrainSvc.water?.userData?.texture_top || ''
+  )
+  protected waterLevel = signal(this.terrainSvc.water?.position.y ?? 0)
+  protected waterOpacity = signal(
+    this.terrainSvc.water?.userData.opacity ?? 128
+  )
+  protected waterUnderView = signal(
+    this.terrainSvc.water?.userData?.under_view ?? 500
+  )
 
   constructor() {
-    this.terrain = signal(this.terrainSvc.terrain != null)
-    this.terrainOffset = signal(this.terrainSvc.terrain?.position.y ?? 0)
-    this.fog = signal(this.lightingSvc.worldFog?.enabled ?? false)
-    this.fogMin = signal(this.lightingSvc.worldFog?.near ?? 0)
-    this.fogMax = signal(this.lightingSvc.worldFog?.far ?? 120)
-    this.lightDirX = signal(this.lightingSvc.dirLightTarget[0] | 0)
-    this.lightDirY = signal(this.lightingSvc.dirLightTarget[1] | 0)
-    this.lightDirZ = signal(this.lightingSvc.dirLightTarget[2] | 0)
-
-    this.fogColor = signal(
-      colorHexToStr(this.lightingSvc.worldFog?.color ?? 0x00007f)
-    )
-    this.ambLight = signal(colorHexToStr(this.lightingSvc.ambLightColor))
-    this.dirLight = signal(colorHexToStr(this.lightingSvc.dirLightColor))
-    this.water = signal(this.terrainSvc.water != null)
-    this.waterColor = signal(
-      colorHexToStr(this.terrainSvc.water?.userData?.color ?? 0x00ffff)
-    )
-    this.waterTextureBottom = signal(
-      this.terrainSvc.water?.userData?.texture_bottom || ''
-    )
-    this.waterTextureTop = signal(
-      this.terrainSvc.water?.userData?.texture_top || ''
-    )
-    this.waterLevel = signal(this.terrainSvc.water?.position.y ?? 0)
-    this.waterOpacity = signal(this.terrainSvc.water?.userData.opacity ?? 128)
-    this.waterUnderView = signal(
-      this.terrainSvc.water?.userData?.under_view ?? 500
-    )
-
     effect(() => {
       this.lightingSvc.worldFog = {
         color: colorStrToHex(this.fogColor()),
@@ -138,13 +113,10 @@ export class UiWorldAttribsComponent {
       ]
     })
     effect(() => {
-      this.terrainSvc.setTerrain(
-        {
-          enabled: this.terrain(),
-          offset: this.terrainOffset()
-        },
-        this.worldSvc.worldId
-      )
+      this.terrainSvc.setTerrain({
+        enabled: this.terrain(),
+        offset: this.terrainOffset()
+      })
     })
     effect(() => {
       this.terrainSvc.setWater({

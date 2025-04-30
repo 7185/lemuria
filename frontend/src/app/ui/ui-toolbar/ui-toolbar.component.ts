@@ -21,17 +21,8 @@ import {EngineService} from '../../engine/engine.service'
 import {SettingsService} from '../../settings/settings.service'
 import {TeleportService} from '../../engine/teleport.service'
 import {WorldService} from '../../world/world.service'
-import type {User} from '../../user'
 import {UserService} from '../../user'
-import type {ElementRef} from '@angular/core'
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  Renderer2,
-  signal,
-  viewChild
-} from '@angular/core'
+import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
 import {SocketService} from '../../network'
 import {environment} from '../../../environments/environment'
 import type {Vector3} from 'three'
@@ -84,51 +75,51 @@ import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UiToolbarComponent {
-  faArrowLeft = faArrowLeft
-  faArrowRight = faArrowRight
-  faBolt = faBolt
-  faCheck = faCheck
-  faCircleUser = faCircleUser
-  faCog = faCog
-  faEye = faEye
-  faGlobe = faGlobe
-  faHand = faHand
-  faHouse = faHouse
-  faKeyboard = faKeyboard
-  faLocationArrow = faLocationArrow
-  faMountainSun = faMountainSun
-  faRightFromBracket = faRightFromBracket
-  faPerson = faPerson
-  faUser = faUser
-  faUsers = faUsers
-  faVideo = faVideo
+  protected readonly icon = {
+    faArrowLeft,
+    faArrowRight,
+    faBolt,
+    faCheck,
+    faCircleUser,
+    faCog,
+    faEye,
+    faGlobe,
+    faHand,
+    faHouse,
+    faKeyboard,
+    faLocationArrow,
+    faMountainSun,
+    faRightFromBracket,
+    faPerson,
+    faUser,
+    faUsers,
+    faVideo
+  }
 
-  debug = environment.debug
   cameraType = signal(0)
+  compassRot = signal(0)
   home = {world: null, position: null, isNew: true}
   teleports = signal([])
-  userId = ''
-  avatarId = 0
-  userList: User[] = []
-  visibilityList = Array.from<number>({length: 11})
-    .fill(40)
-    .map((n, i) => n + i * 20)
-  visibility = environment.world.lod.maxDistance
+  userId = signal('')
   strPos = signal(posToString({x: 0, y: 0, z: 0}))
   strAlt = signal(altToString({x: 0, y: 0, z: 0}))
   strFps = '0 FPS 0 draws'
   strMem = '0 Geom. 0 Text.'
+
+  protected readonly debug = environment.debug
+  protected visibility = environment.world.lod.maxDistance
+  protected readonly visibilityList = Array.from<number>({length: 11})
+    .fill(40)
+    .map((n, i) => n + i * 20)
 
   protected readonly dialog = inject(MatDialog)
   protected readonly socket = inject(SocketService)
   protected readonly worldSvc = inject(WorldService)
   protected readonly teleportSvc = inject(TeleportService)
   protected readonly userSvc = inject(UserService)
-  private readonly renderer = inject(Renderer2)
   private readonly engineSvc = inject(EngineService)
   private readonly http = inject(HttpService)
   private readonly settings = inject(SettingsService)
-  private compass = viewChild<ElementRef>('compass')
 
   constructor() {
     toObservable(this.userSvc.userList).subscribe((list) => {
@@ -141,23 +132,22 @@ export class UiToolbarComponent {
       })
     })
     toObservable(this.http.getLogged()).subscribe((u) => {
-      this.userId = u.id
-      if (u.id != null) {
-        this.http
-          .worlds()
-          .subscribe((w: {id: number; name: string; users: number}[]) => {
-            this.worldSvc.worldList.set(w)
-            const home = this.settings.get('home')
-            this.home = {
-              world: home?.world,
-              position: home?.position,
-              isNew: true
-            }
-            if (this.home.world || this.home.position) {
-              this.teleportSvc.teleport.set(this.home)
-            }
-          })
-      }
+      this.userId.set(u.id)
+      if (u.id == null) return
+      this.http
+        .worlds()
+        .subscribe((w: {id: number; name: string; users: number}[]) => {
+          this.worldSvc.worldList.set(w)
+          const home = this.settings.get('home')
+          this.home = {
+            world: home?.world,
+            position: home?.position,
+            isNew: true
+          }
+          if (this.home.world || this.home.position) {
+            this.teleportSvc.teleport.set(this.home)
+          }
+        })
     })
     toObservable(this.engineSvc.compassSignal)
       .pipe(
@@ -176,15 +166,9 @@ export class UiToolbarComponent {
       .subscribe((o: {pos: Vector3; theta: number}) => {
         this.strPos.set(posToString(o.pos))
         this.strAlt.set(altToString(o.pos))
-        if (this.compass() == null) return
-        this.renderer.setStyle(
-          this.compass().nativeElement,
-          'transform',
-          `rotate(${o.theta}deg)`
-        )
+        this.compassRot.set(o.theta)
       })
 
-    this.worldSvc.avatarSub.subscribe((avatarId) => (this.avatarId = avatarId))
     this.settings.updated.subscribe(() => {
       const home = this.settings.get('home')
       this.home = {
@@ -222,7 +206,7 @@ export class UiToolbarComponent {
       avatarId = 0
     }
     this.socket.sendMessage({type: 'avatar', data: avatarId})
-    this.worldSvc.avatarSub.next(avatarId)
+    this.worldSvc.ownAvatar.set(avatarId)
   }
 
   teleportWorld(world: string, entry = null) {

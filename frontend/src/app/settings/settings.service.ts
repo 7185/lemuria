@@ -15,8 +15,4 @@ export class SettingsService {
   get(key: string): any {
     return JSON.parse(globalThis.localStorage.getItem(key))
   }
-
-  clear() {
-    globalThis.localStorage.clear()
-  }
 }
