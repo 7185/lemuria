@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.10.0",
-    "@swc/core": "^1.11.22",
+    "@swc/core": "^1.11.24",
     "@vitest/coverage-v8": "^3.1.2",
     "eslint": "^9.25.1",
     "jiti": "^2.4.2",

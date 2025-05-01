@@ -63,18 +63,21 @@ export class UiChatZoneComponent {
   protected message = ''
   protected chatActive = signal(false)
   protected verticalChat = signal(true)
+  protected names = {}
   protected colors = {}
 
   constructor() {
     this.socket.messages.subscribe((msg) => {
-      if (['msg', 'err', 'join', 'part', 'info'].includes(msg.type)) {
-        for (const u of this.userSvc.userList()) {
-          this.colors[u.name] = '#' + u.id.substring(0, 6)
-        }
-        this.messages.push(msg)
-        if (this.virtualScroller() == null) return
-        this.virtualScroller().scrollInto(msg)
+      if (!['msg', 'err', 'join', 'part', 'info'].includes(msg.type)) {
+        return
       }
+      for (const u of this.userSvc.userList()) {
+        this.colors[u.id] = '#' + u.id.substring(0, 6)
+        this.names[u.id] = u.name
+      }
+      this.messages.push(msg)
+      if (this.virtualScroller() == null) return
+      this.virtualScroller().scrollInto(msg)
     })
     this.settings.updated.subscribe(() => {
       this.verticalChat.set(this.settings.get('verticalChat') ?? true)

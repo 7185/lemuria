@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """Bot module"""
 
+import asyncio
 import json
 import httpx
-import trio
-import trio_websocket
+import websockets
 
 
 def get_cookie_from_response(response, cookie_name):
@@ -45,7 +45,6 @@ class Bot(User):
         self.web_url = web_url
         self.ws_url = ws_url
         self.ws = None
-        self.nursery = None
         self.logging_enabled = logging_enabled
         self.connected = False
         self.handlers = {}
@@ -113,7 +112,7 @@ class Bot(User):
 
     async def send(self, msg: dict) -> None:
         if self.ws is not None:
-            await self.ws.send_message(json.dumps(msg))
+            await self.ws.send(json.dumps(msg))
             self.log(f'< {msg}')
         else:
             self.log('* Websocket not initialized')
@@ -136,13 +135,12 @@ class Bot(User):
         self.avatar = avatar
         await self.send({'type': 'avatar', 'data': self.avatar})
 
-    async def reader(self, websocket) -> None:
-        while True:
+    async def reader(self, websocket):
+        async for message_raw in websocket:
             try:
-                message_raw = await websocket.get_message()
                 msg = json.loads(message_raw)
                 await self._process_msg(msg)
-            except trio_websocket.ConnectionClosed:
+            except websockets.exceptions.ConnectionClosed:
                 break
 
     async def login(self) -> None:
@@ -169,17 +167,18 @@ class Bot(User):
         await self.login()
         await self.get_world_list()
         headers = [('Cookie', f"{AUTH_COOKIE}={self.cookiejar[AUTH_COOKIE]}")]
-        async with trio_websocket.open_websocket_url(self.ws_url, extra_headers=headers) as websocket:
+        async with websockets.connect(self.ws_url, additional_headers=headers) as websocket:
             self.ws = websocket
             self.log('@ Connected')
             self.connected = True
             await self._callback('on_connected')
-            async with trio.open_nursery() as nursery:
-                self.nursery = nursery
-                nursery.start_soon(self.reader, websocket)
+
+            reader_task = asyncio.create_task(self.reader(websocket))
+            await reader_task
+
             self.connected = False
             self.log('@ Disconnected')
             await self._callback('on_disconnected')
 
     def run(self) -> None:
-        trio.run(self.connect)
+        asyncio.run(self.connect())

@@ -17,6 +17,7 @@ EXPOSE 8080
 WORKDIR /backend
 ENV PATH="/venv/bin:$PATH"
 ENV DATABASE_URL="file:/app.db"
+ENV PRISMA_PY_DEBUG_GENERATOR="1"
 COPY backend-py /backend/
 COPY backend/prisma/schema.prisma /backend/prisma/schema.prisma
 COPY --from=frontend --chown=nobody:nobody /root/static /backend/static

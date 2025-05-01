@@ -6,15 +6,15 @@
   @for (m of scroll.viewPortItems; track m) {
     <p class="line">
       @if (m.type === 'msg') {
-        <b [ngStyle]="{color: colors[m.user]}">{{ m.user }}</b
+        <b [ngStyle]="{color: colors[m.user]}">{{ names[m.user] }}</b
         >:
         <span [innerHTML]="m.data | linkify"></span>
       }
       @if (m.type === 'join') {
-        <b class="text-green">{{ t('userJoined', {user: m.data}) }}</b>
+        <b class="text-green">{{ t('userJoined', {user: names[m.data]}) }}</b>
       }
       @if (m.type === 'part') {
-        <b class="text-red">{{ t('userLeft', {user: m.data}) }}</b>
+        <b class="text-red">{{ t('userLeft', {user: names[m.data]}) }}</b>
       }
       @if (m.type === 'err') {
         <b class="text-red">{{ m.data }}</b>

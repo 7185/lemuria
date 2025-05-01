@@ -1,8 +1,8 @@
 #!/usr/bin/env python
+import asyncio
 from datetime import datetime
 from math import atan2, pi
 from random import randint
-import trio
 from bot import Bot
 
 WEB_URL = 'https://lemuria.7185.fr/api/v1'
@@ -37,7 +37,7 @@ class Bonobot(Bot):
                 break
             self.set_position(step[0], self.y, step[1], yaw=direction)
             await self.send_position()
-            await trio.sleep(tick / 1e3)
+            await asyncio.sleep(tick / 1e3)
         self.state = 'idle'
         await self.send_position()
 
@@ -51,16 +51,22 @@ class Bonobot(Bot):
         await self.send_position()
 
     async def on_user_join(self, msg: str) -> None:
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] * {msg} joined")
+        user = self.userlist.get(msg)
+        name = msg if user is None else user.name
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] * {name} joined")
 
     async def on_user_part(self, msg: str) -> None:
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] * {msg} left")
+        user = self.userlist.get(msg)
+        name = msg if user is None else user.name
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] * {name} left")
 
-    async def on_msg(self, user: str, msg: str) -> None:
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] <{user}> {msg}")
+    async def on_msg(self, user_id: str, msg: str) -> None:
+        user = self.userlist.get(user_id)
+        name = user_id if user is None else user.name
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] <{name}> {msg}")
 
         # Return early if the message is from the bot itself
-        if user == self.name:
+        if user.name == self.name:
             return
 
         # Parse the message and extract the command and arguments
@@ -73,21 +79,19 @@ class Bonobot(Bot):
         elif command == "!pos":
             await self.send_msg(f"{self.x},{self.y},{self.z}")
         elif command == "!come":
-            u = next((u for u in self.userlist.values() if u.name == user), None)
-            if u is None:
+            if user is None:
                 await self.send_msg("Sorry, I don't know who you are.")
-            elif u.world != self.world:
+            elif user.world != self.world:
                 await self.send_msg(f"Sorry, I'm on {self.worldlist[self.world]['name'] if self.world else 'Nowhere'}...")
             else:
                 await self.send_msg("Coming...")
                 self.current_move_thread += 1
-                self.nursery.start_soon(self.move, u.x, u.z)
+                asyncio.create_task(self.move(user.x, user.z))
         elif command == "!whereami":
-            u = next((u for u in self.userlist.values() if u.name == user), None)
-            if u is None:
+            if user is None:
                 await self.send_msg("Sorry, I don't know who you are.")
             else:
-                await self.send_msg(f"{u.x},{u.y},{u.z}")
+                await self.send_msg(f"{user.x},{user.y},{user.z}")
         elif command == "!speed":
             try:
                 value = int(args[0])

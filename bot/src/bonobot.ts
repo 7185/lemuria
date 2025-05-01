@@ -63,17 +63,26 @@ class Bonobot extends Bot {
   }
 
   async on_user_join(msg: string): Promise<void> {
-    console.log(`[${new Date().toISOString()}] * ${msg} joined`)
+    const user = this.userlist[msg]
+    console.log(
+      `[${new Date().toISOString()}] * ${user ? user.name : msg} joined`
+    )
   }
 
   async on_user_part(msg: string): Promise<void> {
-    console.log(`[${new Date().toISOString()}] * ${msg} left`)
+    const user = this.userlist[msg]
+    console.log(
+      `[${new Date().toISOString()}] * ${user ? user.name : msg} left`
+    )
   }
 
-  async on_msg(user: string, msg: string): Promise<void> {
-    console.log(`[${new Date().toISOString()}] <${user}> ${msg}`)
+  async on_msg(userId: string, msg: string): Promise<void> {
+    const user = this.userlist[userId]
+    console.log(
+      `[${new Date().toISOString()}] <${user ? user.name : msg}> ${msg}`
+    )
 
-    if (user === this.name) {
+    if (user?.name === this.name) {
       return
     }
 
@@ -91,10 +100,9 @@ class Bonobot extends Bot {
         await this.sendMsg(`${this.x},${this.y},${this.z}`)
         break
       case '!come': {
-        const u = Object.values(this.userlist).find((u) => u.name === user)
-        if (!u) {
+        if (!user) {
           await this.sendMsg("Sorry, I don't know who you are.")
-        } else if (u.world !== this.world) {
+        } else if (user.world !== this.world) {
           const worldName = this.world
             ? this.worldlist[this.world]?.name
             : 'Nowhere'
@@ -102,18 +110,15 @@ class Bonobot extends Bot {
         } else {
           await this.sendMsg('Coming...')
           this.currentMoveThread++
-          this.move(u.x, u.z).catch(console.error)
+          this.move(user.x, user.z).catch(console.error)
         }
         break
       }
       case '!whereami': {
-        const targetUser = Object.values(this.userlist).find(
-          (u) => u.name === user
-        )
-        if (!targetUser) {
+        if (!user) {
           await this.sendMsg("Sorry, I don't know who you are.")
         } else {
-          await this.sendMsg(`${targetUser.x},${targetUser.y},${targetUser.z}`)
+          await this.sendMsg(`${user.x},${user.y},${user.z}`)
         }
         break
       }

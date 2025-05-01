@@ -6,8 +6,8 @@ from user.model import broadcast, broadcast_userlist, User
 
 
 async def sending(user: User):
-    await broadcast({'type': 'join', 'data': await user.name})
     await broadcast_userlist()
+    await broadcast({'type': 'join', 'data': user.auth_id})
     try:
         while True:
             data = await user.queue.get()
@@ -19,7 +19,7 @@ async def sending(user: User):
             user.connected = False
             # Force Timer cancel
             await user.set_timer()
-            await broadcast({'type': 'part', 'data': await user.name})
+            await broadcast({'type': 'part', 'data': user.auth_id})
             await broadcast_userlist()
 
 
@@ -31,7 +31,7 @@ async def receiving(user: User):
 
 async def process_msg(user: User, payload: dict) -> None:
     if payload['type'] == 'msg':
-        await broadcast({'type': 'msg', 'user': await user.name, 'data': payload['data']})
+        await broadcast({'type': 'msg', 'user': user.auth_id, 'data': payload['data']})
     elif payload['type'] == 'pos':
         user.position[0] = payload['data']['pos']['x']
         user.position[1] = payload['data']['pos']['y']

@@ -35,7 +35,7 @@ export class WsGateway {
             case 'msg':
               this.userSvc.broadcast({
                 type: 'msg',
-                user: user.name,
+                user: user.id,
                 data: message.data
               })
               break
@@ -86,8 +86,8 @@ export class WsGateway {
     user.heartbeat = timer(0, config.heartbeatRate).subscribe(() => {
       client.ping(noop)
     })
-    this.userSvc.broadcast({type: 'join', data: user.name})
     this.userSvc.broadcastUserlist()
+    this.userSvc.broadcast({type: 'join', data: user.id})
   }
 
   handleDisconnect(client: any) {
@@ -101,7 +101,7 @@ export class WsGateway {
             user.connected = false
             this.userSvc.broadcast({
               type: 'part',
-              data: user.name
+              data: user.id
             })
             this.userSvc.broadcastUserlist()
           }
