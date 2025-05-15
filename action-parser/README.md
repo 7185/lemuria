@@ -18,7 +18,7 @@ action.parse('create color blue, sign "hello!"; activate color salmon, rotate -.
 
 The `parse()` function will then return an object looking like this:
 
-```js
+```
 {
   create: [
     {

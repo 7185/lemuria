@@ -5,24 +5,22 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "start": "node --import 'data:text/javascript,import {register} from \"node:module\"; import {pathToFileURL} from \"node:url\"; register(\"ts-node/esm\", pathToFileURL(\"./\"));' src/bonobot.ts",
+    "start": "node --experimental-strip-types src/bonobot.ts",
     "format": "prettier --write \"src/**/*.ts\" \"*.{m,}ts\"",
     "lint": "eslint \"src/**/*.ts\""
   },
   "license": "MIT",
   "dependencies": {
     "axios": "^1.9.0",
-    "ws": "^8.18.1"
+    "ws": "^8.18.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.10.0",
-    "@types/node": "^20.17.14",
+    "@types/node": "^22.15.18",
     "@types/ws": "^8.18.1",
-    "eslint": "^9.25.1",
-    "jiti": "^2.4.2",
+    "eslint": "^9.26.0",
     "prettier": "^3.5.3",
-    "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.31.1"
+    "typescript-eslint": "^8.32.1"
   }
 }

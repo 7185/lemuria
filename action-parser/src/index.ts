@@ -1,1 +1,1 @@
-export {Action} from './action.visitor'
+export {Action} from './action.visitor.ts'

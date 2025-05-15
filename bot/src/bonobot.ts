@@ -1,4 +1,4 @@
-import {Bot} from './bot'
+import {Bot} from './bot.ts'
 import {setTimeout} from 'timers/promises'
 
 const WEB_URL = 'https://lemuria.7185.fr/api/v1'

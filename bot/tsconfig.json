@@ -1,16 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "es2020",
+    "noEmit": true,
+    "target": "esnext",
+    "module": "nodenext",
     "outDir": "./dist",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
     "strict": true,
-    "strictNullChecks": true,
-    "allowImportingTsExtensions": false
-  },
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
+    "strictNullChecks": true
   }
 }

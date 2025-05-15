@@ -1,4 +1,4 @@
-import {Action} from '../src'
+import {Action} from '../src/index.ts'
 
 const parser = new Action()
 

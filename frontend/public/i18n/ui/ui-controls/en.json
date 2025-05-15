@@ -9,6 +9,7 @@
   "moveLft": "Move Left",
   "moveRgt": "Move Right",
   "moveUp": "Move Up (Fly)",
+  "none": "<None>",
   "pressKey": "Press key",
   "run": "Run",
   "setDefault": "Set default",

@@ -1,6 +1,7 @@
-import {CstNode, IToken, Lexer} from 'chevrotain'
-import {colorStringToRGB, visitCoords} from './action.utils'
-import {ActionParser, allTokens} from './action.parser'
+import {Lexer} from 'chevrotain'
+import type {CstNode, IToken} from 'chevrotain'
+import {colorStringToRGB, visitCoords} from './action.utils.ts'
+import {ActionParser, allTokens} from './action.parser.ts'
 import type {
   ActionCtx,
   ActionsCtx,
@@ -49,7 +50,7 @@ import type {
   VisibleCommandCtx,
   WaitParameterCtx,
   WarpCommandCtx
-} from './action.interfaces'
+} from './action.interfaces.ts'
 
 const parserInstance = new ActionParser()
 const BaseActionVisitor = parserInstance.getBaseCstVisitorConstructor()

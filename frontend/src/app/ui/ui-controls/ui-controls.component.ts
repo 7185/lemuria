@@ -1,5 +1,9 @@
 import {MatButton} from '@angular/material/button'
-import {MatDialogContent, MatDialogTitle} from '@angular/material/dialog'
+import {
+  MatDialogContent,
+  MatDialogRef,
+  MatDialogTitle
+} from '@angular/material/dialog'
 import type {PressedKey} from '../../engine/inputsystem.service'
 import {InputSystemService} from '../../engine/inputsystem.service'
 import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
@@ -46,8 +50,13 @@ export class UiControlsComponent {
   private readonly translocoSvc = inject(TranslocoService)
   private cancel: Subject<void> | null = null
   private oldKey: string | null = 'nop'
-
+  private dialogRef = inject(MatDialogRef<UiControlsComponent>)
   constructor() {
+    // Disable Escape but allow backdrop click to close the dialog
+    this.dialogRef.disableClose = true
+    this.dialogRef.backdropClick().subscribe(() => {
+      this.dialogRef.close()
+    })
     this.getKeymap()
   }
 
@@ -69,7 +78,7 @@ export class UiControlsComponent {
       .pipe(take(1), timeout(5000), takeUntil(this.cancel))
       .subscribe({
         next: (e: KeyboardEvent) => {
-          this.controlsKeymap[key][pos] = e.code
+          this.controlsKeymap[key][pos] = e.code !== 'Escape' ? e.code : null
           this.setKeymap()
           this.activeKey.set([null, null])
           if (this.cancel != null) {

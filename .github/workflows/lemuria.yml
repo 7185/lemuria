@@ -12,7 +12,7 @@ jobs:
         working-directory: .
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
+        node-version: [22.x, 24.x]
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -33,7 +33,7 @@ jobs:
         working-directory: .
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
+        node-version: [22.x, 24.x]
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -53,7 +53,7 @@ jobs:
         working-directory: .
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
+        node-version: [22.x, 24.x]
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -65,6 +65,7 @@ jobs:
       - run: npm -w action-parser ci
       - run: npm -w action-parser run lint
       - run: npm -w action-parser run test:cov
+      - run: npm -w action-parser run build
 
   bot:
     runs-on: ubuntu-latest
@@ -73,7 +74,7 @@ jobs:
         working-directory: .
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
+        node-version: [22.x, 24.x]
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}

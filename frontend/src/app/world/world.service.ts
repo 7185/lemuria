@@ -33,7 +33,7 @@ import {HttpService, SocketService} from '../network'
 import type {AvatarAnimationManager} from '../animation'
 import {AvatarAnimationService} from '../animation'
 import {environment} from '../../environments/environment'
-import {DEG} from '../utils/constants'
+import {DEG, EYE_LEVEL} from '../utils/constants'
 import {modelName, posToStringYaw, stringToPos} from '../utils/utils'
 import {BuildService} from '../engine/build.service'
 import type {LightData} from './lighting.service'
@@ -332,7 +332,7 @@ export class WorldService {
         await animationMgr
       ).spawnAnimationPlayer(group)
       if (group.name === 'avatar') {
-        this.engineSvc.setCameraOffset(group.userData.height * 0.9)
+        this.engineSvc.setCameraOffset(group.userData.height * EYE_LEVEL)
         this.engineSvc.updateBoundingBox()
         group.position.setY(group.position.y + group.userData.offsetY)
       } else {

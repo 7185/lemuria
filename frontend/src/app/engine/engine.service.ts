@@ -38,7 +38,7 @@ import {PropAnimationService} from '../animation'
 import type {PressedKey} from './inputsystem.service'
 import {InputSystemService} from './inputsystem.service'
 import {environment} from '../../environments/environment'
-import {DEG} from '../utils/constants'
+import {DEG, EYE_LEVEL} from '../utils/constants'
 import {getMeshes, radNormalized, shortestAngle} from '../utils/utils'
 import {Player} from './player'
 import {
@@ -300,7 +300,7 @@ export class EngineService {
   }
 
   updateBoundingBox() {
-    const boxHeight = this.camera.position.y * 1.11
+    const boxHeight = this.camera.position.y / EYE_LEVEL
     this.player.resetCollider(boxHeight)
 
     if (!environment.debug) {
@@ -890,7 +890,7 @@ export class EngineService {
       seen.push({
         dist: this.player.position.distanceToSquared(this.tmpObjPos),
         obj: obj,
-        pos: {x: this.tmpObjPos.x, y: this.tmpObjPos.x, z: this.tmpObjPos.z}
+        pos: {x: this.tmpObjPos.x, y: this.tmpObjPos.y, z: this.tmpObjPos.z}
       })
     })
 

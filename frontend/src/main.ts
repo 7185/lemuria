@@ -4,7 +4,7 @@ import {
   withFetch,
   withInterceptors
 } from '@angular/common/http'
-import {provideExperimentalZonelessChangeDetection} from '@angular/core'
+import {provideZonelessChangeDetection} from '@angular/core'
 import {provideRouter, withViewTransitions} from '@angular/router'
 import {bootstrapApplication} from '@angular/platform-browser'
 import {provideAnimationsAsync} from '@angular/platform-browser/animations/async'
@@ -18,7 +18,7 @@ import {environment} from './environments/environment'
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(appRoutes, withViewTransitions()),
-    provideExperimentalZonelessChangeDetection(),
+    provideZonelessChangeDetection(),
     provideAnimationsAsync(),
     provideHttpClient(withFetch(), withInterceptors([jwtInterceptor])),
     provideTransloco({

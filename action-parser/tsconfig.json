@@ -1,13 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "es2020",
+    "target": "esnext",
+    "module": "nodenext",
     "outDir": "./dist",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
     "strict": true,
     "strictNullChecks": true,
-    "allowImportingTsExtensions": false,
     "types": ["vitest/globals"]
-  }
+  },
+  "exclude": [
+    "vitest.config.mts"
+  ]
 }
