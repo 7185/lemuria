@@ -8,6 +8,7 @@
 Powered with Nest (or Quart), Angular and Three.js.</em>
 </p>
 
+![Codeberg Repo Stars](https://img.shields.io/gitea/stars/7185/lemuria?gitea_url=https%3A%2F%2Fcodeberg.org&style=flat-square&logo=codeberg&logoColor=2185D0&color=DAAA3F)
 ![GitHub Repo stars](https://img.shields.io/github/stars/7185/lemuria?style=flat-square&logo=github&logoColor=181717&color=DAAA3F)
 [![build](https://img.shields.io/github/actions/workflow/status/7185/lemuria/lemuria.yml?style=flat-square&logo=github-actions&logoColor=2088FF)](https://github.com/7185/lemuria/actions)
 [![license](https://img.shields.io/github/license/7185/lemuria.svg?style=flat-square&logo=open-source-initiative)](https://opensource.org/licenses/MIT)

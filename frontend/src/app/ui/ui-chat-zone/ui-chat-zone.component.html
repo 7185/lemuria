@@ -6,7 +6,7 @@
   @for (m of scroll.viewPortItems; track m) {
     <p class="line">
       @if (m.type === 'msg') {
-        <b [ngStyle]="{color: colors[m.user]}">{{ names[m.user] }}</b
+        <b [style.color]="colors[m.user]">{{ names[m.user] }}</b
         >:
         <span [innerHTML]="m.data | linkify"></span>
       }

@@ -35,6 +35,7 @@ FROM node:22-alpine AS node
 EXPOSE 8080
 ENV NODE_PATH="/root/node_modules"
 ENV DATABASE_URL="file:/app.db"
+ENV ADAPTER_URL="file:/app.db"
 WORKDIR /root
 COPY backend /root/backend/
 COPY --from=frontend --chown=nobody:nobody /root/static /static

@@ -5,7 +5,6 @@ import {
   signal,
   viewChild
 } from '@angular/core'
-import {NgStyle} from '@angular/common'
 import {FormsModule} from '@angular/forms'
 import {MatIconButton} from '@angular/material/button'
 import {MatInput, MatLabel} from '@angular/material/input'
@@ -33,7 +32,6 @@ import {SettingsService} from '../../settings/settings.service'
     MatPrefix,
     FaIconComponent,
     FormsModule,
-    NgStyle,
     VirtualScrollerModule,
     LinkifyPipe
   ],

@@ -1,5 +1,5 @@
 diff --git a/node_modules/three-rwx-loader/src/RWXLoader.js b/node_modules/three-rwx-loader/src/RWXLoader.js
-index a8d9ceb..f2aa05f 100644
+index 26ba188..03cdc59 100644
 --- a/node_modules/three-rwx-loader/src/RWXLoader.js
 +++ b/node_modules/three-rwx-loader/src/RWXLoader.js
 @@ -16,7 +16,8 @@ import {
@@ -23,9 +23,9 @@ index a8d9ceb..f2aa05f 100644
 +const extensionRegex = /\.([^.\\]+)$/i;
 +const isAlphaExtensionRegex = /^(tiff|png|webp|gif)$/i;
  
- // Perform polygon triangulation by projecting vertices on a 2D plane first
- function triangulateFaces( vertices, uvs, loop, objectName, forceEarcut = false, verboseWarning = false ) {
-@@ -197,10 +198,12 @@ function makeMaskPromise( bmpURI, threeMat, loader, textureColorSpace = LinearSR
+ const firstClumpName = 'rwx-first-clump';
+ const scaleGroupName = 'rwx-scale-group';
+@@ -200,10 +201,12 @@ function makeMaskPromise( bmpURI, threeMat, loader, textureColorSpace = LinearSR
  
  	return new Promise( ( resolveMask ) => {
  
@@ -40,8 +40,8 @@ index a8d9ceb..f2aa05f 100644
  
  				threeMat.userData.rwx.maskAnimation = { yTiles: maskTexture.image.height / maskTexture.image.width,
  					yHeight: maskTexture.image.width / maskTexture.image.height,
-@@ -236,7 +239,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
- 	maskExtension = '.zip', fflate = null, loadingPromises = [], textureColorSpace = SRGBColorSpace,
+@@ -239,7 +242,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+ 	maskExtension = '.zip', specularName = null, normalName = null, fflate = null, loadingPromises = [], textureColorSpace = SRGBColorSpace,
  	textureWrapping = RepeatWrapping, alphaTest = defaultAlphaTest, textureFiltering = true, allowURLs = true ) {
  
 -	let loader = new TextureLoader();
@@ -49,7 +49,7 @@ index a8d9ceb..f2aa05f 100644
  	let texturePath = null;
  
  	const urlRes = urlRegex.exec( textureName );
-@@ -266,7 +269,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+@@ -269,7 +272,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
  
  	}
  
@@ -58,7 +58,7 @@ index a8d9ceb..f2aa05f 100644
  
  		threeMat.alphaTest = alphaTest;
  		threeMat.transparent = true;
-@@ -275,7 +278,9 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+@@ -278,7 +281,9 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
  
  	loadingPromises.push( new Promise( ( resolveTex, rejectTex ) => {
  
@@ -69,7 +69,7 @@ index a8d9ceb..f2aa05f 100644
  
  			texture.wrapS = textureWrapping;
  			texture.wrapT = textureWrapping;
-@@ -291,7 +296,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+@@ -294,7 +299,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
  			}
  
  			// If the height is nicely divisible by the width: it's an animated texture
@@ -78,7 +78,7 @@ index a8d9ceb..f2aa05f 100644
  
  				threeMat.userData.rwx.animation = { yTiles: texture.image.height / texture.image.width,
  					yHeight: texture.image.width / texture.image.height,
-@@ -504,7 +509,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
+@@ -553,7 +558,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
  		const whiteEmissive = Math.trunc( surface[ 1 ] );
  		materialDict[ 'emissive' ] = ( whiteEmissive << 16 ) + ( whiteEmissive << 8 ) + whiteEmissive;
  
@@ -87,7 +87,7 @@ index a8d9ceb..f2aa05f 100644
  
  	}
  
-@@ -680,7 +685,7 @@ function addQuad( ctx, a, b, c, d ) {
+@@ -729,7 +734,7 @@ function addQuad( ctx, a, b, c, d ) {
  
  	}
  
@@ -96,7 +96,7 @@ index a8d9ceb..f2aa05f 100644
  
  		// We need to use a whole different geometry logic to handle wireframe quads the way the AW client does:
  		// by only rendering the outter edges
-@@ -1540,7 +1545,7 @@ function mergeGeometryRecursive( group, ctx, transform = group.matrix ) {
+@@ -1589,7 +1594,7 @@ function mergeGeometryRecursive( group, ctx, transform = group.matrix ) {
  			// Do not forget the UVs either
  			if ( child.geometry.getAttribute( 'uv' ) === undefined ) {
  
@@ -105,7 +105,7 @@ index a8d9ceb..f2aa05f 100644
  				ctx.uvs.push( ...uvs );
  
  			} else {
-@@ -1656,33 +1661,33 @@ class RWXMaterial {
+@@ -1708,33 +1713,33 @@ class RWXMaterial {
  
  	getMatSignature() {
  
@@ -125,6 +125,8 @@ index a8d9ceb..f2aa05f 100644
 -		const materialMode = this.materialmode.toString();
 -		const texture = this.texture === null ? '' : this.texture;
 -		const mask = this.mask === null ? '' : this.mask;
+-		const normal = this.normalMap === null ? '' : this.normalMap;
+-		const specular = this.specularMap === null ? '' : this.specularMap;
 -		const textureAddressMode = this.textureaddressmode.toString();
 -
 -		const collision = this.collision.toString();
@@ -133,13 +135,11 @@ index a8d9ceb..f2aa05f 100644
 -		const ratio = this.ratio.toFixed( 2 );
 -
 -		return `${color}_${surface}_${opacity}_${lightSampling}_${geometrySampling}_${textureMode}_${materialMode}` +
--			`_${texture}_${mask}_${textureAddressMode}_${collision}_${tag}_${ratio}`;
--
--	}
+-			`_${texture}_${this.tint}_${mask}_${specular}_${normal}_${textureAddressMode}_${collision}_${tag}_${ratio}`;
 +		// Different from the original signature code but avoids toFixed calls
 +		// Faster code, smaller strings, but same end result
 +		return [
-+		  	[
++			[
 +				Math.round( this.color[ 0 ] * 1000 ) / 1000,
 +				Math.round( this.color[ 1 ] * 1000 ) / 1000,
 +				Math.round( this.color[ 2 ] * 1000 ) / 1000
@@ -156,17 +156,17 @@ index a8d9ceb..f2aa05f 100644
 +			this.materialmode,
 +			this.texture ?? '',
 +			this.mask ?? '',
++		        this.specularMap ?? '',
++		        this.normalMap ?? '',
 +			this.textureaddressmode,
 +			+this.collision,
 +			this.tag,
 +			Math.round( this.ratio * 100 ) / 100
 +		].join( '_' );
-+
-+	  }
  
- }
+ 	}
  
-@@ -1878,48 +1883,50 @@ class RWXLoader extends Loader {
+@@ -1932,48 +1937,50 @@ class RWXLoader extends Loader {
  
  		super( manager );
  
@@ -186,7 +186,7 @@ index a8d9ceb..f2aa05f 100644
 -		this.polygonRegex = /^ *(polygon|polygonext)( +[0-9]+)(( +[0-9]+)+)( +tag +([0-9]+))?.*$/i;
 -		this.quadRegex = /^ *(quad|quadext)(( +([0-9]+)){4})( +tag +([0-9]+))?.*$/i;
 -		this.triangleRegex = /^ *(triangle|triangleext)(( +([0-9]+)){3})( +tag +([0-9]+))?.*$/i;
--		this.textureRegex = /^ *(texture) +([A-Za-z0-9_\-\/:\.]+)* *(mask *([A-Za-z0-9_\-\/:\.]+))?.*$/i;
+-		this.textureRegex = /^ *texture +(?<texture>[A-Za-z0-9_\-\/:.]+)(?: +(?<rest>.*))?$/i;
 -		this.colorRegex = /^ *(color)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3}).*$/i;
 -		this.opacityRegex = /^ *(opacity)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?).*$/i;
 -		this.identityRegex = /^ *(identity) *$/i;
@@ -226,7 +226,7 @@ index a8d9ceb..f2aa05f 100644
 +		this.polygonRegex = /^(polygon(?:ext)?)( +[0-9]+)(( +[0-9]+)+)( +tag +([0-9]+))?/i;
 +		this.quadRegex = /^(quad(?:ext)?)(( +([0-9]+)){4})( +tag +([0-9]+))?/i;
 +		this.triangleRegex = /^(triangle(?:ext)?)(( +([0-9]+)){3})( +tag +([0-9]+))?/i;
-+		this.textureRegex = /^(texture) +([A-Za-z0-9_\-/:.]+)* *(mask *([A-Za-z0-9_\-/:.]+))?/i;
++		this.textureRegex = /^texture +(?<texture>[A-Za-z0-9_\-\/:.]+)(?: +(?<rest>.*))?$/i;
 +		this.colorRegex = /^(color)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3})/i;
 +		this.opacityRegex = /^(opacity)( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?)/i;
 +		this.identityRegex = /^identity$/i;
@@ -257,16 +257,16 @@ index a8d9ceb..f2aa05f 100644
  
  		this.fflate = null;
  		this.textureExtension = '.jpg';
-@@ -2170,7 +2177,7 @@ class RWXLoader extends Loader {
- 		const scale_ten = new Matrix4();
- 		scale_ten.makeScale( 10.0, 10.0, 10.0 );
+@@ -2222,7 +2229,7 @@ class RWXLoader extends Loader {
+ 		let groupBeforeProto = null;
+ 		let firstClumpStarted = false;
  
 -		const lines = str.split( /[\n\r]+/g );
 +		const lines = str.split( this.newLineRegex );
  
  		// Ready root object group
  		ctx.rootGroup = new Group();
-@@ -2180,21 +2187,18 @@ class RWXLoader extends Loader {
+@@ -2240,21 +2247,18 @@ class RWXLoader extends Loader {
  
  		for ( let i = 0, l = lines.length; i < l; i ++ ) {
  
@@ -292,7 +292,7 @@ index a8d9ceb..f2aa05f 100644
  
  				makeMeshToCurrentGroup( ctx );
  				clearGeometry( ctx );
-@@ -2206,8 +2210,7 @@ class RWXLoader extends Loader {
+@@ -2274,8 +2278,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -302,7 +302,7 @@ index a8d9ceb..f2aa05f 100644
  
  				makeMeshToCurrentGroup( ctx );
  
-@@ -2220,8 +2223,7 @@ class RWXLoader extends Loader {
+@@ -2288,8 +2291,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -312,7 +312,7 @@ index a8d9ceb..f2aa05f 100644
  
  				saveCurrentTransform( ctx );
  
-@@ -2229,8 +2231,7 @@ class RWXLoader extends Loader {
+@@ -2297,8 +2299,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -322,7 +322,7 @@ index a8d9ceb..f2aa05f 100644
  
  				loadCurrentTransform( ctx );
  
-@@ -2260,8 +2261,7 @@ class RWXLoader extends Loader {
+@@ -2328,8 +2329,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -332,7 +332,7 @@ index a8d9ceb..f2aa05f 100644
  
  				makeMeshToCurrentGroup( ctx );
  
-@@ -2511,10 +2511,10 @@ class RWXLoader extends Loader {
+@@ -2592,10 +2592,10 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -345,7 +345,7 @@ index a8d9ceb..f2aa05f 100644
  
  			}
  
-@@ -2761,7 +2761,7 @@ class RWXLoader extends Loader {
+@@ -2842,7 +2842,7 @@ class RWXLoader extends Loader {
  			res = this.addtexturemodeRegex.exec( line );
  			if ( res != null ) {
  
@@ -354,7 +354,7 @@ index a8d9ceb..f2aa05f 100644
  
  				// Do not push the same texture mode twice
  				if ( ! ctx.materialTracker.currentRWXMaterial.texturemodes.includes( TextureMode[ tm ] ) ) {
-@@ -2778,7 +2778,7 @@ class RWXLoader extends Loader {
+@@ -2859,7 +2859,7 @@ class RWXLoader extends Loader {
  			res = this.removetexturemodeRegex.exec( line );
  			if ( res != null ) {
  
