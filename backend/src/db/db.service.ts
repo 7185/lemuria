@@ -7,7 +7,7 @@ export class DbService extends PrismaClient implements OnModuleInit {
   constructor() {
     super({
       adapter: new PrismaBetterSQLite3({
-        url: process.env.ADAPTER_URL
+        url: process.env.ADAPTER_URL ?? ':memory:'
       })
     })
   }
