@@ -90,7 +90,7 @@ export class WorldService {
 
   async getTerrainPage(wid: number, pageX: number, pageZ: number) {
     const cacheKey = `T-${wid}-${pageX}-${pageZ}`
-    let page: Partial<Record<number, [number, number]>> | null =
+    let page: Partial<Record<number, [number, number]>> | undefined =
       await this.cache.get(cacheKey)
     if (page == null) {
       page = {}

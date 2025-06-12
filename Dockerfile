@@ -42,7 +42,6 @@ COPY --from=frontend --chown=nobody:nobody /root/static /static
 COPY package.json package-lock.json /root/
 RUN npm -w backend ci && \
     npm -w backend run build && \
-    mv backend/src/generated/prisma/libquery_engine* backend/dist/generated/prisma/ && \
     mv backend/dist / && \
     npm -w backend prune --omit=dev && \
     npx -y nm-prune --force && \

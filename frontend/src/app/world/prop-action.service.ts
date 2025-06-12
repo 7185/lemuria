@@ -28,7 +28,12 @@ import {
 import {pictureTag as PICTURE_TAG, signTag as SIGN_TAG} from 'three-rwx-loader'
 import {environment} from '../../environments/environment'
 import {HttpService} from '../network'
-import {getObjectsByUserData, posToStringYaw, rgbToHex} from '../utils/utils'
+import {
+  disposeMaterial,
+  getObjectsByUserData,
+  posToStringYaw,
+  rgbToHex
+} from '../utils/utils'
 import {SettingsService} from '../settings/settings.service'
 import {AudioService} from '../engine/audio.service'
 import {TeleportService} from '../engine/teleport.service'
@@ -589,7 +594,7 @@ export class PropActionService {
   /**
    * Applies a picture texture to a prop
    * @param prop Prop
-   * @param picture Image
+   * @param bitmap Image
    */
   private pictureToProp(prop: Group, bitmap: ImageBitmap) {
     const picture = new CanvasTexture(bitmap)
@@ -600,8 +605,7 @@ export class PropActionService {
         child instanceof Mesh &&
         Object.keys(child.userData.taggedMaterials).length
       ) {
-        const newMaterials = []
-        newMaterials.push(...child.material)
+        const newMaterials = [...child.material]
         for (const i of child.userData.taggedMaterials[PICTURE_TAG]) {
           if (child.material[i].userData.rwx?.material != null) {
             newMaterials[i] = child.material[i].clone()
@@ -631,9 +635,7 @@ export class PropActionService {
             }
             newMaterials[i].needsUpdate = true
           }
-          child.material[i].alphaMap?.dispose()
-          child.material[i].map?.dispose()
-          child.material[i].dispose()
+          disposeMaterial(child.material[i])
         }
         newMaterials.forEach((m: MeshPhongMaterial) => {
           m.visible = !prop.userData.notVisible
@@ -663,8 +665,7 @@ export class PropActionService {
         child instanceof Mesh &&
         Object.keys(child.userData.taggedMaterials).length
       ) {
-        const newMaterials = []
-        newMaterials.push(...child.material)
+        const newMaterials = [...child.material]
         for (const i of child.userData.taggedMaterials[SIGN_TAG]) {
           if (child.material[i].userData.rwx?.material != null) {
             newMaterials[i] = child.material[i].clone()
@@ -690,9 +691,7 @@ export class PropActionService {
               console.error('Error in textCanvas:', error)
             }
           }
-          child.material[i].alphaMap?.dispose()
-          child.material[i].map?.dispose()
-          child.material[i].dispose()
+          disposeMaterial(child.material[i])
         }
         newMaterials.forEach((m: MeshPhongMaterial) => {
           m.visible = !prop.userData.notVisible
@@ -749,9 +748,7 @@ export class PropActionService {
             newMaterials.push(curMat.threeMat)
             promises.push(forkJoin(curMat.loadingPromises))
           }
-          m.alphaMap?.dispose()
-          m.map?.dispose()
-          m.dispose()
+          disposeMaterial(m)
         })
         newMaterials.forEach((m: MeshPhongMaterial) => {
           m.visible = !prop.userData.notVisible

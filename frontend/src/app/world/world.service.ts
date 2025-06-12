@@ -34,7 +34,13 @@ import type {AvatarAnimationManager} from '../animation'
 import {AvatarAnimationService} from '../animation'
 import {environment} from '../../environments/environment'
 import {DEG, EYE_LEVEL} from '../utils/constants'
-import {modelName, posToStringYaw, stringToPos} from '../utils/utils'
+import {
+  disposeGroupGeometries,
+  disposeGroupMaterials,
+  modelName,
+  posToStringYaw,
+  stringToPos
+} from '../utils/utils'
 import {BuildService} from '../engine/build.service'
 import type {LightData} from './lighting.service'
 import {LightingService} from './lighting.service'
@@ -322,8 +328,8 @@ export class WorldService {
       o.rotation.copy(new Euler(0, Math.PI, 0))
       group.parent!.updateMatrixWorld()
       group.position.setY(group.parent!.position.y)
-      this.engineSvc.disposeMaterial(group)
-      this.engineSvc.disposeGeometry(group)
+      disposeGroupMaterials(group)
+      disposeGroupGeometries(group)
       group.clear().add(o.clone())
       const box = new Box3().setFromObject(group)
       group.userData.height = box.max.y - box.min.y

@@ -1,4 +1,4 @@
-import type {Object3D, Vector3Like} from 'three'
+import type {Group, MeshPhongMaterial, Object3D, Vector3Like} from 'three'
 import {Mesh} from 'three'
 
 export const posToString = (pos: Vector3Like): string => {
@@ -26,7 +26,7 @@ export const altToString = (pos: Vector3Like): string => {
 export const stringToPos = (pos: string): Vector3Like => {
   const r = {x: 0, y: 0, z: 0}
   const [, zNum, , zHemi, xNum, , xHemi, , yNum] =
-    /([+-]?([0-9]*\.)?[0-9]+)(N|S)\s([+-]?([0-9]*\.)?[0-9]+)(W|E)(\s([+-]?([0-9]*\.)?[0-9]+)a)?/i.exec(
+    /([+-]?([0-9]*\.)?[0-9]+)([ns])\s([+-]?([0-9]*\.)?[0-9]+)([we])(\s([+-]?([0-9]*\.)?[0-9]+)a)?/i.exec(
       pos
     ) || []
   if (zNum && xNum) {
@@ -149,4 +149,42 @@ export const getMeshes = (object: Object3D, children: Mesh[] = []) => {
     }
   })
   return children
+}
+
+/**
+ * Dispose the material
+ * @param material Material to dispose of
+ */
+export const disposeMaterial = (material: MeshPhongMaterial) => {
+  material.alphaMap?.dispose()
+  material.specularMap?.dispose()
+  material.map?.dispose()
+  material.normalMap?.dispose()
+  material.dispose()
+}
+
+/**
+ * Dispose all geometries from this group
+ * @param group
+ */
+export const disposeGroupGeometries = (group: Group) => {
+  group.traverse((child: Object3D) => {
+    if (child instanceof Mesh) {
+      child.geometry.dispose()
+    }
+  })
+}
+
+/**
+ * Dispose all materials from this group
+ * @param group
+ */
+export const disposeGroupMaterials = (group: Group) => {
+  group.traverse((child: Object3D) => {
+    if (child instanceof Mesh) {
+      for (const m of child.material) {
+        disposeMaterial(m)
+      }
+    }
+  })
 }

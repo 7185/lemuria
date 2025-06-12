@@ -39,7 +39,13 @@ import type {PressedKey} from './inputsystem.service'
 import {InputSystemService} from './inputsystem.service'
 import {environment} from '../../environments/environment'
 import {DEG, EYE_LEVEL} from '../utils/constants'
-import {getMeshes, radNormalized, shortestAngle} from '../utils/utils'
+import {
+  disposeGroupGeometries,
+  disposeGroupMaterials,
+  getMeshes,
+  radNormalized,
+  shortestAngle
+} from '../utils/utils'
 import {Player} from './player'
 import {
   acceleratedRaycast,
@@ -290,8 +296,8 @@ export class EngineService {
   clearScene() {
     this.clearObjects()
     this.scene.traverse((child: Object3D) => {
-      this.disposeGeometry(child as Group)
-      this.disposeMaterial(child as Group)
+      disposeGroupGeometries(child as Group)
+      disposeGroupMaterials(child as Group)
     })
     // Outside of traverse because the children size might change
     for (const child of this.scene.children) {
@@ -310,7 +316,7 @@ export class EngineService {
     for (const prop of this.worldNode.children.filter(
       (i) => i.name === 'boundingBox'
     )) {
-      this.disposeMaterial(prop as Group)
+      disposeGroupMaterials(prop as Group)
       this.worldNode.remove(prop)
     }
     this.player.collider.createBoundingBox(boxHeight, this.player.position)
@@ -420,30 +426,10 @@ export class EngineService {
     if (!this.skybox) {
       return
     }
-    this.disposeMaterial(this.skybox)
-    this.disposeGeometry(this.skybox)
+    disposeGroupMaterials(this.skybox)
+    disposeGroupGeometries(this.skybox)
     this.skybox.clear()
     this.skybox.add(skybox)
-  }
-
-  disposeGeometry(group: Group) {
-    group.traverse((child: Object3D) => {
-      if (child instanceof Mesh) {
-        child.geometry.dispose()
-      }
-    })
-  }
-
-  disposeMaterial(group: Group) {
-    group.traverse((child: Object3D) => {
-      if (child instanceof Mesh) {
-        for (const m of child.material) {
-          m.alphaMap?.dispose()
-          m.map?.dispose()
-          m.dispose()
-        }
-      }
-    })
   }
 
   removeObject(group: Group) {
@@ -451,8 +437,8 @@ export class EngineService {
       this.buildSvc.deselectProp()
     }
     this.handleHiddenProp(group)
-    this.disposeMaterial(group)
-    this.disposeGeometry(group)
+    disposeGroupMaterials(group)
+    disposeGroupGeometries(group)
 
     const chunk = group.parent as Group
     chunk.remove(group)
@@ -499,9 +485,8 @@ export class EngineService {
         this.water = null
         break
     }
-
-    this.disposeMaterial(group)
-    this.disposeGeometry(group)
+    disposeGroupMaterials(group)
+    disposeGroupGeometries(group)
 
     if (group.parent) {
       group.parent.remove(group)
@@ -513,8 +498,8 @@ export class EngineService {
     if (label != null) {
       this.labelScene.remove(label)
     }
-    this.disposeMaterial(group)
-    this.disposeGeometry(group)
+    disposeGroupMaterials(group)
+    disposeGroupGeometries(group)
     this.usersNode.remove(group)
   }
 

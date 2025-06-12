@@ -51,14 +51,14 @@ export class AvatarAnimationPlayer {
     }
     const nbFrames = Math.floor(duration * frameRate)
 
-    transition.frames.push(firstFrame)
     transition.frames.push(
+      firstFrame,
       ...Array.from({length: nbFrames - 1}, () => ({
         joints: {},
         location: new Vector3()
-      }))
+      })),
+      lastFrame
     )
-    transition.frames.push(lastFrame)
 
     interpolateThreeFrames(transition.frames, 0, transition.frames.length - 1)
 
