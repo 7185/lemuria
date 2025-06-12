@@ -8,6 +8,7 @@ import tomllib
 from quart import Quart, render_template, websocket, request, send_from_directory
 from quart_jwt_extended import JWTManager, decode_token
 from flask_caching import Cache
+from health.api import api_health
 from proxy.api import api_proxy
 from user.api import api_auth
 from user.model import authorized_users
@@ -71,6 +72,7 @@ async def redirect(_):
         return {'error': 'Not found'}, 404
     return await render_template("index.html")
 
+app.register_blueprint(api_health)
 app.register_blueprint(api_auth)
 app.register_blueprint(api_world)
 app.register_blueprint(api_proxy)

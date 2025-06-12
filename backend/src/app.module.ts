@@ -9,6 +9,7 @@ import {WsGateway} from './ws/ws.gateway'
 import {ProxyModule} from './proxy/proxy.module'
 import {UserModule} from './user/user.module'
 import {WorldModule} from './world/world.module'
+import {HealthModule} from './health/health.module'
 import {config} from './app.config'
 
 @Module({
@@ -58,7 +59,8 @@ import {config} from './app.config'
     }),
     ProxyModule,
     UserModule,
-    WorldModule
+    WorldModule,
+    HealthModule
   ],
   controllers: [AppController],
   providers: [AppService, JwtService, WsGateway]
