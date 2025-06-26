@@ -1,7 +1,7 @@
 import fs from 'fs/promises'
 import readline from 'readline'
 import {PrismaBetterSQLite3} from '@prisma/adapter-better-sqlite3'
-import {PrismaClient} from '../generated/prisma'
+import {PrismaClient} from '../generated/prisma/client'
 
 const db = new PrismaClient({
   adapter: new PrismaBetterSQLite3({

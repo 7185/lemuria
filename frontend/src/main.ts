@@ -10,7 +10,6 @@ import {
 } from '@angular/core'
 import {provideRouter, withViewTransitions} from '@angular/router'
 import {bootstrapApplication} from '@angular/platform-browser'
-import {provideAnimationsAsync} from '@angular/platform-browser/animations/async'
 import {AppComponent} from './app/app.component'
 import {appRoutes} from './app/app-routes'
 import {jwtInterceptor} from './app/network'
@@ -23,7 +22,6 @@ bootstrapApplication(AppComponent, {
     provideRouter(appRoutes, withViewTransitions()),
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
-    provideAnimationsAsync(),
     provideHttpClient(withFetch(), withInterceptors([jwtInterceptor])),
     provideTransloco({
       config: {

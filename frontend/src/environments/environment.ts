@@ -1,9 +1,11 @@
+const baseUrl = `${window.location.protocol}//${window.location.host}/api/v1`
+
 export const environment = {
   url: {
-    websocket: 'wss://lemuria.7185.fr/api/v1/ws',
-    server: 'https://lemuria.7185.fr/api/v1',
-    mediaProxy: 'https://lemuria.7185.fr/api/v1/proxy/url?url=',
-    mediaArchive: 'https://lemuria.7185.fr/api/v1/proxy/archive?url=$1&date=$2'
+    websocket: `${baseUrl.replace('http', 'ws')}/ws`,
+    server: baseUrl,
+    mediaProxy: `${baseUrl}/proxy/url?url=`,
+    mediaArchive: `${baseUrl}/proxy/archive?url=$1&date=$2`
   },
   csrf: {
     access: 'lemuria_csrf_access',

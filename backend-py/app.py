@@ -15,6 +15,7 @@ from user.model import authorized_users
 from world.api import api_world
 from utils.ws import sending, receiving
 from utils.orjson import OrJSONProvider
+from utils.utils import get_secret_key
 
 with open('config.toml', 'rb') as config_file:
     toml_data = tomllib.load(config_file)
@@ -25,7 +26,7 @@ config = app.config
 
 app.static_folder = config['STATIC_PATH']
 app.template_folder = config['STATIC_PATH']
-app.secret_key = config['SECRET_KEY']
+app.secret_key = get_secret_key() or config['SECRET_KEY']
 
 jwt = JWTManager(app)
 app.cache = Cache(app)

@@ -6,6 +6,7 @@ import {fastifyCookie} from '@fastify/cookie'
 import {AppModule} from './app.module'
 import {config} from './app.config'
 import {Logger} from 'nestjs-pino'
+import {getSecretKey} from './utils/utils'
 
 const bootstrap = async () => {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -24,10 +25,10 @@ const bootstrap = async () => {
     prefixAvoidTrailingSlash: true
   })
   app.useWebSocketAdapter(new WsAdapter(app))
-  app.register(fastifyCookie, {
-    secret: config.secret
-  })
   app.useLogger(app.get(Logger))
+  app.register(fastifyCookie, {
+    secret: getSecretKey() ?? config.secret
+  })
 
   await app.listen(8080, '0.0.0.0')
 }
