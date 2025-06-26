@@ -8,16 +8,16 @@
 Powered with Nest (or Quart), Angular and Three.js.</em>
 </p>
 
-![Codeberg Repo Stars](https://img.shields.io/gitea/stars/7185/lemuria?gitea_url=https%3A%2F%2Fcodeberg.org&style=flat-square&logo=codeberg&logoColor=2185D0&color=DAAA3F)
-![GitHub Repo stars](https://img.shields.io/github/stars/7185/lemuria?style=flat-square&logo=github&logoColor=181717&color=DAAA3F)
+[![Codeberg Repo stars](https://img.shields.io/gitea/stars/7185/lemuria?gitea_url=https%3A%2F%2Fcodeberg.org&style=flat-square&logo=codeberg&logoColor=2185D0&color=DAAA3F)](https://codeberg.org/7185/lemuria/stars)
+[![GitHub Repo stars](https://img.shields.io/github/stars/7185/lemuria?style=flat-square&logo=github&logoColor=181717&color=DAAA3F)](https://github.com/7185/lemuria/stargazers)
 [![build](https://img.shields.io/github/actions/workflow/status/7185/lemuria/lemuria.yml?style=flat-square&logo=github-actions&logoColor=2088FF)](https://github.com/7185/lemuria/actions)
 [![license](https://img.shields.io/github/license/7185/lemuria.svg?style=flat-square&logo=open-source-initiative)](https://opensource.org/licenses/MIT)
 [![last-commit](https://img.shields.io/github/last-commit/7185/lemuria?display_timestamp=author&style=flat-square&logo=git)](https://github.com/7185/lemuria/commits/master)
 [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/7185/lemuria?style=flat-square&logo=codefactor)](https://www.codefactor.io/repository/github/7185/lemuria) \
-![node](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/dev/%40types%2Fnode?filename=backend%2Fpackage.json&style=flat-square&logo=node.js&label=node&color=5FA04E)
-![nestjs](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/@nestjs/core?filename=backend%2Fpackage.json&label=nestjs&style=flat-square&logo=nestjs&logoColor=E0234E&color=E0234E)
-![angular](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/@angular/core?filename=frontend%2Fpackage.json&label=angular&style=flat-square&logo=angular&logoColor=0F0F11&color=0F0F11)
-![three](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/three?filename=frontend%2Fpackage.json&style=flat-square&logo=three.js&logoColor=000000&color=000000)
+[![node](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/dev/%40types%2Fnode?filename=backend%2Fpackage.json&style=flat-square&logo=node.js&label=node&color=5FA04E)](https://nodejs.org)
+[![nestjs](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/@nestjs/core?filename=backend%2Fpackage.json&label=nestjs&style=flat-square&logo=nestjs&logoColor=E0234E&color=E0234E)](https://nestjs.com)
+[![angular](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/@angular/core?filename=frontend%2Fpackage.json&label=angular&style=flat-square&logo=angular&logoColor=0F0F11&color=0F0F11)](https://angular.dev)
+[![three](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/three?filename=frontend%2Fpackage.json&style=flat-square&logo=three.js&logoColor=000000&color=000000)](https://threejs.org)
 
 ---
 
@@ -131,6 +131,34 @@ $ docker build --target python -t lemuria .
 
 $ docker run -it -p 8080:8080 -v $PWD/backend/app.db:/app.db lemuria
 ```
+
+### Docker Compose
+Here's an example of a `compose.yml` file using the node backend and a secret key file, listening locally on port `8080` (to be used with a reverse proxy).
+
+```yaml
+services:
+  lemuria:
+    container_name: lemuria
+    build:
+      context: lemuria
+      dockerfile: Dockerfile
+      target: node
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Paris
+      LEMURIA_SECRET_FILE: /run/secrets/lemuria_secret_key
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - lemuria/backend/app.db:/app.db
+    secrets:
+      - lemuria_secret_key
+secrets:
+  lemuria_secret_key:
+    file: secrets/lemuria_secret_key.txt
+```
+
+Building an up-to-date image is then as simple as `git -C lemuria pull` followed by a `docker compose build lemuria`.
 
 ## Bot
 
