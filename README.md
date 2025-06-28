@@ -131,6 +131,8 @@ $ docker build --target python -t lemuria .
 
 $ docker run -it -p 8080:8080 -v $PWD/backend/app.db:/app.db lemuria
 ```
+> [!TIP]
+> For more security, a `node-distroless` target is also available.
 
 ### Docker Compose
 Here's an example of a `compose.yml` file using the node backend and a secret key file, listening locally on port `8080` (to be used with a reverse proxy).
