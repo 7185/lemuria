@@ -30,7 +30,7 @@ RUN apk add --update --no-cache icu-libs openssl && \
     chown nobody: -R /root /backend
 CMD ["hypercorn", "--config", "hypercorn.toml", "app:app"]
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD python -c "import sys,urllib.request; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/readyz').status==200 else sys.exit(1)"
+  CMD ["python", "-c", "import sys,urllib.request; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/readyz').status==200 else sys.exit(1)"]
 VOLUME ["/app.db"]
 USER nobody
 
@@ -53,7 +53,7 @@ RUN npm -w backend ci && \
     chown nobody: -R /root /dist /static
 CMD ["node", "/dist/main"]
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD node -e "fetch('http://localhost:8080/readyz').then(x=>x.status==200?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"
+  CMD ["node", "-e", "fetch('http://localhost:8080/readyz').then(x=>x.status==200?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"]
 VOLUME ["/app.db"]
 USER nobody
 
@@ -67,6 +67,6 @@ ENV ADAPTER_URL="file:/app.db"
 WORKDIR /dist
 CMD ["main.js"]
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD /nodejs/bin/node -e "fetch('http://localhost:8080/readyz').then(x=>x.status==200?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"
+  CMD ["/nodejs/bin/node", "-e", "fetch('http://localhost:8080/readyz').then(x=>x.status==200?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"]
 VOLUME ["/app.db"]
 USER nonroot

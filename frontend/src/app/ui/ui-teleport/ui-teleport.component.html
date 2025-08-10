@@ -1,11 +1,11 @@
-<h1 mat-dialog-title *transloco="let t; read: 'teleport'">
+<h1 mat-dialog-title *transloco="let t; prefix: 'teleport'">
   @if (data.type === 0) {
     {{ t('teleportTo') }}
   } @else {
     {{ t('remember') }}
   }
 </h1>
-<mat-dialog-content *transloco="let t; read: 'teleport'">
+<mat-dialog-content *transloco="let t; prefix: 'teleport'">
   @if (data.type === 0) {
     <mat-form-field appearance="outline">
       <mat-label>{{ t('world') }}</mat-label>
@@ -28,7 +28,7 @@
     </mat-form-field>
   }
 </mat-dialog-content>
-<mat-dialog-actions align="end" *transloco="let t; read: 'teleport'">
+<mat-dialog-actions align="end" *transloco="let t; prefix: 'teleport'">
   @if (data.type === 0) {
     <button
       mat-flat-button

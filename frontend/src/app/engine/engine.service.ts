@@ -38,7 +38,7 @@ import {PropAnimationService} from '../animation'
 import type {PressedKey} from './inputsystem.service'
 import {InputSystemService} from './inputsystem.service'
 import {environment} from '../../environments/environment'
-import {DEG, EYE_LEVEL} from '../utils/constants'
+import {DEG, EYE_LEVEL, ZERO_VEC} from '../utils/constants'
 import {
   disposeGroupGeometries,
   disposeGroupMaterials,
@@ -82,9 +82,16 @@ const nearestChunkPattern = [
   {x: 1, z: 1}
 ]
 
+const lightFxMap: Record<string, (now: number, rnd: number) => number> = {
+  fire: (_, rnd) => rnd * 0.4 + 0.8,
+  pulse: (now) => Math.sin(((now / 1000) % 1) * Math.PI),
+  flash: (_, rnd) => +(rnd <= 0.02),
+  flicker: (_, rnd) => +(rnd > 0.02),
+}
+
 @Injectable({providedIn: 'root'})
 export class EngineService {
-  compassSignal = signal({pos: new Vector3(), theta: 0})
+  compassSignal = signal({pos: {x: 0, y: 0, z: 0}, theta: 0})
   fps = signal(0)
   maxFps = signal(60)
   maxLights = signal(6)
@@ -114,6 +121,7 @@ export class EngineService {
   private thirdCamera: PerspectiveCamera
   private thirdFrontCamera: PerspectiveCamera
   private activeCamera: PerspectiveCamera
+  private cameras: PerspectiveCamera[]
   private lodCamera: PerspectiveCamera
   private scene: Scene
   private buildScene: Scene
@@ -170,8 +178,14 @@ export class EngineService {
   ])
 
   private spriteRotation = new Euler()
+
+  private tmpPosCache = new Vector3()
+  private tmpRotCache = new Vector3()
+  private tmpPositionTuple: [Vector3, Vector3] = [ZERO_VEC, ZERO_VEC]
   private tmpObjPos = new Vector3()
   private tmpPrevUserPos = new Vector3()
+  private tmpSpritePos = new Vector3()
+  private tmpCamToSprite = new Vector3()
 
   constructor() {
     this.raycaster.firstHitOnly = true
@@ -263,6 +277,7 @@ export class EngineService {
 
     this.audioSvc.addListener(this.camera)
 
+    this.cameras = [this.camera, this.thirdCamera, this.thirdFrontCamera]
     this.activeCamera = this.camera
 
     this.skybox = new Group()
@@ -324,9 +339,16 @@ export class EngineService {
   }
 
   get position(): [Vector3, Vector3] {
-    return this.player == null
-      ? [new Vector3(), new Vector3()]
-      : [this.player.position, new Vector3().setFromEuler(this.player.rotation)]
+    if (!this.player) {
+      this.tmpPositionTuple[0] = ZERO_VEC
+      this.tmpPositionTuple[1] = ZERO_VEC
+    } else {
+      this.tmpPosCache.copy(this.player.position)
+      this.tmpRotCache.setFromEuler(this.player.rotation)
+      this.tmpPositionTuple[0] = this.tmpPosCache
+      this.tmpPositionTuple[1] = this.tmpRotCache
+    }
+    return this.tmpPositionTuple
   }
 
   get yaw(): number {
@@ -488,9 +510,7 @@ export class EngineService {
     disposeGroupMaterials(group)
     disposeGroupGeometries(group)
 
-    if (group.parent) {
-      group.parent.remove(group)
-    }
+    group.parent?.remove(group)
   }
 
   removeUser(group: Group) {
@@ -598,18 +618,8 @@ export class EngineService {
   }
 
   setCamera(cameraType: number) {
-    switch (cameraType) {
-      case 0:
-        this.activeCamera = this.camera
-        break
-      case 1:
-        this.activeCamera = this.thirdCamera
-        break
-      case 2:
-        this.activeCamera = this.thirdFrontCamera
-        break
-      default:
-        break
+    if (this.cameras != null) {
+      this.activeCamera = this.cameras[cameraType]
     }
     this.player.avatar.visible = this.activeCamera !== this.camera
   }
@@ -882,6 +892,7 @@ export class EngineService {
     seen.sort((a, b) => a.dist - b.dist)
     const toLit = seen.slice(0, this.pointLights.length)
 
+    const now = Date.now()
     this.pointLights.forEach((light, index) => {
       light.position.set(0, 0, 0)
       light.intensity = 0
@@ -894,25 +905,9 @@ export class EngineService {
       if (prop?.obj == null) {
         return
       }
-      let fx = 1
-      switch (prop.obj.userData.light?.fx) {
-        case 'fire':
-          fx = Math.random() * 0.4 + 0.8
-          break
-        case 'pulse': {
-          const power = (Date.now() / 1000) % 1
-          fx = Math.sin(power * Math.PI)
-          break
-        }
-        case 'flash':
-          fx = +(Math.random() <= 0.02)
-          break
-        case 'flicker':
-          fx = +(Math.random() > 0.02)
-          break
-        default:
-          break
-      }
+      const rnd = Math.random()
+      const fxFn = lightFxMap[prop.obj.userData.light?.fx]
+      const fx = fxFn ? fxFn(now, rnd) : 1
       if (prop.obj.userData.coronaObj?.visible) {
         prop.obj.userData.coronaObj.material.opacity = fx
       }
@@ -1064,11 +1059,11 @@ export class EngineService {
     // compass
     this.compass.setFromVector3(this.cameraDirection)
     this.compassSignal.set({
-      pos: new Vector3(
-        Math.round(this.player.position.x * 100) / 100,
-        Math.round(this.player.position.y * 100) / 100,
-        Math.round(this.player.position.z * 100) / 100
-      ),
+      pos: {
+        x: Math.round(this.player.position.x * 100) / 100,
+        y: Math.round(this.player.position.y * 100) / 100,
+        z: Math.round(this.player.position.z * 100) / 100
+      },
       theta: this.yaw
     })
   }
@@ -1145,12 +1140,12 @@ export class EngineService {
   }
 
   private isCoronaVisible(corona: Sprite) {
-    const spritePosition = corona.getWorldPosition(new Vector3())
-    const cameraToSpriteDirection = new Vector3()
+    const spritePosition = corona.getWorldPosition(this.tmpSpritePos)
+    this.tmpCamToSprite
       .subVectors(spritePosition, this.cameraPosition)
       .normalize()
 
-    this.raycaster.set(this.cameraPosition, cameraToSpriteDirection)
+    this.raycaster.set(this.cameraPosition, this.tmpCamToSprite)
 
     // Ignore the current prop during raycasting to prevent self-intersection
     const ignoreList = getMeshes(corona.parent!)

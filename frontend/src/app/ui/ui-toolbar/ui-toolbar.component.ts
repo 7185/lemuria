@@ -25,7 +25,7 @@ import {UserService} from '../../user'
 import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
 import {SocketService} from '../../network'
 import {environment} from '../../../environments/environment'
-import type {Vector3} from 'three'
+import type {Vector3Like} from 'three'
 import {distinctUntilChanged, throttleTime} from 'rxjs'
 import {altToString, posToString} from '../../utils/utils'
 import {
@@ -154,8 +154,8 @@ export class UiToolbarComponent {
         throttleTime(100),
         distinctUntilChanged(
           (
-            prev: {pos: Vector3; theta: number},
-            curr: {pos: Vector3; theta: number}
+            prev: {pos: Vector3Like; theta: number},
+            curr: {pos: Vector3Like; theta: number}
           ) =>
             prev.pos.x === curr.pos.x &&
             prev.pos.y === curr.pos.y &&
@@ -163,7 +163,7 @@ export class UiToolbarComponent {
             prev.theta === curr.theta
         )
       )
-      .subscribe((o: {pos: Vector3; theta: number}) => {
+      .subscribe((o: {pos: Vector3Like; theta: number}) => {
         this.strPos.set(posToString(o.pos))
         this.strAlt.set(altToString(o.pos))
         this.compassRot.set(o.theta)

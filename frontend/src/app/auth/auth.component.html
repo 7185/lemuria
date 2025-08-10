@@ -3,7 +3,7 @@
     class="form-sign-in"
     (ngSubmit)="onLogin()"
     [formGroup]="loginForm"
-    *transloco="let t; read: 'auth'"
+    *transloco="let t; prefix: 'auth'"
   >
     <app-logo />
     <mat-form-field appearance="outline">

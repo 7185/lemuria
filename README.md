@@ -23,7 +23,7 @@ Powered with Nest (or Quart), Angular and Three.js.</em>
 
 ## Demo
 
-[See Demo Here](https://lemuria.7185.fr)
+[See Demo Here](https://lemuria.7185.fr) (any password is valid)
 
 ## Installation
 

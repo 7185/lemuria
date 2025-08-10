@@ -239,12 +239,10 @@ export class BuildService {
     center.applyAxisAngle(Y_AXIS, this.selectedProp().rotation.y)
     center.applyAxisAngle(Z_AXIS, this.selectedProp().rotation.z)
     center.applyAxisAngle(X_AXIS, this.selectedProp().rotation.x)
-    this.propSelection.position.copy(
-      new Vector3(
-        chunkData.x + this.selectedProp().position.x,
-        this.selectedProp().position.y,
-        chunkData.z + this.selectedProp().position.z
-      )
+    this.propSelection.position.set(
+      chunkData.x + this.selectedProp().position.x,
+      this.selectedProp().position.y,
+      chunkData.z + this.selectedProp().position.z
     )
     this.propSelection.rotation.copy(this.selectedProp().rotation)
     this.propSelection.updateMatrix()

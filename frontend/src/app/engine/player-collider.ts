@@ -30,6 +30,9 @@ export class PlayerCollider {
   private rays: Ray[]
   private currentPos = new Vector3()
 
+  private tmpIntersect = new Vector3()
+  private tmpBestIntersect = new Vector3()
+
   constructor(boxHeight: number, pos = new Vector3()) {
     // We need to ensure the total collider height doesn't go too low
     this.boxHeight = Math.max(boxHeight, playerClimbHeight + 0.1)
@@ -125,20 +128,21 @@ export class PlayerCollider {
   }
 
   raysIntersectTriangle(tri: Triangle): Vector3 {
-    let intersectionPoint: Vector3 = null
+    let hasIntersection = false
     this.rays.forEach((ray) => {
-      const point = ray.intersectTriangle(
-        tri.a,
-        tri.b,
-        tri.c,
-        true,
-        new Vector3()
-      )
-      if (intersectionPoint === null || point?.y > intersectionPoint.y) {
-        intersectionPoint = point
+      // If intersection occurs, result is stored in tmpIntersect
+      if (
+        ray.intersectTriangle(tri.a, tri.b, tri.c, true, this.tmpIntersect) &&
+        (!hasIntersection || this.tmpIntersect.y > this.tmpBestIntersect.y)
+      ) {
+        // Copy into cached "best" vector
+        this.tmpBestIntersect.copy(this.tmpIntersect)
+        hasIntersection = true
       }
     })
-    return intersectionPoint
+    // Critical to only return the best intersect if the intersection
+    // actually happened during this call
+    return hasIntersection ? this.tmpBestIntersect : null
   }
 
   checkBoundsTree(

@@ -2,7 +2,7 @@
   id="prop-edit"
   cdkDrag
   cdkDragBoundary=".ui-wrapper"
-  *transloco="let t; read: 'prop-edit'"
+  *transloco="let t; prefix: 'prop-edit'"
 >
   <hr cdkDragHandle />
   <div class="buttons">
@@ -211,48 +211,50 @@
       </fa-layers>
     </button>
   </div>
-  <div class="prop-form">
-    <mat-form-field appearance="outline">
-      <mat-label>{{ t('object') }}</mat-label>
-      <input
-        matInput
-        type="text"
-        [ngModel]="buildSvc.selectedProp()?.name"
-        (ngModelChange)="updateName($event)"
-      />
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>{{ t('description') }}</mat-label>
-      <textarea
-        matInput
-        cdkTextareaAutosize
-        cdkAutosizeMinRows="1"
-        cdkAutosizeMaxRows="8"
-        [(ngModel)]="buildSvc.selectedProp()?.userData.desc"
-      ></textarea>
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>{{ t('action') }}</mat-label>
-      <textarea
-        matInput
-        cdkTextareaAutosize
-        cdkAutosizeMinRows="1"
-        cdkAutosizeMaxRows="8"
-        [(ngModel)]="buildSvc.selectedProp()?.userData.act"
-        spellcheck="false"
-      ></textarea>
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>{{ t('date') }}</mat-label>
-      <input
-        matInput
-        type="text"
-        [ngModel]="
-          (buildSvc.selectedProp()?.userData.date ?? 0) * 1000
-            | date: 'EEE MMM d, y h:mm a'
-        "
-        readonly
-      />
-    </mat-form-field>
-  </div>
+  @if (buildSvc.selectedProp() !== null) {
+    <div class="prop-form">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ t('object') }}</mat-label>
+        <input
+          matInput
+          type="text"
+          [ngModel]="buildSvc.selectedProp()?.name"
+          (ngModelChange)="updateName($event)"
+        />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ t('description') }}</mat-label>
+        <textarea
+          matInput
+          cdkTextareaAutosize
+          cdkAutosizeMinRows="1"
+          cdkAutosizeMaxRows="8"
+          [(ngModel)]="buildSvc.selectedProp()!.userData.desc"
+        ></textarea>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ t('action') }}</mat-label>
+        <textarea
+          matInput
+          cdkTextareaAutosize
+          cdkAutosizeMinRows="1"
+          cdkAutosizeMaxRows="8"
+          [(ngModel)]="buildSvc.selectedProp()!.userData.act"
+          spellcheck="false"
+        ></textarea>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ t('date') }}</mat-label>
+        <input
+          matInput
+          type="text"
+          [ngModel]="
+            (buildSvc.selectedProp()?.userData.date ?? 0) * 1000
+              | date: 'EEE MMM d, y h:mm a'
+          "
+          readonly
+        />
+      </mat-form-field>
+    </div>
+  }
 </div>

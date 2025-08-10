@@ -28,9 +28,11 @@ export class SocketService {
     url: environment.url.websocket
   })
   private posTimer: Subscription
-  private lastSentPos = [new Vector3(), new Vector3()]
+  private lastSentPos: [Vector3, Vector3] = [new Vector3(), new Vector3()]
   private lastSentGesture: string = null
   private lastSentState: string = null
+
+  private tmpPosToSend: [Vector3, Vector3] = [new Vector3(), new Vector3()]
 
   connect() {
     if (this.connected || this.connecting) {
@@ -59,30 +61,29 @@ export class SocketService {
       }
     })
     this.posTimer = interval(200).subscribe(() => {
-      const pos: [Vector3, Vector3] = [new Vector3(), new Vector3()]
       const {gesture, state} = this.engineSvc
 
       for (const [i, vec] of this.engineSvc.position.entries()) {
-        pos[i].fromArray(vec.toArray().map((v) => +v.toFixed(2)))
+        this.tmpPosToSend[i].fromArray(vec.toArray().map((v) => +v.toFixed(2)))
       }
 
       if (
-        !this.lastSentPos[0].equals(pos[0]) ||
-        !this.lastSentPos[1].equals(pos[1]) ||
+        !this.lastSentPos[0].equals(this.tmpPosToSend[0]) ||
+        !this.lastSentPos[1].equals(this.tmpPosToSend[1]) ||
         gesture !== this.lastSentGesture ||
         state !== this.lastSentState
       ) {
         this.sendMessage({
           type: 'pos',
           data: {
-            pos: pos[0],
-            ori: pos[1],
+            pos: this.tmpPosToSend[0],
+            ori: this.tmpPosToSend[1],
             state,
             gesture
           }
         })
-        this.lastSentPos[0].copy(pos[0])
-        this.lastSentPos[1].copy(pos[1])
+        this.lastSentPos[0].copy(this.tmpPosToSend[0])
+        this.lastSentPos[1].copy(this.tmpPosToSend[1])
         this.lastSentGesture = gesture
         this.lastSentState = state
       }

@@ -1,7 +1,7 @@
-<h1 mat-dialog-title *transloco="let t; read: 'toolbar'">
+<h1 mat-dialog-title *transloco="let t; prefix: 'toolbar'">
   {{ t('settings') }}
 </h1>
-<mat-dialog-content *transloco="let t; read: 'settings'">
+<mat-dialog-content *transloco="let t; prefix: 'settings'">
   <mat-checkbox [(ngModel)]="archivedMedia">{{
     t('archivedMedia')
   }}</mat-checkbox>
@@ -37,7 +37,7 @@
     </mat-select>
   </mat-form-field>
 </mat-dialog-content>
-<mat-dialog-actions align="end" *transloco="let t; read: 'settings'">
+<mat-dialog-actions align="end" *transloco="let t; prefix: 'settings'">
   <button
     mat-flat-button
     [mat-dialog-close]="true"

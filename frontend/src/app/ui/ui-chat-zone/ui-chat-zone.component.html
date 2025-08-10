@@ -1,7 +1,7 @@
 <virtual-scroller
   #scroll
   [items]="messages"
-  *transloco="let t; read: 'chat-zone'"
+  *transloco="let t; prefix: 'chat-zone'"
 >
   @for (m of scroll.viewPortItems; track m) {
     <p class="line">
