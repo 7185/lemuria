@@ -139,7 +139,7 @@ export class WorldService {
 
     for (let i = -this.chunkLoadRadius; i <= this.chunkLoadRadius; i++) {
       for (let j = -this.chunkLoadRadius; j <= this.chunkLoadRadius; j++) {
-        // Only keep chunks within a certain circular radius (if circular loadin is enabled)
+        // Only keep chunks within a certain circular radius (if circular loading is enabled)
         if (
           !this.chunkLoadCircular ||
           i * i + j * j < this.chunkLoadRadius * this.chunkLoadRadius

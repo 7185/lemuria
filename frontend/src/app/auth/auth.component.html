@@ -1,86 +1,88 @@
 @defer (when !http.isLogged()) {
-  <form
-    class="form-sign-in"
-    (ngSubmit)="onLogin()"
-    [formGroup]="loginForm"
-    *transloco="let t; prefix: 'auth'"
-  >
-    <app-logo />
-    <mat-form-field appearance="outline">
-      <mat-label>
-        <fa-icon [icon]="icon.faUser" [fixedWidth]="true" />
-        <span>{{ t('username') }}</span>
-      </mat-label>
-      <input
-        matInput
-        type="text"
-        formControlName="username"
-        autocomplete="username"
-        required
-      />
-      @if (loginError) {
-        <mat-error>{{ t('login-error') }}</mat-error>
-      }
-      @if (usernameCtl.dirty && usernameCtl.errors?.required) {
-        <mat-error>{{ t('username-required') }}</mat-error>
-      }
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>
-        <fa-icon [icon]="icon.faKey" [fixedWidth]="true" />
-        <span>{{ t('password') }}</span>
-      </mat-label>
-      <input
-        matInput
-        [type]="hide ? 'password' : 'text'"
-        formControlName="password"
-        autocomplete="current-password"
-        required
-      />
-      <button
-        mat-icon-button
-        type="button"
-        matSuffix
-        (click)="hide = !hide"
-        color="accent"
-        [attr.aria-label]="'Hide password'"
-        [attr.aria-pressed]="hide"
-      >
-        @if (hide) {
-          <fa-icon [icon]="icon.faEyeSlash" [fixedWidth]="true" />
-        } @else {
-          <fa-icon [icon]="icon.faEye" [fixedWidth]="true" />
-        }
-      </button>
-      @if (passwordCtl.dirty && passwordCtl.errors?.required) {
-        <mat-error>{{ t('password-required') }}</mat-error>
-      }
-    </mat-form-field>
-    @if (!processing) {
-      <button
-        mat-flat-button
-        color="primary"
-        class="btn-sign-in"
-        type="submit"
-        [disabled]="loginForm.invalid"
-      >
-        {{ t('sign-in') }}
-      </button>
-    } @else {
-      <button
-        mat-flat-button
-        color="primary"
-        class="btn-sign-in"
-        type="submit"
-        disabled
-      >
-        <fa-icon
-          [icon]="icon.faCircleNotch"
-          [fixedWidth]="true"
-          animation="spin"
+  <mat-card class="card-sign-in">
+    <form
+      class="form-sign-in"
+      (ngSubmit)="onLogin()"
+      [formGroup]="loginForm"
+      *transloco="let t; prefix: 'auth'"
+    >
+      <app-logo />
+      <mat-form-field appearance="outline">
+        <mat-label>
+          <fa-icon [icon]="icon.faUser" [fixedWidth]="true" />
+          <span>{{ t('username') }}</span>
+        </mat-label>
+        <input
+          matInput
+          type="text"
+          formControlName="username"
+          autocomplete="username"
+          required
         />
-        <span class="sr-only">Loading...</span>
-      </button>
-    }
-  </form>
+        @if (loginError) {
+          <mat-error>{{ t('login-error') }}</mat-error>
+        }
+        @if (usernameCtl.dirty && usernameCtl.errors?.required) {
+          <mat-error>{{ t('username-required') }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>
+          <fa-icon [icon]="icon.faKey" [fixedWidth]="true" />
+          <span>{{ t('password') }}</span>
+        </mat-label>
+        <input
+          matInput
+          [type]="hide ? 'password' : 'text'"
+          formControlName="password"
+          autocomplete="current-password"
+          required
+        />
+        <button
+          mat-icon-button
+          type="button"
+          matSuffix
+          (click)="hide = !hide"
+          color="accent"
+          [attr.aria-label]="'Hide password'"
+          [attr.aria-pressed]="hide"
+        >
+          @if (hide) {
+            <fa-icon [icon]="icon.faEyeSlash" [fixedWidth]="true" />
+          } @else {
+            <fa-icon [icon]="icon.faEye" [fixedWidth]="true" />
+          }
+        </button>
+        @if (passwordCtl.dirty && passwordCtl.errors?.required) {
+          <mat-error>{{ t('password-required') }}</mat-error>
+        }
+      </mat-form-field>
+      @if (!processing) {
+        <button
+          mat-flat-button
+          color="primary"
+          class="btn-sign-in"
+          type="submit"
+          [disabled]="loginForm.invalid"
+        >
+          {{ t('sign-in') }}
+        </button>
+      } @else {
+        <button
+          mat-flat-button
+          color="primary"
+          class="btn-sign-in"
+          type="submit"
+          disabled
+        >
+          <fa-icon
+            [icon]="icon.faCircleNotch"
+            [fixedWidth]="true"
+            animation="spin"
+          />
+          <span class="sr-only">Loading...</span>
+        </button>
+      }
+    </form>
+  </mat-card>
 }

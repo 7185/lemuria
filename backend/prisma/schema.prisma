@@ -1,7 +1,7 @@
 generator client {
-  provider        = "prisma-client"
-  previewFeatures = ["queryCompiler", "driverAdapters"]
-  output          = "../src/generated/prisma"
+  provider   = "prisma-client"
+  output     = "../src/generated/prisma"
+  engineType = "client"
 }
 
 generator client-py {

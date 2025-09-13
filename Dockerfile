@@ -7,7 +7,7 @@ COPY action-parser/src /root/action-parser/src
 COPY frontend/src /root/frontend/src
 COPY patches /root/patches
 COPY package.json package-lock.json /root/
-RUN npm -w action-parser -w frontend ci && \
+RUN npm -w action-parser -w frontend ci --include-workspace-root && \
     npm -w frontend run build:prod && \
     rm -r .npm action-parser frontend patches node_modules
 
@@ -24,7 +24,6 @@ COPY --from=frontend --chown=nobody:nobody /root/static /backend/static
 RUN apk add --update --no-cache icu-libs openssl && \
     python -m venv /venv && \
     pip install --no-cache-dir -r /backend/requirements.txt && \
-    sed -i '/previewFeatures/d' /backend/prisma/schema.prisma && \
     prisma generate --schema /backend/prisma/schema.prisma --generator client-py && \
     rm -r /root/.cache/prisma /root/.cache/prisma-python/nodeenv /root/.npm && \
     chown nobody: -R /root /backend
@@ -43,7 +42,7 @@ WORKDIR /root
 COPY backend /root/backend/
 COPY --from=frontend --chown=nobody:nobody /root/static /static
 COPY package.json package-lock.json /root/
-RUN npm -w backend ci && \
+RUN npm -w backend ci --include-workspace-root && \
     npm -w backend run build && \
     mv backend/dist / && \
     npm -w backend prune --omit=dev && \

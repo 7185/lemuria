@@ -14,14 +14,14 @@ jobs:
       matrix:
         node-version: [22.x, 24.x]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
           cache-dependency-path: package-lock.json
-      - run: npm -w backend ci
+      - run: npm -w backend ci --include-workspace-root
       - run: npm -w backend run lint
       - run: npm -w backend run test
       - run: npm -w backend run build
@@ -35,14 +35,14 @@ jobs:
       matrix:
         node-version: [22.x, 24.x]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
           cache-dependency-path: package-lock.json
-      - run: npm -w action-parser -w frontend ci
+      - run: npm -w action-parser -w frontend ci --include-workspace-root
       - run: npm -w frontend run lint
       - run: npm -w frontend run build:prod
 
@@ -55,14 +55,14 @@ jobs:
       matrix:
         node-version: [22.x, 24.x]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
           cache-dependency-path: package-lock.json
-      - run: npm -w action-parser ci
+      - run: npm -w action-parser ci --include-workspace-root
       - run: npm -w action-parser run lint
       - run: npm -w action-parser run test:cov
       - run: npm -w action-parser run build
@@ -76,12 +76,12 @@ jobs:
       matrix:
         node-version: [22.x, 24.x]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
           cache-dependency-path: package-lock.json
-      - run: npm -w bot ci
+      - run: npm -w bot ci --include-workspace-root
       - run: npm -w bot run lint

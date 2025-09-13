@@ -13,8 +13,8 @@ export class WorkerService {
 
   textCanvas(
     text: string,
-    color: any,
-    bcolor: any,
+    color: {r: number; g: number; b: number},
+    bcolor: {r: number; g: number; b: number},
     ratio: number
   ): Promise<ImageBitmap> {
     const id = this.messageId++

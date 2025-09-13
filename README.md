@@ -14,7 +14,7 @@ Powered with Nest (or Quart), Angular and Three.js.</em>
 [![license](https://img.shields.io/github/license/7185/lemuria.svg?style=flat-square&logo=open-source-initiative)](https://opensource.org/licenses/MIT)
 [![last-commit](https://img.shields.io/github/last-commit/7185/lemuria?display_timestamp=author&style=flat-square&logo=git)](https://github.com/7185/lemuria/commits/master)
 [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/7185/lemuria?style=flat-square&logo=codefactor)](https://www.codefactor.io/repository/github/7185/lemuria) \
-[![node](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/dev/%40types%2Fnode?filename=backend%2Fpackage.json&style=flat-square&logo=node.js&label=node&color=5FA04E)](https://nodejs.org)
+[![node](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/dev/%40types%2Fnode?filename=package.json&style=flat-square&logo=node.js&label=node&color=5FA04E)](https://nodejs.org)
 [![nestjs](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/@nestjs/core?filename=backend%2Fpackage.json&label=nestjs&style=flat-square&logo=nestjs&logoColor=E0234E&color=E0234E)](https://nestjs.com)
 [![angular](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/@angular/core?filename=frontend%2Fpackage.json&label=angular&style=flat-square&logo=angular&logoColor=0F0F11&color=0F0F11)](https://angular.dev)
 [![three](https://img.shields.io/github/package-json/dependency-version/7185/lemuria/three?filename=frontend%2Fpackage.json&style=flat-square&logo=three.js&logoColor=000000&color=000000)](https://threejs.org)

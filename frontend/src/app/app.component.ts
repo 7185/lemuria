@@ -20,11 +20,11 @@ export class AppComponent {
       getBrowserLang() ??
       this.translocoSvc.getDefaultLang()
 
-    for (const lang of this.translocoSvc.getAvailableLangs() as LangDefinition[]) {
-      if (lang.id === browserLang) {
-        this.translocoSvc.setActiveLang(lang.id)
-        return
-      }
+    const lang = (
+      this.translocoSvc.getAvailableLangs() as LangDefinition[]
+    ).find((l) => l.id === browserLang)
+    if (lang) {
+      this.translocoSvc.setActiveLang(lang.id)
     }
   }
 }

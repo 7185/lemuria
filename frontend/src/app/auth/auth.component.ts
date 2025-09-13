@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, Component, inject} from '@angular/core'
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms'
 import {ActivatedRoute, Router} from '@angular/router'
 import {MatButton, MatIconButton} from '@angular/material/button'
+import {MatCard} from '@angular/material/card'
 import {MatError, MatInput, MatSuffix} from '@angular/material/input'
 import {MatFormField, MatLabel} from '@angular/material/form-field'
 import {FaIconComponent} from '@fortawesome/angular-fontawesome'
@@ -23,6 +24,7 @@ import {SettingsService} from '../settings/settings.service'
     TranslocoDirective,
     ReactiveFormsModule,
     MatButton,
+    MatCard,
     MatIconButton,
     MatError,
     MatInput,

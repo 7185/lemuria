@@ -271,15 +271,10 @@
 
   <span class="spacer"></span>
 
-  <button
-    mat-icon-button
-    [matBadge]="userSvc.userList().length"
-    matBadgePosition="below"
-    matBadgeSize="small"
-    [matMenuTriggerFor]="usersMenu"
-    [title]="t('users')"
-  >
-    <fa-icon [icon]="icon.faUsers" class="text-purple" [fixedWidth]="true" />
+  <button mat-icon-button [matMenuTriggerFor]="usersMenu" [title]="t('users')">
+    <div [matBadge]="userSvc.userList().length" matBadgeSize="small">
+      <fa-icon [icon]="icon.faUsers" class="text-purple" [fixedWidth]="true" />
+    </div>
   </button>
   <mat-menu #usersMenu="matMenu">
     <ng-template matMenuContent>

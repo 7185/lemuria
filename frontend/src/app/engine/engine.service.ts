@@ -86,7 +86,7 @@ const lightFxMap: Record<string, (now: number, rnd: number) => number> = {
   fire: (_, rnd) => rnd * 0.4 + 0.8,
   pulse: (now) => Math.sin(((now / 1000) % 1) * Math.PI),
   flash: (_, rnd) => +(rnd <= 0.02),
-  flicker: (_, rnd) => +(rnd > 0.02),
+  flicker: (_, rnd) => +(rnd > 0.02)
 }
 
 @Injectable({providedIn: 'root'})
