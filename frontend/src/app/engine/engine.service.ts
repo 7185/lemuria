@@ -339,14 +339,14 @@ export class EngineService {
   }
 
   get position(): [Vector3, Vector3] {
-    if (!this.player) {
-      this.tmpPositionTuple[0] = ZERO_VEC
-      this.tmpPositionTuple[1] = ZERO_VEC
-    } else {
+    if (this.player) {
       this.tmpPosCache.copy(this.player.position)
       this.tmpRotCache.setFromEuler(this.player.rotation)
       this.tmpPositionTuple[0] = this.tmpPosCache
       this.tmpPositionTuple[1] = this.tmpRotCache
+    } else {
+      this.tmpPositionTuple[0] = ZERO_VEC
+      this.tmpPositionTuple[1] = ZERO_VEC
     }
     return this.tmpPositionTuple
   }
@@ -536,10 +536,10 @@ export class EngineService {
 
   animate(): void {
     this.clock = new Clock(true)
-    if (document.readyState !== 'loading') {
-      this.render()
-    } else {
+    if (document.readyState === 'loading') {
       fromEvent(globalThis, 'DOMContentLoaded').subscribe(() => this.render())
+    } else {
+      this.render()
     }
     fromEvent(globalThis, 'resize').subscribe(() => this.resize())
     fromEvent(globalThis, 'visibilitychange').subscribe(() => {

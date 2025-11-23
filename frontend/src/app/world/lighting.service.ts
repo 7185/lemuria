@@ -17,9 +17,9 @@ export interface LightData {
 
 @Injectable({providedIn: 'root'})
 export class LightingService {
-  private light: AmbientLight
-  private dirLight: DirectionalLight
-  private dirLightTargetObj: Object3D
+  private readonly light: AmbientLight
+  private readonly dirLight: DirectionalLight
+  private readonly dirLightTargetObj: Object3D
   private readonly engineSvc = inject(EngineService)
 
   constructor() {

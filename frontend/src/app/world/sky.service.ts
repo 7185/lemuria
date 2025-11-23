@@ -108,14 +108,14 @@ export class SkyService {
     // 8 triangle faces to make an octahedron
     // prettier-ignore
     octGeom.setIndex([
-          4, 0, 1, // top north east face
-          4, 1, 2, // top south east face
-          4, 2, 3, // top south west face
-          4, 3, 0, // top north west face
-          5, 1, 0, // bottom north east face
-          5, 2, 1, // bottom south east face
-          5, 3, 2, // bottom south west face
-          5, 0, 3  // bottom north west face
+          4, 0, 1, // top north-east face
+          4, 1, 2, // top south-east face
+          4, 2, 3, // top south-west face
+          4, 3, 0, // top north-west face
+          5, 1, 0, // bottom north-east face
+          5, 2, 1, // bottom south-east face
+          5, 3, 2, // bottom south-west face
+          5, 0, 3  // bottom north-west face
         ])
 
     octGeom.addGroup(0, octGeom.getIndex()!.count, 0)

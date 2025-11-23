@@ -1,10 +1,10 @@
 import fs from 'fs/promises'
 import readline from 'readline'
-import {PrismaBetterSQLite3} from '@prisma/adapter-better-sqlite3'
+import {PrismaBetterSqlite3} from '@prisma/adapter-better-sqlite3'
 import {PrismaClient} from '../generated/prisma/client'
 
 const db = new PrismaClient({
-  adapter: new PrismaBetterSQLite3({
+  adapter: new PrismaBetterSqlite3({
     url: process.env.ADAPTER_URL
   })
 })
@@ -136,7 +136,7 @@ const parseAtdump = async (attrFile: string): Promise<any> => {
       const colorIndex = 'rgb'.indexOf(lastKey)
       target[colorIndex] = parseInt(value)
     } else {
-      target[lastKey] = !isNaN(Number(value)) ? Number(value) : value
+      target[lastKey] = isNaN(Number(value)) ? value : Number(value)
     }
   }
 
@@ -303,13 +303,13 @@ export const importWorld = async (
     await db.$queryRaw`SELECT * FROM world WHERE LOWER(name) = ${worldName.toLowerCase()}`
   let world = worlds[0]
 
-  if (!world) {
-    world = await db.world.create({
+  if (world) {
+    world = await db.world.update({
+      where: {id: world.id},
       data: {name: attrDict.name, data: JSON.stringify(attrDict)}
     })
   } else {
-    world = await db.world.update({
-      where: {id: world.id},
+    world = await db.world.create({
       data: {name: attrDict.name, data: JSON.stringify(attrDict)}
     })
   }

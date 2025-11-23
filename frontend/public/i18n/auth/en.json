@@ -1,8 +1,9 @@
 {
-  "login-error": "Wrong login or password.",
+  "loginError": "Wrong login or password.",
   "password": "Password",
-  "password-required": "Password is required.",
-  "sign-in": "Sign in",
+  "passwordRequired": "Password is required.",
+  "signIn": "Sign in",
   "username": "Username",
-  "username-required": "Username is required."
+  "usernameRequired": "Username is required.",
+  "usernameTooShort": "Username is too short."
 }

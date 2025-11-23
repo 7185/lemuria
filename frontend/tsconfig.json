@@ -5,10 +5,12 @@
   "compilerOptions": {
     "outDir": "./dist/out-tsc",
     "strict": false,
+    "esModuleInterop": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "bundler",
     "skipLibCheck": true,
     "isolatedModules": true,
     "sourceMap": true,
@@ -17,10 +19,6 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "preserve",
-    "lib": [
-      "ES2022",
-      "dom"
-    ],
     "paths": {
       "@lemuria/action-parser": ["../action-parser/src"]
     },

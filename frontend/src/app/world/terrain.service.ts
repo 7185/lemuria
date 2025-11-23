@@ -287,7 +287,7 @@ export class TerrainService {
       let changeTexture = 0
       let currTexture = 0
       for (let k = 0; k < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE; k++) {
-        const newTexture = elevData[k] != null ? elevData[k][0] : 0
+        const newTexture = elevData[k] == null ? 0 : elevData[k][0]
 
         if (elevData[k] != null && elevData[k][0] === 254) {
           // Empty cell
@@ -432,7 +432,7 @@ export class TerrainService {
     if (pages.northWest) {
       // We can fix current north-west corner
       const [nwPositions, nwIndices] = this.getPosAndIndex(pages.northWest)
-      // Get north west page's south east corner (0 = first face)
+      // Get north-west page's south-east corner (0 = first face)
       const seCorner = nwPositions.getY(nwIndices.getX(0))
       // Set corner
       positions.setY(indices.getY(lastFaceIndex * 3), seCorner)
@@ -442,7 +442,7 @@ export class TerrainService {
     if (pages.southEast) {
       // We can fix south-east page's north-west corner
       const [sePositions, seIndices] = this.getPosAndIndex(pages.southEast)
-      // Get current south east corner (0 = first face)
+      // Get current south-east corner (0 = first face)
       const seCorner = positions.getY(indices.getX(0))
       // Set corner
       sePositions.setY(seIndices.getY(lastFaceIndex * 3), seCorner)
@@ -489,11 +489,11 @@ export class TerrainService {
       return
     }
     // Display BVH
-    if (terrainMesh.userData.bvhHelper != null) {
-      terrainMesh.userData.bvhHelper.update()
-    } else {
+    if (terrainMesh.userData.bvhHelper == null) {
       terrainMesh.userData.bvhHelper = new MeshBVHHelper(terrainMesh, 20)
       terrainMesh.parent!.add(terrainMesh.userData.bvhHelper)
+    } else {
+      terrainMesh.userData.bvhHelper.update()
     }
   }
 }

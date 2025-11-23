@@ -1,7 +1,7 @@
 import {WebSocketGateway, WebSocketServer} from '@nestjs/websockets'
 import {noop, timer} from 'rxjs'
 import type {IncomingMessage} from 'http'
-import {Server, WebSocket} from 'ws'
+import type {Server, WebSocket} from 'ws'
 import {UserService} from '../user/user.service'
 import {config} from '../app.config'
 

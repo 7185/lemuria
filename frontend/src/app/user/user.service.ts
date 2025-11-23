@@ -45,15 +45,16 @@ export class UserService {
 
   setAvatar(userId: string, avatarId: number) {
     const user = this.getUser(userId)
-    if (user?.id !== this.http.getLogged()().id) {
-      user.avatar = avatarId
-      this.avatarChanged.next(user)
+    if (user?.id === this.http.getLogged()().id) {
+      return
     }
+    user.avatar = avatarId
+    this.avatarChanged.next(user)
   }
 
   setPosition(
     userId: string,
-    postion: [Vector3, Vector3],
+    position: [Vector3, Vector3],
     state = 'idle',
     gesture: string | null = null
   ) {
@@ -62,12 +63,12 @@ export class UserService {
       return
     }
     if (
-      u.x !== postion[0].x ||
-      u.y !== postion[0].y ||
-      u.z !== postion[0].z ||
-      u.roll !== postion[1].x ||
-      u.yaw !== postion[1].y ||
-      u.pitch !== postion[1].z ||
+      u.x !== position[0].x ||
+      u.y !== position[0].y ||
+      u.z !== position[0].z ||
+      u.roll !== position[1].x ||
+      u.yaw !== position[1].y ||
+      u.pitch !== position[1].z ||
       u.gesture !== gesture
     ) {
       u.oldX = u.x
@@ -76,12 +77,12 @@ export class UserService {
       u.oldRoll = u.roll
       u.oldYaw = u.yaw
       u.oldPitch = u.pitch
-      u.x = postion[0].x
-      u.y = postion[0].y
-      u.z = postion[0].z
-      u.roll = postion[1].x
-      u.yaw = postion[1].y
-      u.pitch = postion[1].z
+      u.x = position[0].x
+      u.y = position[0].y
+      u.z = position[0].z
+      u.roll = position[1].x
+      u.yaw = position[1].y
+      u.pitch = position[1].z
       u.completion = 0
       u.state = state
       u.gesture = gesture

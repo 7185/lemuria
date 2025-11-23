@@ -1,6 +1,6 @@
 import {inject} from '@angular/core'
 import {Router} from '@angular/router'
-import {HttpService} from '../network/http.service'
+import {HttpService} from '../network'
 
 /**
  * Guard for routing

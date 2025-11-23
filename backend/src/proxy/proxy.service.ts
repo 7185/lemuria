@@ -1,8 +1,7 @@
 import {HttpService} from '@nestjs/axios'
 import {Inject, Injectable} from '@nestjs/common'
-import {CACHE_MANAGER} from '@nestjs/cache-manager'
+import {CACHE_MANAGER, Cache} from '@nestjs/cache-manager'
 import {map, of} from 'rxjs'
-import {Cache} from 'cache-manager'
 
 @Injectable()
 export class ProxyService {

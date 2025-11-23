@@ -2,8 +2,7 @@
   <mat-card class="card-sign-in">
     <form
       class="form-sign-in"
-      (ngSubmit)="onLogin()"
-      [formGroup]="loginForm"
+      (submit)="onLogin($event)"
       *transloco="let t; prefix: 'auth'"
     >
       <app-logo />
@@ -15,15 +14,16 @@
         <input
           matInput
           type="text"
-          formControlName="username"
+          [field]="loginForm.username"
           autocomplete="username"
-          required
         />
         @if (loginError) {
-          <mat-error>{{ t('login-error') }}</mat-error>
+          <mat-error>{{ t('loginError') }}</mat-error>
         }
-        @if (usernameCtl.dirty && usernameCtl.errors?.required) {
-          <mat-error>{{ t('username-required') }}</mat-error>
+        @if (loginForm.username().touched() && loginForm.username().invalid()) {
+          @for (error of loginForm.username().errors(); track error) {
+            <mat-error>{{ error.message }}</mat-error>
+          }
         }
       </mat-form-field>
       <mat-form-field appearance="outline">
@@ -31,13 +31,23 @@
           <fa-icon [icon]="icon.faKey" [fixedWidth]="true" />
           <span>{{ t('password') }}</span>
         </mat-label>
-        <input
-          matInput
-          [type]="hide ? 'password' : 'text'"
-          formControlName="password"
-          autocomplete="current-password"
-          required
-        />
+        @if (hide) {
+          <input
+            matInput
+            type="password"
+            [field]="loginForm.password"
+            formControlName="password"
+            autocomplete="current-password"
+          />
+        } @else {
+          <input
+            matInput
+            type="text"
+            [field]="loginForm.password"
+            formControlName="password"
+            autocomplete="current-password"
+          />
+        }
         <button
           mat-icon-button
           type="button"
@@ -53,8 +63,10 @@
             <fa-icon [icon]="icon.faEye" [fixedWidth]="true" />
           }
         </button>
-        @if (passwordCtl.dirty && passwordCtl.errors?.required) {
-          <mat-error>{{ t('password-required') }}</mat-error>
+        @if (loginForm.password().touched() && loginForm.password().invalid()) {
+          @for (error of loginForm.password().errors(); track error) {
+            <mat-error>{{ error.message }}</mat-error>
+          }
         }
       </mat-form-field>
       @if (!processing) {
@@ -63,9 +75,9 @@
           color="primary"
           class="btn-sign-in"
           type="submit"
-          [disabled]="loginForm.invalid"
+          [disabled]="loginForm().invalid()"
         >
-          {{ t('sign-in') }}
+          {{ t('signIn') }}
         </button>
       } @else {
         <button

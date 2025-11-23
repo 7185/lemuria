@@ -24,6 +24,7 @@ COPY --from=frontend --chown=nobody:nobody /root/static /backend/static
 RUN apk add --update --no-cache icu-libs openssl && \
     python -m venv /venv && \
     pip install --no-cache-dir -r /backend/requirements.txt && \
+    sed -i 's/provider ="sqlite"/provider = "sqlite"\nurl = env("DATABASE_URL")/' /backend/prisma/schema.prisma && \
     prisma generate --schema /backend/prisma/schema.prisma --generator client-py && \
     rm -r /root/.cache/prisma /root/.cache/prisma-python/nodeenv /root/.npm && \
     chown nobody: -R /root /backend

@@ -1,5 +1,5 @@
-import {ChangeDetectionStrategy, Component, inject} from '@angular/core'
-import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms'
+import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
+import {form, Field, minLength, required} from '@angular/forms/signals'
 import {ActivatedRoute, Router} from '@angular/router'
 import {MatButton, MatIconButton} from '@angular/material/button'
 import {MatCard} from '@angular/material/card'
@@ -16,13 +16,16 @@ import {
   faKey,
   faUser
 } from '@fortawesome/free-solid-svg-icons'
-import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
+import {
+  provideTranslocoScope,
+  translateSignal,
+  TranslocoDirective
+} from '@jsverse/transloco'
 import {SettingsService} from '../settings/settings.service'
 
 @Component({
   imports: [
     TranslocoDirective,
-    ReactiveFormsModule,
     MatButton,
     MatCard,
     MatIconButton,
@@ -32,7 +35,8 @@ import {SettingsService} from '../settings/settings.service'
     MatFormField,
     MatSuffix,
     FaIconComponent,
-    LogoComponent
+    LogoComponent,
+    Field
   ],
   providers: [provideTranslocoScope('auth')],
   selector: 'app-auth',
@@ -54,36 +58,38 @@ export class AuthComponent {
   loginError = false
 
   protected readonly http = inject(HttpService)
-  private readonly fb = inject(FormBuilder)
   private readonly router = inject(Router)
   private readonly route = inject(ActivatedRoute)
   private readonly settings = inject(SettingsService)
 
   private readonly returnUrl = this.route.snapshot.queryParams.next || '/'
-  usernameCtl = this.fb.control('', [
-    Validators.required,
-    Validators.minLength(2)
-  ])
-  passwordCtl = this.fb.control('', [Validators.required])
-  loginForm = this.fb.group({
-    username: this.usernameCtl,
-    password: this.passwordCtl
+  loginModel = signal<{username: string; password: string}>({
+    username: this.settings.get('login') ?? '',
+    password: ''
+  })
+  loginForm = form(this.loginModel, (fieldPath) => {
+    required(fieldPath.username, {
+      message: translateSignal('usernameRequired')
+    })
+    minLength(fieldPath.username, 2, {
+      message: translateSignal('usernameTooShort')
+    })
+    required(fieldPath.password, {
+      message: translateSignal('passwordRequired')
+    })
   })
 
   constructor() {
-    this.loginForm.setValue({
-      username: this.settings.get('login') ?? '',
-      password: ''
-    })
     if (this.http.isLogged()) {
       this.router.navigate([this.returnUrl])
     }
   }
 
-  onLogin(): void {
+  onLogin(event: Event): void {
+    event.preventDefault()
     this.processing = true
     this.http
-      .login(this.loginForm.value.username, this.loginForm.value.password)
+      .login(this.loginModel().username, this.loginModel().password)
       .pipe(
         finalize(() => {
           this.processing = false
@@ -91,7 +97,7 @@ export class AuthComponent {
       )
       .subscribe({
         next: () => {
-          this.settings.set('login', this.loginForm.value.username)
+          this.settings.set('login', this.loginModel().username)
           this.loginError = false
           this.router.navigate([this.returnUrl])
         },

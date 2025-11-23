@@ -1,6 +1,5 @@
 import {Inject, Injectable} from '@nestjs/common'
-import {CACHE_MANAGER} from '@nestjs/cache-manager'
-import {Cache} from 'cache-manager'
+import {CACHE_MANAGER, Cache} from '@nestjs/cache-manager'
 import {DbService} from '../db/db.service'
 import {World} from './world'
 
@@ -37,7 +36,7 @@ export class WorldService {
     minZ: number | null,
     maxZ: number | null
   ) {
-    // Having a null value on one of those coordinate criterias means no bound will be applied when querying all objects
+    // Having a null value on one of those coordinate criteria means no bound will be applied when querying all objects
     const orClause: {
       x?: {gte?: number; lt?: number}
       y?: {gte?: number; lt?: number}

@@ -132,7 +132,7 @@ class ActionVisitor extends BaseActionVisitor {
         targetName: (ctx.nameParameter[0].children.Resource[0] as IToken).image
       })
     }
-    return res.color != null ? res : null
+    return res.color == null ? null : res
   }
 
   coronaCommand(ctx: CoronaCommandCtx) {

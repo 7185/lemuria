@@ -78,7 +78,7 @@ export class UiControlsComponent {
       .pipe(take(1), timeout(5000), takeUntil(this.cancel))
       .subscribe({
         next: (e: KeyboardEvent) => {
-          this.controlsKeymap[key][pos] = e.code !== 'Escape' ? e.code : null
+          this.controlsKeymap[key][pos] = e.code === 'Escape' ? null : e.code
           this.setKeymap()
           this.activeKey.set([null, null])
           if (this.cancel != null) {

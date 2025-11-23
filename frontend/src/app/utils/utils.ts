@@ -54,7 +54,7 @@ export const radNormalized = (value: number): number => {
 }
 
 /**
- * Converts RGB values to an hex color number
+ * Converts RGB values to a hex color number
  *
  * @param red Red value
  * @param green Green value
@@ -66,7 +66,7 @@ export const rgbToHex = (red: number, green: number, blue: number): number => {
 }
 
 /**
- * Converts an hex color to RGB values
+ * Converts a hex color to RGB values
  *
  * @param hex Color number
  * @returns RGB values array
@@ -86,7 +86,7 @@ export const colorStrToHex = (color: string): number => {
 }
 
 /**
- * Converts an hex color to string
+ * Converts a hex color to string
  *
  * @param color Hex color
  * @returns Color string

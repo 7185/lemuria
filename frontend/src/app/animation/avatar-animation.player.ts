@@ -25,7 +25,7 @@ export class AvatarAnimationPlayer {
   private currentTransition: ThreeSequence | null = null
   private currentGesture: string | null = null
   private avatarAnimationManager: AvatarAnimationManager
-  private avatarGroup: Group
+  private readonly avatarGroup: Group
 
   constructor(
     avatarAnimationManager: AvatarAnimationManager,
@@ -74,7 +74,7 @@ export class AvatarAnimationPlayer {
     // Choose which state to move in based on the velocity
 
     let newFallbackState = null
-    let newState = null
+    let newState: AnimationEntry
     const newGesture = gesture
 
     switch (state) {
@@ -247,9 +247,9 @@ export class AvatarAnimationPlayer {
       // Note: location from frames is not meant to be applied in implicit animations (hence the 'false')
       this.step(
         threeSequence,
-        velocityMultiplier !== null
-          ? deltaSecond * velocity * velocityMultiplier
-          : deltaSecond,
+        velocityMultiplier === null
+          ? deltaSecond
+          : deltaSecond * velocity * velocityMultiplier,
         false,
         true
       )
@@ -312,11 +312,11 @@ export class AvatarAnimationPlayer {
     if (frame === undefined) {
       // Frame not found, we're done with the current animation
       return true
-    } else {
-      this.lastPlayedFrame.joints = frame.joints
-      if (!updateLocation) {
-        this.lastPlayedFrame.location.set(0, 0, 0)
-      }
+    }
+
+    this.lastPlayedFrame.joints = frame.joints
+    if (!updateLocation) {
+      this.lastPlayedFrame.location.set(0, 0, 0)
     }
 
     for (const [key, q] of Object.entries(frame.joints)) {

@@ -1,8 +1,9 @@
 {
-  "login-error": "Utilisateur inconnu ou mauvais mot de passe.",
+  "loginError": "Utilisateur inconnu ou mauvais mot de passe.",
   "password": "Mot de passe",
-  "password-required": "Le mot de passe est requis.",
-  "sign-in": "Connexion",
+  "passwordRequired": "Le mot de passe est requis.",
+  "signIn": "Connexion",
   "username": "Nom d'utilisateur",
-  "username-required": "Le nom d'utilisateur est requis."
+  "usernameRequired": "Le nom d'utilisateur est requis.",
+  "usernameTooShort": "Le nom d'utilisateur est trop court."
 }
