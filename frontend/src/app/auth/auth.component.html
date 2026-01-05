@@ -31,23 +31,13 @@
           <fa-icon [icon]="icon.faKey" [fixedWidth]="true" />
           <span>{{ t('password') }}</span>
         </mat-label>
-        @if (hide) {
-          <input
-            matInput
-            type="password"
-            [field]="loginForm.password"
-            formControlName="password"
-            autocomplete="current-password"
-          />
-        } @else {
-          <input
-            matInput
-            type="text"
-            [field]="loginForm.password"
-            formControlName="password"
-            autocomplete="current-password"
-          />
-        }
+        <input
+          matInput
+          [type]="hide ? 'password' : 'text'"
+          [field]="loginForm.password"
+          formControlName="password"
+          autocomplete="current-password"
+        />
         <button
           mat-icon-button
           type="button"
