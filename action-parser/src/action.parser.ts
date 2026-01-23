@@ -639,17 +639,102 @@ export class ActionParser extends CstParser {
     return {[trigger]: commands}
   })
 
+  consumeError = this.RULE('consumeError', () => {
+    this.AT_LEAST_ONE(() => {
+      this.OR([
+        {
+          GATE: () => this.LA(1).tokenType.name !== 'Equals',
+          ALT: () => this.CONSUME(Resource)
+        },
+        {ALT: () => this.CONSUME(Comma)},
+        {ALT: () => this.CONSUME(Equals)}
+      ])
+    })
+  })
+
   actions = this.RULE('actions', () => {
-    const actionList = [this.SUBRULE(this.action)]
+    const actionList = []
+    this.OPTION(() => {
+      this.OR([
+        {
+          GATE: () =>
+            ['Create', 'Activate', 'Bump', 'Adone'].includes(
+              this.LA(1).tokenType.name
+            ),
+          ALT: () => actionList.push(this.SUBRULE(this.action))
+        },
+        {ALT: () => this.SUBRULE(this.consumeError)}
+      ])
+    })
+
     this.MANY(() => {
       this.CONSUME(Semicolon)
-      const nextAction = this.SUBRULE1(this.action)
-      if (nextAction) {
-        actionList.push(nextAction)
-      }
+      this.OPTION1(() => {
+        this.OR1([
+          {
+            GATE: () =>
+              ['Create', 'Activate', 'Bump', 'Adone'].includes(
+                this.LA(1).tokenType.name
+              ),
+            ALT: () => {
+              const nextAction = this.SUBRULE1(this.action)
+              if (nextAction) {
+                actionList.push(nextAction)
+              }
+            }
+          },
+          {
+            GATE: () => this.LA(1).tokenType.name !== 'Semicolon',
+            ALT: () => this.SUBRULE1(this.consumeError)
+          }
+        ])
+      })
     })
-    // Optional trailing semicolons
-    this.OPTION(() => this.MANY1(() => this.CONSUME1(Semicolon)))
+
+    // This OPTION for trailing semicolons is tricky because MANY loop above consumes semicolons.
+    // However, if we have ;;;, the MANY consumes one ;, then enters OPTION1.
+    // Inside OPTION1, we check if Semicolon. If Semicolon, GATE fails (name !== 'Semicolon').
+    // So OPTION1 matches nothing (empty).
+    // Then MANY repeats. Next char is ;.
+    // So MANY consumes ;.
+    // So multiple semicolons should be consumed by MANY loop.
+    // BUT, the GATE in consumeError was preventing consumption of Semicolon?
+    // consumeError consumes Resource, Comma, Equals.
+    // If I have ;;;
+    // 1. ; consumed by CONSUME(Semicolon)
+    // 2. Next is ;. OPTION1 enters.
+    //    GATE !Semicolon -> false.
+    //    So OPTION1 is empty.
+    // 3. MANY repeats. Next is ;.
+    //    CONSUME(Semicolon).
+    // 4. ...
+    // So existing logic should handle multiple semicolons.
+    // Why did `whitespace and semicolons do not matter` fail?
+    // `create   color        abcdef;;;;;;`
+    // Maybe `abcdef` was consumed by `consumeError`?
+    // `create color` -> action.
+    // `abcdef` -> invalid command?
+    // Wait, `create color abcdef` is parsed as `create color` with resource `abcdef`.
+    // The test says:
+    // `create   color        abcdef;;;;;;` -> `color: {r: 171, g: 205, b: 239}`.
+    // `abcdef` is a hex color? #abcdef is r=171, g=205, b=239.
+    // Ah, `create color` consumes `Resource`. `abcdef` is a resource.
+    // So `create color abcdef` is a valid action.
+    // The semicolons follow.
+    // `action` returns.
+    // MANY loop starts.
+    // CONSUME(Semicolon).
+    // Remaining ;;;;;
+    // OPTION1 -> GATE !Semicolon -> false. Empty.
+    // MANY repeats.
+    // CONSUME(Semicolon).
+    // ...
+    // Until EOF.
+    // So it should work.
+
+    // Let's remove the extra trailing semicolon rule as it might be redundant or causing ambiguity if MANY doesn't consume all.
+    // this.OPTION(() => this.MANY1(() => this.CONSUME1(Semicolon)))
+
     return actionList
   })
 }

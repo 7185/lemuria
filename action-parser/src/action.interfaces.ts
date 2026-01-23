@@ -267,5 +267,6 @@ export interface ActionCtx {
 }
 
 export interface ActionsCtx {
-  action: CstNode[]
+  action?: CstNode[]
+  consumeError?: CstNode[]
 }

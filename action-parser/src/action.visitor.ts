@@ -594,6 +594,9 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   action(ctx: ActionCtx) {
+    if (!ctx.trigger || !ctx.command) {
+      return {}
+    }
     const type = this.visit(ctx.trigger)
     const commands = ctx.command.map((command) => this.visit(command))
     const result: Record<string, object[]> = {}
@@ -618,14 +621,18 @@ class ActionVisitor extends BaseActionVisitor {
     return result
   }
 
+  consumeError() {
+    return {}
+  }
+
   actions(ctx: ActionsCtx) {
-    const actions = ctx.action.map((action) => this.visit(action))
+    const actions = (ctx.action || []).map((action) => this.visit(action))
 
     // Filter out duplicate actions of the same type, keeping only the first one
     const actionsMap = new Map<string, object>()
     actions.forEach((action) => {
       const [key] = Object.keys(action)
-      if (!actionsMap.has(key)) {
+      if (key && !actionsMap.has(key)) {
         actionsMap.set(key, action)
       }
     })
@@ -655,16 +662,40 @@ export class Action {
     parserInstance.input = lexResult.tokens
 
     const cst = parserInstance.actions()
-    return parserInstance.errors.length > 0 ? {} : this.visitor.visit(cst)
+
+    if (parserInstance.errors.length > 0) {
+      console.error(parserInstance.errors)
+    }
+
+    return this.visitor.visit(cst)
   }
 
   debug(inputText: string) {
     const lexResult = this.lexer.tokenize(inputText)
     parserInstance.input = lexResult.tokens
 
-    parserInstance.actions()
-    return parserInstance.errors.length > 0
-      ? parserInstance.errors[0].message
-      : 'OK'
+    const cst = parserInstance.actions()
+
+    if (parserInstance.errors.length > 0) {
+      return parserInstance.errors[0].message
+    }
+
+    // Check if consumeError was used in CST
+    const checkForError = (node: any): boolean => {
+      if (!node) return false
+      if (node.name === 'consumeError') return true
+      if (node.children) {
+        return Object.values(node.children).some((children: any) =>
+          children.some((child: any) => checkForError(child))
+        )
+      }
+      return false
+    }
+
+    if (checkForError(cst)) {
+      return 'Invalid action'
+    }
+
+    return 'OK'
   }
 }
