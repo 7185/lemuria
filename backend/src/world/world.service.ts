@@ -106,23 +106,57 @@ export class WorldService {
         }
       })) {
         const width = elev.radius * 2
-        const textures = (elev.textures ?? '')
-          .split(' ')
-          .map((n: string) => parseInt(n))
-        const heights = (elev.heights ?? '')
-          .split(' ')
-          .map((n: string) => parseInt(n))
-        for (let i = 0; i < width; i++) {
-          const row = i * 128
-          for (let j = 0; j < width; j++) {
-            const idx = width * i + j
-            const texture = idx < textures.length ? textures[idx] : textures[0]
-            const height = idx < heights.length ? heights[idx] : heights[0]
-            if (texture === 0 && height === 0) {
-              continue
+        let textures: number[]
+        if (!elev.textures || elev.textures.length === 0) {
+          textures = [0]
+        } else if (elev.textures.indexOf(' ') === -1) {
+          textures = [parseInt(elev.textures)]
+        } else {
+          textures = elev.textures.split(' ').map((n: string) => parseInt(n))
+        }
+        let heights: number[]
+        if (!elev.heights || elev.heights.length === 0) {
+          heights = [0]
+        } else if (elev.heights.indexOf(' ') === -1) {
+          heights = [parseInt(elev.heights)]
+        } else {
+          heights = elev.heights.split(' ').map((n: string) => parseInt(n))
+        }
+
+        const zOffset = elev.node_z * 128
+        const nodeX = elev.node_x
+
+        if (textures.length === 1 && heights.length === 1) {
+          const t = textures[0]
+          const h = heights[0]
+          if (t === 0 && h === 0) {
+            continue
+          }
+          for (let i = 0; i < width; i++) {
+            const row = i * 128
+            for (let j = 0; j < width; j++) {
+              const cell = row + j + nodeX + zOffset
+              page[cell] = [t, h]
             }
-            const cell = row + j + elev.node_x + elev.node_z * 128
-            page[cell] = [texture, height]
+          }
+        } else {
+          const tLen = textures.length
+          const hLen = heights.length
+          const t0 = textures[0]
+          const h0 = heights[0]
+          for (let i = 0; i < width; i++) {
+            const row = i * 128
+            const baseIdx = width * i
+            for (let j = 0; j < width; j++) {
+              const idx = baseIdx + j
+              const texture = idx < tLen ? textures[idx] : t0
+              const height = idx < hLen ? heights[idx] : h0
+              if (texture === 0 && height === 0) {
+                continue
+              }
+              const cell = row + j + nodeX + zOffset
+              page[cell] = [texture, height]
+            }
           }
         }
       }
