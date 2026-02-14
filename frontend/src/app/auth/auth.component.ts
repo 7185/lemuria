@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
-import {form, Field, minLength, required} from '@angular/forms/signals'
+import {form, FormField, minLength, required} from '@angular/forms/signals'
 import {ActivatedRoute, Router} from '@angular/router'
 import {MatButton, MatIconButton} from '@angular/material/button'
 import {MatCard} from '@angular/material/card'
@@ -36,7 +36,7 @@ import {SettingsService} from '../settings/settings.service'
     MatSuffix,
     FaIconComponent,
     LogoComponent,
-    Field
+    FormField
   ],
   providers: [provideTranslocoScope('auth')],
   selector: 'app-auth',

@@ -90,7 +90,7 @@ export class WsGateway {
     this.userSvc.broadcast({type: 'join', data: user.id})
   }
 
-  handleDisconnect(client: any) {
+  handleDisconnect(client: WebSocket) {
     for (const user of this.userSvc.authorizedUsers) {
       for (const websocket of user.websockets) {
         if (websocket === client) {

@@ -14,7 +14,7 @@
         <input
           matInput
           type="text"
-          [field]="loginForm.username"
+          [formField]="loginForm.username"
           autocomplete="username"
         />
         @if (loginError) {
@@ -34,8 +34,7 @@
         <input
           matInput
           [type]="hide ? 'password' : 'text'"
-          [field]="loginForm.password"
-          formControlName="password"
+          [formField]="loginForm.password"
           autocomplete="current-password"
         />
         <button

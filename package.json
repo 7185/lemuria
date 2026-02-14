@@ -4,19 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "format": "npm -ws run format",
-    "lint": "npm -ws run lint",
+    "format": "npm --workspaces run format",
+    "lint": "npm ---workspaces run lint",
     "test": "npm -w action-parser -w backend run test",
     "patch:frontend": "patch-package"
   },
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.10.0",
-    "@types/node": "^24.10.4",
+    "@types/node": "^24.10.13",
     "eslint": "^9.39.2",
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.52.0"
+    "typescript-eslint": "^8.55.0"
   },
   "workspaces": [
     "action-parser",

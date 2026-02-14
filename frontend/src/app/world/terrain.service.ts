@@ -14,8 +14,8 @@ import {
 } from 'three'
 import type {Observable} from 'rxjs'
 import {forkJoin, from, map} from 'rxjs'
-import type {MeshBVHOptions} from 'three-mesh-bvh'
-import {MeshBVHHelper} from 'three-mesh-bvh'
+import type {BVHOptions} from 'three-mesh-bvh'
+import {BVHHelper} from 'three-mesh-bvh'
 import {EngineService} from '../engine/engine.service'
 import {PropService} from './prop.service'
 import {HttpService} from '../network'
@@ -484,13 +484,13 @@ export class TerrainService {
       return
     }
     // Force indirect (experimental) to avoid messed up faces
-    terrainMesh.geometry.computeBoundsTree({indirect: true} as MeshBVHOptions)
+    terrainMesh.geometry.computeBoundsTree({indirect: true} as BVHOptions)
     if (!environment.debug) {
       return
     }
     // Display BVH
     if (terrainMesh.userData.bvhHelper == null) {
-      terrainMesh.userData.bvhHelper = new MeshBVHHelper(terrainMesh, 20)
+      terrainMesh.userData.bvhHelper = new BVHHelper(terrainMesh, 20)
       terrainMesh.parent!.add(terrainMesh.userData.bvhHelper)
     } else {
       terrainMesh.userData.bvhHelper.update()

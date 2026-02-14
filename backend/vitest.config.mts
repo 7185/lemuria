@@ -8,7 +8,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8'
     },
-    exclude: ['dist/**/*']
+    exclude: ['dist/**/*', 'node_modules/**/*']
   },
   plugins: [
     swc.vite({

@@ -13,8 +13,10 @@ const bootstrap = async () => {
     AppModule,
     new FastifyAdapter({
       logger: false,
-      // allow trailing slashes
-      ignoreTrailingSlash: true
+      routerOptions: {
+        // allow trailing slashes in routes
+        ignoreTrailingSlash: true
+      }
     }),
     {
       bufferLogs: true

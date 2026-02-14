@@ -4,10 +4,7 @@ import {
   withFetch,
   withInterceptors
 } from '@angular/common/http'
-import {
-  provideBrowserGlobalErrorListeners,
-  provideZonelessChangeDetection
-} from '@angular/core'
+import {provideBrowserGlobalErrorListeners} from '@angular/core'
 import {provideRouter, withViewTransitions} from '@angular/router'
 import {bootstrapApplication} from '@angular/platform-browser'
 import {AppComponent} from './app/app.component'
@@ -21,7 +18,6 @@ bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(appRoutes, withViewTransitions()),
     provideBrowserGlobalErrorListeners(),
-    provideZonelessChangeDetection(),
     provideHttpClient(withFetch(), withInterceptors([jwtInterceptor])),
     provideTransloco({
       config: {

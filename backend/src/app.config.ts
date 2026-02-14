@@ -1,4 +1,24 @@
-export const config: any = {
+interface AppConfig {
+  cache: {
+    threshold: number
+    timeout: number
+  }
+  cookie: {
+    secure: boolean
+    sameSite: 'strict' | 'lax' | 'none'
+    accessName: string
+    accessExpires: number
+    accessPath: string
+    refreshName: string
+    refreshExpires: number
+    refreshPath: string
+  }
+  positionUpdateTick: number
+  heartbeatRate: number
+  secret: string
+}
+
+export const config: AppConfig = {
   cache: {
     threshold: 5000,
     timeout: 3600

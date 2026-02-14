@@ -25,43 +25,40 @@ export const textCanvas = async (
   ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`
   ctx.textBaseline = 'middle'
 
-  let fontSize = 128
-  let fontFit = false
+  let lowIdx = 1
+  let highIdx = 64 // 128px max
+  let bestSize = 2
+  let bestLines: string[] = []
 
-  // Find the maximum font size that fits the text without cropping
-  while (!fontFit && fontSize > 0) {
-    ctx.font = `500 ${fontSize}px Arimo,Arial,sans-serif`
+  while (lowIdx <= highIdx) {
+    const midIdx = Math.floor((lowIdx + highIdx) / 2)
+    const currentSize = midIdx * 2 // Even
+
+    ctx.font = `500 ${currentSize}px Arimo,Arial,sans-serif`
     const lines = breakTextIntoLines(text, ctx, canvasWidth)
 
-    const totalHeight = lines.length * fontSize * 1.2
-    const totalWidth = Math.max(
-      ...lines.map((line) => ctx.measureText(line).width)
-    )
+    const totalHeight = lines.length * currentSize * 1.2
+    const maxWidth =
+      lines.length > 0
+        ? Math.max(...lines.map((l) => ctx.measureText(l).width))
+        : 0
 
-    const heightDifference = totalHeight - canvasHeight
-    const widthDifference = totalWidth - canvasWidth
-    // Estimate how big the adjustment needs to be in order to avoid too many measureText calls
-    const adjustment = Math.trunc(
-      Math.max(heightDifference, widthDifference) / fontSize
-    )
-
-    if (heightDifference <= 0 && widthDifference <= 0) {
-      fontFit = true
+    if (totalHeight <= canvasHeight && maxWidth <= canvasWidth) {
+      bestSize = currentSize
+      bestLines = lines
+      lowIdx = midIdx + 1
     } else {
-      // Keep the size even
-      fontSize -= adjustment & ~1 || 2
+      highIdx = midIdx - 1
     }
   }
 
-  const lines = breakTextIntoLines(text, ctx, canvasWidth)
-
-  ctx.font = `500 ${fontSize}px Arimo,Arial,sans-serif`
+  ctx.font = `500 ${bestSize}px Arimo,Arial,sans-serif`
   ctx.textBaseline = 'top'
 
-  const lineHeight = fontSize * 1.2
-  const startY = (canvasHeight - lines.length * lineHeight) / 2
+  const lineHeight = bestSize * 1.2
+  const startY = (canvasHeight - bestLines.length * lineHeight) / 2
 
-  lines.forEach((line, index) => {
+  bestLines.forEach((line, index) => {
     const textWidth = ctx.measureText(line).width
     const startX = (canvasWidth - textWidth) / 2
     const y = startY + index * lineHeight

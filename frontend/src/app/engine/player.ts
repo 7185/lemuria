@@ -1,5 +1,6 @@
 import type {LOD, Mesh, Triangle, Vector3Like} from 'three'
 import {Group, Object3D, Vector3} from 'three'
+import type {MeshBVH} from 'three-mesh-bvh'
 import {PlayerCollider} from './player-collider'
 import {DEG, TERRAIN_PAGE_SIZE} from '../utils/constants'
 import {radNormalized, stringToPos} from '../utils/utils'
@@ -201,7 +202,7 @@ export class Player {
       if (
         rayIntersectionPoint != null &&
         // Add terrain offset if needed
-        rayIntersectionPoint.y + checkTerrain * terrain.position.y >
+        rayIntersectionPoint.y + checkTerrain * (terrain?.position.y ?? 0) >
           this.tmpNewPosition.y
       ) {
         this.collider.boxMaterial?.color.setHex(0xffff00)
@@ -243,7 +244,7 @@ export class Player {
         .setY(terrain.position.y)
       this.collider.translate(this.tmpTerrainPageOffset.negate())
       this.collider.checkBoundsTree(
-        terrainPage.geometry.boundsTree,
+        terrainPage.geometry.boundsTree as MeshBVH,
         intersectsTriangle
       )
       this.collider.translate(this.tmpTerrainPageOffset.negate())
