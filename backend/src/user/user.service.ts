@@ -1,7 +1,7 @@
 import {Injectable} from '@nestjs/common'
 import {JwtService} from '@nestjs/jwt'
 import {randomUUID} from 'crypto'
-import {Message} from 'src/ws/ws.gateway'
+import {Message} from '../ws/ws.gateway'
 import {User} from './user'
 import {config} from '../app.config'
 

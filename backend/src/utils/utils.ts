@@ -9,7 +9,9 @@ export const getSecretKey = (): string | null => {
     try {
       return readFileSync(secretFile, 'utf8').trim()
     } catch (error) {
-      logger.warn(`Failed to read secret file ${secretFile}: ${error.message}`)
+      logger.warn(
+        `Failed to read secret file ${secretFile}: ${error instanceof Error ? error.message : String(error)}`
+      )
     }
   }
   return null

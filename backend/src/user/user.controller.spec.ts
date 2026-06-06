@@ -86,7 +86,7 @@ describe(UserController.name, () => {
       } as unknown as FastifyReply
       expect(controller.authSession('cookie', responseMock)).toStrictEqual({
         id: 'dummy',
-        name: undefined
+        name: 'Anonymous'
       })
       expect(responseMock.status).toHaveBeenCalledWith(200)
     })
@@ -132,7 +132,7 @@ describe(UserController.name, () => {
       } as unknown as FastifyReply
       expect(controller.authRenew('cookie', responseMock)).toStrictEqual({
         id: 'dummy',
-        name: undefined
+        name: 'Anonymous'
       })
       expect(responseMock.status).toHaveBeenCalledWith(200)
     })

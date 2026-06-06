@@ -14,7 +14,7 @@ export interface Message {
 @WebSocketGateway({path: '/api/v1/ws'})
 export class WsGateway {
   @WebSocketServer()
-  server: Server
+  server!: Server
   constructor(private readonly userSvc: UserService) {}
 
   afterInit() {

@@ -1,4 +1,4 @@
-FROM node:24-slim AS frontend
+FROM node:26-slim AS frontend
 WORKDIR /root
 COPY action-parser/package.json action-parser/tsconfig.json /root/action-parser/
 COPY frontend/package.json frontend/angular.json frontend/tsconfig*.json frontend/transloco.config.ts /root/frontend/
@@ -34,7 +34,7 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
 VOLUME ["/app.db"]
 USER nobody
 
-FROM node:24-slim AS node
+FROM platformatic/node-caged:26-slim AS node
 EXPOSE 8080
 ENV NODE_PATH="/root/node_modules"
 ENV DATABASE_URL="file:/app.db"
@@ -57,7 +57,7 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
 VOLUME ["/app.db"]
 USER nobody
 
-FROM gcr.io/distroless/nodejs24-debian13:nonroot AS node-distroless
+FROM gcr.io/distroless/nodejs26-debian13:nonroot AS node-distroless
 EXPOSE 8080
 COPY --from=node --chown=nonroot:nonroot /root/node_modules /node_modules
 COPY --from=node --chown=nonroot:nonroot /dist /dist

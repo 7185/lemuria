@@ -17,6 +17,7 @@ export class User {
 
   constructor(params: User | object = {}) {
     this.id = null
+    this.name = 'Anonymous'
     this.position = [0, 0, 0]
     this.orientation = [0, 0, 0]
     this.avatar = 0

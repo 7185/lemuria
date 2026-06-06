@@ -2,6 +2,8 @@ import {HttpService} from '@nestjs/axios'
 import {Inject, Injectable} from '@nestjs/common'
 import {CACHE_MANAGER, Cache} from '@nestjs/cache-manager'
 import {map, of} from 'rxjs'
+import type {Observable} from 'rxjs'
+import type {AxiosResponse} from 'axios'
 
 @Injectable()
 export class ProxyService {
@@ -10,7 +12,7 @@ export class ProxyService {
     private readonly httpService: HttpService
   ) {}
 
-  proxify(url: string) {
+  proxify(url: string): Observable<AxiosResponse<ArrayBuffer>> {
     return this.httpService.get(url, {responseType: 'arraybuffer'})
   }
 

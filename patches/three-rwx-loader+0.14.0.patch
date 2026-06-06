@@ -1,5 +1,5 @@
 diff --git a/node_modules/three-rwx-loader/src/RWXLoader.js b/node_modules/three-rwx-loader/src/RWXLoader.js
-index 26ba188..f358cc9 100644
+index 41e67cd..9e6eaa3 100644
 --- a/node_modules/three-rwx-loader/src/RWXLoader.js
 +++ b/node_modules/three-rwx-loader/src/RWXLoader.js
 @@ -16,7 +16,8 @@ import {
@@ -78,7 +78,29 @@ index 26ba188..f358cc9 100644
  
  				threeMat.userData.rwx.animation = { yTiles: texture.image.height / texture.image.width,
  					yHeight: texture.image.width / texture.image.height,
-@@ -553,7 +558,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
+@@ -436,8 +441,9 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+ 
+ 		loadingPromises.push( new Promise( ( resolve, reject ) => {
+ 
+-			loader.load( normalPath, ( normalMap ) => {
++			loader.load( normalPath, ( bitmap ) => {
+ 
++				const normalMap = new CanvasTexture( bitmap );
+ 				normalMap.wrapS = textureWrapping;
+ 				normalMap.wrapT = textureWrapping;
+ 				threeMat.normalMap = normalMap;
+@@ -459,8 +465,9 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+ 
+ 		loadingPromises.push( new Promise( ( resolve, reject ) => {
+ 
+-			loader.load( specularPath, ( specularMap ) => {
++			loader.load( specularPath, ( bitmap ) => {
+ 
++				const specularMap = new CanvasTexture( bitmap );
+ 				specularMap.wrapS = textureWrapping;
+ 				specularMap.wrapT = textureWrapping;
+ 				threeMat.specularMap = specularMap;
+@@ -553,7 +560,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
  		const whiteEmissive = Math.trunc( surface[ 1 ] );
  		materialDict[ 'emissive' ] = ( whiteEmissive << 16 ) + ( whiteEmissive << 8 ) + whiteEmissive;
  
@@ -87,7 +109,7 @@ index 26ba188..f358cc9 100644
  
  	}
  
-@@ -729,7 +734,7 @@ function addQuad( ctx, a, b, c, d ) {
+@@ -729,7 +736,7 @@ function addQuad( ctx, a, b, c, d ) {
  
  	}
  
@@ -96,7 +118,7 @@ index 26ba188..f358cc9 100644
  
  		// We need to use a whole different geometry logic to handle wireframe quads the way the AW client does:
  		// by only rendering the outter edges
-@@ -1589,7 +1594,7 @@ function mergeGeometryRecursive( group, ctx, transform = group.matrix ) {
+@@ -1589,7 +1596,7 @@ function mergeGeometryRecursive( group, ctx, transform = group.matrix ) {
  			// Do not forget the UVs either
  			if ( child.geometry.getAttribute( 'uv' ) === undefined ) {
  
@@ -105,7 +127,7 @@ index 26ba188..f358cc9 100644
  				ctx.uvs.push( ...uvs );
  
  			} else {
-@@ -1708,33 +1713,33 @@ class RWXMaterial {
+@@ -1709,33 +1716,33 @@ class RWXMaterial {
  
  	getMatSignature() {
  
@@ -166,7 +188,7 @@ index 26ba188..f358cc9 100644
  
  	}
  
-@@ -1932,48 +1937,50 @@ class RWXLoader extends Loader {
+@@ -1933,48 +1940,50 @@ class RWXLoader extends Loader {
  
  		super( manager );
  
@@ -257,7 +279,7 @@ index 26ba188..f358cc9 100644
  
  		this.fflate = null;
  		this.textureExtension = '.jpg';
-@@ -2222,7 +2229,7 @@ class RWXLoader extends Loader {
+@@ -2223,7 +2232,7 @@ class RWXLoader extends Loader {
  		let groupBeforeProto = null;
  		let firstClumpStarted = false;
  
@@ -266,7 +288,7 @@ index 26ba188..f358cc9 100644
  
  		// Ready root object group
  		ctx.rootGroup = new Group();
-@@ -2240,21 +2247,18 @@ class RWXLoader extends Loader {
+@@ -2241,21 +2250,18 @@ class RWXLoader extends Loader {
  
  		for ( let i = 0, l = lines.length; i < l; i ++ ) {
  
@@ -292,7 +314,7 @@ index 26ba188..f358cc9 100644
  
  				makeMeshToCurrentGroup( ctx );
  				clearGeometry( ctx );
-@@ -2274,8 +2278,7 @@ class RWXLoader extends Loader {
+@@ -2275,8 +2281,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -302,7 +324,7 @@ index 26ba188..f358cc9 100644
  
  				makeMeshToCurrentGroup( ctx );
  
-@@ -2288,8 +2291,7 @@ class RWXLoader extends Loader {
+@@ -2289,8 +2294,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -312,7 +334,7 @@ index 26ba188..f358cc9 100644
  
  				saveCurrentTransform( ctx );
  
-@@ -2297,8 +2299,7 @@ class RWXLoader extends Loader {
+@@ -2298,8 +2302,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -322,7 +344,7 @@ index 26ba188..f358cc9 100644
  
  				loadCurrentTransform( ctx );
  
-@@ -2328,8 +2329,7 @@ class RWXLoader extends Loader {
+@@ -2329,8 +2332,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -332,7 +354,7 @@ index 26ba188..f358cc9 100644
  
  				makeMeshToCurrentGroup( ctx );
  
-@@ -2592,10 +2592,10 @@ class RWXLoader extends Loader {
+@@ -2593,10 +2595,10 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -345,7 +367,7 @@ index 26ba188..f358cc9 100644
  
  			}
  
-@@ -2842,7 +2842,7 @@ class RWXLoader extends Loader {
+@@ -2843,7 +2845,7 @@ class RWXLoader extends Loader {
  			res = this.addtexturemodeRegex.exec( line );
  			if ( res != null ) {
  
@@ -354,7 +376,7 @@ index 26ba188..f358cc9 100644
  
  				// Do not push the same texture mode twice
  				if ( ! ctx.materialTracker.currentRWXMaterial.texturemodes.includes( TextureMode[ tm ] ) ) {
-@@ -2859,7 +2859,7 @@ class RWXLoader extends Loader {
+@@ -2860,7 +2862,7 @@ class RWXLoader extends Loader {
  			res = this.removetexturemodeRegex.exec( line );
  			if ( res != null ) {
  

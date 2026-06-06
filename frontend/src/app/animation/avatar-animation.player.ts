@@ -216,12 +216,11 @@ export class AvatarAnimationPlayer {
   private findBestAnimation(
     animationList: AnimationEntry[]
   ): [ThreeSequence | null, number | null] {
-    let threeSequence: ThreeSequence | null = null
-
-    // Iterate of each proposed animation
+    // Iterate over each proposed animation
     for (const entry of animationList) {
-      threeSequence =
-        this.avatarAnimationManager.implicitSequences.get(entry.name) ?? null
+      const threeSequence = this.avatarAnimationManager.implicitSequences.get(
+        entry.name
+      )
 
       if (threeSequence) {
         // If some sequence was found: return it right away

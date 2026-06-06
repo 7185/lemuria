@@ -11,20 +11,17 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@eslint/js": "^9.10.0",
-    "@types/node": "^24.10.13",
-    "eslint": "^9.39.2",
-    "prettier": "^3.8.1",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.55.0"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.1",
+    "eslint": "^10.4.1",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.1"
   },
   "workspaces": [
     "action-parser",
     "backend",
     "frontend",
     "bot"
-  ],
-  "overrides": {
-    "keyv": "^5.0.0"
-  }
+  ]
 }

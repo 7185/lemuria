@@ -44,7 +44,7 @@ export class ProxyController {
       next: (data) =>
         res
           .status(200)
-          .headers({'content-type': data.headers['content-type']})
+          .headers({'content-type': data.headers['content-type'] as string})
           .send(data.data),
       error: () => res.status(404).send({})
     })

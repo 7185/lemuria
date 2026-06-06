@@ -6,7 +6,6 @@ import type {DirectionalLight, LOD, Sprite, Vector3Like} from 'three'
 import {
   BufferGeometry,
   Cache,
-  Clock,
   Color,
   Euler,
   Fog,
@@ -19,6 +18,7 @@ import {
   Scene,
   Spherical,
   SRGBColorSpace,
+  Timer,
   Vector2,
   Vector3,
   WebGLRenderer
@@ -116,7 +116,7 @@ export class EngineService {
   private renderer: WebGLRenderer
   private labelRenderer: CSS2DRenderer
   private labelMap = new Map<string, CSS2DObject>()
-  private clock: Clock
+  private timer: Timer
   private camera: PerspectiveCamera
   private thirdCamera: PerspectiveCamera
   private thirdFrontCamera: PerspectiveCamera
@@ -535,20 +535,14 @@ export class EngineService {
   }
 
   animate(): void {
-    this.clock = new Clock(true)
+    this.timer = new Timer()
+    this.timer.connect(document)
     if (document.readyState === 'loading') {
       fromEvent(globalThis, 'DOMContentLoaded').subscribe(() => this.render())
     } else {
       this.render()
     }
     fromEvent(globalThis, 'resize').subscribe(() => this.resize())
-    fromEvent(globalThis, 'visibilitychange').subscribe(() => {
-      if (document.visibilityState === 'visible') {
-        this.clock.start()
-      } else {
-        this.clock.stop()
-      }
-    })
     fromEvent(this.canvas, 'contextmenu').subscribe((e: MouseEvent) =>
       this.rightClick(e)
     )
@@ -736,7 +730,8 @@ export class EngineService {
   private render(): void {
     this.frameId = requestAnimationFrame(() => this.render())
 
-    this.deltaFps += this.clock.getDelta()
+    this.timer.update()
+    this.deltaFps += this.timer.getDelta()
 
     if (this.deltaFps <= 1 / this.maxFps()) {
       return
