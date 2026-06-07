@@ -1,7 +1,6 @@
 import {inject, Injectable} from '@angular/core'
 import {
   BufferAttribute,
-  CanvasTexture,
   Color,
   Group,
   ImageBitmapLoader,
@@ -104,9 +103,12 @@ export class TerrainService {
     if (water?.texture_bottom) {
       this.textureLoader.load(
         `${this.propSvc.path()}/textures/${water.texture_bottom}.jpg`,
-        (texture) => {
-          const bottomTexture = new CanvasTexture(
-            texture,
+        (bitmap) => {
+          if (!bitmap || bitmap.width === 0 || bitmap.height === 0) {
+            return
+          }
+          const bottomTexture = new Texture(
+            bitmap,
             Texture.DEFAULT_MAPPING,
             RepeatWrapping,
             RepeatWrapping
@@ -122,9 +124,12 @@ export class TerrainService {
     if (water?.texture_top) {
       this.textureLoader.load(
         `${this.propSvc.path()}/textures/${water.texture_top}.jpg`,
-        (texture) => {
-          const topTexture = new CanvasTexture(
-            texture,
+        (bitmap) => {
+          if (!bitmap || bitmap.width === 0 || bitmap.height === 0) {
+            return
+          }
+          const topTexture = new Texture(
+            bitmap,
             Texture.DEFAULT_MAPPING,
             RepeatWrapping,
             RepeatWrapping
@@ -165,9 +170,12 @@ export class TerrainService {
             `${this.propSvc.path()}/textures/terrain${j}.jpg`
           )
         ).pipe(
-          map((texture) => {
-            const baseTexture = new CanvasTexture(
-              texture,
+          map((bitmap) => {
+            if (!bitmap || bitmap.width === 0 || bitmap.height === 0) {
+              return null
+            }
+            const baseTexture = new Texture(
+              bitmap,
               Texture.DEFAULT_MAPPING,
               RepeatWrapping,
               RepeatWrapping

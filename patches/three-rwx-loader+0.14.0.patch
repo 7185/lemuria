@@ -1,18 +1,24 @@
 diff --git a/node_modules/three-rwx-loader/src/RWXLoader.js b/node_modules/three-rwx-loader/src/RWXLoader.js
-index 41e67cd..9e6eaa3 100644
+index 41e67cd..90cab11 100644
 --- a/node_modules/three-rwx-loader/src/RWXLoader.js
 +++ b/node_modules/three-rwx-loader/src/RWXLoader.js
-@@ -16,7 +16,8 @@ import {
+@@ -16,13 +16,13 @@ import {
  	BufferGeometry,
  	Quaternion,
  	Plane,
 -	TextureLoader,
 +	ImageBitmapLoader,
-+	CanvasTexture,
++	Texture,
  	NearestFilter,
  	LinearMipmapNearestFilter,
  	RepeatWrapping,
-@@ -73,9 +74,9 @@ const glossRatio = 0.1;
+ 	ClampToEdgeWrapping,
+ 	MirroredRepeatWrapping,
+-	LinearSRGBColorSpace,
+ 	SRGBColorSpace,
+ 	FrontSide,
+ 	DoubleSide,
+@@ -73,9 +73,9 @@ const glossRatio = 0.1;
  const defaultAlphaTest = 0.2;
  const defaultSurface = [ 0.69, 0.0, 0.0 ]; // Ambience (recommended AW 2.2), Diffusion, Specularity
  
@@ -25,31 +31,61 @@ index 41e67cd..9e6eaa3 100644
  
  const firstClumpName = 'rwx-first-clump';
  const scaleGroupName = 'rwx-scale-group';
-@@ -200,10 +201,12 @@ function makeMaskPromise( bmpURI, threeMat, loader, textureColorSpace = LinearSR
+@@ -195,51 +195,11 @@ function triangulateFaces( vertices, uvs, loop, objectName, forceEarcut = false,
  
- 	return new Promise( ( resolveMask ) => {
+ }
  
+-function makeMaskPromise( bmpURI, threeMat, loader, textureColorSpace = LinearSRGBColorSpace,
+-	textureWrapping = RepeatWrapping, textureFiltering = true ) {
+-
+-	return new Promise( ( resolveMask ) => {
+-
 -		loader.load( bmpURI, ( maskTexture ) => {
-+		loader.load( bmpURI, ( bitmap ) => {
-+
-+			const maskTexture = new CanvasTexture( bitmap );
- 
- 			// If the height is nicely divisible by the width: it's an animated mask
+-
+-			// If the height is nicely divisible by the width: it's an animated mask
 -			if ( maskTexture.image.height !== maskTexture.image.width && maskTexture.image.height % maskTexture.image.width === 0 ) {
-+			if ( maskTexture.image != null && maskTexture.image.height !== maskTexture.image.width && maskTexture.image.height % maskTexture.image.width === 0 ) {
- 
- 				threeMat.userData.rwx.maskAnimation = { yTiles: maskTexture.image.height / maskTexture.image.width,
- 					yHeight: maskTexture.image.width / maskTexture.image.height,
-@@ -239,7 +242,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+-
+-				threeMat.userData.rwx.maskAnimation = { yTiles: maskTexture.image.height / maskTexture.image.width,
+-					yHeight: maskTexture.image.width / maskTexture.image.height,
+-					step: 0 };
+-				maskTexture.offset.y = ( 1.0 - threeMat.userData.rwx.maskAnimation.yHeight );
+-				maskTexture.repeat.set( 1, threeMat.userData.rwx.maskAnimation.yHeight );
+-
+-			}
+-
+-			maskTexture.wrapS = textureWrapping;
+-			maskTexture.wrapT = textureWrapping;
+-			maskTexture.colorSpace = textureColorSpace;
+-
+-			if ( ! textureFiltering ) {
+-
+-				maskTexture.minFilter = LinearMipmapNearestFilter;
+-				maskTexture.magFilter = NearestFilter;
+-
+-			}
+-
+-			threeMat.alphaMap = maskTexture;
+-			threeMat.needsUpdate = true;
+-
+-			resolveMask( maskTexture );
+-
+-		} );
+-
+-	} );
+-
+-}
+-
+ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.jpg', maskName = null,
  	maskExtension = '.zip', specularName = null, normalName = null, fflate = null, loadingPromises = [], textureColorSpace = SRGBColorSpace,
- 	textureWrapping = RepeatWrapping, alphaTest = defaultAlphaTest, textureFiltering = true, allowURLs = true ) {
+-	textureWrapping = RepeatWrapping, alphaTest = defaultAlphaTest, textureFiltering = true, allowURLs = true ) {
++	textureWrapping = RepeatWrapping, alphaTest = defaultAlphaTest, textureFiltering = true, allowURLs = true, textureMap = new Map() ) {
  
 -	let loader = new TextureLoader();
 +	let loader = new ImageBitmapLoader().setOptions( { imageOrientation: 'flipY' } );
  	let texturePath = null;
  
  	const urlRes = urlRegex.exec( textureName );
-@@ -269,7 +272,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+@@ -269,50 +229,80 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
  
  	}
  
@@ -58,49 +94,436 @@ index 41e67cd..9e6eaa3 100644
  
  		threeMat.alphaTest = alphaTest;
  		threeMat.transparent = true;
-@@ -278,7 +281,9 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
  
- 	loadingPromises.push( new Promise( ( resolveTex, rejectTex ) => {
+ 	}
+ 
+-	loadingPromises.push( new Promise( ( resolveTex, rejectTex ) => {
++	const texCacheKey = `tex_${texturePath}_${textureColorSpace}_${textureWrapping}_${textureFiltering}`;
++
++	if ( textureMap.has( texCacheKey ) ) {
  
 -		loader.load( texturePath, ( texture ) => {
-+		loader.load( texturePath, ( bitmap ) => {
-+
-+			const texture = new CanvasTexture( bitmap );
++		loadingPromises.push( textureMap.get( texCacheKey ).then( texture => {
  
- 			texture.wrapS = textureWrapping;
- 			texture.wrapT = textureWrapping;
-@@ -294,7 +299,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
- 			}
+-			texture.wrapS = textureWrapping;
+-			texture.wrapT = textureWrapping;
+-			texture.colorSpace = textureColorSpace;
++			if ( ! texture ) return;
+ 			threeMat.map = texture;
+ 			threeMat.needsUpdate = true;
  
- 			// If the height is nicely divisible by the width: it's an animated texture
--			if ( texture.image.height !== texture.image.width && texture.image.height % texture.image.width === 0 ) {
+-			if ( ! textureFiltering ) {
 +			if ( texture.image != null && texture.image.height !== texture.image.width && texture.image.height % texture.image.width === 0 ) {
  
- 				threeMat.userData.rwx.animation = { yTiles: texture.image.height / texture.image.width,
- 					yHeight: texture.image.width / texture.image.height,
-@@ -436,8 +441,9 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+-				texture.minFilter = LinearMipmapNearestFilter;
+-				texture.magFilter = NearestFilter;
++				threeMat.userData.rwx.animation = { yTiles: texture.image.height / texture.image.width,
++					yHeight: texture.image.width / texture.image.height, step: 0 };
  
- 		loadingPromises.push( new Promise( ( resolve, reject ) => {
+ 			}
+ 
+-			// If the height is nicely divisible by the width: it's an animated texture
+-			if ( texture.image.height !== texture.image.width && texture.image.height % texture.image.width === 0 ) {
++		} ) );
+ 
+-				threeMat.userData.rwx.animation = { yTiles: texture.image.height / texture.image.width,
+-					yHeight: texture.image.width / texture.image.height,
+-					step: 0 };
+-				texture.offset.y = ( 1.0 - threeMat.userData.rwx.animation.yHeight );
+-				texture.repeat.set( 1, threeMat.userData.rwx.animation.yHeight );
++	} else {
+ 
+-			}
++		const texPromise = new Promise( ( resolveTex ) => {
++
++			loader.load( texturePath, ( bitmap ) => {
+ 
+-			resolveTex( texture );
++				if ( ! bitmap || bitmap.width === 0 || bitmap.height === 0 ) {
++
++					resolveTex( null );
++					return;
++
++				}
++
++				const texture = new Texture( bitmap );
++				texture.wrapS = textureWrapping;
++				texture.wrapT = textureWrapping;
++				texture.colorSpace = textureColorSpace;
++
++				threeMat.map = texture;
++
++				if ( ! textureFiltering ) {
++
++					texture.minFilter = LinearMipmapNearestFilter;
++					texture.magFilter = NearestFilter;
++
++				}
+ 
+-		}, null, ( e ) => {
++				// If the height is nicely divisible by the width: it's an animated texture
++				if ( texture.image != null && texture.image.height !== texture.image.width && texture.image.height % texture.image.width === 0 ) {
+ 
+-			rejectTex( e );
++					threeMat.userData.rwx.animation = { yTiles: texture.image.height / texture.image.width,
++						yHeight: texture.image.width / texture.image.height, step: 0 };
++					texture.offset.y = ( 1.0 - threeMat.userData.rwx.animation.yHeight );
++					texture.repeat.set( 1, threeMat.userData.rwx.animation.yHeight );
++
++				}
++
++				texture.needsUpdate = true;
++				threeMat.needsUpdate = true;
++				resolveTex( texture );
++
++			}, null, ( e ) => resolveTex( null ) );
+ 
+ 		} );
++		textureMap.set( texCacheKey, texPromise );
++		loadingPromises.push( texPromise );
+ 
+-	} ) );
++	}
+ 
+ 	if ( maskName != null ) {
+ 
+@@ -345,84 +335,170 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+ 
+ 		}
+ 
+-		if ( maskExtension.toLowerCase() == '.zip' && fflate != null ) {
++		// If mask path is a full URL: use it verbatim;
++		// Otherwise, if it's a single name: do not append the extension to it if
++		// it's already embedded in the original string.
++		const maskFilePath = urlRes ? maskName : folder + '/' + maskBaseName + maskExtension;
++		const globalMaskKey = `mask_${maskFilePath}_${textureColorSpace}_${textureWrapping}_${textureFiltering}`;
++
++		if ( textureMap.has( globalMaskKey ) ) {
++
++			loadingPromises.push( textureMap.get( globalMaskKey ).then( maskTexture => {
++
++				if ( ! maskTexture ) return;
++				threeMat.alphaMap = maskTexture;
++				threeMat.needsUpdate = true;
++
++				if ( maskTexture.image != null && maskTexture.image.height !== maskTexture.image.width && maskTexture.image.height % maskTexture.image.width === 0 ) {
++
++					threeMat.userData.rwx.maskAnimation = { yTiles: maskTexture.image.height / maskTexture.image.width,
++						yHeight: maskTexture.image.width / maskTexture.image.height, step: 0 };
++
++				}
++
++			} ) );
++
++		} else {
++
++			const maskPromise = new Promise( ( resolve ) => {
+ 
+-			// If mask path is a full URL: use it verbatim;
+-			// Otherwise, if it's a single name: do not append the extension to it if
+-			// it's already embedded in the original string.
+-			const zipPath = urlRes ? maskName : folder + '/' + maskBaseName + maskExtension;
++				if ( maskExtension.toLowerCase() == '.zip' && fflate != null ) {
+ 
+-			loadingPromises.push( new Promise( ( resolve, reject ) => {
++					const zipLoader = new FileLoader();
++					zipLoader.setResponseType( 'arraybuffer' );
+ 
+-				const zipLoader = new FileLoader();
+-				zipLoader.setResponseType( 'arraybuffer' );
++					// We load the mask asynchronously using fflate (if available)
++					zipLoader.load( maskFilePath, ( data ) => {
+ 
+-				// We load the mask asynchronously using fflate (if available)
+-				zipLoader.load( zipPath, ( data ) => {
++						const zipData = fflate.unzipSync( new Uint8Array( data ) );
++						let filename = null;
+ 
+-					const zipData = fflate.unzipSync( new Uint8Array( data ) );
+-					let filename = null;
++						// Find the bmp file within the archive, we need to be case insensitive
++						for ( const key of Object.keys( zipData ) ) {
+ 
+-					// Find the bmp file within the archive, we need to be case insensitive
+-					for ( const key of Object.keys( zipData ) ) {
++							if ( key.toLowerCase() == ( maskBaseName.toLowerCase() + '.bmp' ) ) {
+ 
+-						if ( key.toLowerCase() == ( maskBaseName.toLowerCase() + '.bmp' ) ) {
++								filename = key; break;
+ 
+-							// Found the file
+-							filename = key;
+-							break;
++							}
+ 
+ 						}
+ 
+-					}
++						if ( ! filename ) {
+ 
+-					if ( ! filename ) {
++							console.warn( `No .bmp file candidate found within '${maskFilePath}'` );
++							resolve( null ); return;
+ 
+-						// No .bmp mask file found within the archive: can't proceed further
+-						reject( new Error( `No .bmp file candidate found within '${zipPath}'` ) );
++						}
+ 
+-					}
++						const buffer = zipData[ filename ];
+ 
+-					const buffer = zipData[ filename ];
++						// Load the bmp image into a data uri string
++						let bmpURI = 'data:image/bmp;base64,';
++						const chunkSize = 4056;
++						let dataStr = '';
+ 
+-					// Load the bmp image into a data uri string
+-					let bmpURI = 'data:image/bmp;base64,';
+-					const chunkSize = 4056;
+-					let dataStr = '';
++						// Chunking the buffer to maximize browser compatibility and avoid exceeding some size limit
++						// during string creation when using 'String.fromCharCode'
++						for ( let i = 0; i < buffer.length; i += chunkSize ) {
+ 
+-					// Chunking the buffer to maximize browser compatibility and avoid exceeding some size limit
+-					// during string creation when using 'String.fromCharCode'
+-					for ( let i = 0; i < buffer.length; i += chunkSize ) {
++							dataStr = dataStr.concat( String.fromCharCode.apply( null, new Uint16Array( buffer.slice( i, i + chunkSize ) ) ) );
+ 
+-						dataStr = dataStr.concat( String.fromCharCode.apply( null, new Uint16Array( buffer.slice( i, i + chunkSize ) ) ) );
++						}
+ 
+-					}
++						bmpURI = bmpURI.concat( btoa( dataStr ) );
+ 
+-					bmpURI = bmpURI.concat( btoa( dataStr ) );
++						loader.load( bmpURI, ( bitmap ) => {
+ 
+-					makeMaskPromise( bmpURI, threeMat, loader, LinearSRGBColorSpace, textureWrapping, textureFiltering ).then( ( mask ) => {
++							if ( ! bitmap || bitmap.width === 0 || bitmap.height === 0 ) {
+ 
+-						resolve( mask );
++								resolve( null ); return;
+ 
+-					} )
+-						.catch( ( e ) => {
++							}
+ 
+-							reject( e );
++							const maskTexture = new Texture( bitmap );
++							maskTexture.wrapS = textureWrapping;
++							maskTexture.wrapT = textureWrapping;
++							maskTexture.colorSpace = textureColorSpace;
++							if ( ! textureFiltering ) {
+ 
+-						} );
++								maskTexture.minFilter = LinearMipmapNearestFilter;
++								maskTexture.magFilter = NearestFilter;
+ 
+-				}, null, ( e ) => {
++							}
+ 
+-					reject( e );
++							if ( maskTexture.image != null && maskTexture.image.height !== maskTexture.image.width && maskTexture.image.height % maskTexture.image.width === 0 ) {
+ 
+-				} );
++								const yHeight = maskTexture.image.width / maskTexture.image.height;
++								maskTexture.offset.y = ( 1.0 - yHeight );
++								maskTexture.repeat.set( 1, yHeight );
+ 
+-			} ) );
++							}
++
++							maskTexture.needsUpdate = true;
++							resolve( maskTexture );
++
++						}, null, () => resolve( null ) );
++
++					}, null, () => resolve( null ) );
++
++				} else if ( maskExtension != '.zip' ) {
++
++					loader.load( maskFilePath, ( bitmap ) => {
++
++						if ( ! bitmap || bitmap.width === 0 || bitmap.height === 0 ) {
++
++							resolve( null ); return;
++
++						}
+ 
+-		} else if ( maskExtension != '.zip' ) {
++						const maskTexture = new Texture( bitmap );
++						maskTexture.wrapS = textureWrapping;
++						maskTexture.wrapT = textureWrapping;
++						maskTexture.colorSpace = textureColorSpace;
++						if ( ! textureFiltering ) {
+ 
+-			const bmpPath = urlRes ? maskName : folder + '/' + maskBaseName + maskExtension;
+-			loadingPromises.push( makeMaskPromise( bmpPath, threeMat, loader, LinearSRGBColorSpace, textureWrapping, textureFiltering ) );
++							maskTexture.minFilter = LinearMipmapNearestFilter;
++							maskTexture.magFilter = NearestFilter;
++
++						}
++
++						if ( maskTexture.image != null && maskTexture.image.height !== maskTexture.image.width && maskTexture.image.height % maskTexture.image.width === 0 ) {
++
++							const yHeight = maskTexture.image.width / maskTexture.image.height;
++							maskTexture.offset.y = ( 1.0 - yHeight );
++							maskTexture.repeat.set( 1, yHeight );
++
++						}
++
++						maskTexture.needsUpdate = true;
++						resolve( maskTexture );
++
++					}, null, () => resolve( null ) );
++
++				} else {
++
++					resolve( null );
++
++				}
++
++			} );
++
++			textureMap.set( globalMaskKey, maskPromise );
++
++			loadingPromises.push( maskPromise.then( maskTexture => {
++
++				if ( ! maskTexture ) return;
++				threeMat.alphaMap = maskTexture;
++				threeMat.needsUpdate = true;
++				if ( maskTexture.image != null && maskTexture.image.height !== maskTexture.image.width && maskTexture.image.height % maskTexture.image.width === 0 ) {
++
++					threeMat.userData.rwx.maskAnimation = { yTiles: maskTexture.image.height / maskTexture.image.width,
++						yHeight: maskTexture.image.width / maskTexture.image.height, step: 0 };
++
++				}
++
++			} ) );
+ 
+ 		}
+ 
+@@ -434,20 +510,46 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+ 		const urlRes = urlRegex.exec( normalName );
+ 		const normalPath = urlRes ? normalName : folder + '/' + normalName + textureExtension;
+ 
+-		loadingPromises.push( new Promise( ( resolve, reject ) => {
++		const normCacheKey = `norm_${normalPath}_${textureWrapping}`;
  
 -			loader.load( normalPath, ( normalMap ) => {
-+			loader.load( normalPath, ( bitmap ) => {
++		if ( textureMap.has( normCacheKey ) ) {
  
-+				const normalMap = new CanvasTexture( bitmap );
- 				normalMap.wrapS = textureWrapping;
- 				normalMap.wrapT = textureWrapping;
+-				normalMap.wrapS = textureWrapping;
+-				normalMap.wrapT = textureWrapping;
++			loadingPromises.push( textureMap.get( normCacheKey ).then( normalMap => {
++
++				if ( ! normalMap ) return;
  				threeMat.normalMap = normalMap;
-@@ -459,8 +465,9 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+ 				threeMat.needsUpdate = true;
  
- 		loadingPromises.push( new Promise( ( resolve, reject ) => {
+-				resolve( normalMap );
++			} ) );
+ 
+-			}, null, reject );
++		} else {
+ 
+-		} ) );
++			const normPromise = new Promise( ( resolve ) => {
++
++				loader.load( normalPath, ( bitmap ) => {
++
++					if ( ! bitmap || bitmap.width === 0 || bitmap.height === 0 ) {
++
++						resolve( null );
++						return;
++
++					}
++
++					const normalMap = new Texture( bitmap );
++					normalMap.wrapS = textureWrapping;
++					normalMap.wrapT = textureWrapping;
++					threeMat.normalMap = normalMap;
++					normalMap.needsUpdate = true;
++					threeMat.needsUpdate = true;
++					resolve( normalMap );
++
++				}, null, ( e ) => resolve( null ) );
++
++			} );
++			textureMap.set( normCacheKey, normPromise );
++			loadingPromises.push( normPromise );
++
++		}
+ 
+ 	}
+ 
+@@ -457,20 +559,47 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+ 		const urlRes = urlRegex.exec( specularName );
+ 		const specularPath = urlRes ? specularName : folder + '/' + specularName + textureExtension;
+ 
+-		loadingPromises.push( new Promise( ( resolve, reject ) => {
++		const specCacheKey = `spec_${specularPath}_${textureWrapping}`;
++
++		if ( textureMap.has( specCacheKey ) ) {
  
 -			loader.load( specularPath, ( specularMap ) => {
-+			loader.load( specularPath, ( bitmap ) => {
++			loadingPromises.push( textureMap.get( specCacheKey ).then( specularMap => {
  
-+				const specularMap = new CanvasTexture( bitmap );
- 				specularMap.wrapS = textureWrapping;
- 				specularMap.wrapT = textureWrapping;
+-				specularMap.wrapS = textureWrapping;
+-				specularMap.wrapT = textureWrapping;
++				if ( ! specularMap ) return;
  				threeMat.specularMap = specularMap;
-@@ -553,7 +560,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
+ 				threeMat.needsUpdate = true;
+ 
+-				resolve( specularMap );
++			} ) );
+ 
+-			}, null, reject );
++		} else {
+ 
+-		} ) );
++			const specPromise = new Promise( ( resolve ) => {
++
++				loader.load( specularPath, ( bitmap ) => {
++
++					if ( ! bitmap || bitmap.width === 0 || bitmap.height === 0 ) {
++
++						resolve( null );
++						return;
++
++					}
++
++					const specularMap = new Texture( bitmap );
++					specularMap.wrapS = textureWrapping;
++					specularMap.wrapT = textureWrapping;
++					threeMat.specularMap = specularMap;
++					specularMap.needsUpdate = true;
++					threeMat.needsUpdate = true;
++					resolve( specularMap );
++
++				}, null, ( e ) => resolve( null ) );
++
++			} );
++
++			textureMap.set( specCacheKey, specPromise );
++			loadingPromises.push( specPromise );
++
++		}
+ 
+ 	}
+ 
+@@ -478,7 +607,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+ 
+ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', maskExtension = '.zip',
+ 	fflate = null, useBasicMaterial = false, textureColorSpace = SRGBColorSpace, alphaTest = defaultAlphaTest,
+-	allowURLs = true ) {
++	allowURLs = true, textureMap = new Map() ) {
+ 
+ 	let materialDict = { name: rwxMaterial.getMatSignature() };
+ 
+@@ -553,7 +682,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
  		const whiteEmissive = Math.trunc( surface[ 1 ] );
  		materialDict[ 'emissive' ] = ( whiteEmissive << 16 ) + ( whiteEmissive << 8 ) + whiteEmissive;
  
@@ -109,7 +532,16 @@ index 41e67cd..9e6eaa3 100644
  
  	}
  
-@@ -729,7 +736,7 @@ function addQuad( ctx, a, b, c, d ) {
+@@ -580,7 +709,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
+ 
+ 		applyTextureToMat( threeMat, folder, rwxMaterial.texture, textureExtension, rwxMaterial.mask,
+ 			maskExtension, rwxMaterial.specular, rwxMaterial.normal, fflate, loadingPromises, textureColorSpace, textureWrapping, alphaTest, textureFiltering,
+-			allowURLs );
++			allowURLs, textureMap );
+ 
+ 	}
+ 
+@@ -729,7 +858,7 @@ function addQuad( ctx, a, b, c, d ) {
  
  	}
  
@@ -118,7 +550,7 @@ index 41e67cd..9e6eaa3 100644
  
  		// We need to use a whole different geometry logic to handle wireframe quads the way the AW client does:
  		// by only rendering the outter edges
-@@ -1589,7 +1596,7 @@ function mergeGeometryRecursive( group, ctx, transform = group.matrix ) {
+@@ -1589,7 +1718,7 @@ function mergeGeometryRecursive( group, ctx, transform = group.matrix ) {
  			// Do not forget the UVs either
  			if ( child.geometry.getAttribute( 'uv' ) === undefined ) {
  
@@ -127,7 +559,7 @@ index 41e67cd..9e6eaa3 100644
  				ctx.uvs.push( ...uvs );
  
  			} else {
-@@ -1709,33 +1716,33 @@ class RWXMaterial {
+@@ -1709,33 +1838,33 @@ class RWXMaterial {
  
  	getMatSignature() {
  
@@ -181,14 +613,31 @@ index 41e67cd..9e6eaa3 100644
 +			this.specularMap ?? '',
 +			this.normalMap ?? '',
 +			this.textureaddressmode,
-+			+this.collision,
++			+ this.collision,
 +			this.tag,
 +			Math.round( this.ratio * 100 ) / 100
 +		].join( '_' );
  
  	}
  
-@@ -1933,48 +1940,50 @@ class RWXLoader extends Loader {
+@@ -1750,6 +1879,7 @@ class RWXMaterialManager {
+ 	allowURLs = false ) {
+ 
+ 		this.threeMaterialMap = new Map();
++		this.textureMap = new Map();
+ 
+ 		this.folder = folder;
+ 		this.textureExtension = textureExtension;
+@@ -1770,7 +1900,7 @@ class RWXMaterialManager {
+ 		const threeMaterial = makeThreeMaterial( newRWXMaterial,
+ 			this.folder, this.textureExtension, this.maskExtension, this.fflate,
+ 			this.useBasicMaterial, this.textureColorSpace, this.alphaTest,
+-			this.allowURLs );
++			this.allowURLs, this.textureMap );
+ 		threeMaterial.signature = finalSignature;
+ 
+ 		this.threeMaterialMap.set( finalSignature, threeMaterial );
+@@ -1933,48 +2063,50 @@ class RWXLoader extends Loader {
  
  		super( manager );
  
@@ -279,7 +728,7 @@ index 41e67cd..9e6eaa3 100644
  
  		this.fflate = null;
  		this.textureExtension = '.jpg';
-@@ -2223,7 +2232,7 @@ class RWXLoader extends Loader {
+@@ -2223,7 +2355,7 @@ class RWXLoader extends Loader {
  		let groupBeforeProto = null;
  		let firstClumpStarted = false;
  
@@ -288,7 +737,7 @@ index 41e67cd..9e6eaa3 100644
  
  		// Ready root object group
  		ctx.rootGroup = new Group();
-@@ -2241,21 +2250,18 @@ class RWXLoader extends Loader {
+@@ -2241,21 +2373,18 @@ class RWXLoader extends Loader {
  
  		for ( let i = 0, l = lines.length; i < l; i ++ ) {
  
@@ -314,7 +763,7 @@ index 41e67cd..9e6eaa3 100644
  
  				makeMeshToCurrentGroup( ctx );
  				clearGeometry( ctx );
-@@ -2275,8 +2281,7 @@ class RWXLoader extends Loader {
+@@ -2275,8 +2404,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -324,7 +773,7 @@ index 41e67cd..9e6eaa3 100644
  
  				makeMeshToCurrentGroup( ctx );
  
-@@ -2289,8 +2294,7 @@ class RWXLoader extends Loader {
+@@ -2289,8 +2417,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -334,7 +783,7 @@ index 41e67cd..9e6eaa3 100644
  
  				saveCurrentTransform( ctx );
  
-@@ -2298,8 +2302,7 @@ class RWXLoader extends Loader {
+@@ -2298,8 +2425,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -344,7 +793,7 @@ index 41e67cd..9e6eaa3 100644
  
  				loadCurrentTransform( ctx );
  
-@@ -2329,8 +2332,7 @@ class RWXLoader extends Loader {
+@@ -2329,8 +2455,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -354,7 +803,7 @@ index 41e67cd..9e6eaa3 100644
  
  				makeMeshToCurrentGroup( ctx );
  
-@@ -2593,10 +2595,10 @@ class RWXLoader extends Loader {
+@@ -2593,10 +2718,10 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -367,7 +816,7 @@ index 41e67cd..9e6eaa3 100644
  
  			}
  
-@@ -2843,7 +2845,7 @@ class RWXLoader extends Loader {
+@@ -2843,7 +2968,7 @@ class RWXLoader extends Loader {
  			res = this.addtexturemodeRegex.exec( line );
  			if ( res != null ) {
  
@@ -376,7 +825,7 @@ index 41e67cd..9e6eaa3 100644
  
  				// Do not push the same texture mode twice
  				if ( ! ctx.materialTracker.currentRWXMaterial.texturemodes.includes( TextureMode[ tm ] ) ) {
-@@ -2860,7 +2862,7 @@ class RWXLoader extends Loader {
+@@ -2860,7 +2985,7 @@ class RWXLoader extends Loader {
  			res = this.removetexturemodeRegex.exec( line );
  			if ( res != null ) {
  
@@ -385,3 +834,11 @@ index 41e67cd..9e6eaa3 100644
  
  				// Cannot remove Filter mode when forcing texture filtering
  				if ( this.forceTextureFiltering && TextureMode[ tm ] === TextureMode.FILTER ) continue;
+@@ -3029,6 +3154,6 @@ class RWXLoader extends Loader {
+ }
+ 
+ export default RWXLoader;
+-export { RWXMaterial, RWXMaterialManager, RWXMaterialTracker, makeThreeMaterial, makeMaskPromise, applyTextureToMat,
++export { RWXMaterial, RWXMaterialManager, RWXMaterialTracker, makeThreeMaterial, applyTextureToMat,
+ 	LightSampling, GeometrySampling, TextureMode, MaterialMode, TextureAddressMode, signTag, pictureTag, flattenGroup,
+ 	defaultAlphaTest, firstClumpName, scaleGroupName };

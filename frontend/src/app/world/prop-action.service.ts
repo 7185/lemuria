@@ -15,7 +15,6 @@ import type {MeshPhongMaterial, Object3D, Vector3} from 'three'
 import {
   AdditiveBlending,
   AudioLoader,
-  CanvasTexture,
   Color,
   Group,
   ImageBitmapLoader,
@@ -23,7 +22,8 @@ import {
   RepeatWrapping,
   Sprite,
   SpriteMaterial,
-  SRGBColorSpace
+  SRGBColorSpace,
+  Texture
 } from 'three'
 import {pictureTag as PICTURE_TAG, signTag as SIGN_TAG} from 'three-rwx-loader'
 import {environment} from '../../environments/environment'
@@ -597,9 +597,10 @@ export class PropActionService {
    * @param bitmap Image
    */
   private pictureToProp(prop: Group, bitmap: ImageBitmap) {
-    const picture = new CanvasTexture(bitmap)
+    const picture = new Texture(bitmap)
     picture.colorSpace = SRGBColorSpace
     picture.wrapS = picture.wrapT = RepeatWrapping
+    picture.needsUpdate = true
     prop.traverse((child: Object3D) => {
       if (
         child instanceof Mesh &&
@@ -619,7 +620,7 @@ export class PropActionService {
             }
             newMaterials[i].color = new Color(1, 1, 1)
             newMaterials[i].map = picture
-            const {width, height} = picture.image
+            const {width, height} = bitmap
             if (height > width && height % width === 0) {
               // Animated picture
               const yTiles = height / width
@@ -685,8 +686,9 @@ export class PropActionService {
                 newMaterials[i].userData.ratio
               )
               newMaterials[i].color = new Color(1, 1, 1)
-              newMaterials[i].map = new CanvasTexture(bitmap)
+              newMaterials[i].map = new Texture(bitmap)
               newMaterials[i].map.colorSpace = SRGBColorSpace
+              newMaterials[i].map.needsUpdate = true
             } catch (error) {
               console.error('Error in textCanvas:', error)
             }
@@ -775,8 +777,9 @@ export class PropActionService {
     const size = prop.userData.corona?.size / 100 || 1
     const color = prop.userData.light?.color ?? 0xffffff
     this.textureLoader.load(textureUrl, (bitmap) => {
-      const texture = new CanvasTexture(bitmap)
+      const texture = new Texture(bitmap)
       texture.colorSpace = SRGBColorSpace
+      texture.needsUpdate = true
       const corona = new Sprite(
         new SpriteMaterial({
           map: texture,
