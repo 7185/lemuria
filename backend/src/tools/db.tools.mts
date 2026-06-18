@@ -1,6 +1,6 @@
+import {PrismaBetterSqlite3} from '@prisma/adapter-better-sqlite3'
 import fs from 'fs/promises'
 import readline from 'readline'
-import {PrismaBetterSqlite3} from '@prisma/adapter-better-sqlite3'
 import {PrismaClient} from '../generated/prisma/client'
 
 const db = new PrismaClient({
@@ -78,9 +78,13 @@ async function* loadPropdump(filePath: string): AsyncGenerator<any[]> {
     line = line.replace(/\x80\x7f/g, '\r\n').replace(/\x7f/g, '\n')
     const parts = line
       .split(' ')
-      .reduce<
-        string[]
-      >((acc, cur, idx) => (idx < 12 ? [...acc, cur] : [...acc.slice(0, -1), `${acc[acc.length - 1]} ${cur}`]), [])
+      .reduce<string[]>(
+        (acc, cur, idx) =>
+          idx < 12
+            ? [...acc, cur]
+            : [...acc.slice(0, -1), `${acc[acc.length - 1]} ${cur}`],
+        []
+      )
 
     if (parts.length < 12) continue
 

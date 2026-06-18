@@ -1,7 +1,7 @@
-import {Test, TestingModule} from '@nestjs/testing'
-import {HealthController} from './health.controller'
 import {HealthCheckService, PrismaHealthIndicator} from '@nestjs/terminus'
+import {Test, TestingModule} from '@nestjs/testing'
 import {DbService} from '../db/db.service'
+import {HealthController} from './health.controller'
 
 describe(HealthController.name, () => {
   let controller: HealthController

@@ -1,6 +1,6 @@
-import {DbService} from '../db/db.service'
-import {Test, TestingModule} from '@nestjs/testing'
 import {CACHE_MANAGER} from '@nestjs/cache-manager'
+import {Test, TestingModule} from '@nestjs/testing'
+import {DbService} from '../db/db.service'
 import {WorldService} from './world.service'
 
 describe(WorldService.name, () => {

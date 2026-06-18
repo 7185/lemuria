@@ -1,26 +1,20 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  signal,
-  viewChild
-} from '@angular/core'
+import {Component, inject, signal, viewChild} from '@angular/core'
 import {FormsModule} from '@angular/forms'
 import {MatIconButton} from '@angular/material/button'
-import {MatInput, MatLabel} from '@angular/material/input'
 import {MatFormField, MatPrefix} from '@angular/material/form-field'
+import {MatInput, MatLabel} from '@angular/material/input'
 import {FaIconComponent} from '@fortawesome/angular-fontawesome'
-import {LinkifyPipe} from '../../utils/linkify.pipe'
 import {faComments} from '@fortawesome/free-solid-svg-icons'
 import {
   VirtualScrollerComponent,
   VirtualScrollerModule
 } from '@iharbeck/ngx-virtual-scroller'
+import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
 import type {Message} from '../../network'
 import {SocketService} from '../../network'
-import {UserService} from '../../user'
-import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
 import {SettingsService} from '../../settings/settings.service'
+import {UserService} from '../../user'
+import {LinkifyPipe} from '../../utils/linkify.pipe'
 
 @Component({
   imports: [
@@ -45,8 +39,7 @@ import {SettingsService} from '../../settings/settings.service'
   },
   selector: 'app-ui-chat-zone',
   templateUrl: './ui-chat-zone.component.html',
-  styleUrl: './ui-chat-zone.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrl: './ui-chat-zone.component.scss'
 })
 export class UiChatZoneComponent {
   private virtualScroller = viewChild<VirtualScrollerComponent>(

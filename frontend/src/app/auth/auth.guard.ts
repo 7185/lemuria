@@ -1,16 +1,13 @@
 import {inject} from '@angular/core'
 import {Router} from '@angular/router'
-import {HttpService} from '../network'
+import {AuthService} from './auth.service'
 
 /**
  * Guard for routing
  */
 export const AuthGuard = () => {
-  const http = inject(HttpService)
+  const authSvc = inject(AuthService)
   const router = inject(Router)
 
-  if (!http.isLogged()) {
-    router.navigate(['login'])
-  }
-  return http.isLogged()
+  return authSvc.isLogged() || router.navigate(['login'])
 }

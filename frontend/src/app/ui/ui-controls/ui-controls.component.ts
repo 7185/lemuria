@@ -1,18 +1,18 @@
+import {Component, inject, signal} from '@angular/core'
 import {MatButton} from '@angular/material/button'
 import {
   MatDialogContent,
   MatDialogRef,
   MatDialogTitle
 } from '@angular/material/dialog'
-import type {PressedKey} from '../../engine/inputsystem.service'
-import {InputSystemService} from '../../engine/inputsystem.service'
-import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
-import {Subject, take, takeUntil, timeout} from 'rxjs'
 import {
   provideTranslocoScope,
   TranslocoDirective,
   TranslocoService
 } from '@jsverse/transloco'
+import {Subject, take, takeUntil, timeout} from 'rxjs'
+import type {PressedKey} from '../../engine/inputsystem.service'
+import {InputSystemService} from '../../engine/inputsystem.service'
 
 @Component({
   imports: [TranslocoDirective, MatButton, MatDialogContent, MatDialogTitle],
@@ -21,8 +21,7 @@ import {
   ],
   selector: 'app-ui-controls',
   templateUrl: './ui-controls.component.html',
-  styleUrl: './ui-controls.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrl: './ui-controls.component.scss'
 })
 export class UiControlsComponent {
   protected controlsKeys: PressedKey[] = [

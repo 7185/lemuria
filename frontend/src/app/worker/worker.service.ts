@@ -1,7 +1,7 @@
-import {Injectable} from '@angular/core'
+import {Service} from '@angular/core'
 import {filter, Subject, take} from 'rxjs'
 
-@Injectable({providedIn: 'root'})
+@Service()
 export class WorkerService {
   private worker = new Worker(new URL('./worker', import.meta.url))
   private workerSubject = new Subject<MessageEvent>()

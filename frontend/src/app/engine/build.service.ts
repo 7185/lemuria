@@ -1,5 +1,5 @@
-import {inject, Injectable, signal} from '@angular/core'
 import type {Material, Mesh, Object3D} from 'three'
+import {inject, Service, signal} from '@angular/core'
 import {
   AxesHelper,
   BoxGeometry,
@@ -12,13 +12,11 @@ import {
   Vector3
 } from 'three'
 import type {PropCtl} from '../world/prop.service'
-import {InputSystemService} from './inputsystem.service'
-import {PropActionService} from '../world/prop-action.service'
 import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils/constants'
+import {PropActionService} from '../world/prop-action.service'
+import {InputSystemService} from './inputsystem.service'
 
-@Injectable({
-  providedIn: 'root'
-})
+@Service()
 export class BuildService {
   buildMode = false
   selectedCell = signal<{

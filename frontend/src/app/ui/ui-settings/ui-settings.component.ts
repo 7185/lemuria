@@ -1,10 +1,7 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  model,
-  signal
-} from '@angular/core'
+import type {LangDefinition} from '@jsverse/transloco'
+import {Component, inject, model, signal} from '@angular/core'
+import {toObservable} from '@angular/core/rxjs-interop'
+import {FormsModule} from '@angular/forms'
 import {MatButton} from '@angular/material/button'
 import {MatCheckbox} from '@angular/material/checkbox'
 import {
@@ -15,17 +12,14 @@ import {
 } from '@angular/material/dialog'
 import {MatFormField} from '@angular/material/form-field'
 import {MatInput, MatLabel} from '@angular/material/input'
-import {FormsModule} from '@angular/forms'
-import {EngineService} from '../../engine/engine.service'
-import {SettingsService} from '../../settings/settings.service'
-import type {LangDefinition} from '@jsverse/transloco'
+import {MatOption, MatSelect} from '@angular/material/select'
 import {
   provideTranslocoScope,
   TranslocoDirective,
   TranslocoService
 } from '@jsverse/transloco'
-import {MatOption, MatSelect} from '@angular/material/select'
-import {toObservable} from '@angular/core/rxjs-interop'
+import {EngineService} from '../../engine/engine.service'
+import {SettingsService} from '../../settings/settings.service'
 
 @Component({
   imports: [
@@ -48,8 +42,7 @@ import {toObservable} from '@angular/core/rxjs-interop'
   ],
   selector: 'app-ui-settings',
   templateUrl: './ui-settings.component.html',
-  styleUrl: './ui-settings.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrl: './ui-settings.component.scss'
 })
 export class UiSettingsComponent {
   maxFps: number

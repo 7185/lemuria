@@ -1,10 +1,10 @@
-import {computed, inject, Injectable} from '@angular/core'
+import {computed, inject, Service} from '@angular/core'
 import parseSequence, {FileType, getJointTag} from 'aw-sequence-parser'
+import * as fflate from 'fflate'
+import {Quaternion, Vector3} from 'three'
 import {EngineService} from '../engine/engine.service'
 import {PropService} from '../world/prop.service'
 import {AvatarAnimationManager} from './avatar-animation.manager'
-import {Quaternion, Vector3} from 'three'
-import * as fflate from 'fflate'
 
 export interface ThreeSequence {
   original: ParsedSequence | null
@@ -72,7 +72,7 @@ export const interpolateThreeFrames = (
   }
 }
 
-@Injectable({providedIn: 'root'})
+@Service()
 export class AvatarAnimationService {
   private sequences = new Map<string, Promise<ThreeSequence> | null>()
   private avatarAnimationManagers = new Map<

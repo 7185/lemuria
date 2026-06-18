@@ -1,9 +1,9 @@
-import {Test, TestingModule} from '@nestjs/testing'
-import {FastifyAdapter, NestFastifyApplication} from '@nestjs/platform-fastify'
 import {fastifyCookie} from '@fastify/cookie'
+import {FastifyAdapter, NestFastifyApplication} from '@nestjs/platform-fastify'
+import {Test, TestingModule} from '@nestjs/testing'
 import request from 'supertest'
-import {UserModule} from '../src/user/user.module'
 import {config} from '../src/app.config'
+import {UserModule} from '../src/user/user.module'
 
 describe('AppController (e2e)', () => {
   let app: NestFastifyApplication

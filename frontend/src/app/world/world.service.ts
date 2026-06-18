@@ -1,6 +1,8 @@
-import {inject, Injectable, signal} from '@angular/core'
-import {toObservable} from '@angular/core/rxjs-interop'
 import type {Observable, Subscription} from 'rxjs'
+import type {Object3D, Vector3Like} from 'three'
+import {HttpClient} from '@angular/common/http'
+import {inject, Service, signal} from '@angular/core'
+import {toObservable} from '@angular/core/rxjs-interop'
 import {
   catchError,
   concatMap,
@@ -15,24 +17,23 @@ import {
   throwError,
   toArray
 } from 'rxjs'
-import type {Object3D, Vector3Like} from 'three'
 import {Box3, Euler, Group, LOD, Vector3} from 'three'
-import type {User} from '../user'
-import {UserService} from '../user'
-import {SettingsService} from '../settings/settings.service'
-import {EngineService} from '../engine/engine.service'
-import type {TerrainData, WaterData} from './terrain.service'
-import {TerrainService} from './terrain.service'
-import {TeleportService} from '../engine/teleport.service'
-import {PlayerCollider} from '../engine/player-collider'
-import type {PropCtl} from './prop.service'
-import {PropService} from './prop.service'
-import {PropActionService} from './prop-action.service'
-import type {Avatar, PropEntry} from '../network'
-import {HttpService, SocketService} from '../network'
 import type {AvatarAnimationManager} from '../animation'
-import {AvatarAnimationService} from '../animation'
+import type {User} from '../user'
+import type {LightData} from './lighting.service'
+import type {PropCtl, PropEntry} from './prop.service'
+import type {SkyData} from './sky.service'
+import type {TerrainData, WaterData} from './terrain.service'
 import {environment} from '../../environments/environment'
+import {AvatarAnimationService} from '../animation'
+import {AuthService} from '../auth/auth.service'
+import {BuildService} from '../engine/build.service'
+import {EngineService} from '../engine/engine.service'
+import {PlayerCollider} from '../engine/player-collider'
+import {TeleportService} from '../engine/teleport.service'
+import {SocketService} from '../network'
+import {SettingsService} from '../settings/settings.service'
+import {UserService} from '../user'
 import {DEG, EYE_LEVEL} from '../utils/constants'
 import {
   disposeGroupGeometries,
@@ -41,11 +42,18 @@ import {
   posToStringYaw,
   stringToPos
 } from '../utils/utils'
-import {BuildService} from '../engine/build.service'
-import type {LightData} from './lighting.service'
 import {LightingService} from './lighting.service'
-import type {SkyData} from './sky.service'
+import {PropActionService} from './prop-action.service'
+import {PropService} from './prop.service'
 import {SkyService} from './sky.service'
+import {TerrainService} from './terrain.service'
+
+export interface Avatar {
+  name: string
+  geometry: string
+  implicit: Map<string, string>
+  explicit: Map<string, string>
+}
 
 interface WorldData {
   id: number
@@ -59,7 +67,7 @@ interface WorldData {
   light: LightData
 }
 
-@Injectable({providedIn: 'root'})
+@Service()
 export class WorldService {
   avatarList: Avatar[] = []
   ownAvatar = signal<number | null>(null)
@@ -67,6 +75,7 @@ export class WorldService {
   worldId = signal(0)
   worldList = signal<{id: number; name: string; users: number}[]>([])
 
+  private readonly http = inject(HttpClient)
   private readonly engineSvc = inject(EngineService)
   private readonly skySvc = inject(SkyService)
   private readonly lightingSvc = inject(LightingService)
@@ -75,7 +84,7 @@ export class WorldService {
   private readonly propSvc = inject(PropService)
   private readonly propActionSvc = inject(PropActionService)
   private readonly anmSvc = inject(AvatarAnimationService)
-  private readonly http = inject(HttpService)
+  private readonly authSvc = inject(AuthService)
   private readonly settings = inject(SettingsService)
   private readonly socket = inject(SocketService)
   private readonly teleportSvc = inject(TeleportService)
@@ -125,7 +134,7 @@ export class WorldService {
           return
         }
 
-        this.http.world(targetWorld.id).subscribe((w: WorldData) => {
+        this.getWorld(targetWorld.id).subscribe((w: WorldData) => {
           this.teleportSvc.teleportFrom(this.worldName, currentPos, isNew)
           this.setWorld(w, position)
         })
@@ -228,6 +237,61 @@ export class WorldService {
         this.setObjectChunk(this.buildSvc.selectedProp())
       }
     })
+  }
+
+  getAvatars(path: string) {
+    const list: Avatar[] = []
+    let [readImp, readExp] = [false, false]
+    return this.http
+      .get(`${path}/avatars/avatars.dat`, {responseType: 'text'})
+      .pipe(
+        map((fileContent: string) => {
+          fileContent.split('\n').forEach((line: string) => {
+            line = line.trim()
+            const i = list.length - 1
+            if (line === 'avatar') {
+              list.push({
+                name: '',
+                geometry: '',
+                implicit: new Map<string, string>(),
+                explicit: new Map<string, string>()
+              })
+              return
+            }
+            if (line.startsWith('name=')) {
+              list[i].name = line.substring(5)
+            } else if (line.startsWith('geometry=')) {
+              list[i].geometry = line.substring(9)
+            } else if (line.startsWith('beginimp')) {
+              readImp = true
+            } else if (line.startsWith('endimp')) {
+              readImp = false
+            } else if (line.startsWith('beginexp')) {
+              readExp = true
+            } else if (line.startsWith('endexp')) {
+              readExp = false
+            } else {
+              const values = line.split('=')
+              if ((!readImp && !readExp) || values.length !== 2) {
+                return
+              }
+              list[i][readImp ? 'implicit' : 'explicit'].set(
+                values[0],
+                values[1]
+              )
+            }
+          })
+          return list
+        })
+      )
+  }
+
+  getWorld(worldId: number) {
+    return this.http.get(`${environment.url.server}/world/${worldId}`)
+  }
+
+  getWorlds() {
+    return this.http.get(`${environment.url.server}/world/`)
   }
 
   initWorld() {
@@ -418,9 +482,9 @@ export class WorldService {
       z: (z * this.chunkDepth) / 100
     }
 
-    // We first need to fetch the list of props using HttpService, we cannot go further
+    // We first need to fetch the list of props, we cannot go further
     // with this chunk if this call fails
-    return this.http
+    return this.propSvc
       .props(
         this.worldId(),
         x * this.chunkWidth - this.chunkWidth / 2,
@@ -568,7 +632,7 @@ export class WorldService {
     this.skySvc.setSkybox(world.sky)
     this.lightingSvc.setLighting(world.light)
 
-    this.http.avatars(this.propSvc.path()).subscribe((list) => {
+    this.getAvatars(this.propSvc.path()).subscribe((list) => {
       this.avatarList = list
       // Set first avatar on self
       const avatarMap = new Map<number, number>(
@@ -584,7 +648,7 @@ export class WorldService {
   }
 
   private addUser(user: User) {
-    if (user.id === this.http.getLogged()().id) {
+    if (user.id === this.authSvc.getLogged()().id) {
       return
     }
     const group = new Group()

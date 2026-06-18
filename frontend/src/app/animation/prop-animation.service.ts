@@ -1,8 +1,8 @@
-import {Injectable} from '@angular/core'
 import type {Group} from 'three'
+import {Service} from '@angular/core'
 import {RPM, X_AXIS, Y_AXIS, Z_AXIS} from '../utils/constants'
 
-@Injectable({providedIn: 'root'})
+@Service()
 export class PropAnimationService {
   moveProp(prop: Group, delta: number) {
     const moveData = prop.userData.animation.move

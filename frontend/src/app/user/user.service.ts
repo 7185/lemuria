@@ -1,15 +1,15 @@
-import {inject, Injectable, signal} from '@angular/core'
 import type {Vector3} from 'three'
+import {inject, Service, signal} from '@angular/core'
 import {Subject} from 'rxjs'
-import {HttpService} from '../network'
+import {AuthService} from '../auth/auth.service'
 import {User} from './user.model'
 
-@Injectable({providedIn: 'root'})
+@Service()
 export class UserService {
   userList = signal<User[]>([])
   avatarChanged = new Subject<User>()
 
-  private readonly http = inject(HttpService)
+  private readonly authSvc = inject(AuthService)
 
   getUser(id: string) {
     return this.userList().find((user) => user.id === id) ?? new User()
@@ -45,7 +45,7 @@ export class UserService {
 
   setAvatar(userId: string, avatarId: number) {
     const user = this.getUser(userId)
-    if (user?.id === this.http.getLogged()().id) {
+    if (user?.id === this.authSvc.getLogged()().id) {
       return
     }
     user.avatar = avatarId

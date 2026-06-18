@@ -1,23 +1,15 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject
-} from '@angular/core'
-import {DatePipe} from '@angular/common'
-import {FormsModule} from '@angular/forms'
 import {CdkDrag, CdkDragHandle} from '@angular/cdk/drag-drop'
+import {DatePipe} from '@angular/common'
+import {Component, computed, inject} from '@angular/core'
+import {FormsModule} from '@angular/forms'
 import {MatIconButton} from '@angular/material/button'
-import {MatInput, MatLabel} from '@angular/material/input'
 import {MatFormField} from '@angular/material/form-field'
+import {MatInput, MatLabel} from '@angular/material/input'
 import {
   FaIconComponent,
   FaLayersComponent,
   FaLayersTextComponent
 } from '@fortawesome/angular-fontawesome'
-import type {PropCtl} from '../../world/prop.service'
-import {PropService} from '../../world/prop.service'
-import {BuildService} from '../../engine/build.service'
 import {
   faArrowDown,
   faArrowLeft,
@@ -32,6 +24,9 @@ import {
   faTrashCan
 } from '@fortawesome/free-solid-svg-icons'
 import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
+import type {PropCtl} from '../../world/prop.service'
+import {BuildService} from '../../engine/build.service'
+import {PropService} from '../../world/prop.service'
 
 @Component({
   imports: [
@@ -56,8 +51,7 @@ import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
   ],
   selector: 'app-ui-prop-edit',
   templateUrl: './ui-prop-edit.component.html',
-  styleUrl: './ui-prop-edit.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrl: './ui-prop-edit.component.scss'
 })
 export class UiPropEditComponent {
   protected readonly icon = {

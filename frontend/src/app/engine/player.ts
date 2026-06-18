@@ -1,13 +1,13 @@
 import type {LOD, Mesh, Triangle, Vector3Like} from 'three'
-import {Group, Object3D, Vector3} from 'three'
 import type {MeshBVH} from 'three-mesh-bvh'
-import {PlayerCollider} from './player-collider'
+import {inject, signal} from '@angular/core'
+import {Group, Object3D, Vector3} from 'three'
+import type {AvatarAnimationPlayer} from '../animation'
+import {environment} from '../../environments/environment'
 import {DEG, TERRAIN_PAGE_SIZE} from '../utils/constants'
 import {radNormalized, stringToPos} from '../utils/utils'
-import {environment} from '../../environments/environment'
-import {inject, signal} from '@angular/core'
-import type {AvatarAnimationPlayer} from '../animation'
 import {InputSystemService} from './inputsystem.service'
+import {PlayerCollider} from './player-collider'
 
 export class Player {
   static readonly CLIMB_HEIGHT = environment.world.collider.climbHeight

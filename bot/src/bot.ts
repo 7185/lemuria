@@ -1,6 +1,6 @@
-import WebSocket from 'ws'
-import axios from 'axios'
 import type {AxiosResponse} from 'axios'
+import axios from 'axios'
+import WebSocket from 'ws'
 
 const AUTH_COOKIE = 'lemuria_token_access'
 const DEBUG = false

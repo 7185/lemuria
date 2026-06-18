@@ -1,14 +1,13 @@
-import {ChangeDetectionStrategy, Component, inject} from '@angular/core'
-import {RouterOutlet} from '@angular/router'
 import type {LangDefinition} from '@jsverse/transloco'
+import {Component, inject} from '@angular/core'
+import {RouterOutlet} from '@angular/router'
 import {getBrowserLang, TranslocoService} from '@jsverse/transloco'
 import {SettingsService} from './settings/settings.service'
 
 @Component({
   imports: [RouterOutlet],
   selector: 'app-root',
-  template: `<router-outlet />`,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  template: `<router-outlet />`
 })
 export class AppComponent {
   private readonly translocoSvc = inject(TranslocoService)

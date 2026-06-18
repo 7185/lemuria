@@ -1,6 +1,6 @@
-import {Test, TestingModule} from '@nestjs/testing'
 import {HttpModule} from '@nestjs/axios'
 import {CACHE_MANAGER} from '@nestjs/cache-manager'
+import {Test, TestingModule} from '@nestjs/testing'
 import {ProxyController} from './proxy.controller'
 import {ProxyService} from './proxy.service'
 

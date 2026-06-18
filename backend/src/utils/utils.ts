@@ -1,5 +1,5 @@
-import {readFileSync} from 'fs'
 import {Logger} from '@nestjs/common'
+import {readFileSync} from 'fs'
 
 const logger = new Logger('utils')
 

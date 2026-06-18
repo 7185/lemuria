@@ -1,21 +1,22 @@
-import {inject} from '@angular/core'
 import type {HttpInterceptorFn, HttpResponse} from '@angular/common/http'
-import {HttpErrorResponse, HttpHeaders} from '@angular/common/http'
-import {HttpService} from './http.service'
+import {HttpErrorResponse} from '@angular/common/http'
+import {inject} from '@angular/core'
 import {catchError, EMPTY, mergeMap, throwError} from 'rxjs'
 import {environment} from '../../environments/environment'
+import {AuthService} from '../auth/auth.service'
 
 const authUrl = `${environment.url.server}/auth`
 
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
-  const http: HttpService = inject(HttpService)
+  const authSvc: AuthService = inject(AuthService)
+
   return next(req).pipe(
     catchError((err) => {
       if (
         err.status === 401 &&
         !(req.url.startsWith(authUrl) && req.method !== 'GET')
       ) {
-        return renewCookie(http).pipe(mergeMap(() => next(req)))
+        return renewCookie(authSvc).pipe(mergeMap(() => next(req)))
       }
       if (
         err instanceof HttpErrorResponse &&
@@ -28,20 +29,16 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   )
 }
 
-const renewCookie = (http: HttpService) => {
-  if (!http.isLogged()) {
+const renewCookie = (authSvc: AuthService) => {
+  if (!authSvc.isLogged()) {
     // disconnect if session is marked as expired
-    http.logout().subscribe()
+    authSvc.logout().subscribe()
     return EMPTY
   }
-  http.expiration = Math.floor(new Date().getTime() / 1000) + 36000
-  const headers = new HttpHeaders().set(
-    'X-CSRF-TOKEN',
-    HttpService.getCookie(environment.csrf.renew)
-  )
-  return http.post(`${authUrl}/renew`, null, {headers}).pipe(
+  authSvc.expiration = Math.floor(new Date().getTime() / 1000) + 36000
+  return authSvc.renewSession().pipe(
     catchError((refreshError: HttpResponse<unknown>) => {
-      http.logout().subscribe()
+      authSvc.logout().subscribe()
       return throwError(() => refreshError)
     })
   )

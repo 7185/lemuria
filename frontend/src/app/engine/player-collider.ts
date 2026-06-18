@@ -1,4 +1,5 @@
 import type {Triangle} from 'three'
+import type {MeshBVH} from 'three-mesh-bvh'
 import {
   Box3,
   BoxGeometry,
@@ -9,7 +10,6 @@ import {
   Vector3
 } from 'three'
 import {flattenGroup} from 'three-rwx-loader'
-import type {MeshBVH} from 'three-mesh-bvh'
 import {environment} from '../../environments/environment'
 
 const playerBoxSide = environment.world.collider.boxSide

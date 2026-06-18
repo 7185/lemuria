@@ -1,5 +1,7 @@
-import {inject, Injectable} from '@angular/core'
 import type {Observable} from 'rxjs'
+import type {MeshPhongMaterial, Object3D, Vector3} from 'three'
+import {HttpClient} from '@angular/common/http'
+import {inject, Service} from '@angular/core'
 import {
   catchError,
   EMPTY,
@@ -11,7 +13,6 @@ import {
   take,
   tap
 } from 'rxjs'
-import type {MeshPhongMaterial, Object3D, Vector3} from 'three'
 import {
   AdditiveBlending,
   AudioLoader,
@@ -27,23 +28,22 @@ import {
 } from 'three'
 import {pictureTag as PICTURE_TAG, signTag as SIGN_TAG} from 'three-rwx-loader'
 import {environment} from '../../environments/environment'
-import {HttpService} from '../network'
+import {AudioService} from '../engine/audio.service'
+import {TeleportService} from '../engine/teleport.service'
+import {SettingsService} from '../settings/settings.service'
 import {
   disposeMaterial,
   getObjectsByUserData,
   posToStringYaw,
   rgbToHex
 } from '../utils/utils'
-import {SettingsService} from '../settings/settings.service'
-import {AudioService} from '../engine/audio.service'
-import {TeleportService} from '../engine/teleport.service'
 import {WorkerService} from '../worker/worker.service'
 import {PropService} from './prop.service'
 
 const triggers = ['activate', 'adone', 'bump', 'create'] as const
 type Trigger = (typeof triggers)[number]
 
-@Injectable({providedIn: 'root'})
+@Service()
 export class PropActionService {
   private audioLoader = new AudioLoader()
   private textureLoader = new ImageBitmapLoader().setOptions({
@@ -54,7 +54,7 @@ export class PropActionService {
   private readonly settings = inject(SettingsService)
   private readonly audioSvc = inject(AudioService)
   private readonly propSvc = inject(PropService)
-  private readonly http = inject(HttpService)
+  private readonly http = inject(HttpClient)
   private readonly workerSvc = inject(WorkerService)
   private archiveApiQueue = new Subject<{
     prop: Group

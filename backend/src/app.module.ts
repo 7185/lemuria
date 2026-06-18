@@ -1,16 +1,16 @@
-import {Module} from '@nestjs/common'
 import {CacheModule} from '@nestjs/cache-manager'
+import {Module} from '@nestjs/common'
 import {ConfigModule} from '@nestjs/config'
 import {JwtService} from '@nestjs/jwt'
 import {LoggerModule} from 'nestjs-pino'
+import {config} from './app.config'
 import {AppController} from './app.controller'
 import {AppService} from './app.service'
-import {WsGateway} from './ws/ws.gateway'
+import {HealthModule} from './health/health.module'
 import {ProxyModule} from './proxy/proxy.module'
 import {UserModule} from './user/user.module'
 import {WorldModule} from './world/world.module'
-import {HealthModule} from './health/health.module'
-import {config} from './app.config'
+import {WsGateway} from './ws/ws.gateway'
 
 @Module({
   imports: [

@@ -1,24 +1,20 @@
 import {APP_BASE_HREF} from '@angular/common'
-import {
-  provideHttpClient,
-  withFetch,
-  withInterceptors
-} from '@angular/common/http'
+import {provideHttpClient, withInterceptors} from '@angular/common/http'
 import {provideBrowserGlobalErrorListeners} from '@angular/core'
-import {provideRouter, withViewTransitions} from '@angular/router'
 import {bootstrapApplication} from '@angular/platform-browser'
-import {AppComponent} from './app/app.component'
-import {appRoutes} from './app/app-routes'
-import {jwtInterceptor} from './app/network'
-import {TranslocoHttpLoader} from './app/i18n/transloco-loader'
+import {provideRouter, withViewTransitions} from '@angular/router'
 import {provideTransloco} from '@jsverse/transloco'
+import {appRoutes} from './app/app-routes'
+import {AppComponent} from './app/app.component'
+import {TranslocoHttpLoader} from './app/i18n/transloco-loader'
+import {jwtInterceptor} from './app/network'
 import {environment} from './environments/environment'
 
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(appRoutes, withViewTransitions()),
     provideBrowserGlobalErrorListeners(),
-    provideHttpClient(withFetch(), withInterceptors([jwtInterceptor])),
+    provideHttpClient(withInterceptors([jwtInterceptor])),
     provideTransloco({
       config: {
         availableLangs: [

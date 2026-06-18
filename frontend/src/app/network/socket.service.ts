@@ -1,13 +1,13 @@
-import {EngineService} from '../engine/engine.service'
-import {UserService} from '../user'
-import {inject, Injectable} from '@angular/core'
 import type {Subscription} from 'rxjs'
-import {interval, Subject} from 'rxjs'
 import type {WebSocketSubject} from 'rxjs/webSocket'
-import {webSocket} from 'rxjs/webSocket'
+import {inject, Service} from '@angular/core'
 import {TranslocoService} from '@jsverse/transloco'
+import {interval, Subject} from 'rxjs'
+import {webSocket} from 'rxjs/webSocket'
 import {Vector3} from 'three'
 import {environment} from '../../environments/environment'
+import {EngineService} from '../engine/engine.service'
+import {UserService} from '../user'
 
 export interface Message {
   type: string
@@ -15,7 +15,7 @@ export interface Message {
   data?: any
 }
 
-@Injectable({providedIn: 'root'})
+@Service()
 export class SocketService {
   messages = new Subject<Message>()
   connected = false

@@ -1,5 +1,6 @@
+import {HttpClient} from '@angular/common/http'
+import {computed, effect, inject, Service, signal} from '@angular/core'
 import * as fflate from 'fflate'
-import {computed, effect, Injectable, signal} from '@angular/core'
 import {Observable, Subject} from 'rxjs'
 import {
   BufferAttribute,
@@ -10,6 +11,7 @@ import {
   MeshBasicMaterial
 } from 'three'
 import RWXLoader, {flattenGroup, RWXMaterialManager} from 'three-rwx-loader'
+import {environment} from '../../environments/environment'
 import {modelName} from '../utils/utils'
 
 export type PropCtl = [
@@ -33,8 +35,23 @@ export type PropCtl = [
   'deselect'
 ][number]
 
-@Injectable({providedIn: 'root'})
+export type PropEntry = [
+  number,
+  number,
+  string,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  string?,
+  string?
+]
+
+@Service()
 export class PropService {
+  private readonly http = inject(HttpClient)
   propControl = new Subject<PropCtl>()
   path = signal('')
   animatedPictures = []
@@ -66,6 +83,54 @@ export class PropService {
       this.basicLoader.setPath(rwxPath).setResourcePath(resPath)
       this.rwxPropLoader.setPath(rwxPath).setResourcePath(resPath)
     })
+  }
+
+  props(
+    worldId: number,
+    minX: number | null,
+    maxX: number | null,
+    minY: number | null,
+    maxY: number | null,
+    minZ: number | null,
+    maxZ: number | null
+  ) {
+    // Craft params for props GET request
+    const opts: {
+      params: {
+        min_x?: number
+        max_x?: number
+        min_y?: number
+        max_y?: number
+        min_z?: number
+        max_z?: number
+      }
+    } = {
+      params: {}
+    }
+
+    if (minX != null) {
+      opts.params.min_x = minX
+    }
+    if (maxX != null) {
+      opts.params.max_x = maxX
+    }
+    if (minY != null) {
+      opts.params.min_y = minY
+    }
+    if (maxY != null) {
+      opts.params.max_y = maxY
+    }
+    if (minZ != null) {
+      opts.params.min_z = minZ
+    }
+    if (maxZ != null) {
+      opts.params.max_z = maxZ
+    }
+
+    return this.http.get<{entries: PropEntry[]}>(
+      `${environment.url.server}/world/${worldId}/props`,
+      opts
+    )
   }
 
   loadModel(name: string, basic = false): Observable<Group> {

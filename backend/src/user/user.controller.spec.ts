@@ -1,10 +1,10 @@
-import {Test, TestingModule} from '@nestjs/testing'
+import type {FastifyReply} from 'fastify'
 import {JwtModule} from '@nestjs/jwt'
+import {Test, TestingModule} from '@nestjs/testing'
+import {config} from '../app.config'
 import {User} from './user'
 import {UserController} from './user.controller'
 import {UserService} from './user.service'
-import type {FastifyReply} from 'fastify'
-import {config} from '../app.config'
 
 describe(UserController.name, () => {
   let offlineController: UserController

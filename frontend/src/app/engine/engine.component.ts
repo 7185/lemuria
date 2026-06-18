@@ -1,21 +1,19 @@
 import type {ElementRef, OnInit} from '@angular/core'
 import {
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   inject,
   viewChild,
   ViewEncapsulation
 } from '@angular/core'
-import {EngineService} from './engine.service'
 import {WorldService} from '../world/world.service'
+import {EngineService} from './engine.service'
 
 @Component({
   selector: 'app-engine',
   templateUrl: './engine.component.html',
   styleUrl: './engine.component.scss',
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  encapsulation: ViewEncapsulation.None
 })
 export class EngineComponent implements OnInit {
   rendererCanvas =

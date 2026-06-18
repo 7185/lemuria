@@ -1,8 +1,8 @@
-import {fromEvent, timer} from 'rxjs'
-import {toObservable} from '@angular/core/rxjs-interop'
 import type {ElementRef} from '@angular/core'
-import {inject, Injectable, signal} from '@angular/core'
 import type {DirectionalLight, LOD, Sprite, Vector3Like} from 'three'
+import {inject, Service, signal} from '@angular/core'
+import {toObservable} from '@angular/core/rxjs-interop'
+import {fromEvent, timer} from 'rxjs'
 import {
   BufferGeometry,
   Cache,
@@ -24,20 +24,20 @@ import {
   WebGLRenderer
 } from 'three'
 import {
+  acceleratedRaycast,
+  computeBoundsTree,
+  disposeBoundsTree
+} from 'three-mesh-bvh'
+import {
   CSS2DObject,
   CSS2DRenderer
 } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
-import {AudioService} from './audio.service'
-import {BuildService} from './build.service'
-import {UserService} from '../user'
-import type {PropCtl} from '../world/prop.service'
-import {PropService} from '../world/prop.service'
-import {PropActionService} from '../world/prop-action.service'
 import type {AvatarAnimationPlayer} from '../animation'
-import {PropAnimationService} from '../animation'
+import type {PropCtl} from '../world/prop.service'
 import type {PressedKey} from './inputsystem.service'
-import {InputSystemService} from './inputsystem.service'
 import {environment} from '../../environments/environment'
+import {PropAnimationService} from '../animation'
+import {UserService} from '../user'
 import {DEG, EYE_LEVEL, ZERO_VEC} from '../utils/constants'
 import {
   disposeGroupGeometries,
@@ -46,12 +46,12 @@ import {
   radNormalized,
   shortestAngle
 } from '../utils/utils'
+import {PropActionService} from '../world/prop-action.service'
+import {PropService} from '../world/prop.service'
+import {AudioService} from './audio.service'
+import {BuildService} from './build.service'
+import {InputSystemService} from './inputsystem.service'
 import {Player} from './player'
-import {
-  acceleratedRaycast,
-  computeBoundsTree,
-  disposeBoundsTree
-} from 'three-mesh-bvh'
 
 // Faster raycasting using BVH
 BufferGeometry.prototype.computeBoundsTree = computeBoundsTree
@@ -89,7 +89,7 @@ const lightFxMap: Record<string, (now: number, rnd: number) => number> = {
   flicker: (_, rnd) => +(rnd > 0.02)
 }
 
-@Injectable({providedIn: 'root'})
+@Service()
 export class EngineService {
   compassSignal = signal({pos: {x: 0, y: 0, z: 0}, theta: 0})
   fps = signal(0)

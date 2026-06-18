@@ -1,6 +1,13 @@
 import type {Group, MeshPhongMaterial, Object3D, Vector3Like} from 'three'
 import {Mesh} from 'three'
 
+export const getCookie = (name: string): string => {
+  const c = RegExp('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)').exec(
+    document.cookie
+  )
+  return c ? c.pop() : ''
+}
+
 export const posToString = (pos: Vector3Like): string => {
   return `${(Math.abs(pos.z) / 10).toFixed(2)}${pos.z >= 0 ? 'N' : 'S'} ${(
     Math.abs(pos.x) / 10

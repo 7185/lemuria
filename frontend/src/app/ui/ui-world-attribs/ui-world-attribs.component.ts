@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  inject,
-  signal
-} from '@angular/core'
+import {Component, effect, inject, signal} from '@angular/core'
 import {FormsModule} from '@angular/forms'
 import {MatCheckbox} from '@angular/material/checkbox'
 import {MatDialogContent, MatDialogTitle} from '@angular/material/dialog'
@@ -13,10 +7,6 @@ import {MatInput, MatLabel} from '@angular/material/input'
 import {MatSlider, MatSliderThumb} from '@angular/material/slider'
 import {MatTab, MatTabGroup, MatTabLabel} from '@angular/material/tabs'
 import {FaIconComponent} from '@fortawesome/angular-fontawesome'
-import {colorHexToStr, colorStrToHex, hexToRgb} from '../../utils/utils'
-import {SkyService} from '../../world/sky.service'
-import {TerrainService} from '../../world/terrain.service'
-import {LightingService} from '../../world/lighting.service'
 import {
   faMound,
   faPanorama,
@@ -24,6 +14,10 @@ import {
   faWater
 } from '@fortawesome/free-solid-svg-icons'
 import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
+import {colorHexToStr, colorStrToHex, hexToRgb} from '../../utils/utils'
+import {LightingService} from '../../world/lighting.service'
+import {SkyService} from '../../world/sky.service'
+import {TerrainService} from '../../world/terrain.service'
 
 @Component({
   imports: [
@@ -50,8 +44,7 @@ import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
   ],
   selector: 'app-ui-world-attribs',
   templateUrl: './ui-world-attribs.component.html',
-  styleUrl: './ui-world-attribs.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrl: './ui-world-attribs.component.scss'
 })
 export class UiWorldAttribsComponent {
   protected readonly icon = {faMound, faPanorama, faSun, faWater}

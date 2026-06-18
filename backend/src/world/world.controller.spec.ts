@@ -1,12 +1,12 @@
+import type {FastifyReply} from 'fastify'
+import {CACHE_MANAGER} from '@nestjs/cache-manager'
+import {Test, TestingModule} from '@nestjs/testing'
+import {DbService} from '../db/db.service'
+import {User} from '../user/user'
 import {UserModule} from '../user/user.module'
 import {UserService} from '../user/user.service'
-import {Test, TestingModule} from '@nestjs/testing'
-import {CACHE_MANAGER} from '@nestjs/cache-manager'
-import type {FastifyReply} from 'fastify'
-import {DbService} from '../db/db.service'
 import {WorldController} from './world.controller'
 import {WorldService} from './world.service'
-import {User} from '../user/user'
 
 describe(WorldController.name, () => {
   let controller: WorldController

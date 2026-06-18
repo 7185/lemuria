@@ -1,4 +1,4 @@
-import {inject, Injectable} from '@angular/core'
+import {inject, Service} from '@angular/core'
 import {AmbientLight, Color, DirectionalLight, Object3D} from 'three'
 import {EngineService} from '../engine/engine.service'
 import {rgbToHex} from '../utils/utils'
@@ -15,7 +15,7 @@ export interface LightData {
   }
 }
 
-@Injectable({providedIn: 'root'})
+@Service()
 export class LightingService {
   private readonly light: AmbientLight
   private readonly dirLight: DirectionalLight

@@ -1,10 +1,10 @@
-import {UserService} from '../user/user.service'
-import {UserModule} from '../user/user.module'
-import {User} from '../user/user'
 import {Test, TestingModule} from '@nestjs/testing'
-import {WsGateway} from './ws.gateway'
 import {IncomingMessage} from 'http'
 import {WebSocket} from 'ws'
+import {User} from '../user/user'
+import {UserModule} from '../user/user.module'
+import {UserService} from '../user/user.service'
+import {WsGateway} from './ws.gateway'
 
 describe(WsGateway.name, () => {
   let gateway: WsGateway

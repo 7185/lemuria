@@ -1,5 +1,5 @@
 diff --git a/node_modules/three-rwx-loader/src/RWXLoader.js b/node_modules/three-rwx-loader/src/RWXLoader.js
-index 41e67cd..90cab11 100644
+index 41e67cd..5b7936f 100644
 --- a/node_modules/three-rwx-loader/src/RWXLoader.js
 +++ b/node_modules/three-rwx-loader/src/RWXLoader.js
 @@ -16,13 +16,13 @@ import {
@@ -98,7 +98,7 @@ index 41e67cd..90cab11 100644
  	}
  
 -	loadingPromises.push( new Promise( ( resolveTex, rejectTex ) => {
-+	const texCacheKey = `tex_${texturePath}_${textureColorSpace}_${textureWrapping}_${textureFiltering}`;
++	const texCacheKey = `tex_${texturePath}_${textureColorSpace}`;
 +
 +	if ( textureMap.has( texCacheKey ) ) {
  
@@ -196,7 +196,7 @@ index 41e67cd..90cab11 100644
 +		// Otherwise, if it's a single name: do not append the extension to it if
 +		// it's already embedded in the original string.
 +		const maskFilePath = urlRes ? maskName : folder + '/' + maskBaseName + maskExtension;
-+		const globalMaskKey = `mask_${maskFilePath}_${textureColorSpace}_${textureWrapping}_${textureFiltering}`;
++		const globalMaskKey = `mask_${maskFilePath}_${textureColorSpace}`;
 +
 +		if ( textureMap.has( globalMaskKey ) ) {
 +
@@ -410,7 +410,7 @@ index 41e67cd..90cab11 100644
  		const normalPath = urlRes ? normalName : folder + '/' + normalName + textureExtension;
  
 -		loadingPromises.push( new Promise( ( resolve, reject ) => {
-+		const normCacheKey = `norm_${normalPath}_${textureWrapping}`;
++		const normCacheKey = `norm_${normalPath}`;
  
 -			loader.load( normalPath, ( normalMap ) => {
 +		if ( textureMap.has( normCacheKey ) ) {
@@ -464,7 +464,7 @@ index 41e67cd..90cab11 100644
  		const specularPath = urlRes ? specularName : folder + '/' + specularName + textureExtension;
  
 -		loadingPromises.push( new Promise( ( resolve, reject ) => {
-+		const specCacheKey = `spec_${specularPath}_${textureWrapping}`;
++		const specCacheKey = `spec_${specularPath}`;
 +
 +		if ( textureMap.has( specCacheKey ) ) {
  

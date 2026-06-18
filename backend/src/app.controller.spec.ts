@@ -1,5 +1,5 @@
-import {Test, TestingModule} from '@nestjs/testing'
 import type {FastifyReply} from 'fastify'
+import {Test, TestingModule} from '@nestjs/testing'
 import {AppController} from './app.controller'
 import {AppService} from './app.service'
 

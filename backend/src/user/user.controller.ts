@@ -1,8 +1,8 @@
+import type {FastifyReply} from 'fastify'
 import {Body, Controller, Delete, Get, Headers, Post, Res} from '@nestjs/common'
 import {JwtService} from '@nestjs/jwt'
-import {UserService} from './user.service'
-import type {FastifyReply} from 'fastify'
 import {config} from '../app.config'
+import {UserService} from './user.service'
 
 @Controller('/api/v1/auth')
 export class UserController {

@@ -6,12 +6,12 @@
   "type": "module",
   "scripts": {
     "start": "node --experimental-strip-types src/bonobot.ts",
-    "format": "prettier --write \"src/**/*.ts\" \"*.{m,}ts\"",
+    "format": "oxfmt --write \"src/**/*.ts\" \"*.{m,}ts\"",
     "lint": "eslint \"src/**/*.ts\""
   },
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.17.0",
+    "axios": "^1.18.0",
     "ws": "^8.20.0"
   },
   "devDependencies": {

@@ -1,5 +1,4 @@
-import {effect, inject, Injectable, signal} from '@angular/core'
-import {colorHexToStr, colorStrToHex, hexToRgb, rgbToHex} from '../utils/utils'
+import {effect, inject, Service, signal} from '@angular/core'
 import {
   Box3,
   BufferAttribute,
@@ -11,6 +10,7 @@ import {
 } from 'three'
 import {SRGBToLinear} from 'three/src/math/ColorManagement.js'
 import {EngineService} from '../engine/engine.service'
+import {colorHexToStr, colorStrToHex, hexToRgb, rgbToHex} from '../utils/utils'
 import {PropService} from './prop.service'
 
 export interface SkyData {
@@ -23,7 +23,7 @@ export interface SkyData {
   bottom_color: [number, number, number]
 }
 
-@Injectable({providedIn: 'root'})
+@Service()
 export class SkyService {
   private readonly engineSvc = inject(EngineService)
   private readonly propSvc = inject(PropService)

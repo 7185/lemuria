@@ -1,5 +1,5 @@
-import {Bot} from './bot.ts'
 import {setTimeout} from 'timers/promises'
+import {Bot} from './bot.ts'
 
 const WEB_URL = 'https://lemuria.7185.fr/api/v1'
 const WS_URL = 'wss://lemuria.7185.fr/api/v1/ws'
@@ -100,25 +100,27 @@ class Bonobot extends Bot {
         await this.sendMsg(`${this.x},${this.y},${this.z}`)
         break
       case '!come': {
-        if (!user) {
-          await this.sendMsg("Sorry, I don't know who you are.")
-        } else if (user.world !== this.world) {
-          const worldName = this.world
-            ? this.worldlist[this.world]?.name
-            : 'Nowhere'
-          await this.sendMsg(`Sorry, I'm on ${worldName}...`)
+        if (user) {
+          if (user.world !== this.world) {
+            const worldName = this.world
+              ? this.worldlist[this.world]?.name
+              : 'Nowhere'
+            await this.sendMsg(`Sorry, I'm on ${worldName}...`)
+          } else {
+            await this.sendMsg('Coming...')
+            this.currentMoveThread++
+            this.move(user.x, user.z).catch(console.error)
+          }
         } else {
-          await this.sendMsg('Coming...')
-          this.currentMoveThread++
-          this.move(user.x, user.z).catch(console.error)
+          await this.sendMsg("Sorry, I don't know who you are.")
         }
         break
       }
       case '!whereami': {
-        if (!user) {
-          await this.sendMsg("Sorry, I don't know who you are.")
-        } else {
+        if (user) {
           await this.sendMsg(`${user.x},${user.y},${user.z}`)
+        } else {
+          await this.sendMsg("Sorry, I don't know who you are.")
         }
         break
       }

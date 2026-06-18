@@ -1,5 +1,5 @@
-import {createToken, CstParser, Lexer} from 'chevrotain'
 import type {CstNode, IParserConfig, ITokenConfig, TokenType} from 'chevrotain'
+import {createToken, CstParser, Lexer} from 'chevrotain'
 
 // Tokens
 export const allTokens: TokenType[] = []

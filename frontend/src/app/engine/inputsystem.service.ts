@@ -1,4 +1,4 @@
-import {inject, Injectable} from '@angular/core'
+import {inject, Service} from '@angular/core'
 import {filter, fromEvent, tap} from 'rxjs'
 import {SettingsService} from '../settings/settings.service'
 
@@ -26,7 +26,7 @@ export type PressedKey = (typeof pressedKeys)[number]
 
 const ignoredElements = ['INPUT', 'TEXTAREA']
 
-@Injectable({providedIn: 'root'})
+@Service()
 export class InputSystemService {
   controls: Record<PressedKey, boolean> = pressedKeys.reduce(
     (acc, value) => {

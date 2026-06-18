@@ -1,4 +1,8 @@
-import {inject, Injectable} from '@angular/core'
+import type {Observable} from 'rxjs'
+import type {BVHOptions} from 'three-mesh-bvh'
+import {HttpClient} from '@angular/common/http'
+import {inject, Service} from '@angular/core'
+import {forkJoin, from, map} from 'rxjs'
 import {
   BufferAttribute,
   Color,
@@ -11,16 +15,12 @@ import {
   SRGBColorSpace,
   Texture
 } from 'three'
-import type {Observable} from 'rxjs'
-import {forkJoin, from, map} from 'rxjs'
-import type {BVHOptions} from 'three-mesh-bvh'
 import {BVHHelper} from 'three-mesh-bvh'
+import {environment} from '../../environments/environment'
 import {EngineService} from '../engine/engine.service'
-import {PropService} from './prop.service'
-import {HttpService} from '../network'
 import {TERRAIN_PAGE_SIZE} from '../utils/constants'
 import {rgbToHex} from '../utils/utils'
-import {environment} from '../../environments/environment'
+import {PropService} from './prop.service'
 
 export interface WaterData {
   enabled?: boolean
@@ -36,12 +36,12 @@ export interface TerrainData {
   enabled: boolean
   offset: number
 }
-@Injectable({providedIn: 'root'})
+@Service()
 export class TerrainService {
   terrain: Group | null = null
   water: Group | null = null
+  private readonly http = inject(HttpClient)
   private readonly engineSvc = inject(EngineService)
-  private readonly http = inject(HttpService)
   private readonly propSvc = inject(PropService)
   private textureLoader = new ImageBitmapLoader().setOptions({
     imageOrientation: 'flipY'
@@ -52,6 +52,12 @@ export class TerrainService {
   private waterBottomMaterials: MeshLambertMaterial[] = []
   private waterTopMaterials: MeshLambertMaterial[] = []
   private loadingPages = new Set()
+
+  getTerrain(worldId: number, pageX: number, pageZ: number) {
+    return this.http.get(`${environment.url.server}/world/${worldId}/terrain`, {
+      params: {page_x: pageX, page_z: pageZ}
+    })
+  }
 
   setWater(water: WaterData | null = null) {
     if (this.water != null) {
@@ -269,7 +275,7 @@ export class TerrainService {
 
     this.loadingPages.add(`${xPage}_${zPage}`)
 
-    this.http.terrain(worldId, xPage, zPage).subscribe((elevData) => {
+    this.getTerrain(worldId, xPage, zPage).subscribe((elevData) => {
       const geometry = new PlaneGeometry(
         TERRAIN_PAGE_SIZE * 10,
         TERRAIN_PAGE_SIZE * 10,

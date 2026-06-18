@@ -1,4 +1,6 @@
+import type {Vector3Like} from 'three'
 import {KeyValuePipe} from '@angular/common'
+import {Component, inject, signal} from '@angular/core'
 import {toObservable} from '@angular/core/rxjs-interop'
 import {MatBadge} from '@angular/material/badge'
 import {MatIconButton} from '@angular/material/button'
@@ -16,18 +18,6 @@ import {
   FaLayersComponent,
   FaLayersTextComponent
 } from '@fortawesome/angular-fontawesome'
-import {HttpService} from '../../network'
-import {EngineService} from '../../engine/engine.service'
-import {SettingsService} from '../../settings/settings.service'
-import {TeleportService} from '../../engine/teleport.service'
-import {WorldService} from '../../world/world.service'
-import {UserService} from '../../user'
-import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
-import {SocketService} from '../../network'
-import {environment} from '../../../environments/environment'
-import type {Vector3Like} from 'three'
-import {distinctUntilChanged, throttleTime} from 'rxjs'
-import {altToString, posToString} from '../../utils/utils'
 import {
   faArrowLeft,
   faArrowRight,
@@ -49,6 +39,16 @@ import {
   faVideo
 } from '@fortawesome/free-solid-svg-icons'
 import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
+import {distinctUntilChanged, throttleTime} from 'rxjs'
+import {environment} from '../../../environments/environment'
+import {AuthService} from '../../auth/auth.service'
+import {EngineService} from '../../engine/engine.service'
+import {TeleportService} from '../../engine/teleport.service'
+import {SocketService} from '../../network'
+import {SettingsService} from '../../settings/settings.service'
+import {UserService} from '../../user'
+import {altToString, posToString} from '../../utils/utils'
+import {WorldService} from '../../world/world.service'
 
 @Component({
   imports: [
@@ -71,8 +71,7 @@ import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
   ],
   selector: 'app-ui-toolbar',
   templateUrl: './ui-toolbar.component.html',
-  styleUrl: './ui-toolbar.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrl: './ui-toolbar.component.scss'
 })
 export class UiToolbarComponent {
   protected readonly icon = {
@@ -118,7 +117,7 @@ export class UiToolbarComponent {
   protected readonly teleportSvc = inject(TeleportService)
   protected readonly userSvc = inject(UserService)
   private readonly engineSvc = inject(EngineService)
-  private readonly http = inject(HttpService)
+  private readonly authSvc = inject(AuthService)
   private readonly settings = inject(SettingsService)
 
   constructor() {
@@ -131,11 +130,11 @@ export class UiToolbarComponent {
         }
       })
     })
-    toObservable(this.http.getLogged()).subscribe((u) => {
+    toObservable(this.authSvc.getLogged()).subscribe((u) => {
       this.userId.set(u.id)
       if (u.id == null) return
-      this.http
-        .worlds()
+      this.worldSvc
+        .getWorlds()
         .subscribe((w: {id: number; name: string; users: number}[]) => {
           this.worldSvc.worldList.set(w)
           const home = this.settings.get('home')
@@ -221,7 +220,7 @@ export class UiToolbarComponent {
     if (this.socket.connected) {
       this.socket.close()
     }
-    this.http.logout().subscribe()
+    this.authSvc.logout().subscribe()
   }
 
   async openSettings() {

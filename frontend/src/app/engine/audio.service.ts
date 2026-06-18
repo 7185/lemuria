@@ -1,10 +1,8 @@
-import {Injectable} from '@angular/core'
 import type {PerspectiveCamera} from 'three'
+import {Service} from '@angular/core'
 import {Audio, AudioListener} from 'three'
 
-@Injectable({
-  providedIn: 'root'
-})
+@Service()
 export class AudioService {
   private audioListener = new AudioListener()
   private bgAudio = new Audio(this.audioListener)

@@ -1,14 +1,11 @@
-import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
+import {Component, inject, signal} from '@angular/core'
 import {form, FormField, minLength, required} from '@angular/forms/signals'
-import {ActivatedRoute, Router} from '@angular/router'
 import {MatButton, MatIconButton} from '@angular/material/button'
 import {MatCard} from '@angular/material/card'
-import {MatError, MatInput, MatSuffix} from '@angular/material/input'
 import {MatFormField, MatLabel} from '@angular/material/form-field'
+import {MatError, MatInput, MatSuffix} from '@angular/material/input'
+import {ActivatedRoute, Router} from '@angular/router'
 import {FaIconComponent} from '@fortawesome/angular-fontawesome'
-import {finalize} from 'rxjs'
-import {HttpService} from '../network'
-import {LogoComponent} from '../logo/logo.component'
 import {
   faCircleNotch,
   faEye,
@@ -21,7 +18,10 @@ import {
   translateSignal,
   TranslocoDirective
 } from '@jsverse/transloco'
+import {finalize} from 'rxjs'
+import {LogoComponent} from '../logo/logo.component'
 import {SettingsService} from '../settings/settings.service'
+import {AuthService} from './auth.service'
 
 @Component({
   imports: [
@@ -41,8 +41,7 @@ import {SettingsService} from '../settings/settings.service'
   providers: [provideTranslocoScope('auth')],
   selector: 'app-auth',
   templateUrl: './auth.component.html',
-  styleUrl: './auth.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrl: './auth.component.scss'
 })
 export class AuthComponent {
   protected readonly icon = {
@@ -57,7 +56,7 @@ export class AuthComponent {
   protected processing = false
   loginError = false
 
-  protected readonly http = inject(HttpService)
+  protected readonly authSvc = inject(AuthService)
   private readonly router = inject(Router)
   private readonly route = inject(ActivatedRoute)
   private readonly settings = inject(SettingsService)
@@ -80,7 +79,7 @@ export class AuthComponent {
   })
 
   constructor() {
-    if (this.http.isLogged()) {
+    if (this.authSvc.isLogged()) {
       this.router.navigate([this.returnUrl])
     }
   }
@@ -88,7 +87,7 @@ export class AuthComponent {
   onLogin(event: Event): void {
     event.preventDefault()
     this.processing = true
-    this.http
+    this.authSvc
       .login(this.loginModel().username, this.loginModel().password)
       .pipe(
         finalize(() => {

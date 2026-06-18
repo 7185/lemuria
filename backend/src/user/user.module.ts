@@ -1,8 +1,8 @@
 import {Module} from '@nestjs/common'
 import {JwtModule} from '@nestjs/jwt'
-import {UserService} from './user.service'
-import {UserController} from './user.controller'
 import {config} from '../app.config'
+import {UserController} from './user.controller'
+import {UserService} from './user.service'
 
 @Module({
   imports: [JwtModule.register({secret: config.secret})],

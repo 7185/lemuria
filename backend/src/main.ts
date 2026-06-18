@@ -1,11 +1,11 @@
-import {join} from 'node:path'
+import {fastifyCookie} from '@fastify/cookie'
 import {NestFactory} from '@nestjs/core'
 import {FastifyAdapter, NestFastifyApplication} from '@nestjs/platform-fastify'
 import {WsAdapter} from '@nestjs/platform-ws'
-import {fastifyCookie} from '@fastify/cookie'
-import {AppModule} from './app.module'
-import {config} from './app.config'
 import {Logger} from 'nestjs-pino'
+import {join} from 'node:path'
+import {config} from './app.config'
+import {AppModule} from './app.module'
 import {getSecretKey} from './utils/utils'
 
 const bootstrap = async () => {

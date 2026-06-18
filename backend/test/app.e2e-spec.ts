@@ -1,6 +1,6 @@
-import {Test, TestingModule} from '@nestjs/testing'
 import {FastifyAdapter, NestFastifyApplication} from '@nestjs/platform-fastify'
 import {WsAdapter} from '@nestjs/platform-ws'
+import {Test, TestingModule} from '@nestjs/testing'
 import request from 'supertest'
 import {AppModule} from '../src/app.module'
 
