@@ -1,7 +1,7 @@
 import {CACHE_MANAGER, Cache} from '@nestjs/cache-manager'
 import {Inject, Injectable} from '@nestjs/common'
-import {DbService} from '../db/db.service'
-import {World} from './world'
+import {DbService} from '../db/db.service.js'
+import {World} from './world.js'
 
 @Injectable()
 export class WorldService {

@@ -1,6 +1,6 @@
 import type {FastifyReply} from 'fastify'
 import {All, Controller, Get, Redirect, Res} from '@nestjs/common'
-import {AppService} from './app.service'
+import {AppService} from './app.service.js'
 
 @Controller()
 export class AppController {

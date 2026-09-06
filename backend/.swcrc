@@ -1,5 +1,9 @@
 {
   "jsc": {
-    "baseUrl": "./"
+    "baseUrl": "./",
+    "target": "es2023"
+  },
+  "module": {
+    "type": "es6"
   }
 }

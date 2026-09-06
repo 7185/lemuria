@@ -1,6 +1,6 @@
 import {Controller, Get} from '@nestjs/common'
 import {HealthCheckService, PrismaHealthIndicator} from '@nestjs/terminus'
-import {DbService} from '../db/db.service'
+import {DbService} from '../db/db.service.js'
 
 @Controller()
 export class HealthController {

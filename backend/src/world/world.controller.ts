@@ -1,7 +1,7 @@
 import type {FastifyReply} from 'fastify'
 import {Controller, Get, Headers, Param, Query, Res} from '@nestjs/common'
-import {UserService} from '../user/user.service'
-import {WorldService} from './world.service'
+import {UserService} from '../user/user.service.js'
+import {WorldService} from './world.service.js'
 
 @Controller('/api/v1/world')
 export class WorldController {

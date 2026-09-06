@@ -17,7 +17,7 @@
           [formField]="loginForm.username"
           autocomplete="username"
         />
-        @if (loginError) {
+        @if (loginError()) {
           <mat-error>{{ t('loginError') }}</mat-error>
         }
         @if (loginForm.username().touched() && loginForm.username().invalid()) {
@@ -33,7 +33,7 @@
         </mat-label>
         <input
           matInput
-          [type]="hide ? 'password' : 'text'"
+          [type]="hide() ? 'password' : 'text'"
           [formField]="loginForm.password"
           autocomplete="current-password"
         />
@@ -41,12 +41,12 @@
           mat-icon-button
           type="button"
           matSuffix
-          (click)="hide = !hide"
+          (click)="hide.update(v => !v)"
           color="accent"
           [attr.aria-label]="'Hide password'"
-          [attr.aria-pressed]="hide"
+          [attr.aria-pressed]="hide()"
         >
-          @if (hide) {
+          @if (hide()) {
             <fa-icon [icon]="icon.faEyeSlash" [fixedWidth]="true" />
           } @else {
             <fa-icon [icon]="icon.faEye" [fixedWidth]="true" />
@@ -58,7 +58,7 @@
           }
         }
       </mat-form-field>
-      @if (!processing) {
+      @if (!processing()) {
         <button
           mat-flat-button
           color="primary"

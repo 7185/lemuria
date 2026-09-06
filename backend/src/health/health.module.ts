@@ -1,7 +1,7 @@
 import {Module} from '@nestjs/common'
 import {TerminusModule} from '@nestjs/terminus'
-import {DbService} from '../db/db.service'
-import {HealthController} from './health.controller'
+import {DbService} from '../db/db.service.js'
+import {HealthController} from './health.controller.js'
 
 @Module({
   imports: [TerminusModule],

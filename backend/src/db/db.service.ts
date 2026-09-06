@@ -1,6 +1,6 @@
 import {Injectable, OnModuleInit} from '@nestjs/common'
 import {PrismaBetterSqlite3} from '@prisma/adapter-better-sqlite3'
-import {PrismaClient} from '../generated/prisma/client'
+import {PrismaClient} from '../generated/prisma/client.js'
 
 @Injectable()
 export class DbService extends PrismaClient implements OnModuleInit {

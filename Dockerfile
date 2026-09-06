@@ -51,7 +51,7 @@ RUN npm -w backend ci --include-workspace-root && \
     rm package*json && \
     rm -r .cache .npm backend && \
     chown nobody: -R /root /dist /static
-CMD ["node", "/dist/main"]
+CMD ["node", "/dist/src/main"]
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD ["node", "-e", "fetch('http://localhost:8080/readyz').then(x=>x.status==200?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"]
 VOLUME ["/app.db"]
@@ -64,7 +64,7 @@ COPY --from=node --chown=nonroot:nonroot /dist /dist
 COPY --from=node --chown=nonroot:nonroot /static /static
 ENV DATABASE_URL="file:/app.db"
 ENV ADAPTER_URL="file:/app.db"
-WORKDIR /dist
+WORKDIR /dist/src
 CMD ["main.js"]
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD ["/nodejs/bin/node", "-e", "fetch('http://localhost:8080/readyz').then(x=>x.status==200?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"]

@@ -12,11 +12,11 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^24.13.2",
-    "eslint": "^10.5.0",
-    "oxfmt": "^0.55.0",
+    "@types/node": "^24.13.3",
+    "eslint": "^10.10.0",
+    "oxfmt": "^0.66.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.61.1"
+    "typescript-eslint": "^8.69.0"
   },
   "workspaces": [
     "action-parser",

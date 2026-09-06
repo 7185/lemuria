@@ -1,8 +1,8 @@
 import {Module} from '@nestjs/common'
-import {DbService} from '../db/db.service'
-import {UserModule} from '../user/user.module'
-import {WorldController} from './world.controller'
-import {WorldService} from './world.service'
+import {DbService} from '../db/db.service.js'
+import {UserModule} from '../user/user.module.js'
+import {WorldController} from './world.controller.js'
+import {WorldService} from './world.service.js'
 
 @Module({
   imports: [UserModule],

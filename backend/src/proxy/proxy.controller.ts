@@ -1,7 +1,7 @@
 import type {FastifyReply} from 'fastify'
 import {Controller, Get, Query, Res} from '@nestjs/common'
 import {from, mergeMap} from 'rxjs'
-import {ProxyService} from './proxy.service'
+import {ProxyService} from './proxy.service.js'
 
 @Controller('/api/v1/proxy')
 export class ProxyController {

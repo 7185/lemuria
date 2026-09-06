@@ -52,14 +52,14 @@ export class AuthComponent {
     faUser
   }
 
-  protected hide = true
-  protected processing = false
-  loginError = false
-
   protected readonly authSvc = inject(AuthService)
   private readonly router = inject(Router)
   private readonly route = inject(ActivatedRoute)
   private readonly settings = inject(SettingsService)
+
+  protected hide = signal(true)
+  protected processing = signal(false)
+  protected loginError = signal(false)
 
   private readonly returnUrl = this.route.snapshot.queryParams.next || '/'
   loginModel = signal<{username: string; password: string}>({
@@ -86,22 +86,22 @@ export class AuthComponent {
 
   onLogin(event: Event): void {
     event.preventDefault()
-    this.processing = true
+    this.processing.set(true)
     this.authSvc
       .login(this.loginModel().username, this.loginModel().password)
       .pipe(
         finalize(() => {
-          this.processing = false
+          this.processing.set(false)
         })
       )
       .subscribe({
         next: () => {
           this.settings.set('login', this.loginModel().username)
-          this.loginError = false
+          this.loginError.set(false)
           this.router.navigate([this.returnUrl])
         },
         error: () => {
-          this.loginError = true
+          this.loginError.set(true)
         }
       })
   }

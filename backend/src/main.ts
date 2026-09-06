@@ -1,12 +1,13 @@
 import {fastifyCookie} from '@fastify/cookie'
+import {fastifyStatic} from '@fastify/static'
 import {NestFactory} from '@nestjs/core'
 import {FastifyAdapter, NestFastifyApplication} from '@nestjs/platform-fastify'
 import {WsAdapter} from '@nestjs/platform-ws'
 import {Logger} from 'nestjs-pino'
 import {join} from 'node:path'
-import {config} from './app.config'
-import {AppModule} from './app.module'
-import {getSecretKey} from './utils/utils'
+import {config} from './app.config.js'
+import {AppModule} from './app.module.js'
+import {getSecretKey} from './utils/utils.js'
 
 const bootstrap = async () => {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -22,13 +23,14 @@ const bootstrap = async () => {
       bufferLogs: true
     }
   )
-  app.useStaticAssets({
-    root: join(__dirname, '../static', 'browser'),
+
+  app.useLogger(app.get(Logger))
+  await app.register(fastifyStatic, {
+    root: join(import.meta.dirname, '../../static/browser'),
     prefixAvoidTrailingSlash: true
   })
   app.useWebSocketAdapter(new WsAdapter(app))
-  app.useLogger(app.get(Logger))
-  app.register(fastifyCookie, {
+  await app.register(fastifyCookie, {
     secret: getSecretKey() ?? config.secret
   })
 
