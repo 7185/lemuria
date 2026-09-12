@@ -265,7 +265,3 @@ export interface ActionCtx {
   trigger: CstNode[]
   command: CstNode[]
 }
-
-export interface ActionsCtx {
-  action: CstNode[]
-}

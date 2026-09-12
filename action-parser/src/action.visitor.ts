@@ -2,7 +2,6 @@ import type {CstNode, IToken} from 'chevrotain'
 import {Lexer} from 'chevrotain'
 import type {
   ActionCtx,
-  ActionsCtx,
   AngleParameterCtx,
   AnimateCommandCtx,
   AstartCommandCtx,
@@ -617,21 +616,6 @@ class ActionVisitor extends BaseActionVisitor {
 
     return result
   }
-
-  actions(ctx: ActionsCtx) {
-    const actions = ctx.action.map((action) => this.visit(action))
-
-    // Filter out duplicate actions of the same type, keeping only the first one
-    const actionsMap = new Map<string, object>()
-    actions.forEach((action) => {
-      const [key] = Object.keys(action)
-      if (!actionsMap.has(key)) {
-        actionsMap.set(key, action)
-      }
-    })
-
-    return Object.assign({}, ...actionsMap.values())
-  }
 }
 
 /**
@@ -651,20 +635,55 @@ export class Action {
   }
 
   parse(inputText: string) {
-    const lexResult = this.lexer.tokenize(inputText ?? '')
-    parserInstance.input = lexResult.tokens
+    const finalResult: Record<string, object[]> = {}
+    if (!inputText) return finalResult
 
-    const cst = parserInstance.actions()
-    return parserInstance.errors.length > 0 ? {} : this.visitor.visit(cst)
+    const rawActions = inputText.split(';')
+
+    for (const raw of rawActions) {
+      const trimmed = raw.trim()
+      if (!trimmed) continue
+
+      const lexResult = this.lexer.tokenize(trimmed)
+      parserInstance.input = lexResult.tokens
+
+      const cst = parserInstance.action()
+
+      // Keep action if no error is found
+      if (parserInstance.errors.length === 0 && cst) {
+        const actionResult = this.visitor.visit(cst) as Record<string, object[]>
+
+        // Merge actions but keep only the first one on duplicates of the same type
+        for (const key of Object.keys(actionResult)) {
+          if (key && !finalResult[key]) {
+            finalResult[key] = actionResult[key]
+          }
+        }
+      }
+    }
+
+    return finalResult
   }
 
   debug(inputText: string) {
-    const lexResult = this.lexer.tokenize(inputText)
-    parserInstance.input = lexResult.tokens
+    if (!inputText) return 'OK'
 
-    parserInstance.actions()
-    return parserInstance.errors.length > 0
-      ? parserInstance.errors[0].message
-      : 'OK'
+    const rawActions = inputText.split(';')
+
+    for (const raw of rawActions) {
+      const trimmed = raw.trim()
+      if (!trimmed) continue
+
+      const lexResult = this.lexer.tokenize(trimmed)
+      parserInstance.input = lexResult.tokens
+
+      parserInstance.action()
+
+      if (parserInstance.errors.length > 0) {
+        return parserInstance.errors[0].message
+      }
+    }
+
+    return 'OK'
   }
 }

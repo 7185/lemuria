@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",
-    "@nestjs/schematics": "^12.0.0",
+    "@nestjs/schematics": "^12.0.1",
     "@nestjs/testing": "^12.0.1",
     "@swc/cli": "^0.8.1",
     "@swc/core": "^1.16.2",
@@ -64,7 +64,7 @@
     "ts-loader": "^9.6.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "4.2.0",
-    "unplugin-swc": "^1.5.11",
+    "unplugin-swc": "^1.6.0",
     "vitest": "^5.0.0"
   }
 }

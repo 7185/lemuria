@@ -248,7 +248,6 @@ const Equals = addToken({
   categories: [Resource]
 })
 const Comma = addToken({name: 'Comma', pattern: /,/})
-const Semicolon = addToken({name: 'Semicolon', pattern: /;/})
 addToken({
   name: 'Whitespace',
   pattern: /\s+/,
@@ -637,19 +636,5 @@ export class ActionParser extends CstParser {
     // Optional trailing commas
     this.OPTION(() => this.MANY1(() => this.CONSUME1(Comma)))
     return {[trigger]: commands}
-  })
-
-  actions = this.RULE('actions', () => {
-    const actionList = [this.SUBRULE(this.action)]
-    this.MANY(() => {
-      this.CONSUME(Semicolon)
-      const nextAction = this.SUBRULE1(this.action)
-      if (nextAction) {
-        actionList.push(nextAction)
-      }
-    })
-    // Optional trailing semicolons
-    this.OPTION(() => this.MANY1(() => this.CONSUME1(Semicolon)))
-    return actionList
   })
 }

@@ -18,6 +18,10 @@ test('good string has empty debug information', () => {
   expect(parser.debug('create color green;')).toStrictEqual('OK')
 })
 
+test('empty string has empty debug information', () => {
+  expect(parser.debug('')).toStrictEqual('OK')
+})
+
 test('invalid string has debug information', () => {
   expect(parser.debug('color red')).not.toStrictEqual('OK')
 })
@@ -895,6 +899,30 @@ test('astart and astop on remote props', () => {
       {
         commandType: 'astop',
         targetName: 'testb'
+      }
+    ]
+  })
+})
+
+test('valid action is kept even if followed by an invalid action', () => {
+  expect(
+    parser.parse(
+      'create sign bcolor=white color=123456 ;activate mailto:user@example.com'
+    )
+  ).toStrictEqual({
+    create: [
+      {
+        commandType: 'sign',
+        bcolor: {
+          r: 255,
+          g: 255,
+          b: 255
+        },
+        color: {
+          r: 18,
+          g: 52,
+          b: 86
+        }
       }
     ]
   })
