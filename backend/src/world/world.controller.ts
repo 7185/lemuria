@@ -1,5 +1,11 @@
-import type {FastifyReply} from 'fastify'
-import {Controller, Get, Headers, Param, Query, Res} from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Headers,
+  Param,
+  Query,
+  UnauthorizedException
+} from '@nestjs/common'
 import {UserService} from '../user/user.service.js'
 import {WorldService} from './world.service.js'
 
@@ -24,25 +30,17 @@ export class WorldController {
   }
 
   @Get(':id')
-  async worldGet(
-    @Headers('cookie') cookie: string,
-    @Param('id') id: string,
-    @Res() res: FastifyReply
-  ) {
+  async worldGet(@Headers('cookie') cookie: string, @Param('id') id: string) {
     const user = this.userService.getUserFromAccessCookie(cookie)
     if (!user.id) {
-      return res.status(401).send()
+      throw new UnauthorizedException()
     }
     const world = await this.worldService.getWorld(parseInt(id))
     user.world = parseInt(id)
     this.userService.broadcastUserlist()
-    return res
-      .status(200)
-      .send(
-        Object.fromEntries(
-          Object.entries(world).filter((a) => a[1] !== undefined)
-        )
-      )
+    return Object.fromEntries(
+      Object.entries(world).filter((a) => a[1] !== undefined)
+    )
   }
 
   @Get(':id/props')

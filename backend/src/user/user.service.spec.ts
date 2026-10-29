@@ -1,6 +1,6 @@
 import {JwtService} from '@nestjs/jwt'
 import {Test, TestingModule} from '@nestjs/testing'
-import {UserService} from './user.service'
+import {UserService} from './user.service.js'
 
 describe(UserService.name, () => {
   let service: UserService

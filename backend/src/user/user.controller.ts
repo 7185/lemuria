@@ -1,5 +1,16 @@
-import type {FastifyReply} from 'fastify'
-import {Body, Controller, Delete, Get, Headers, Post, Res} from '@nestjs/common'
+import type {NodeResponse} from '@nestjs/platform-node'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Res,
+  UnauthorizedException
+} from '@nestjs/common'
 import {JwtService} from '@nestjs/jwt'
 import {config} from '../app.config.js'
 import {UserService} from './user.service.js'
@@ -12,25 +23,26 @@ export class UserController {
   ) {}
 
   @Get('/')
-  authSession(@Headers('cookie') cookie: string, @Res() res: FastifyReply) {
+  authSession(@Headers('cookie') cookie: string) {
     const user = this.userService.getUserFromAccessCookie(cookie)
     if (user.id == null) {
-      return res.status(401).send()
+      throw new UnauthorizedException()
     }
-    return res.status(200).send({id: user.id, name: user.name})
+    return {id: user.id, name: user.name}
   }
 
   @Post('/')
+  @HttpCode(HttpStatus.OK)
   authLogin(
     @Body() params: {login: string; password: string},
-    @Res({passthrough: true}) res: FastifyReply
+    @Res({passthrough: true}) res: NodeResponse
   ) {
     const user = this.userService.login(params.login)
     const accessToken = this.jwtService.sign(
       {id: user.id},
       {expiresIn: config.cookie.accessExpires}
     )
-    res.setCookie(config.cookie.accessName, accessToken, {
+    res.cookie(config.cookie.accessName, accessToken, {
       httpOnly: true,
       secure: config.cookie.secure,
       sameSite: config.cookie.sameSite,
@@ -40,19 +52,20 @@ export class UserController {
       {id: user.id},
       {expiresIn: config.cookie.refreshExpires}
     )
-    res.setCookie(config.cookie.refreshName, refreshToken, {
+    res.cookie(config.cookie.refreshName, refreshToken, {
       httpOnly: true,
       secure: config.cookie.secure,
       sameSite: config.cookie.sameSite,
       path: config.cookie.refreshPath
     })
-    return res.status(200).send(user)
+    return user
   }
 
   @Delete('/')
+  @HttpCode(HttpStatus.OK)
   authLogout(
     @Headers('cookie') cookie: string,
-    @Res({passthrough: true}) res: FastifyReply
+    @Res({passthrough: true}) res: NodeResponse
   ) {
     const user = this.userService.getUserFromAccessCookie(cookie)
     res.clearCookie(config.cookie.accessName, {
@@ -61,25 +74,29 @@ export class UserController {
       sameSite: config.cookie.sameSite,
       path: config.cookie.accessPath
     })
-    return res.status(200).send(this.userService.logout(user.id))
+    return this.userService.logout(user.id)
   }
 
   @Post('/renew')
-  authRenew(@Headers('cookie') cookie: string, @Res() res: FastifyReply) {
+  @HttpCode(HttpStatus.OK)
+  authRenew(
+    @Headers('cookie') cookie: string,
+    @Res({passthrough: true}) res: NodeResponse
+  ) {
     const user = this.userService.getUserFromRefreshCookie(cookie)
     if (user.id == null) {
-      return res.status(401).send()
+      throw new UnauthorizedException()
     }
     const newToken = this.jwtService.sign(
       {id: user.id},
       {expiresIn: config.cookie.accessExpires}
     )
-    res.setCookie(config.cookie.accessName, newToken, {
+    res.cookie(config.cookie.accessName, newToken, {
       httpOnly: true,
       secure: config.cookie.secure,
       sameSite: config.cookie.sameSite,
       path: config.cookie.accessPath
     })
-    return res.status(200).send({id: user.id, name: user.name})
+    return {id: user.id, name: user.name}
   }
 }

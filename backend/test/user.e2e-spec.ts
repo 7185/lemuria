@@ -1,26 +1,21 @@
-import {fastifyCookie} from '@fastify/cookie'
-import {FastifyAdapter, NestFastifyApplication} from '@nestjs/platform-fastify'
+import {HttpStatus} from '@nestjs/common'
+import {NodeAdapter, NestNodeApplication} from '@nestjs/platform-node'
 import {Test, TestingModule} from '@nestjs/testing'
 import request from 'supertest'
-import {config} from '../src/app.config'
-import {UserModule} from '../src/user/user.module'
+import {UserModule} from '../src/user/user.module.js'
 
 describe('AppController (e2e)', () => {
-  let app: NestFastifyApplication
+  let app: NestNodeApplication
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [UserModule]
     }).compile()
 
-    app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter()
+    app = moduleFixture.createNestApplication<NestNodeApplication>(
+      new NodeAdapter()
     )
-    app.register(fastifyCookie, {
-      secret: config.secret
-    })
     await app.init()
-    await app.getHttpAdapter().getInstance().ready()
   })
 
   it('/api/v1/auth (GET)', () => {
@@ -34,6 +29,6 @@ describe('AppController (e2e)', () => {
         login: 'alice',
         password: 'P@$$w0rd!'
       })
-      .expect(200)
+      .expect(HttpStatus.OK)
   })
 })

@@ -2,7 +2,9 @@ import {CacheModule} from '@nestjs/cache-manager'
 import {Module} from '@nestjs/common'
 import {ConfigModule} from '@nestjs/config'
 import {JwtService} from '@nestjs/jwt'
+import {ServeStaticModule} from '@nestjs/serve-static'
 import {LoggerModule} from 'nestjs-pino'
+import {join} from 'node:path'
 import {config} from './app.config.js'
 import {AppController} from './app.controller.js'
 import {AppService} from './app.service.js'
@@ -21,6 +23,9 @@ import {WsGateway} from './ws/ws.gateway.js'
     }),
     ConfigModule.forRoot({
       isGlobal: true
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(import.meta.dirname, '../../static/browser')
     }),
     LoggerModule.forRoot({
       pinoHttp: {

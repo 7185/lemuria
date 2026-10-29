@@ -1,7 +1,7 @@
 import {HttpModule} from '@nestjs/axios'
 import {CACHE_MANAGER} from '@nestjs/cache-manager'
 import {Test, TestingModule} from '@nestjs/testing'
-import {ProxyService} from './proxy.service'
+import {ProxyService} from './proxy.service.js'
 
 describe('ProxyService', () => {
   let service: ProxyService

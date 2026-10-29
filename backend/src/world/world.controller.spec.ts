@@ -1,12 +1,12 @@
-import type {FastifyReply} from 'fastify'
 import {CACHE_MANAGER} from '@nestjs/cache-manager'
+import {UnauthorizedException} from '@nestjs/common'
 import {Test, TestingModule} from '@nestjs/testing'
-import {DbService} from '../db/db.service'
-import {User} from '../user/user'
-import {UserModule} from '../user/user.module'
-import {UserService} from '../user/user.service'
-import {WorldController} from './world.controller'
-import {WorldService} from './world.service'
+import {DbService} from '../db/db.service.js'
+import {User} from '../user/user.js'
+import {UserModule} from '../user/user.module.js'
+import {UserService} from '../user/user.service.js'
+import {WorldController} from './world.controller.js'
+import {WorldService} from './world.service.js'
 
 describe(WorldController.name, () => {
   let controller: WorldController
@@ -99,29 +99,13 @@ describe(WorldController.name, () => {
 
   describe('worldGet', () => {
     it('should return none', async () => {
-      const statusResponseMock = {
-        send: vi.fn((x) => x)
-      }
-      const responseMock = {
-        status: vi.fn().mockReturnValue(statusResponseMock),
-        send: vi.fn((x) => x)
-      } as unknown as FastifyReply
-      expect(
-        await offlineController.worldGet('cookie', '1', responseMock)
-      ).toStrictEqual(undefined)
-      expect(responseMock.status).toHaveBeenCalledWith(401)
+      await expect(offlineController.worldGet('cookie', '1')).rejects.toThrow(
+        UnauthorizedException
+      )
     })
+
     it('should return world 1', async () => {
-      const statusResponseMock = {
-        send: vi.fn((x) => x)
-      }
-      const responseMock = {
-        status: vi.fn().mockReturnValue(statusResponseMock),
-        send: vi.fn((x) => x)
-      } as unknown as FastifyReply
-      expect(
-        await controller.worldGet('cookie', '1', responseMock)
-      ).toStrictEqual({
+      expect(await controller.worldGet('cookie', '1')).toStrictEqual({
         entry: '0N 0W',
         id: 1,
         name: 'Lemuria',

@@ -1,7 +1,7 @@
 import {CACHE_MANAGER} from '@nestjs/cache-manager'
 import {Test, TestingModule} from '@nestjs/testing'
-import {DbService} from '../db/db.service'
-import {WorldService} from './world.service'
+import {DbService} from '../db/db.service.js'
+import {WorldService} from './world.service.js'
 
 describe(WorldService.name, () => {
   let service: WorldService

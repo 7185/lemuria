@@ -1,10 +1,11 @@
-import type {FastifyReply} from 'fastify'
+import type {NodeResponse} from '@nestjs/platform-node'
+import {UnauthorizedException} from '@nestjs/common'
 import {JwtModule} from '@nestjs/jwt'
 import {Test, TestingModule} from '@nestjs/testing'
-import {config} from '../app.config'
-import {User} from './user'
-import {UserController} from './user.controller'
-import {UserService} from './user.service'
+import {config} from '../app.config.js'
+import {UserController} from './user.controller.js'
+import {User} from './user.js'
+import {UserService} from './user.service.js'
 
 describe(UserController.name, () => {
   let offlineController: UserController
@@ -41,23 +42,16 @@ describe(UserController.name, () => {
 
   describe('authLogin', () => {
     it('should return username and id', () => {
-      const statusResponseMock = {
-        send: vi.fn((x) => x)
-      }
-      const responseMock = {
-        status: vi.fn().mockReturnValue(statusResponseMock),
-        setCookie: vi.fn(),
-        send: vi.fn((x) => x)
-      } as unknown as FastifyReply
-      offlineController.authLogin(
-        {
-          login: '',
-          password: 'P@$$w0rd!'
-        },
-        responseMock
-      )
-      expect(responseMock.status).toHaveBeenCalledWith(200)
-      expect(statusResponseMock.send).toHaveBeenCalledWith({
+      const responseMock = {cookie: vi.fn()} as unknown as NodeResponse
+      expect(
+        offlineController.authLogin(
+          {
+            login: '',
+            password: 'P@$$w0rd!'
+          },
+          responseMock
+        )
+      ).toStrictEqual({
         name: expect.stringMatching('Anonymous[0-9a-f]{8}'),
         id: expect.stringMatching('[0-9a-f]{8}')
       })
@@ -66,75 +60,53 @@ describe(UserController.name, () => {
 
   describe('authSession', () => {
     it('should return 401', () => {
-      const statusResponseMock = {
-        send: vi.fn((x) => x)
-      }
-      const responseMock = {
-        status: vi.fn().mockReturnValue(statusResponseMock),
-        send: vi.fn((x) => x)
-      } as unknown as FastifyReply
-      offlineController.authSession('cookie', responseMock)
-      expect(responseMock.status).toHaveBeenCalledWith(401)
+      expect(() => offlineController.authSession('cookie')).toThrow(
+        UnauthorizedException
+      )
     })
+
     it('should return 200', () => {
-      const statusResponseMock = {
-        send: vi.fn((x) => x)
-      }
-      const responseMock = {
-        status: vi.fn().mockReturnValue(statusResponseMock),
-        send: vi.fn((x) => x)
-      } as unknown as FastifyReply
-      expect(controller.authSession('cookie', responseMock)).toStrictEqual({
+      expect(controller.authSession('cookie')).toStrictEqual({
         id: 'dummy',
         name: 'Anonymous'
       })
-      expect(responseMock.status).toHaveBeenCalledWith(200)
     })
   })
 
   describe('authLogout', () => {
-    const statusResponseMock = {
-      send: vi.fn((x) => x)
-    }
-    const responseMock = {
-      status: vi.fn().mockReturnValue(statusResponseMock),
-      clearCookie: vi.fn(),
-      send: vi.fn((x) => x)
-    } as unknown as FastifyReply
     it('should return empty', () => {
+      const responseMock = {
+        clearCookie: vi.fn()
+      } as unknown as NodeResponse
+
       expect(
         offlineController.authLogout('cookie', responseMock)
       ).toStrictEqual({})
-      expect(responseMock.status).toHaveBeenCalledWith(200)
+      expect(responseMock.clearCookie).toHaveBeenCalled()
     })
   })
 
   describe('authRenew', () => {
     it('should return 401', () => {
-      const statusResponseMock = {
-        send: vi.fn((x) => x)
-      }
       const responseMock = {
-        status: vi.fn().mockReturnValue(statusResponseMock),
-        send: vi.fn((x) => x)
-      } as unknown as FastifyReply
-      offlineController.authRenew('cookie', responseMock)
-      expect(responseMock.status).toHaveBeenCalledWith(401)
+        cookie: vi.fn()
+      } as unknown as NodeResponse
+
+      expect(() => offlineController.authRenew('cookie', responseMock)).toThrow(
+        UnauthorizedException
+      )
     })
+
     it('should return 200', () => {
-      const statusResponseMock = {
-        send: vi.fn((x) => x)
-      }
       const responseMock = {
-        status: vi.fn().mockReturnValue(statusResponseMock),
-        setCookie: vi.fn(),
-        send: vi.fn((x) => x)
-      } as unknown as FastifyReply
+        cookie: vi.fn()
+      } as unknown as NodeResponse
+
       expect(controller.authRenew('cookie', responseMock)).toStrictEqual({
         id: 'dummy',
         name: 'Anonymous'
       })
-      expect(responseMock.status).toHaveBeenCalledWith(200)
+      expect(responseMock.cookie).toHaveBeenCalled()
     })
   })
 })

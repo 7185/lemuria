@@ -1,8 +1,8 @@
 import {HttpModule} from '@nestjs/axios'
 import {CACHE_MANAGER} from '@nestjs/cache-manager'
 import {Test, TestingModule} from '@nestjs/testing'
-import {ProxyController} from './proxy.controller'
-import {ProxyService} from './proxy.service'
+import {ProxyController} from './proxy.controller.js'
+import {ProxyService} from './proxy.service.js'
 
 describe('ProxyController', () => {
   let controller: ProxyController

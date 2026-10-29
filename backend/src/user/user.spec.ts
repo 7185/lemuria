@@ -1,4 +1,4 @@
-import {User} from './user'
+import {User} from './user.js'
 
 describe('User', () => {
   it('should be defined', () => {

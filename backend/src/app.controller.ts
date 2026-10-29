@@ -1,14 +1,13 @@
-import type {FastifyReply} from 'fastify'
-import {All, Controller, Get, Redirect, Res} from '@nestjs/common'
+import {All, Controller, Get, NotFoundException, Redirect} from '@nestjs/common'
 import {AppService} from './app.service.js'
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @All('/api/*')
-  notImplemented(@Res() res: FastifyReply) {
-    return res.status(404).send({error: 'Not found'})
+  @All('/api/{*path}')
+  notImplemented() {
+    throw new NotFoundException({error: 'Not found'})
   }
 
   @Get('/login')

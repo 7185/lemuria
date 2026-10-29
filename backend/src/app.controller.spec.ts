@@ -1,7 +1,7 @@
-import type {FastifyReply} from 'fastify'
+import {HttpStatus, NotFoundException} from '@nestjs/common'
 import {Test, TestingModule} from '@nestjs/testing'
-import {AppController} from './app.controller'
-import {AppService} from './app.service'
+import {AppController} from './app.controller.js'
+import {AppService} from './app.service.js'
 
 describe(AppController.name, () => {
   let appController: AppController
@@ -17,18 +17,18 @@ describe(AppController.name, () => {
 
   describe('unknown api route', () => {
     it('should return a 404 status code', () => {
-      const statusResponseMock = {
-        send: vi.fn((x) => x)
+      try {
+        appController.notImplemented()
+        expect.unreachable('Should have thrown NotFoundException')
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException)
+        expect((error as NotFoundException).getStatus()).toBe(
+          HttpStatus.NOT_FOUND
+        )
+        expect((error as NotFoundException).getResponse()).toEqual({
+          error: 'Not found'
+        })
       }
-      const responseMock = {
-        status: vi.fn().mockReturnValue(statusResponseMock),
-        send: vi.fn((x) => x)
-      } as unknown as FastifyReply
-      appController.notImplemented(responseMock)
-      expect(responseMock.status).toHaveBeenCalledWith(404)
-      expect(statusResponseMock.send).toHaveBeenCalledWith({
-        error: 'Not found'
-      })
     })
   })
 })

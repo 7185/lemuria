@@ -2,7 +2,7 @@ import type {AxiosResponse} from 'axios'
 import type {Observable} from 'rxjs'
 import {HttpService} from '@nestjs/axios'
 import {CACHE_MANAGER, Cache} from '@nestjs/cache-manager'
-import {Inject, Injectable} from '@nestjs/common'
+import {HttpStatus, Inject, Injectable} from '@nestjs/common'
 import {map, of} from 'rxjs'
 
 @Injectable()
@@ -28,7 +28,7 @@ export class ProxyService {
       .get(`https://archive.org/wayback/available?url=${url}&timestamp=${date}`)
       .pipe(
         map(async (req) => {
-          if (req.status === 200) {
+          if (req.status === HttpStatus.OK) {
             try {
               const archivedUrl =
                 req.data.archived_snapshots.closest.url.replace(
