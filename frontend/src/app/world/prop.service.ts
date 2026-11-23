@@ -174,6 +174,7 @@ export class PropService {
       new Mesh(unknownGeometry, [new MeshBasicMaterial({color: 0x000000})])
     )
     unknown.userData.isError = true
+    unknown.userData.rwx = {axisAlignment: 'zorienty'}
     return unknown
   }
 

@@ -65,7 +65,7 @@ export const textCanvas = async (
     ctx.fillText(line, startX, y)
   })
 
-  return await createImageBitmap(canvas.transferToImageBitmap(), {
+  return await createImageBitmap(canvas, {
     imageOrientation: 'flipY'
   })
 }

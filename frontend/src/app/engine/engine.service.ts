@@ -147,6 +147,7 @@ export class EngineService {
   private objectsNode = new Group()
   private buildNode = new Group()
   private sprites = new Set<Group>()
+  private coronaObjects = new Set<Group>()
   private animatedObjects = new Set<Group>()
   private litObjects = new Set<Group>()
   private sonicObjects = new Set<Group>()
@@ -177,7 +178,8 @@ export class EngineService {
     ['del', 'delete']
   ])
 
-  private spriteRotation = new Euler()
+  private spriteRotation = new Euler(0, 0, 0, 'YXZ')
+  private spriteRotationXYZ = new Euler(0, 0, 0, 'YXZ')
 
   private tmpPosCache = new Vector3()
   private tmpRotCache = new Vector3()
@@ -300,6 +302,7 @@ export class EngineService {
       this.removeObject(prop as Group)
     }
     this.sprites.clear()
+    this.coronaObjects.clear()
     this.animatedObjects.clear()
     // Turn off the lights
     this.litObjects.clear()
@@ -648,23 +651,21 @@ export class EngineService {
   }
 
   private handleHiddenProp(group: Group) {
-    if (this.sprites.has(group)) {
-      this.sprites.delete(group)
-    }
-    if (this.animatedObjects.has(group)) {
-      this.animatedObjects.delete(group)
-    }
-    if (this.litObjects.has(group)) {
-      this.litObjects.delete(group)
-    }
-    if (this.sonicObjects.has(group)) {
-      this.sonicObjects.delete(group)
-    }
+    this.sprites.delete(group)
+    this.coronaObjects.delete(group)
+    this.animatedObjects.delete(group)
+    this.litObjects.delete(group)
+    this.sonicObjects.delete(group)
   }
 
   private handleShownProp(group: Group) {
-    if (group.userData.rwx?.axisAlignment !== 'none') {
+    const axisAlignment = group.userData.rwx?.axisAlignment
+    if (axisAlignment != null && axisAlignment !== 'none') {
       this.sprites.add(group)
+      this.alignSprite(group, axisAlignment)
+    }
+    if (group.userData.corona != null) {
+      this.coronaObjects.add(group)
     }
     if (
       group.userData.animation?.rotate != null ||
@@ -950,7 +951,6 @@ export class EngineService {
           this.player.rotation.y + reverse * rotSteps
         )
       }
-      this.rotateSprites()
     }
     if (this.inputSysSvc.controls['turnRgt']) {
       if (this.inputSysSvc.controls['clip']) {
@@ -964,7 +964,6 @@ export class EngineService {
           this.player.rotation.y - reverse * rotSteps
         )
       }
-      this.rotateSprites()
     }
     if (this.inputSysSvc.controls['moveLft']) {
       this.player.velocity.add({
@@ -1027,9 +1026,9 @@ export class EngineService {
         y: this.player.position.y,
         z: this.player.position.z
       })
-      this.rotateSprites()
       this.updateLODs()
     }
+    this.rotateSprites()
     this.player.inWater.set(this.water?.position.y >= this.cameraPosition.y)
     this.activeCamera.getWorldPosition(this.cameraPosition)
 
@@ -1040,15 +1039,10 @@ export class EngineService {
       10 + this.player.position.z
     )
 
-    if (this.frameId % 10 === 0) {
+    if (this.frameId % 3 === 0 && this.coronaObjects.size > 0) {
       // Skip some frames because this causes heavy
       // raycasting just to check corona visibility
-      this.objectsNode
-        .getObjectsByProperty('name', 'corona')
-        .filter((corona: Object3D) => corona.parent!.parent!.visible)
-        .forEach((corona: Object3D) => {
-          corona.visible = this.isCoronaVisible(corona as Sprite)
-        })
+      this.updateCoronas()
     }
 
     // compass
@@ -1126,44 +1120,97 @@ export class EngineService {
     }
   }
 
-  private rotateSprites() {
-    this.spriteRotation.y = this.player.rotation.y
-    for (const prop of this.sprites) {
+  private alignSprite(prop: Group, axisAlignment: string) {
+    if (axisAlignment === 'xyz') {
+      prop.rotation.copy(this.spriteRotationXYZ)
+    } else {
       prop.rotation.copy(this.spriteRotation)
-      prop.updateMatrix()
+    }
+    prop.updateMatrix()
+  }
+
+  private rotateSprites() {
+    const isFrontCam = this.activeCamera === this.thirdFrontCamera
+    const targetY = isFrontCam
+      ? radNormalized(this.player.rotation.y + Math.PI)
+      : this.player.rotation.y
+    const targetX = isFrontCam
+      ? -this.player.rotation.x
+      : this.player.rotation.x
+
+    if (
+      this.spriteRotation.y === targetY &&
+      this.spriteRotationXYZ.x === targetX
+    ) {
+      return
+    }
+
+    this.spriteRotation.y = targetY
+    this.spriteRotationXYZ.set(targetX, targetY, 0)
+
+    for (const prop of this.sprites) {
+      this.alignSprite(prop, prop.userData.rwx.axisAlignment)
     }
   }
 
-  private isCoronaVisible(corona: Sprite) {
+  private updateCoronas() {
+    const targets: Object3D[] = []
+    for (const lod of this.objectsNode.children as LOD[]) {
+      const chunk = lod.levels[0]?.object
+      if (chunk?.visible) {
+        targets.push(chunk)
+      }
+    }
+    targets.push(...this.usersNode.children)
+    if (this.player.avatar.visible) {
+      targets.push(this.player.avatar)
+    }
+    if (this.terrain != null) {
+      targets.push(this.terrain)
+    }
+
+    for (const prop of this.coronaObjects) {
+      const corona = prop.userData.coronaObj as Sprite | undefined
+      if (corona == null) {
+        continue
+      }
+      corona.visible =
+        prop.parent!.visible && this.isCoronaVisible(corona, targets)
+    }
+  }
+
+  private isCoronaVisible(corona: Sprite, targets: Object3D[]) {
     const spritePosition = corona.getWorldPosition(this.tmpSpritePos)
-    this.tmpCamToSprite
-      .subVectors(spritePosition, this.cameraPosition)
-      .normalize()
+    this.tmpCamToSprite.subVectors(spritePosition, this.cameraPosition)
+    const distance = this.tmpCamToSprite.length()
+    if (distance === 0) {
+      return true
+    }
+    this.tmpCamToSprite.divideScalar(distance)
+
+    // Skip raycasting if the corona is behind the camera
+    if (this.tmpCamToSprite.dot(this.cameraDirection) <= 0) {
+      return false
+    }
 
     this.raycaster.set(this.cameraPosition, this.tmpCamToSprite)
+    this.raycaster.far = distance
 
-    // Ignore the current prop during raycasting to prevent self-intersection
+    // Ignore the current prop and corona during raycasting to prevent self-intersection
     const ignoreList = getMeshes(corona.parent!)
     const intersects = this.raycaster
-      .intersectObjects(
-        this.objectsNode.children
-          .filter((obj) => obj.parent!.visible)
-          .concat(
-            this.usersNode.children,
-            this.player.avatar,
-            this.terrain ?? []
-          ),
-        true
+      .intersectObjects(targets, true)
+      .filter(
+        (intersect) =>
+          intersect.object !== corona &&
+          !ignoreList.includes(intersect.object as Mesh)
       )
-      .filter((intersect) => !ignoreList.includes(intersect.object as Mesh))
+
+    this.raycaster.far = Infinity
 
     const closestIntersection = intersects[0]
 
     // Check if there is an intersection and it is in front of the sprite
-    return (
-      !closestIntersection ||
-      closestIntersection.distance >=
-        this.cameraPosition.distanceTo(spritePosition)
-    )
+    return !closestIntersection || closestIntersection.distance >= distance
   }
 }

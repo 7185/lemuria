@@ -49,7 +49,12 @@ import type {
   WarpCommandCtx
 } from './action.interfaces.ts'
 import {ActionParser, allTokens} from './action.parser.ts'
-import {colorStringToRGB, visitCoords} from './action.utils.ts'
+import {
+  colorStringToRGB,
+  parseNumberParam,
+  splitActions,
+  visitCoords
+} from './action.utils.ts'
 
 const parserInstance = new ActionParser()
 const BaseActionVisitor = parserInstance.getBaseCstVisitorConstructor()
@@ -281,10 +286,14 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   soundCommand(ctx: SoundCommandCtx) {
-    return {
+    const res = {
       commandType: 'sound',
       resource: ctx.Resource.map((identToken: IToken) => identToken.image)[0]
     }
+    if (ctx.nameParameter != null) {
+      Object.assign(res, this.visit(ctx.nameParameter))
+    }
+    return res
   }
 
   teleportCommand(ctx: TeleportCommandCtx) {
@@ -364,9 +373,10 @@ class ActionVisitor extends BaseActionVisitor {
   // Parameters
 
   angleParameter(ctx: AngleParameterCtx) {
-    const paramName = ctx.Angle[0].image.toLowerCase()
-    const paramValue = ctx.Resource[0].image
-    return {[paramName]: parseFloat(paramValue)}
+    return parseNumberParam(
+      ctx.Angle[0].image.toLowerCase(),
+      ctx.Resource[0].image
+    )
   }
 
   bcolorParameter(ctx: BcolorParameterCtx) {
@@ -376,9 +386,10 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   brightnessParameter(ctx: BrightnessParameterCtx) {
-    const paramName = ctx.Brightness[0].image.toLowerCase()
-    const paramValue = ctx.Resource[0].image
-    return {[paramName]: parseFloat(paramValue)}
+    return parseNumberParam(
+      ctx.Brightness[0].image.toLowerCase(),
+      ctx.Resource[0].image
+    )
   }
 
   colorParameter(ctx: ColorParameterCtx) {
@@ -405,21 +416,24 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   pitchParameter(ctx: PitchParameterCtx) {
-    const paramName = ctx.Pitch[0].image.toLowerCase()
-    const paramValue = ctx.Resource[0].image
-    return {[paramName]: parseFloat(paramValue)}
+    return parseNumberParam(
+      ctx.Pitch[0].image.toLowerCase(),
+      ctx.Resource[0].image
+    )
   }
 
   radiusParameter(ctx: RadiusParameterCtx) {
-    const paramName = ctx.Radius[0].image.toLowerCase()
-    const paramValue = ctx.Resource[0].image
-    return {[paramName]: parseFloat(paramValue)}
+    return parseNumberParam(
+      ctx.Radius[0].image.toLowerCase(),
+      ctx.Resource[0].image
+    )
   }
 
   sizeParameter(ctx: SizeParameterCtx) {
-    const paramName = ctx.Size[0].image.toLowerCase()
-    const paramValue = ctx.Resource[0].image
-    return {[paramName]: parseFloat(paramValue)}
+    return parseNumberParam(
+      ctx.Size[0].image.toLowerCase(),
+      ctx.Resource[0].image
+    )
   }
 
   tagParameter(ctx: TagParameterCtx) {
@@ -429,9 +443,10 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   timeParameter(ctx: TimeParameterCtx) {
-    const paramName = ctx.Time[0].image.toLowerCase()
-    const paramValue = ctx.Resource[0].image
-    return {[paramName]: parseFloat(paramValue)}
+    return parseNumberParam(
+      ctx.Time[0].image.toLowerCase(),
+      ctx.Resource[0].image
+    )
   }
 
   typeParameter(ctx: TypeParameterCtx) {
@@ -441,15 +456,18 @@ class ActionVisitor extends BaseActionVisitor {
   }
 
   updateParameter(ctx: UpdateParameterCtx) {
-    const paramName = ctx.Update[0].image.toLowerCase()
-    const paramValue = ctx.Resource[0].image
-    return {[paramName]: parseInt(paramValue)}
+    return parseNumberParam(
+      ctx.Update[0].image.toLowerCase(),
+      ctx.Resource[0].image,
+      parseInt
+    )
   }
 
   waitParameter(ctx: WaitParameterCtx) {
-    const paramName = ctx.Wait[0].image.toLowerCase()
-    const paramValue = ctx.Resource[0].image
-    return {[paramName]: parseFloat(paramValue)}
+    return parseNumberParam(
+      ctx.Wait[0].image.toLowerCase(),
+      ctx.Resource[0].image
+    )
   }
 
   // Command args
@@ -638,7 +656,7 @@ export class Action {
     const finalResult: Record<string, object[]> = {}
     if (!inputText) return finalResult
 
-    const rawActions = inputText.split(';')
+    const rawActions = splitActions(inputText)
 
     for (const raw of rawActions) {
       const trimmed = raw.trim()
@@ -668,7 +686,7 @@ export class Action {
   debug(inputText: string) {
     if (!inputText) return 'OK'
 
-    const rawActions = inputText.split(';')
+    const rawActions = splitActions(inputText)
 
     for (const raw of rawActions) {
       const trimmed = raw.trim()

@@ -532,7 +532,6 @@ test('sign text with quoted unicode and other things after', () => {
   })
 })
 
-/*
 test('sign text with only one quote', () => {
   expect(parser.parse('create sign "; activate something')).toStrictEqual({
     create: [
@@ -543,7 +542,6 @@ test('sign text with only one quote', () => {
     ]
   })
 })
-*/
 
 test('invalid sign text without quotes', () => {
   expect(
@@ -923,6 +921,96 @@ test('valid action is kept even if followed by an invalid action', () => {
           g: 52,
           b: 86
         }
+      }
+    ]
+  })
+})
+
+test('preset colors are case insensitive', () => {
+  expect(
+    parser.parse('create color Red; activate color BLUE name=target')
+  ).toStrictEqual({
+    create: [
+      {
+        commandType: 'color',
+        color: {r: 255, g: 0, b: 0}
+      }
+    ],
+    activate: [
+      {
+        commandType: 'color',
+        color: {r: 0, g: 0, b: 255},
+        targetName: 'target'
+      }
+    ]
+  })
+})
+
+test('parameters support negative values, leading dots and spaces around equals', () => {
+  expect(
+    parser.parse(
+      'create light pitch=-45 time = 2 radius=.5, corona c1 size=.25'
+    )
+  ).toStrictEqual({
+    create: [
+      {
+        commandType: 'light',
+        pitch: -45,
+        time: 2,
+        radius: 0.5
+      },
+      {
+        commandType: 'corona',
+        resource: 'c1',
+        size: 0.25
+      }
+    ]
+  })
+})
+
+test('sign text with comma, semicolon, equals and keywords inside quotes', () => {
+  expect(
+    parser.parse(
+      'create sign "Hello, world; color = blue" color=red name=panel; activate noise ding.wav'
+    )
+  ).toStrictEqual({
+    create: [
+      {
+        commandType: 'sign',
+        text: 'Hello, world; color = blue',
+        color: {r: 255, g: 0, b: 0},
+        targetName: 'panel'
+      }
+    ],
+    activate: [
+      {
+        commandType: 'noise',
+        resource: 'ding.wav'
+      }
+    ]
+  })
+})
+
+test('create sound with name parameter', () => {
+  expect(parser.parse('create sound music.mid name=speaker')).toStrictEqual({
+    create: [
+      {
+        commandType: 'sound',
+        resource: 'music.mid',
+        targetName: 'speaker'
+      }
+    ]
+  })
+})
+
+test('invalid numeric parameter is ignored instead of producing NaN', () => {
+  expect(
+    parser.parse('create light radius=invalid brightness=1.5')
+  ).toStrictEqual({
+    create: [
+      {
+        commandType: 'light',
+        brightness: 1.5
       }
     ]
   })

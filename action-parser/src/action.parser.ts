@@ -23,7 +23,7 @@ const Resource = addToken({
 addToken({
   name: 'Identifier',
   // eslint-disable-next-line no-control-regex
-  pattern: /[\u0000-\u0019\u0021-\u002B\u002D-\u003A\u003C-\uFFFF]+/,
+  pattern: /[\u0000-\u001F\u0021-\u002B\u002D-\u003A\u003C-\uFFFF]+/,
   categories: [Resource]
 })
 const Enabled = addToken({
@@ -244,7 +244,12 @@ const Create = addToken({
 })
 const Equals = addToken({
   name: 'Equals',
-  pattern: /\b=\b/,
+  pattern: /=/,
+  categories: [Resource]
+})
+addToken({
+  name: 'QuotedString',
+  pattern: /"[^"]*"?/,
   categories: [Resource]
 })
 const Comma = addToken({name: 'Comma', pattern: /,/})
@@ -318,7 +323,7 @@ export class ActionParser extends CstParser {
   moveCommand = this.RULE('moveCommand', () => {
     this.CONSUME(Move)
     this.AT_LEAST_ONE({
-      GATE: () => /[+-]?([0-9]*[.])?[0-9]+/.test(this.LA(1).image),
+      GATE: () => /^[+-]?([0-9]*[.])?[0-9]+$/.test(this.LA(1).image),
       DEF: () => this.CONSUME(Resource)
     })
     this.OPTION(() => this.SUBRULE(this.moveArgs))
@@ -337,7 +342,7 @@ export class ActionParser extends CstParser {
   rotateCommand = this.RULE('rotateCommand', () => {
     this.CONSUME(Rotate)
     this.AT_LEAST_ONE({
-      GATE: () => /[+-]?([0-9]*[.])?[0-9]+/.test(this.LA(1).image),
+      GATE: () => /^[+-]?([0-9]*[.])?[0-9]+$/.test(this.LA(1).image),
       DEF: () => this.CONSUME(Resource)
     })
     this.OPTION(() => this.SUBRULE(this.moveArgs))
@@ -347,7 +352,10 @@ export class ActionParser extends CstParser {
     this.CONSUME(Sign)
     this.MANY({
       GATE: () =>
-        !['Name', 'Color', 'Bcolor'].includes(this.LA(1).tokenType.name),
+        !(
+          ['Name', 'Color', 'Bcolor'].includes(this.LA(1).tokenType.name) &&
+          this.LA(2).tokenType === Equals
+        ),
       DEF: () => this.CONSUME(Resource)
     })
     this.OPTION1(() => this.SUBRULE(this.signArgs))
@@ -627,14 +635,13 @@ export class ActionParser extends CstParser {
   })
 
   action = this.RULE('action', () => {
-    const trigger = this.SUBRULE(this.trigger) as unknown as string
-    const commands = [this.SUBRULE(this.command)]
+    this.SUBRULE(this.trigger)
+    this.SUBRULE(this.command)
     this.MANY(() => {
       this.CONSUME(Comma)
-      commands.push(this.SUBRULE1(this.command))
+      this.SUBRULE1(this.command)
     })
     // Optional trailing commas
     this.OPTION(() => this.MANY1(() => this.CONSUME1(Comma)))
-    return {[trigger]: commands}
   })
 }

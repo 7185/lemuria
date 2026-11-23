@@ -42,10 +42,11 @@ const PRESET_COLORS = {
 }
 
 export const colorStringToRGB = (color: string) => {
-  if (color in PRESET_COLORS) {
-    return PRESET_COLORS[color as keyof typeof PRESET_COLORS]
+  const lowerColor = color.toLowerCase()
+  if (lowerColor in PRESET_COLORS) {
+    return PRESET_COLORS[lowerColor as keyof typeof PRESET_COLORS]
   }
-  const extractedHex = RegExp(/(^[a-f0-9]+)/).exec(color.toLowerCase())
+  const extractedHex = RegExp(/(^[a-f0-9]+)/).exec(lowerColor)
   if (extractedHex == null) {
     return null
   }
@@ -135,4 +136,33 @@ export const visitCoords = (
     delete res.commandType
     delete res.coordinates
   }
+}
+
+export const splitActions = (inputText: string): string[] => {
+  const actions: string[] = []
+  let current = ''
+  let inQuotes = false
+
+  for (const char of inputText) {
+    if (char === '"') {
+      inQuotes = !inQuotes
+      current += char
+    } else if (char === ';' && !inQuotes) {
+      actions.push(current)
+      current = ''
+    } else {
+      current += char
+    }
+  }
+  actions.push(current)
+  return actions
+}
+
+export const parseNumberParam = (
+  name: string,
+  value: string,
+  parseFn: (v: string) => number = parseFloat
+) => {
+  const num = parseFn(value)
+  return Number.isNaN(num) ? {} : {[name]: num}
 }

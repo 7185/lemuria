@@ -71,6 +71,7 @@ export interface SolidCommandCtx {
 }
 export interface SoundCommandCtx {
   Resource: IToken[]
+  nameParameter?: CstNode[]
 }
 
 export interface TeleportCommandCtx {

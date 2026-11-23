@@ -4,6 +4,7 @@ import {Action} from '@lemuria/action-parser'
 import {textCanvas} from '../utils/text-canvas'
 
 const actionParser = new Action()
+const actionCache = new Map<string, Record<string, object[]>>()
 
 addEventListener('message', async ({data}) => {
   if (data.type === 'textCanvasRequest') {
@@ -21,7 +22,14 @@ addEventListener('message', async ({data}) => {
   }
 
   if (data.type === 'parseActionRequest') {
-    const parsed = actionParser.parse(data.act)
+    let parsed = actionCache.get(data.act)
+    if (parsed === undefined) {
+      if (actionCache.size >= 5000) {
+        actionCache.clear()
+      }
+      parsed = actionParser.parse(data.act)
+      actionCache.set(data.act, parsed)
+    }
     postMessage({type: 'parseActionResult', parsed, id: data.id})
   }
 })
