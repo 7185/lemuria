@@ -45,7 +45,7 @@ export class UserService {
 
   setAvatar(userId: string, avatarId: number) {
     const user = this.getUser(userId)
-    if (user?.id === this.authSvc.getLogged()().id) {
+    if (!user.id || user.id === this.authSvc.getLogged()().id) {
       return
     }
     user.avatar = avatarId
@@ -59,33 +59,33 @@ export class UserService {
     gesture: string | null = null
   ) {
     const u = this.getUser(userId)
-    if (u == null) {
+    if (!u.id) {
       return
     }
+    u.state = state
+    u.gesture = gesture
     if (
-      u.x !== position[0].x ||
-      u.y !== position[0].y ||
-      u.z !== position[0].z ||
-      u.roll !== position[1].x ||
-      u.yaw !== position[1].y ||
-      u.pitch !== position[1].z ||
-      u.gesture !== gesture
+      u.x === position[0].x &&
+      u.y === position[0].y &&
+      u.z === position[0].z &&
+      u.roll === position[1].x &&
+      u.yaw === position[1].y &&
+      u.pitch === position[1].z
     ) {
-      u.oldX = u.x
-      u.oldY = u.y
-      u.oldZ = u.z
-      u.oldRoll = u.roll
-      u.oldYaw = u.yaw
-      u.oldPitch = u.pitch
-      u.x = position[0].x
-      u.y = position[0].y
-      u.z = position[0].z
-      u.roll = position[1].x
-      u.yaw = position[1].y
-      u.pitch = position[1].z
-      u.completion = 0
-      u.state = state
-      u.gesture = gesture
+      return
     }
+    u.oldX = u.x
+    u.oldY = u.y
+    u.oldZ = u.z
+    u.oldRoll = u.roll
+    u.oldYaw = u.yaw
+    u.oldPitch = u.pitch
+    u.x = position[0].x
+    u.y = position[0].y
+    u.z = position[0].z
+    u.roll = position[1].x
+    u.yaw = position[1].y
+    u.pitch = position[1].z
+    u.completion = 0
   }
 }

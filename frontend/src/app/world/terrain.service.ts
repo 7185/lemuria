@@ -79,17 +79,13 @@ export class TerrainService {
 
     this.waterTopGeom = new PlaneGeometry(
       TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE,
-      TERRAIN_PAGE_SIZE
+      TERRAIN_PAGE_SIZE * 10
     )
     this.waterTopGeom.rotateX(-Math.PI / 2)
     this.waterTopGeom.addGroup(0, this.waterTopGeom.getIndex()!.count, 0)
     this.waterBottomGeom = new PlaneGeometry(
       TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE,
-      TERRAIN_PAGE_SIZE
+      TERRAIN_PAGE_SIZE * 10
     )
     this.waterBottomGeom.rotateX(Math.PI / 2)
     this.waterBottomGeom.addGroup(0, this.waterBottomGeom.getIndex()!.count, 0)
@@ -99,12 +95,14 @@ export class TerrainService {
       color: new Color(this.water.userData.color),
       opacity: this.water.userData.opacity / 255
     })
+    this.waterBottomMaterials = [waterMaterialBottom]
 
     const waterMaterialTop = new MeshLambertMaterial({
       transparent: true,
       color: new Color(this.water.userData.color),
       opacity: this.water.userData.opacity / 255
     })
+    this.waterTopMaterials = [waterMaterialTop]
 
     if (water?.texture_bottom) {
       this.textureLoader.load(
@@ -121,8 +119,9 @@ export class TerrainService {
           )
           bottomTexture.colorSpace = SRGBColorSpace
           bottomTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
+          bottomTexture.needsUpdate = true
           waterMaterialBottom.map = bottomTexture
-          this.waterBottomMaterials = [waterMaterialBottom]
+          waterMaterialBottom.needsUpdate = true
         }
       )
     }
@@ -142,8 +141,9 @@ export class TerrainService {
           )
           topTexture.colorSpace = SRGBColorSpace
           topTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
+          topTexture.needsUpdate = true
           waterMaterialTop.map = topTexture
-          this.waterTopMaterials = [waterMaterialTop]
+          waterMaterialTop.needsUpdate = true
         }
       )
     }
@@ -257,10 +257,7 @@ export class TerrainService {
         this.setTerrainPage(page[0], page[1], worldId)
       }
       if (
-        !this.water?.children?.find(
-          (m) => m.name === `${page[0]}_${page[1]}`
-        ) &&
-        !this.loadingPages.has(`${page[0]}_${page[1]}`)
+        !this.water?.children?.find((m) => m.name === `${page[0]}_${page[1]}`)
       ) {
         this.setWaterPage(page[0], page[1])
       }

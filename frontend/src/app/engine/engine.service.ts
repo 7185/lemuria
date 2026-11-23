@@ -1029,8 +1029,8 @@ export class EngineService {
       this.updateLODs()
     }
     this.rotateSprites()
-    this.player.inWater.set(this.water?.position.y >= this.cameraPosition.y)
     this.activeCamera.getWorldPosition(this.cameraPosition)
+    this.player.inWater.set(this.water?.position.y >= this.cameraPosition.y)
 
     this.skybox.position.copy(this.player.position)
     this.dirLight?.position.set(

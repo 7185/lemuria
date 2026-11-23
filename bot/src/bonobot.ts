@@ -45,8 +45,10 @@ class Bonobot extends Bot {
       await this.sendPosition()
       await setTimeout(tick)
     }
-    this.state = 'idle'
-    await this.sendPosition()
+    if (threadId === this.currentMoveThread) {
+      this.state = 'idle'
+      await this.sendPosition()
+    }
   }
 
   async on_connected(): Promise<void> {
