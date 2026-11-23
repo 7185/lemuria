@@ -38,6 +38,8 @@ export class SkyService {
 
   constructor() {
     effect(() => {
+      // Track world path to reload the skybox when two worlds share the same skybox name on different paths
+      this.propSvc.path()
       this.createSkybox(this.skybox(), {
         top: hexToRgb(colorStrToHex(this.skyTop())),
         north: hexToRgb(colorStrToHex(this.skyNorth())),

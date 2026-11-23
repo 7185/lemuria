@@ -1,8 +1,8 @@
 diff --git a/node_modules/three-rwx-loader/src/RWXLoader.js b/node_modules/three-rwx-loader/src/RWXLoader.js
-index 41e67cd..5b7936f 100644
+index 41e67cd..81393ca 100644
 --- a/node_modules/three-rwx-loader/src/RWXLoader.js
 +++ b/node_modules/three-rwx-loader/src/RWXLoader.js
-@@ -16,13 +16,13 @@ import {
+@@ -16,7 +16,8 @@ import {
  	BufferGeometry,
  	Quaternion,
  	Plane,
@@ -12,26 +12,73 @@ index 41e67cd..5b7936f 100644
  	NearestFilter,
  	LinearMipmapNearestFilter,
  	RepeatWrapping,
- 	ClampToEdgeWrapping,
- 	MirroredRepeatWrapping,
--	LinearSRGBColorSpace,
- 	SRGBColorSpace,
- 	FrontSide,
- 	DoubleSide,
-@@ -73,9 +73,9 @@ const glossRatio = 0.1;
+@@ -73,13 +74,17 @@ const glossRatio = 0.1;
  const defaultAlphaTest = 0.2;
  const defaultSurface = [ 0.69, 0.0, 0.0 ]; // Ambience (recommended AW 2.2), Diffusion, Specularity
  
 -const urlRegex = /^https?:\/\/.*$/i;
--const extensionRegex = /^(.*)(\.[^\\]+)$/i;
--const isAlphaExtensionRegex = /^\.(tiff|png|webp|gif)$/i;
 +const urlRegex = /^https?:\/\//i;
-+const extensionRegex = /\.([^.\\]+)$/i;
-+const isAlphaExtensionRegex = /^(tiff|png|webp|gif)$/i;
+ const extensionRegex = /^(.*)(\.[^\\]+)$/i;
+ const isAlphaExtensionRegex = /^\.(tiff|png|webp|gif)$/i;
++const spacesRegex = / +/;
  
  const firstClumpName = 'rwx-first-clump';
  const scaleGroupName = 'rwx-scale-group';
-@@ -195,51 +195,11 @@ function triangulateFaces( vertices, uvs, loop, objectName, forceEarcut = false,
+ 
++const bitmapLoader = new ImageBitmapLoader().setOptions( { imageOrientation: 'flipY' } );
++const _tmpVec4 = new Vector4();
++
+ // Perform polygon triangulation by projecting vertices on a 2D plane first
+ function triangulateFaces( vertices, uvs, loop, objectName, forceEarcut = false, verboseWarning = false ) {
+ 
+@@ -146,23 +151,18 @@ function triangulateFaces( vertices, uvs, loop, objectName, forceEarcut = false,
+ 	_basis.setPosition( _ctr );
+ 
+ 	// Project the 3D vertices on the 2D plane
+-	let poly2triData = [];
+-	let earcutData = [];
+-
+-	for ( let i = 0; i < l; i ++ ) {
+-
+-		const currentVertex = new Vector3( vertices[ loop[ i ] * 3 ], vertices[ loop[ i ] * 3 + 1 ], vertices[ loop[ i ] * 3 + 2 ] );
+-		_tmp.subVectors( currentVertex, _ctr );
++	let faces = [];
+ 
+-		if ( ! forceEarcut ) poly2triData.push( { x: _tmp.dot( _x ), y: _tmp.dot( _y ), id: vertexIdMap[ i ] } );
++	if ( ! forceEarcut ) {
+ 
+-		earcutData.push( _tmp.dot( _x ), _tmp.dot( _y ) );
++		let poly2triData = [];
+ 
+-	}
++		for ( let i = 0; i < l; i ++ ) {
+ 
+-	let faces = [];
++			_tmp.set( vertices[ loop[ i ] * 3 ], vertices[ loop[ i ] * 3 + 1 ], vertices[ loop[ i ] * 3 + 2 ] ).sub( _ctr );
++			poly2triData.push( { x: _tmp.dot( _x ), y: _tmp.dot( _y ), id: vertexIdMap[ i ] } );
+ 
+-	if ( ! forceEarcut ) {
++		}
+ 
+ 		try {
+ 
+@@ -188,6 +188,15 @@ function triangulateFaces( vertices, uvs, loop, objectName, forceEarcut = false,
+ 
+ 	}
+ 
++	let earcutData = [];
++
++	for ( let i = 0; i < l; i ++ ) {
++
++		_tmp.set( vertices[ loop[ i ] * 3 ], vertices[ loop[ i ] * 3 + 1 ], vertices[ loop[ i ] * 3 + 2 ] ).sub( _ctr );
++		earcutData.push( _tmp.dot( _x ), _tmp.dot( _y ) );
++
++	}
++
+ 	// Return faces correctly mapping original vertex IDs
+ 	faces = Earcut.triangulate( earcutData, null, 2 ).map( id => vertexIdMap[ id ] );
+ 
+@@ -195,51 +204,45 @@ function triangulateFaces( vertices, uvs, loop, objectName, forceEarcut = false,
  
  }
  
@@ -41,64 +88,76 @@ index 41e67cd..5b7936f 100644
 -	return new Promise( ( resolveMask ) => {
 -
 -		loader.load( bmpURI, ( maskTexture ) => {
--
++function buildMaskTexture( bitmap, textureWrapping, textureFiltering, animatedTextures ) {
+ 
 -			// If the height is nicely divisible by the width: it's an animated mask
 -			if ( maskTexture.image.height !== maskTexture.image.width && maskTexture.image.height % maskTexture.image.width === 0 ) {
--
++	if ( ! bitmap || bitmap.width === 0 || bitmap.height === 0 ) {
+ 
 -				threeMat.userData.rwx.maskAnimation = { yTiles: maskTexture.image.height / maskTexture.image.width,
 -					yHeight: maskTexture.image.width / maskTexture.image.height,
 -					step: 0 };
 -				maskTexture.offset.y = ( 1.0 - threeMat.userData.rwx.maskAnimation.yHeight );
 -				maskTexture.repeat.set( 1, threeMat.userData.rwx.maskAnimation.yHeight );
--
++		return null;
+ 
 -			}
--
++	}
+ 
 -			maskTexture.wrapS = textureWrapping;
 -			maskTexture.wrapT = textureWrapping;
 -			maskTexture.colorSpace = textureColorSpace;
--
++	const maskTexture = new Texture( bitmap );
++	maskTexture.wrapS = textureWrapping;
++	maskTexture.wrapT = textureWrapping;
++	maskTexture.colorSpace = LinearSRGBColorSpace;
+ 
 -			if ( ! textureFiltering ) {
--
++	if ( ! textureFiltering ) {
+ 
 -				maskTexture.minFilter = LinearMipmapNearestFilter;
 -				maskTexture.magFilter = NearestFilter;
--
++		maskTexture.minFilter = LinearMipmapNearestFilter;
++		maskTexture.magFilter = NearestFilter;
+ 
 -			}
--
++	}
+ 
 -			threeMat.alphaMap = maskTexture;
 -			threeMat.needsUpdate = true;
--
++	if ( bitmap.height !== bitmap.width && bitmap.height % bitmap.width === 0 ) {
+ 
 -			resolveMask( maskTexture );
--
++		const yHeight = bitmap.width / bitmap.height;
++		maskTexture.userData.animation = { yTiles: bitmap.height / bitmap.width, yHeight, step: 0 };
++		maskTexture.offset.y = ( 1.0 - yHeight );
++		maskTexture.repeat.set( 1, yHeight );
++		if ( animatedTextures ) animatedTextures.add( maskTexture );
+ 
 -		} );
--
++	}
+ 
 -	} );
--
--}
--
++	maskTexture.needsUpdate = true;
++	return maskTexture;
+ 
+ }
+ 
  function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.jpg', maskName = null,
  	maskExtension = '.zip', specularName = null, normalName = null, fflate = null, loadingPromises = [], textureColorSpace = SRGBColorSpace,
 -	textureWrapping = RepeatWrapping, alphaTest = defaultAlphaTest, textureFiltering = true, allowURLs = true ) {
-+	textureWrapping = RepeatWrapping, alphaTest = defaultAlphaTest, textureFiltering = true, allowURLs = true, textureMap = new Map() ) {
++	textureWrapping = RepeatWrapping, alphaTest = defaultAlphaTest, textureFiltering = true, allowURLs = true, textureMap = new Map(), animatedTextures = null ) {
  
 -	let loader = new TextureLoader();
-+	let loader = new ImageBitmapLoader().setOptions( { imageOrientation: 'flipY' } );
  	let texturePath = null;
  
  	const urlRes = urlRegex.exec( textureName );
-@@ -269,50 +229,80 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
- 
- 	}
- 
--	if ( extRes && isAlphaExtensionRegex.test( extRes[ 2 ] ) ) {
-+	if ( extRes && isAlphaExtensionRegex.test( extRes[ 1 ] ) ) {
- 
- 		threeMat.alphaTest = alphaTest;
- 		threeMat.transparent = true;
+@@ -276,43 +279,80 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
  
  	}
  
 -	loadingPromises.push( new Promise( ( resolveTex, rejectTex ) => {
-+	const texCacheKey = `tex_${texturePath}_${textureColorSpace}`;
++	const texCacheKey = `tex_${texturePath}_${textureColorSpace}_${textureWrapping}_${textureFiltering}`;
 +
 +	if ( textureMap.has( texCacheKey ) ) {
  
@@ -113,12 +172,11 @@ index 41e67cd..5b7936f 100644
  			threeMat.needsUpdate = true;
  
 -			if ( ! textureFiltering ) {
-+			if ( texture.image != null && texture.image.height !== texture.image.width && texture.image.height % texture.image.width === 0 ) {
++			if ( texture.userData.animation !== undefined ) {
  
 -				texture.minFilter = LinearMipmapNearestFilter;
 -				texture.magFilter = NearestFilter;
-+				threeMat.userData.rwx.animation = { yTiles: texture.image.height / texture.image.width,
-+					yHeight: texture.image.width / texture.image.height, step: 0 };
++				threeMat.userData.rwx.animation = texture.userData.animation;
  
  			}
  
@@ -136,16 +194,19 @@ index 41e67cd..5b7936f 100644
 -			}
 +		const texPromise = new Promise( ( resolveTex ) => {
 +
-+			loader.load( texturePath, ( bitmap ) => {
++			bitmapLoader.load( texturePath, ( bitmap ) => {
  
 -			resolveTex( texture );
 +				if ( ! bitmap || bitmap.width === 0 || bitmap.height === 0 ) {
-+
+ 
+-		}, null, ( e ) => {
++					textureMap.delete( texCacheKey );
 +					resolveTex( null );
 +					return;
 +
 +				}
-+
+ 
+-			rejectTex( e );
 +				const texture = new Texture( bitmap );
 +				texture.wrapS = textureWrapping;
 +				texture.wrapT = textureWrapping;
@@ -159,16 +220,16 @@ index 41e67cd..5b7936f 100644
 +					texture.magFilter = NearestFilter;
 +
 +				}
- 
--		}, null, ( e ) => {
++
 +				// If the height is nicely divisible by the width: it's an animated texture
-+				if ( texture.image != null && texture.image.height !== texture.image.width && texture.image.height % texture.image.width === 0 ) {
- 
--			rejectTex( e );
-+					threeMat.userData.rwx.animation = { yTiles: texture.image.height / texture.image.width,
-+						yHeight: texture.image.width / texture.image.height, step: 0 };
-+					texture.offset.y = ( 1.0 - threeMat.userData.rwx.animation.yHeight );
-+					texture.repeat.set( 1, threeMat.userData.rwx.animation.yHeight );
++				if ( bitmap.height !== bitmap.width && bitmap.height % bitmap.width === 0 ) {
++
++					const yHeight = bitmap.width / bitmap.height;
++					texture.userData.animation = { yTiles: bitmap.height / bitmap.width, yHeight, step: 0 };
++					threeMat.userData.rwx.animation = texture.userData.animation;
++					texture.offset.y = ( 1.0 - yHeight );
++					texture.repeat.set( 1, yHeight );
++					if ( animatedTextures ) animatedTextures.add( texture );
 +
 +				}
 +
@@ -176,7 +237,12 @@ index 41e67cd..5b7936f 100644
 +				threeMat.needsUpdate = true;
 +				resolveTex( texture );
 +
-+			}, null, ( e ) => resolveTex( null ) );
++			}, null, () => {
++
++				textureMap.delete( texCacheKey );
++				resolveTex( null );
++
++			} );
  
  		} );
 +		textureMap.set( texCacheKey, texPromise );
@@ -187,7 +253,7 @@ index 41e67cd..5b7936f 100644
  
  	if ( maskName != null ) {
  
-@@ -345,84 +335,170 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+@@ -345,87 +385,122 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
  
  		}
  
@@ -196,188 +262,137 @@ index 41e67cd..5b7936f 100644
 +		// Otherwise, if it's a single name: do not append the extension to it if
 +		// it's already embedded in the original string.
 +		const maskFilePath = urlRes ? maskName : folder + '/' + maskBaseName + maskExtension;
-+		const globalMaskKey = `mask_${maskFilePath}_${textureColorSpace}`;
-+
-+		if ( textureMap.has( globalMaskKey ) ) {
-+
-+			loadingPromises.push( textureMap.get( globalMaskKey ).then( maskTexture => {
-+
-+				if ( ! maskTexture ) return;
-+				threeMat.alphaMap = maskTexture;
-+				threeMat.needsUpdate = true;
-+
-+				if ( maskTexture.image != null && maskTexture.image.height !== maskTexture.image.width && maskTexture.image.height % maskTexture.image.width === 0 ) {
-+
-+					threeMat.userData.rwx.maskAnimation = { yTiles: maskTexture.image.height / maskTexture.image.width,
-+						yHeight: maskTexture.image.width / maskTexture.image.height, step: 0 };
-+
-+				}
-+
-+			} ) );
-+
-+		} else {
-+
-+			const maskPromise = new Promise( ( resolve ) => {
++		const globalMaskKey = `mask_${maskFilePath}_${textureWrapping}_${textureFiltering}`;
  
 -			// If mask path is a full URL: use it verbatim;
 -			// Otherwise, if it's a single name: do not append the extension to it if
 -			// it's already embedded in the original string.
 -			const zipPath = urlRes ? maskName : folder + '/' + maskBaseName + maskExtension;
-+				if ( maskExtension.toLowerCase() == '.zip' && fflate != null ) {
++		if ( ! textureMap.has( globalMaskKey ) ) {
  
 -			loadingPromises.push( new Promise( ( resolve, reject ) => {
-+					const zipLoader = new FileLoader();
-+					zipLoader.setResponseType( 'arraybuffer' );
++			const maskPromise = new Promise( ( resolve ) => {
  
 -				const zipLoader = new FileLoader();
 -				zipLoader.setResponseType( 'arraybuffer' );
-+					// We load the mask asynchronously using fflate (if available)
-+					zipLoader.load( maskFilePath, ( data ) => {
++				if ( maskExtension.toLowerCase() == '.zip' && fflate != null ) {
  
 -				// We load the mask asynchronously using fflate (if available)
 -				zipLoader.load( zipPath, ( data ) => {
-+						const zipData = fflate.unzipSync( new Uint8Array( data ) );
-+						let filename = null;
++					const zipLoader = new FileLoader();
++					zipLoader.setResponseType( 'arraybuffer' );
  
 -					const zipData = fflate.unzipSync( new Uint8Array( data ) );
 -					let filename = null;
-+						// Find the bmp file within the archive, we need to be case insensitive
-+						for ( const key of Object.keys( zipData ) ) {
++					// We load the mask asynchronously using fflate (if available)
++					zipLoader.load( maskFilePath, ( data ) => {
  
 -					// Find the bmp file within the archive, we need to be case insensitive
 -					for ( const key of Object.keys( zipData ) ) {
-+							if ( key.toLowerCase() == ( maskBaseName.toLowerCase() + '.bmp' ) ) {
++						fflate.unzip( new Uint8Array( data ), ( err, zipData ) => {
  
 -						if ( key.toLowerCase() == ( maskBaseName.toLowerCase() + '.bmp' ) ) {
-+								filename = key; break;
++							if ( err ) {
  
 -							// Found the file
 -							filename = key;
 -							break;
++								textureMap.delete( globalMaskKey );
++								resolve( null );
++								return;
+ 
+-						}
 +							}
  
- 						}
- 
 -					}
-+						if ( ! filename ) {
++							let filename = null;
++							const expectedName = maskBaseName.toLowerCase() + '.bmp';
  
 -					if ( ! filename ) {
-+							console.warn( `No .bmp file candidate found within '${maskFilePath}'` );
-+							resolve( null ); return;
++							// Find the bmp file within the archive, we need to be case insensitive
++							for ( const key of Object.keys( zipData ) ) {
  
 -						// No .bmp mask file found within the archive: can't proceed further
 -						reject( new Error( `No .bmp file candidate found within '${zipPath}'` ) );
-+						}
++								if ( key.toLowerCase() == expectedName ) {
  
 -					}
-+						const buffer = zipData[ filename ];
++									filename = key;
++									break;
  
 -					const buffer = zipData[ filename ];
-+						// Load the bmp image into a data uri string
-+						let bmpURI = 'data:image/bmp;base64,';
-+						const chunkSize = 4056;
-+						let dataStr = '';
++								}
  
 -					// Load the bmp image into a data uri string
 -					let bmpURI = 'data:image/bmp;base64,';
 -					const chunkSize = 4056;
 -					let dataStr = '';
-+						// Chunking the buffer to maximize browser compatibility and avoid exceeding some size limit
-+						// during string creation when using 'String.fromCharCode'
-+						for ( let i = 0; i < buffer.length; i += chunkSize ) {
++							}
  
 -					// Chunking the buffer to maximize browser compatibility and avoid exceeding some size limit
 -					// during string creation when using 'String.fromCharCode'
 -					for ( let i = 0; i < buffer.length; i += chunkSize ) {
-+							dataStr = dataStr.concat( String.fromCharCode.apply( null, new Uint16Array( buffer.slice( i, i + chunkSize ) ) ) );
++							if ( ! filename ) {
  
 -						dataStr = dataStr.concat( String.fromCharCode.apply( null, new Uint16Array( buffer.slice( i, i + chunkSize ) ) ) );
-+						}
++								console.warn( `No .bmp file candidate found within '${maskFilePath}'` );
++								textureMap.delete( globalMaskKey );
++								resolve( null );
++								return;
  
 -					}
-+						bmpURI = bmpURI.concat( btoa( dataStr ) );
++							}
  
 -					bmpURI = bmpURI.concat( btoa( dataStr ) );
-+						loader.load( bmpURI, ( bitmap ) => {
++							const blob = new Blob( [ zipData[ filename ] ], { type: 'image/bmp' } );
++							createImageBitmap( blob, { imageOrientation: 'flipY' } ).then( ( bitmap ) => {
  
 -					makeMaskPromise( bmpURI, threeMat, loader, LinearSRGBColorSpace, textureWrapping, textureFiltering ).then( ( mask ) => {
-+							if ( ! bitmap || bitmap.width === 0 || bitmap.height === 0 ) {
++								const maskTexture = buildMaskTexture( bitmap, textureWrapping, textureFiltering, animatedTextures );
++								if ( ! maskTexture ) textureMap.delete( globalMaskKey );
++								resolve( maskTexture );
  
 -						resolve( mask );
-+								resolve( null ); return;
++							} ).catch( () => {
  
 -					} )
 -						.catch( ( e ) => {
-+							}
++								textureMap.delete( globalMaskKey );
++								resolve( null );
  
 -							reject( e );
-+							const maskTexture = new Texture( bitmap );
-+							maskTexture.wrapS = textureWrapping;
-+							maskTexture.wrapT = textureWrapping;
-+							maskTexture.colorSpace = textureColorSpace;
-+							if ( ! textureFiltering ) {
++							} );
  
--						} );
-+								maskTexture.minFilter = LinearMipmapNearestFilter;
-+								maskTexture.magFilter = NearestFilter;
+ 						} );
  
 -				}, null, ( e ) => {
-+							}
++					}, null, () => {
  
 -					reject( e );
-+							if ( maskTexture.image != null && maskTexture.image.height !== maskTexture.image.width && maskTexture.image.height % maskTexture.image.width === 0 ) {
++						textureMap.delete( globalMaskKey );
++						resolve( null );
  
 -				} );
-+								const yHeight = maskTexture.image.width / maskTexture.image.height;
-+								maskTexture.offset.y = ( 1.0 - yHeight );
-+								maskTexture.repeat.set( 1, yHeight );
++					} );
  
 -			} ) );
-+							}
-+
-+							maskTexture.needsUpdate = true;
-+							resolve( maskTexture );
-+
-+						}, null, () => resolve( null ) );
-+
-+					}, null, () => resolve( null ) );
-+
 +				} else if ( maskExtension != '.zip' ) {
 +
-+					loader.load( maskFilePath, ( bitmap ) => {
-+
-+						if ( ! bitmap || bitmap.width === 0 || bitmap.height === 0 ) {
-+
-+							resolve( null ); return;
-+
-+						}
++					bitmapLoader.load( maskFilePath, ( bitmap ) => {
  
 -		} else if ( maskExtension != '.zip' ) {
-+						const maskTexture = new Texture( bitmap );
-+						maskTexture.wrapS = textureWrapping;
-+						maskTexture.wrapT = textureWrapping;
-+						maskTexture.colorSpace = textureColorSpace;
-+						if ( ! textureFiltering ) {
++						const maskTexture = buildMaskTexture( bitmap, textureWrapping, textureFiltering, animatedTextures );
++						if ( ! maskTexture ) textureMap.delete( globalMaskKey );
++						resolve( maskTexture );
  
 -			const bmpPath = urlRes ? maskName : folder + '/' + maskBaseName + maskExtension;
 -			loadingPromises.push( makeMaskPromise( bmpPath, threeMat, loader, LinearSRGBColorSpace, textureWrapping, textureFiltering ) );
-+							maskTexture.minFilter = LinearMipmapNearestFilter;
-+							maskTexture.magFilter = NearestFilter;
++					}, null, () => {
 +
-+						}
++						textureMap.delete( globalMaskKey );
++						resolve( null );
 +
-+						if ( maskTexture.image != null && maskTexture.image.height !== maskTexture.image.width && maskTexture.image.height % maskTexture.image.width === 0 ) {
-+
-+							const yHeight = maskTexture.image.width / maskTexture.image.height;
-+							maskTexture.offset.y = ( 1.0 - yHeight );
-+							maskTexture.repeat.set( 1, yHeight );
-+
-+						}
-+
-+						maskTexture.needsUpdate = true;
-+						resolve( maskTexture );
-+
-+					}, null, () => resolve( null ) );
++					} );
 +
 +				} else {
 +
@@ -388,54 +403,58 @@ index 41e67cd..5b7936f 100644
 +			} );
 +
 +			textureMap.set( globalMaskKey, maskPromise );
-+
-+			loadingPromises.push( maskPromise.then( maskTexture => {
-+
-+				if ( ! maskTexture ) return;
-+				threeMat.alphaMap = maskTexture;
-+				threeMat.needsUpdate = true;
-+				if ( maskTexture.image != null && maskTexture.image.height !== maskTexture.image.width && maskTexture.image.height % maskTexture.image.width === 0 ) {
-+
-+					threeMat.userData.rwx.maskAnimation = { yTiles: maskTexture.image.height / maskTexture.image.width,
-+						yHeight: maskTexture.image.width / maskTexture.image.height, step: 0 };
-+
-+				}
-+
-+			} ) );
  
  		}
  
-@@ -434,20 +510,46 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
++		loadingPromises.push( textureMap.get( globalMaskKey ).then( maskTexture => {
++
++			if ( ! maskTexture ) return;
++			threeMat.alphaMap = maskTexture;
++			threeMat.needsUpdate = true;
++
++			if ( maskTexture.userData.animation !== undefined ) {
++
++				threeMat.userData.rwx.maskAnimation = maskTexture.userData.animation;
++
++			}
++
++		} ) );
++
+ 	}
+ 
+ 	// Load normal map
+@@ -434,20 +509,52 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
  		const urlRes = urlRegex.exec( normalName );
  		const normalPath = urlRes ? normalName : folder + '/' + normalName + textureExtension;
  
 -		loadingPromises.push( new Promise( ( resolve, reject ) => {
-+		const normCacheKey = `norm_${normalPath}`;
++		const normCacheKey = `norm_${normalPath}_${textureWrapping}`;
++
++		if ( textureMap.has( normCacheKey ) ) {
  
 -			loader.load( normalPath, ( normalMap ) => {
-+		if ( textureMap.has( normCacheKey ) ) {
++			loadingPromises.push( textureMap.get( normCacheKey ).then( normalMap => {
  
 -				normalMap.wrapS = textureWrapping;
 -				normalMap.wrapT = textureWrapping;
-+			loadingPromises.push( textureMap.get( normCacheKey ).then( normalMap => {
-+
 +				if ( ! normalMap ) return;
  				threeMat.normalMap = normalMap;
  				threeMat.needsUpdate = true;
  
 -				resolve( normalMap );
 +			} ) );
- 
--			}, null, reject );
++
 +		} else {
  
--		} ) );
+-			}, null, reject );
 +			const normPromise = new Promise( ( resolve ) => {
-+
-+				loader.load( normalPath, ( bitmap ) => {
+ 
+-		} ) );
++				bitmapLoader.load( normalPath, ( bitmap ) => {
 +
 +					if ( ! bitmap || bitmap.width === 0 || bitmap.height === 0 ) {
 +
++						textureMap.delete( normCacheKey );
 +						resolve( null );
 +						return;
 +
@@ -449,7 +468,12 @@ index 41e67cd..5b7936f 100644
 +					threeMat.needsUpdate = true;
 +					resolve( normalMap );
 +
-+				}, null, ( e ) => resolve( null ) );
++				}, null, () => {
++
++					textureMap.delete( normCacheKey );
++					resolve( null );
++
++				} );
 +
 +			} );
 +			textureMap.set( normCacheKey, normPromise );
@@ -459,20 +483,20 @@ index 41e67cd..5b7936f 100644
  
  	}
  
-@@ -457,20 +559,47 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+@@ -457,20 +564,53 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
  		const urlRes = urlRegex.exec( specularName );
  		const specularPath = urlRes ? specularName : folder + '/' + specularName + textureExtension;
  
 -		loadingPromises.push( new Promise( ( resolve, reject ) => {
-+		const specCacheKey = `spec_${specularPath}`;
-+
-+		if ( textureMap.has( specCacheKey ) ) {
++		const specCacheKey = `spec_${specularPath}_${textureWrapping}`;
  
 -			loader.load( specularPath, ( specularMap ) => {
-+			loadingPromises.push( textureMap.get( specCacheKey ).then( specularMap => {
++		if ( textureMap.has( specCacheKey ) ) {
  
 -				specularMap.wrapS = textureWrapping;
 -				specularMap.wrapT = textureWrapping;
++			loadingPromises.push( textureMap.get( specCacheKey ).then( specularMap => {
++
 +				if ( ! specularMap ) return;
  				threeMat.specularMap = specularMap;
  				threeMat.needsUpdate = true;
@@ -486,10 +510,11 @@ index 41e67cd..5b7936f 100644
 -		} ) );
 +			const specPromise = new Promise( ( resolve ) => {
 +
-+				loader.load( specularPath, ( bitmap ) => {
++				bitmapLoader.load( specularPath, ( bitmap ) => {
 +
 +					if ( ! bitmap || bitmap.width === 0 || bitmap.height === 0 ) {
 +
++						textureMap.delete( specCacheKey );
 +						resolve( null );
 +						return;
 +
@@ -503,7 +528,12 @@ index 41e67cd..5b7936f 100644
 +					threeMat.needsUpdate = true;
 +					resolve( specularMap );
 +
-+				}, null, ( e ) => resolve( null ) );
++				}, null, () => {
++
++					textureMap.delete( specCacheKey );
++					resolve( null );
++
++				} );
 +
 +			} );
 +
@@ -514,16 +544,16 @@ index 41e67cd..5b7936f 100644
  
  	}
  
-@@ -478,7 +607,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
+@@ -478,7 +618,7 @@ function applyTextureToMat( threeMat, folder, textureName, textureExtension = '.
  
  function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', maskExtension = '.zip',
  	fflate = null, useBasicMaterial = false, textureColorSpace = SRGBColorSpace, alphaTest = defaultAlphaTest,
 -	allowURLs = true ) {
-+	allowURLs = true, textureMap = new Map() ) {
++	allowURLs = true, textureMap = new Map(), animatedTextures = null ) {
  
  	let materialDict = { name: rwxMaterial.getMatSignature() };
  
-@@ -553,7 +682,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
+@@ -553,7 +693,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
  		const whiteEmissive = Math.trunc( surface[ 1 ] );
  		materialDict[ 'emissive' ] = ( whiteEmissive << 16 ) + ( whiteEmissive << 8 ) + whiteEmissive;
  
@@ -532,16 +562,16 @@ index 41e67cd..5b7936f 100644
  
  	}
  
-@@ -580,7 +709,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
+@@ -580,7 +720,7 @@ function makeThreeMaterial( rwxMaterial, folder, textureExtension = '.jpg', mask
  
  		applyTextureToMat( threeMat, folder, rwxMaterial.texture, textureExtension, rwxMaterial.mask,
  			maskExtension, rwxMaterial.specular, rwxMaterial.normal, fflate, loadingPromises, textureColorSpace, textureWrapping, alphaTest, textureFiltering,
 -			allowURLs );
-+			allowURLs, textureMap );
++			allowURLs, textureMap, animatedTextures );
  
  	}
  
-@@ -729,7 +858,7 @@ function addQuad( ctx, a, b, c, d ) {
+@@ -729,7 +869,7 @@ function addQuad( ctx, a, b, c, d ) {
  
  	}
  
@@ -550,16 +580,336 @@ index 41e67cd..5b7936f 100644
  
  		// We need to use a whole different geometry logic to handle wireframe quads the way the AW client does:
  		// by only rendering the outter edges
-@@ -1589,7 +1718,7 @@ function mergeGeometryRecursive( group, ctx, transform = group.matrix ) {
- 			// Do not forget the UVs either
- 			if ( child.geometry.getAttribute( 'uv' ) === undefined ) {
+@@ -756,26 +896,19 @@ function addQuad( ctx, a, b, c, d ) {
+ 	} else {
+ 
+ 		// Evaluate which diagonal we should cut with
+-		const vertexA = new Vector3( ctx.currentBufferVertices[ a * 3 ],
+-			ctx.currentBufferVertices[ a * 3 + 1 ],
+-			ctx.currentBufferVertices[ a * 3 + 2 ] );
+-		const vertexB = new Vector3( ctx.currentBufferVertices[ b * 3 ],
+-			ctx.currentBufferVertices[ b * 3 + 1 ],
+-			ctx.currentBufferVertices[ b * 3 + 2 ] );
+-		const vertexC = new Vector3( ctx.currentBufferVertices[ c * 3 ],
+-			ctx.currentBufferVertices[ c * 3 + 1 ],
+-			ctx.currentBufferVertices[ c * 3 + 2 ] );
+-		const vertexD = new Vector3( ctx.currentBufferVertices[ d * 3 ],
+-			ctx.currentBufferVertices[ d * 3 + 1 ],
+-			ctx.currentBufferVertices[ d * 3 + 2 ] );
+-
+-		const cutAC = vertexA.distanceToSquared( vertexC ) > vertexB.distanceToSquared( vertexD );
++		const ax = ctx.currentBufferVertices[ a * 3 ], ay = ctx.currentBufferVertices[ a * 3 + 1 ], az = ctx.currentBufferVertices[ a * 3 + 2 ];
++		const bx = ctx.currentBufferVertices[ b * 3 ], by = ctx.currentBufferVertices[ b * 3 + 1 ], bz = ctx.currentBufferVertices[ b * 3 + 2 ];
++		const cx = ctx.currentBufferVertices[ c * 3 ], cy = ctx.currentBufferVertices[ c * 3 + 1 ], cz = ctx.currentBufferVertices[ c * 3 + 2 ];
++		const dx = ctx.currentBufferVertices[ d * 3 ], dy = ctx.currentBufferVertices[ d * 3 + 1 ], dz = ctx.currentBufferVertices[ d * 3 + 2 ];
++
++		const acx = ax - cx, acy = ay - cy, acz = az - cz;
++		const bdx = bx - dx, bdy = by - dy, bdz = bz - dz;
++		const cutAC = ( acx * acx + acy * acy + acz * acz ) > ( bdx * bdx + bdy * bdy + bdz * bdz );
+ 
+ 		// Add two new faces
+ 		ctx.currentBufferFaceCount += 2;
+-		const faces = cutAC ? [ a, b, c, a, c, d ] : [ a, b, d, b, c, d ];
+ 
+-		if ( ctx.correctInvalidNormals && hasCurrentInvalidNormals( ctx, faces ) && ctx.materialTracker.currentRWXMaterial != LightSampling.FACET ) {
++		if ( ctx.correctInvalidNormals && hasCurrentInvalidNormals( ctx, cutAC ? [ a, b, c, a, c, d ] : [ a, b, d, b, c, d ] ) && ctx.materialTracker.currentRWXMaterial != LightSampling.FACET ) {
+ 
+ 			// Duplicate vertices to avoid issues
+ 			const vertexIds = [];
+@@ -813,9 +946,13 @@ function addQuad( ctx, a, b, c, d ) {
+ 
+ 			ctx.currentBufferGeometry.computeVertexNormals();
+ 
++		} else if ( cutAC ) {
++
++			ctx.currentBufferFaces.push( a, b, c, a, c, d );
++
+ 		} else {
+ 
+-			ctx.currentBufferFaces.push( ...faces );
++			ctx.currentBufferFaces.push( a, b, d, b, c, d );
+ 
+ 		}
+ 
+@@ -828,6 +965,7 @@ function addPolygon( ctx, indices ) {
+ 	// Apparently: polygons should always behave according to the facet light sampling mode (despite being told otherwise).
+ 	const previousLightSampling = ctx.materialTracker.currentRWXMaterial.lightsampling;
+ 	ctx.materialTracker.currentRWXMaterial.lightsampling = LightSampling.FACET;
++	ctx.materialTracker.cachedMaterialID = null;
+ 
+ 	if ( ctx.materialTracker.getCurrentMaterialID() !== ctx.previousMaterialID ) {
+ 
+@@ -851,6 +989,7 @@ function addPolygon( ctx, indices ) {
+ 	}
+ 
+ 	ctx.materialTracker.currentRWXMaterial.lightsampling = previousLightSampling;
++	ctx.materialTracker.cachedMaterialID = null;
+ 
+ }
+ 
+@@ -1312,6 +1451,7 @@ function loadCurrentTransform( ctx ) {
+ function commitMaterialTag( ctx, tag ) {
+ 
+ 	ctx.materialTracker.currentRWXMaterial.tag = tag;
++	ctx.materialTracker.cachedMaterialID = null;
+ 
+ 	if ( ctx.taggedMaterials[ tag.toString() ] === undefined ) {
+ 
+@@ -1336,6 +1476,7 @@ function commitMaterialTag( ctx, tag ) {
+ function clearMaterialTag( ctx ) {
+ 
+ 	ctx.materialTracker.currentRWXMaterial.tag = 0;
++	ctx.materialTracker.cachedMaterialID = null;
+ 
+ }
+ 
+@@ -1485,11 +1626,31 @@ function setMaterialRatio( ctx, a, b, c, d = null ) {
+ 
+ 	}
+ 
++	ctx.materialTracker.cachedMaterialID = null;
++
+ }
+ 
+ function clearMaterialRatio( ctx ) {
+ 
+ 	ctx.materialTracker.currentRWXMaterial.ratio = 1.0;
++	ctx.materialTracker.cachedMaterialID = null;
++
++}
++
++function getOrAddMaterialIndex( ctx, mat ) {
++
++	let index = ctx.materialMap.get( mat );
++
++	if ( index === undefined ) {
++
++		index = ctx.materials.length;
++		ctx.materialMap.set( mat, index );
++		ctx.materials.push( mat );
++		ctx.materialBuckets.push( [] );
++
++	}
++
++	return index;
+ 
+ }
+ 
+@@ -1504,113 +1665,103 @@ function mergeGeometryRecursive( group, ctx, transform = group.matrix ) {
+ 
+ 		if ( child instanceof Mesh && ctx.meshFilter( child ) ) {
+ 
+-			// We first need to set up the new BufferGeometry groups
+-			let geometryGroups = [];
+ 			const geometryIndices = child.geometry.getIndex().array;
++			const originalVertices = child.geometry.getAttribute( 'position' ).array;
++			const vertexOffset = ctx.positions.length / 3;
++			const vertexCount = originalVertices.length / 3;
+ 
+-			if ( typeof child.material[ Symbol.iterator ] === 'function' ) {
++			// Import the current geometry (vertices and faces) from the child into the final buffer,
++			// apply local transformations if any
++			for ( let i = 0; i < vertexCount; i ++ ) {
+ 
+-				// There's likely multiple materials to deal with, so we fetch the original geometry groups
+-				child.geometry.groups.forEach( ( g ) => {
++				_tmpVec4.set( originalVertices[ i * 3 ], originalVertices[ i * 3 + 1 ], originalVertices[ i * 3 + 2 ], 1 );
++				_tmpVec4.applyMatrix4( localTransform );
+ 
+-					// Each group in the original geometry from the child needs to be exported,
+-					// we take into account the already-registered geometry and materials
+-					// from the context, so that we can compute offsets and match the
+-					// final layout of the mesh (and final material IDs as well)
+-					geometryGroups.push( {
++				ctx.positions.push( _tmpVec4.x, _tmpVec4.y, _tmpVec4.z );
+ 
+-						start: g.start + ctx.indices.length,
+-						count: g.count,
+-						materialIndex: g.materialIndex + ctx.materials.length
++			}
+ 
+-					} );
++			// Do not forget the UVs either
++			const uvAttr = child.geometry.getAttribute( 'uv' );
++			if ( uvAttr === undefined ) {
+ 
+-				} );
++				for ( let i = 0, l = vertexCount * 2; i < l; i ++ ) {
+ 
+-				// Adjust user data for tagged materials, all indices must also be offset
+-				const taggedMaterials = child.userData.taggedMaterials;
++					ctx.uvs.push( 0.0 );
+ 
+-				if ( taggedMaterials !== undefined ) {
++				}
+ 
+-					for ( const [ tag, ids ] of Object.entries( taggedMaterials ) ) {
++			} else {
+ 
+-						if ( ctx.taggedMaterials[ tag ] === undefined ) {
++				const uvArray = uvAttr.array;
++				for ( let i = 0, l = uvArray.length; i < l; i ++ ) {
+ 
+-							ctx.taggedMaterials[ tag ] = [];
++					ctx.uvs.push( uvArray[ i ] );
+ 
+-						}
++				}
+ 
+-						ids.forEach( ( id ) => {
++			}
+ 
+-							ctx.taggedMaterials[ tag ].push( id + ctx.materials.length );
++			if ( typeof child.material[ Symbol.iterator ] === 'function' ) {
+ 
+-						} );
++				const localToGlobal = [];
++				for ( const mat of child.material ) {
+ 
+-					}
++					localToGlobal.push( getOrAddMaterialIndex( ctx, mat ) );
+ 
+ 				}
+ 
+-				// Add the materials from the child to the final material list
+-				ctx.materials.push( ...child.material );
++				// Adjust user data for tagged materials, all indices must also be offset
++				const taggedMaterials = child.userData.taggedMaterials;
+ 
+-			} else {
++				if ( taggedMaterials !== undefined ) {
+ 
+-				// There's only one single material, but it will still need its own geometry group
+-				// in the final mesh
+-				geometryGroups.push( {
++					for ( const [ tag, ids ] of Object.entries( taggedMaterials ) ) {
+ 
+-					start: ctx.indices.length,
+-					count: geometryIndices.length,
+-					materialIndex: ctx.materials.length
++						if ( ctx.taggedMaterials[ tag ] === undefined ) {
+ 
+-				} );
++							ctx.taggedMaterials[ tag ] = [];
+ 
+-				ctx.materials.push( child.material );
++						}
+ 
+-			}
++						for ( const id of ids ) {
+ 
+-			const originalVertices = child.geometry.getAttribute( 'position' ).array;
+-			const vertexOffset = ctx.positions.length / 3;
++							const mappedId = localToGlobal[ id ];
++							if ( ! ctx.taggedMaterials[ tag ].includes( mappedId ) ) {
+ 
+-			// Import the current geometry (vertices and faces) from the child into the final buffer,
+-			// apply local transformations if any
+-			let i = 0;
+-			for ( let l = originalVertices.length / 3; i < l; i ++ ) {
++								ctx.taggedMaterials[ tag ].push( mappedId );
+ 
+-				let tmpVertex = new Vector4( originalVertices[ i * 3 ], originalVertices[ i * 3 + 1 ], originalVertices[ i * 3 + 2 ] );
+-				tmpVertex.applyMatrix4( localTransform );
++							}
+ 
+-				ctx.positions.push( tmpVertex.x );
+-				ctx.positions.push( tmpVertex.y );
+-				ctx.positions.push( tmpVertex.z );
++						}
+ 
+-			}
++					}
+ 
+-			// Do not forget the UVs either
+-			if ( child.geometry.getAttribute( 'uv' ) === undefined ) {
++				}
  
 -				const uvs = new Array( i * 2 ).fill( 0.0 );
-+				const uvs = Array.from( { length: i * 2 } ).fill( 0.0 );
- 				ctx.uvs.push( ...uvs );
+-				ctx.uvs.push( ...uvs );
++				// Bucket indices by deduplicated material
++				for ( const g of child.geometry.groups ) {
  
- 			} else {
-@@ -1709,33 +1838,33 @@ class RWXMaterial {
+-			} else {
++					const bucket = ctx.materialBuckets[ localToGlobal[ g.materialIndex ] ];
++					const end = Math.min( g.start + g.count, geometryIndices.length );
++					for ( let k = g.start; k < end; k ++ ) {
+ 
+-				ctx.uvs.push( ...child.geometry.getAttribute( 'uv' ).array );
++						bucket.push( geometryIndices[ k ] + vertexOffset );
+ 
+-			}
++					}
+ 
+-			ctx.indices.push( ...geometryIndices.map( ( value ) => {
++				}
+ 
+-				return value + vertexOffset;
++			} else {
+ 
+-			} ) );
++				const bucket = ctx.materialBuckets[ getOrAddMaterialIndex( ctx, child.material ) ];
++				for ( let k = 0, l = geometryIndices.length; k < l; k ++ ) {
+ 
+-			// Since the new BufferGeometry groups are all set, we can import them into the
+-			// final buffer geometry
+-			geometryGroups.forEach( ( g ) => {
++					bucket.push( geometryIndices[ k ] + vertexOffset );
+ 
+-				ctx.bufferGeometry.addGroup( g.start, g.count, g.materialIndex );
++				}
+ 
+-			} );
++			}
+ 
+ 		} else if ( child instanceof Group && ctx.groupFilter( child ) ) {
+ 
+@@ -1630,8 +1781,9 @@ function flattenGroup( group, meshFilter = () => true, groupFilter = () => true
+ 		bufferGeometry: new BufferGeometry(),
+ 		positions: [],
+ 		uvs: [],
+-		indices: [],
+ 		materials: [],
++		materialMap: new Map(),
++		materialBuckets: [],
+ 		taggedMaterials: {},
+ 		meshFilter: meshFilter,
+ 		groupFilter: groupFilter,
+@@ -1640,10 +1792,32 @@ function flattenGroup( group, meshFilter = () => true, groupFilter = () => true
+ 
+ 	mergeGeometryRecursive( group, ctx );
+ 
++	let totalIndices = 0;
++	for ( const bucket of ctx.materialBuckets ) {
++
++		totalIndices += bucket.length;
++
++	}
++
++	const vertexCount = ctx.positions.length / 3;
++	const indices = vertexCount > 65535 ? new Uint32Array( totalIndices ) : new Uint16Array( totalIndices );
++	let offset = 0;
++
++	for ( let matIdx = 0; matIdx < ctx.materialBuckets.length; matIdx ++ ) {
++
++		const bucket = ctx.materialBuckets[ matIdx ];
++		if ( bucket.length === 0 ) continue;
++
++		indices.set( bucket, offset );
++		ctx.bufferGeometry.addGroup( offset, bucket.length, matIdx );
++		offset += bucket.length;
++
++	}
++
+ 	/* Ready data for final BufferGeometry */
+ 	ctx.bufferGeometry.setAttribute( 'position', new BufferAttribute( new Float32Array( ctx.positions ), 3 ) );
+ 	ctx.bufferGeometry.setAttribute( 'uv', new BufferAttribute( new Float32Array( ctx.uvs ), 2 ) );
+-	ctx.bufferGeometry.setIndex( ctx.indices );
++	ctx.bufferGeometry.setIndex( new BufferAttribute( indices, 1 ) );
+ 	ctx.bufferGeometry.uvsNeedUpdate = true;
+ 	ctx.bufferGeometry.computeVertexNormals();
+ 
+@@ -1709,33 +1883,13 @@ class RWXMaterial {
  
  	getMatSignature() {
  
@@ -590,54 +940,129 @@ index 41e67cd..5b7936f 100644
 -
 -		return `${color}_${surface}_${opacity}_${lightSampling}_${geometrySampling}_${textureMode}_${materialMode}` +
 -			`_${texture}_${this.tint}_${mask}_${specular}_${normal}_${textureAddressMode}_${collision}_${tag}_${ratio}`;
-+		// Different from the original signature code but avoids toFixed calls
-+		// Faster code, smaller strings, but same end result
-+		return [
-+			[
-+				Math.round( this.color[ 0 ] * 1000 ) / 1000,
-+				Math.round( this.color[ 1 ] * 1000 ) / 1000,
-+				Math.round( this.color[ 2 ] * 1000 ) / 1000
-+			].join( '' ),
-+			[
-+				Math.round( this.surface[ 0 ] * 1000 ) / 1000,
-+				Math.round( this.surface[ 1 ] * 1000 ) / 1000,
-+				Math.round( this.surface[ 2 ] * 1000 ) / 1000
-+			].join( '' ),
-+			Math.round( this.opacity * 1000 ) / 1000,
-+			this.lightsampling,
-+			this.geometrysampling,
-+			this.texturemodes.join( '' ),
-+			this.materialmode,
-+			this.texture ?? '',
-+			this.mask ?? '',
-+			this.specularMap ?? '',
-+			this.normalMap ?? '',
-+			this.textureaddressmode,
-+			+ this.collision,
-+			this.tag,
-+			Math.round( this.ratio * 100 ) / 100
-+		].join( '_' );
++		// Different from the original signature code but avoids toFixed calls and temporary arrays
++		return `${Math.round( this.color[ 0 ] * 1000 )},${Math.round( this.color[ 1 ] * 1000 )},${Math.round( this.color[ 2 ] * 1000 )}` +
++			`_${Math.round( this.surface[ 0 ] * 1000 )},${Math.round( this.surface[ 1 ] * 1000 )},${Math.round( this.surface[ 2 ] * 1000 )}` +
++			`_${Math.round( this.opacity * 1000 )}_${this.lightsampling}_${this.geometrysampling}` +
++			`_${this.texturemodes.join( '' )}_${this.materialmode}_${this.texture ?? ''}_${+ this.tint}` +
++			`_${this.mask ?? ''}_${this.specularMap ?? ''}_${this.normalMap ?? ''}` +
++			`_${this.textureaddressmode}_${+ this.collision}_${this.tag}_${Math.round( this.ratio * 100 )}`;
  
  	}
  
-@@ -1750,6 +1879,7 @@ class RWXMaterialManager {
+@@ -1750,6 +1904,8 @@ class RWXMaterialManager {
  	allowURLs = false ) {
  
  		this.threeMaterialMap = new Map();
 +		this.textureMap = new Map();
++		this.animatedTextures = new Set();
  
  		this.folder = folder;
  		this.textureExtension = textureExtension;
-@@ -1770,7 +1900,7 @@ class RWXMaterialManager {
+@@ -1770,7 +1926,7 @@ class RWXMaterialManager {
  		const threeMaterial = makeThreeMaterial( newRWXMaterial,
  			this.folder, this.textureExtension, this.maskExtension, this.fflate,
  			this.useBasicMaterial, this.textureColorSpace, this.alphaTest,
 -			this.allowURLs );
-+			this.allowURLs, this.textureMap );
++			this.allowURLs, this.textureMap, this.animatedTextures );
  		threeMaterial.signature = finalSignature;
  
  		this.threeMaterialMap.set( finalSignature, threeMaterial );
-@@ -1933,48 +2063,50 @@ class RWXLoader extends Loader {
+@@ -1799,30 +1955,32 @@ class RWXMaterialManager {
+ 
+ 		this.threeMaterialMap.clear();
+ 
+-	}
++		for ( const texPromise of this.textureMap.values() ) {
+ 
+-	texturesNextFrame() {
++			texPromise.then( ( texture ) => {
+ 
+-		for ( const entry of this.threeMaterialMap ) {
++				if ( texture ) {
+ 
+-			const animation = entry[ 1 ].threeMat.userData.rwx.animation;
+-			const maskAnimation = entry[ 1 ].threeMat.userData.rwx.maskAnimation;
++					texture.dispose();
+ 
+-			if ( animation !== undefined ) {
++				}
+ 
+-				animation.step = ( animation.step + 1 ) % animation.yTiles;
+-				entry[ 1 ].threeMat.map.offset.y = ( 1.0 - animation.yHeight ) - animation.step * animation.yHeight;
+-				entry[ 1 ].threeMat.needsUpdate = true;
++			} );
+ 
+-			}
++		}
+ 
+-			if ( maskAnimation !== undefined ) {
++		this.textureMap.clear();
++		this.animatedTextures.clear();
+ 
+-				maskAnimation.step = ( maskAnimation.step + 1 ) % maskAnimation.yTiles;
+-				entry[ 1 ].threeMat.alphaMap.offset.y = ( 1.0 - maskAnimation.yHeight ) - maskAnimation.step * maskAnimation.yHeight;
+-				entry[ 1 ].threeMat.needsUpdate = true;
++	}
+ 
+-			}
++	texturesNextFrame() {
++
++		for ( const texture of this.animatedTextures ) {
++
++			const animation = texture.userData.animation;
++			animation.step = ( animation.step + 1 ) % animation.yTiles;
++			texture.offset.y = ( 1.0 - animation.yHeight ) - animation.step * animation.yHeight;
+ 
+ 		}
+ 
+@@ -1839,6 +1997,7 @@ class RWXMaterialTracker {
+ 
+ 		this.currentRWXMaterial = new RWXMaterial();
+ 		this.currentMaterialID = null;
++		this.cachedMaterialID = null;
+ 		this.currentMaterialList = [];
+ 		this.signatureMap = new Map();
+ 		this.committedMaterialsAmount = 0;
+@@ -1848,13 +2007,20 @@ class RWXMaterialTracker {
+ 
+ 	getCurrentMaterialID() {
+ 
++		if ( this.cachedMaterialID !== null ) {
++
++			return this.cachedMaterialID;
++
++		}
++
+ 		const materialSignature = this.currentRWXMaterial.getMatSignature();
+ 
+ 		// Check if this material doesn't already sit in the current list, if it does: we just return its index
+ 		if ( this.signatureMap.has( materialSignature ) ) {
+ 
+ 			this.currentMaterialSignature = materialSignature;
+-			return this.signatureMap.get( materialSignature );
++			this.cachedMaterialID = this.signatureMap.get( materialSignature );
++			return this.cachedMaterialID;
+ 
+ 		}
+ 
+@@ -1886,6 +2052,7 @@ class RWXMaterialTracker {
+ 
+ 		}
+ 
++		this.cachedMaterialID = this.currentMaterialID;
+ 		return this.currentMaterialID;
+ 
+ 	}
+@@ -1905,6 +2072,7 @@ class RWXMaterialTracker {
+ 	clearCurrentMaterialList( currentMat = new RWXMaterial() ) {
+ 
+ 		this.currentMaterialID = null;
++		this.cachedMaterialID = null;
+ 		this.currentMaterialList = [];
+ 		this.signatureMap.clear();
+ 		this.currentMaterialSignature = '';
+@@ -1933,48 +2101,50 @@ class RWXLoader extends Loader {
  
  		super( manager );
  
@@ -690,8 +1115,8 @@ index 41e67cd..5b7936f 100644
 +		this.clumpendRegex = /^clumpend/i;
 +		this.transformbeginRegex = /^transformbegin/i;
 +		this.transformendRegex = /^transformend/i;
-+		this.protobeginRegex = /(protobegin) +([A-Za-z0-9_\-.]+)/i;
-+		this.protoinstanceRegex = /(protoinstance) +([A-Za-z0-9_\-.]+)/i;
++		this.protobeginRegex = /^(protobegin) +([A-Za-z0-9_\-.]+)/i;
++		this.protoinstanceRegex = /^(protoinstance) +([A-Za-z0-9_\-.]+)/i;
 +		this.protoendRegex = /^protoend/i;
 +		this.vertexRegex = /^(vertex(?:ext)?)(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){3}) *(uv(( +[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)(e[-+][0-9]+)?){2}))?/i;
 +		this.polygonRegex = /^(polygon(?:ext)?)( +[0-9]+)(( +[0-9]+)+)( +tag +([0-9]+))?/i;
@@ -728,7 +1153,7 @@ index 41e67cd..5b7936f 100644
  
  		this.fflate = null;
  		this.textureExtension = '.jpg';
-@@ -2223,7 +2355,7 @@ class RWXLoader extends Loader {
+@@ -2223,7 +2393,7 @@ class RWXLoader extends Loader {
  		let groupBeforeProto = null;
  		let firstClumpStarted = false;
  
@@ -737,33 +1162,198 @@ index 41e67cd..5b7936f 100644
  
  		// Ready root object group
  		ctx.rootGroup = new Group();
-@@ -2241,21 +2373,18 @@ class RWXLoader extends Loader {
+@@ -2241,21 +2411,182 @@ class RWXLoader extends Loader {
  
  		for ( let i = 0, l = lines.length; i < l; i ++ ) {
  
 -			let line = lines[ i ];
-+			// Replace tabs with spaces
-+			let line = lines[ i ].trim().replace( this.tabsRegex, ' ' );
++			let line = lines[ i ].trim();
++			if ( line.length === 0 ) continue;
++
++			// Replace tabs with spaces only when present
++			if ( line.includes( '\t' ) ) {
++
++				line = line.replace( this.tabsRegex, ' ' );
++
++			}
  
  			// Strip comment away (if any)
- 			let res = this.nonCommentRegex.exec( line );
- 			if ( res != null ) {
+-			let res = this.nonCommentRegex.exec( line );
+-			if ( res != null ) {
++			let res;
++			if ( line.includes( '#' ) ) {
++
++				res = this.nonCommentRegex.exec( line );
++				if ( res != null ) {
  
 -				line = res[ 1 ];
-+				line = res[ 1 ].trim();
++					line = res[ 1 ].trim();
++					if ( line.length === 0 ) continue;
++
++				}
  
  			}
  
 -			// Replace tabs with spaces
 -			line = line.trim().replace( /\t/g, ' ' );
--
++			// Fast path for the most frequent geometry directives (vertex, triangle, quad)
++			const spaceIdx = line.indexOf( ' ' );
++			const cmd = ( spaceIdx === - 1 ? line : line.slice( 0, spaceIdx ) ).toLowerCase();
+ 
 -			res = this.clumpbeginRegex.exec( line );
 -			if ( res != null ) {
-+			if ( this.clumpbeginRegex.test( line ) ) {
++			if ( cmd === 'vertex' || cmd === 'vertexext' ) {
++
++				const parts = line.split( spacesRegex );
++				if ( parts.length >= 4 ) {
++
++					const vx = Number( parts[ 1 ] ), vy = Number( parts[ 2 ] ), vz = Number( parts[ 3 ] );
++					if ( ! Number.isNaN( vx ) && ! Number.isNaN( vy ) && ! Number.isNaN( vz ) ) {
++
++						let uvValid = true;
++						let u = 0.0, v = 0.0;
++						if ( parts.length >= 7 && parts[ 4 ].toLowerCase() === 'uv' ) {
++
++							u = Number( parts[ 5 ] );
++							v = Number( parts[ 6 ] );
++							if ( Number.isNaN( u ) || Number.isNaN( v ) ) {
++
++								uvValid = false;
++
++							} else {
++
++								v = 1 - v;
++
++							}
++
++						}
++
++						if ( uvValid ) {
++
++							ctx.triangleRatioHint = null;
++							ctx.quadRatioHint = null;
++							_tmpVec4.set( vx, vy, vz, 1 );
++							_tmpVec4.applyMatrix4( ctx.currentTransform );
++							ctx.currentBufferVertices.push( _tmpVec4.x, _tmpVec4.y, _tmpVec4.z );
++							ctx.currentBufferUVs.push( u, v );
++							continue;
++
++						}
++
++					}
++
++				}
++
++			} else if ( cmd === 'triangle' || cmd === 'triangleext' ) {
++
++				const parts = line.split( spacesRegex );
++				if ( parts.length >= 4 ) {
++
++					const a = Number( parts[ 1 ] ) - 1, b = Number( parts[ 2 ] ) - 1, c = Number( parts[ 3 ] ) - 1;
++					if ( Number.isInteger( a ) && Number.isInteger( b ) && Number.isInteger( c ) ) {
++
++						ctx.quadRatioHint = null;
++						const hasTag = parts.length >= 6 && parts[ 4 ].toLowerCase() === 'tag';
++						const tag = hasTag ? parseInt( parts[ 5 ], 10 ) : undefined;
++						if ( ! hasTag || ! Number.isNaN( tag ) ) {
++
++							if ( tag !== undefined ) {
++
++								if ( tag == signTag ) {
++
++									setMaterialRatio( ctx, a, b, c );
++
++								} else {
++
++									ctx.triangleRatioHint = null;
++
++								}
++
++								commitMaterialTag( ctx, tag );
++
++							} else {
++
++								ctx.triangleRatioHint = null;
++
++							}
++
++							addTriangle( ctx, a, b, c );
++
++							if ( tag !== undefined ) {
++
++								clearMaterialTag( ctx );
++								clearMaterialRatio( ctx );
++
++							}
++
++							continue;
++
++						}
++
++					}
++
++				}
++
++			} else if ( cmd === 'quad' || cmd === 'quadext' ) {
++
++				const parts = line.split( spacesRegex );
++				if ( parts.length >= 5 ) {
++
++					const a = Number( parts[ 1 ] ) - 1, b = Number( parts[ 2 ] ) - 1, c = Number( parts[ 3 ] ) - 1, d = Number( parts[ 4 ] ) - 1;
++					if ( Number.isInteger( a ) && Number.isInteger( b ) && Number.isInteger( c ) && Number.isInteger( d ) ) {
++
++						ctx.triangleRatioHint = null;
++						const hasTag = parts.length >= 7 && parts[ 5 ].toLowerCase() === 'tag';
++						const tag = hasTag ? parseInt( parts[ 6 ], 10 ) : undefined;
++						if ( ! hasTag || ! Number.isNaN( tag ) ) {
++
++							if ( tag !== undefined ) {
++
++								if ( tag == signTag ) {
++
++									setMaterialRatio( ctx, a, b, c, d );
++
++								} else {
++
++									ctx.quadRatioHint = null;
++
++								}
++
++								commitMaterialTag( ctx, tag );
++
++							} else {
++
++								ctx.quadRatioHint = null;
++
++							}
++
++							addQuad( ctx, a, b, c, d );
++
++							if ( tag !== undefined ) {
++
++								clearMaterialTag( ctx );
++								clearMaterialRatio( ctx );
++
++							}
++
++							continue;
++
++						}
++
++					}
++
++				}
++
++			}
++
++			// Any non-geometry directive may modify material state
++			ctx.materialTracker.cachedMaterialID = null;
++
++			if ( cmd === 'clumpbegin' ) {
  
  				makeMeshToCurrentGroup( ctx );
  				clearGeometry( ctx );
-@@ -2275,8 +2404,7 @@ class RWXLoader extends Loader {
+@@ -2275,8 +2606,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -773,7 +1363,7 @@ index 41e67cd..5b7936f 100644
  
  				makeMeshToCurrentGroup( ctx );
  
-@@ -2289,8 +2417,7 @@ class RWXLoader extends Loader {
+@@ -2289,8 +2619,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -783,7 +1373,7 @@ index 41e67cd..5b7936f 100644
  
  				saveCurrentTransform( ctx );
  
-@@ -2298,8 +2425,7 @@ class RWXLoader extends Loader {
+@@ -2298,8 +2627,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -793,7 +1383,7 @@ index 41e67cd..5b7936f 100644
  
  				loadCurrentTransform( ctx );
  
-@@ -2329,8 +2455,7 @@ class RWXLoader extends Loader {
+@@ -2329,8 +2657,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -803,7 +1393,7 @@ index 41e67cd..5b7936f 100644
  
  				makeMeshToCurrentGroup( ctx );
  
-@@ -2593,10 +2718,10 @@ class RWXLoader extends Loader {
+@@ -2593,10 +2920,10 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -816,7 +1406,7 @@ index 41e67cd..5b7936f 100644
  
  			}
  
-@@ -2843,7 +2968,7 @@ class RWXLoader extends Loader {
+@@ -2843,7 +3170,7 @@ class RWXLoader extends Loader {
  			res = this.addtexturemodeRegex.exec( line );
  			if ( res != null ) {
  
@@ -825,7 +1415,7 @@ index 41e67cd..5b7936f 100644
  
  				// Do not push the same texture mode twice
  				if ( ! ctx.materialTracker.currentRWXMaterial.texturemodes.includes( TextureMode[ tm ] ) ) {
-@@ -2860,7 +2985,7 @@ class RWXLoader extends Loader {
+@@ -2860,7 +3187,7 @@ class RWXLoader extends Loader {
  			res = this.removetexturemodeRegex.exec( line );
  			if ( res != null ) {
  
@@ -834,7 +1424,7 @@ index 41e67cd..5b7936f 100644
  
  				// Cannot remove Filter mode when forcing texture filtering
  				if ( this.forceTextureFiltering && TextureMode[ tm ] === TextureMode.FILTER ) continue;
-@@ -3029,6 +3154,6 @@ class RWXLoader extends Loader {
+@@ -3029,6 +3356,6 @@ class RWXLoader extends Loader {
  }
  
  export default RWXLoader;

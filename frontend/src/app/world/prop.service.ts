@@ -1,14 +1,15 @@
 import {HttpClient} from '@angular/common/http'
 import {computed, effect, inject, Service, signal} from '@angular/core'
 import * as fflate from 'fflate'
-import {Observable, Subject} from 'rxjs'
+import {map, Observable, shareReplay, Subject} from 'rxjs'
 import {
   BufferAttribute,
   BufferGeometry,
   Group,
   LoadingManager,
   Mesh,
-  MeshBasicMaterial
+  MeshBasicMaterial,
+  type Object3D
 } from 'three'
 import RWXLoader, {flattenGroup, RWXMaterialManager} from 'three-rwx-loader'
 import {environment} from '../../environments/environment'
@@ -63,7 +64,6 @@ export class PropService {
   private basicLoader = new RWXLoader(new LoadingManager())
   private objects = new Map<string, Observable<Group>>()
   private avatars = new Map<string, Observable<Group>>()
-  private geomCache = new Map<string, BufferGeometry>()
 
   constructor() {
     this.rwxMaterialManager = new RWXMaterialManager(
@@ -146,7 +146,6 @@ export class PropService {
     this.avatars.clear()
     this.animatedPictures.length = 0
     this.rwxMaterialManager.clear()
-    this.geomCache.clear()
   }
 
   texturesNextFrame() {
@@ -176,6 +175,16 @@ export class PropService {
     )
     unknown.userData.isError = true
     return unknown
+  }
+
+  private cloneRwx(rwx: Group): Group {
+    const clone = rwx.clone()
+    clone.traverse((child: Object3D) => {
+      if (child instanceof Mesh && Array.isArray(child.material)) {
+        child.material = [...child.material]
+      }
+    })
+    return clone
   }
 
   /**
@@ -211,21 +220,19 @@ export class PropService {
           if (!hasTag) {
             rwx = flattenGroup(rwx)
           }
-          if (rwx instanceof Mesh) {
-            // Caching should probably be done by the loader
-            // but this is still better than nothing
-            if (this.geomCache.has(name)) {
-              rwx.geometry = this.geomCache.get(name)
-            } else {
-              this.geomCache.set(name, rwx.geometry)
-            }
-          }
           observer.next(rwx)
+          observer.complete()
         },
         null,
-        () => observer.next(this.unknown.clone())
+        () => {
+          observer.next(this.unknown.clone())
+          observer.complete()
+        }
       )
-    })
+    }).pipe(
+      shareReplay(1),
+      map((rwx) => this.cloneRwx(rwx))
+    )
     objectCache.set(name, observable)
     return observable
   }

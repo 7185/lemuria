@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "format": "npm --workspaces run format",
-    "lint": "npm ---workspaces run lint",
+    "lint": "npm --workspaces run lint",
     "test": "npm -w action-parser -w backend run test",
     "patch:frontend": "patch-package"
   },
@@ -13,10 +13,10 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.19.2",
-    "eslint": "^10.13.0",
+    "eslint": "^10.15.0",
     "oxfmt": "^0.75.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.1"
+    "typescript-eslint": "^8.74.0"
   },
   "workspaces": [
     "action-parser",

@@ -17,7 +17,7 @@ import {
   throwError,
   toArray
 } from 'rxjs'
-import {Box3, Euler, Group, LOD, Vector3} from 'three'
+import {Box3, Cache, Euler, Group, LOD, Vector3} from 'three'
 import type {AvatarAnimationManager} from '../animation'
 import type {User} from '../user'
 import type {LightData} from './lighting.service'
@@ -626,6 +626,9 @@ export class WorldService {
     this.engineSvc.clearObjects()
     this.propSvc.cleanCache()
     this.anmSvc.cleanCache()
+    if (this.propSvc.path() && this.propSvc.path() !== world.path) {
+      Cache.clear()
+    }
     this.propSvc.path.set(world.path)
     this.terrainSvc.setTerrain(world?.terrain)
     this.terrainSvc.setWater(world?.water)
