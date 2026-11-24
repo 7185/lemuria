@@ -2,6 +2,7 @@ import {CACHE_MANAGER} from '@nestjs/cache-manager'
 import {UnauthorizedException} from '@nestjs/common'
 import {Test, TestingModule} from '@nestjs/testing'
 import {DbService} from '../db/db.service.js'
+import {prop, world} from '../db/schema.js'
 import {User} from '../user/user.js'
 import {UserModule} from '../user/user.module.js'
 import {UserService} from '../user/user.service.js'
@@ -14,21 +15,44 @@ describe(WorldController.name, () => {
 
   beforeAll(async () => {
     const mockDb = {
-      world: {
-        findFirst: () =>
-          Promise.resolve({
-            id: 1,
-            name: 'Lemuria',
-            data: '{"welcome": "Bienvenue sur Lemuria"}'
-          }),
-        findMany: () => Promise.resolve([{id: 1, name: 'Lemuria', data: '{}'}])
-      },
-      prop: {
-        findMany: () =>
-          Promise.resolve([[0, 0, 'tracteur1', 0, 0, 0, 0, 0, 0, null, null]])
-      },
-      elev: {
-        findMany: () => Promise.resolve([])
+      db: {
+        select: () => ({
+          from: (table: unknown) => {
+            if (table === world) {
+              const rows = [
+                {
+                  id: 1,
+                  name: 'Lemuria',
+                  data: '{"welcome": "Bienvenue sur Lemuria"}'
+                }
+              ]
+              return Object.assign(Promise.resolve(rows), {
+                where: () => ({limit: () => Promise.resolve(rows)})
+              })
+            }
+            if (table === prop) {
+              return {
+                where: () =>
+                  Promise.resolve([
+                    {
+                      id: 0,
+                      date: 0,
+                      name: 'tracteur1',
+                      x: 0,
+                      y: 0,
+                      z: 0,
+                      pi: 0,
+                      ya: 0,
+                      ro: 0,
+                      desc: null,
+                      act: null
+                    }
+                  ])
+              }
+            }
+            return {where: () => Promise.resolve([])}
+          }
+        })
       }
     }
     const mockUser = {

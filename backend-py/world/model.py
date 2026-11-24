@@ -50,14 +50,13 @@ class World:
         if self._resolved:
             return
 
-        world = await db.world.find_first(
-            where={
-                'id': self.world_id
-            }
+        world = await db.fetchone(
+            'SELECT id, name, data FROM world WHERE id = ? LIMIT 1',
+            (self.world_id,)
         )
-        if world.data is not None:
-            world_data = json.loads(world.data)
-            self._name = world.name
+        if world is not None and world['data'] is not None:
+            world_data = json.loads(world['data'])
+            self._name = world['name']
             self._welcome = world_data['welcome']
             self._path = world_data['path']
             self._entry = world_data.get('entry', self._entry)
@@ -92,36 +91,39 @@ class World:
                     min_z = None, max_z = None):
         # Having a 'None' value on one of those coordinate criterias means no bound will be
         # applied when querying all objects
+        conditions = ['wid = ?']
+        params = [self.world_id]
 
-        # Build the WHERE clause
-        where_clauses = [
-            {'x': {'gte': min_x}} if min_x is not None else None,
-            {'x': {'lt': max_x}} if max_x is not None else None,
-            {'y': {'gte': min_y}} if min_y is not None else None,
-            {'y': {'lt': max_y}} if max_y is not None else None,
-            {'z': {'gte': min_z}} if min_z is not None else None,
-            {'z': {'lt': max_z}} if max_z is not None else None
-        ]
+        if min_x is not None:
+            conditions.append('x >= ?')
+            params.append(min_x)
+        if max_x is not None:
+            conditions.append('x < ?')
+            params.append(max_x)
+        if min_y is not None:
+            conditions.append('y >= ?')
+            params.append(min_y)
+        if max_y is not None:
+            conditions.append('y < ?')
+            params.append(max_y)
+        if min_z is not None:
+            conditions.append('z >= ?')
+            params.append(min_z)
+        if max_z is not None:
+            conditions.append('z < ?')
+            params.append(max_z)
 
+        query = (
+            'SELECT id, date, name, x, y, z, pi, ya, ro, desc, act '
+            f"FROM prop WHERE {' AND '.join(conditions)}"
+        )
+        rows = await db.fetchall(query, tuple(params))
         props = [
             [
-                prop.id, prop.date, prop.name, prop.x, prop.y, prop.z, prop.pi, prop.ya, prop.ro,
-                prop.desc, prop.act
+                row['id'], row['date'], row['name'], row['x'], row['y'], row['z'],
+                row['pi'], row['ya'], row['ro'], row['desc'], row['act']
             ]
-            for prop in await db.prop.find_many(
-                where={
-                    'AND': [
-                        {'wid': self.world_id},
-                        {
-                            'AND': [
-                                clause
-                                for clause in where_clauses
-                                if clause is not None
-                            ]
-                        }
-                    ]
-                }
-            )
+            for row in rows
         ]
 
         return {'entries': props}
@@ -129,24 +131,28 @@ class World:
     @classmethod
     @db_required
     async def get_list(cls):
+        worlds = await db.fetchall('SELECT id, name FROM world')
         return [
             {
-                'id': world.id,
-                'name': world.name,
-                'users': len([u for u in authorized_users if u.connected and u.world == world.id])
+                'id': world['id'],
+                'name': world['name'],
+                'users': len([u for u in authorized_users if u.connected and u.world == world['id']])
             }
-            for world in await db.world.find_many()
+            for world in worlds
         ]
 
     @db_required
     async def get_terrain_page(self, page_x, page_z):
         page = {}
-        for elev in await db.elev.find_many(where={
-                'wid': self.world_id, 'page_x': page_x, 'page_z': page_z
-            }):
-            width = elev.radius * 2
-            textures = [int(n) for n in elev.textures.split(' ')]
-            heights = [int(n) for n in elev.heights.split(' ')]
+        elevs = await db.fetchall(
+            'SELECT node_x, node_z, radius, textures, heights FROM elev '
+            'WHERE wid = ? AND page_x = ? AND page_z = ?',
+            (self.world_id, page_x, page_z)
+        )
+        for elev in elevs:
+            width = elev['radius'] * 2
+            textures = [int(n) for n in (elev['textures'] or '').split(' ') if n]
+            heights = [int(n) for n in (elev['heights'] or '').split(' ') if n]
             for i in range(width):
                 row = i * 128
                 for j in range(width):
@@ -155,6 +161,6 @@ class World:
                     height = heights[index] if index < len(heights) else heights[0]
                     if texture == height == 0:
                         continue
-                    cell = row + j + elev.node_x + elev.node_z * 128
+                    cell = row + j + elev['node_x'] + elev['node_z'] * 128
                     page[cell] = [texture, height]
         return page

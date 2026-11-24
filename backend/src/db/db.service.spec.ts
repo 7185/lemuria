@@ -12,21 +12,18 @@ describe('DbService', () => {
     service = module.get<DbService>(DbService)
   })
 
-  it('should be defined', () => {
-    expect(service).toBeDefined()
+  afterEach(() => {
+    service.onModuleDestroy()
   })
 
-  describe('onModuleInit', () => {
-    it('should call $connect', async () => {
-      const spy = vi
-        .spyOn(DbService.prototype, '$connect')
-        .mockImplementation(async () => Promise.resolve())
+  it('should be defined', () => {
+    expect(service).toBeDefined()
+    expect(service.db).toBeDefined()
+  })
 
-      await service.onModuleInit()
-
-      expect(spy).toBeCalledTimes(1)
-      expect(service.$connect).toBeCalledTimes(1)
-      spy.mockRestore()
+  describe('ping', () => {
+    it('should execute a ping query without throwing', () => {
+      expect(() => service.ping()).not.toThrow()
     })
   })
 })

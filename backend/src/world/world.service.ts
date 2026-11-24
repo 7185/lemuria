@@ -1,6 +1,8 @@
 import {CACHE_MANAGER, Cache} from '@nestjs/cache-manager'
 import {Inject, Injectable} from '@nestjs/common'
+import {and, eq, gte, lt, SQL} from 'drizzle-orm'
 import {DbService} from '../db/db.service.js'
+import {elev, prop, world} from '../db/schema.js'
 import {World} from './world.js'
 
 @Injectable()
@@ -11,18 +13,22 @@ export class WorldService {
   ) {}
 
   async getList() {
-    return await this.db.world.findMany()
+    return await this.db.db.select().from(world)
   }
 
   async getWorld(id: number) {
-    const world = await this.db.world.findFirst({where: {id}})
-    if (world == null) {
+    const [found] = await this.db.db
+      .select()
+      .from(world)
+      .where(eq(world.id, id))
+      .limit(1)
+    if (found == null) {
       return new World()
     }
-    const attr = JSON.parse(world.data ?? '{}')
+    const attr = JSON.parse(found.data ?? '{}')
     return new World({
-      id: world.id,
-      name: world.name,
+      id: found.id,
+      name: found.name,
       ...attr
     })
   }
@@ -37,28 +43,24 @@ export class WorldService {
     maxZ: number | null
   ) {
     // Having a null value on one of those coordinate criteria means no bound will be applied when querying all objects
-    const orClause: {
-      x?: {gte?: number; lt?: number}
-      y?: {gte?: number; lt?: number}
-      z?: {gte?: number; lt?: number}
-    }[] = []
+    const conditions: SQL[] = [eq(prop.wid, wid)]
     if (minX != null) {
-      orClause.push({x: {gte: minX}})
+      conditions.push(gte(prop.x, minX))
     }
     if (maxX != null) {
-      orClause.push({x: {lt: maxX}})
+      conditions.push(lt(prop.x, maxX))
     }
     if (minY != null) {
-      orClause.push({y: {gte: minY}})
+      conditions.push(gte(prop.y, minY))
     }
     if (maxY != null) {
-      orClause.push({y: {lt: maxY}})
+      conditions.push(lt(prop.y, maxY))
     }
     if (minZ != null) {
-      orClause.push({z: {gte: minZ}})
+      conditions.push(gte(prop.z, minZ))
     }
     if (maxZ != null) {
-      orClause.push({z: {lt: maxZ}})
+      conditions.push(lt(prop.z, maxZ))
     }
 
     // Ignore Y for cache keys
@@ -66,22 +68,22 @@ export class WorldService {
     let props = await this.cache.get(cacheKey)
 
     if (props == null) {
-      props = await this.db.prop.findMany({
-        select: {
-          id: true,
-          date: true,
-          name: true,
-          x: true,
-          y: true,
-          z: true,
-          pi: true,
-          ya: true,
-          ro: true,
-          desc: true,
-          act: true
-        },
-        where: {AND: [{wid}, {AND: orClause}]}
-      })
+      props = await this.db.db
+        .select({
+          id: prop.id,
+          date: prop.date,
+          name: prop.name,
+          x: prop.x,
+          y: prop.y,
+          z: prop.z,
+          pi: prop.pi,
+          ya: prop.ya,
+          ro: prop.ro,
+          desc: prop.desc,
+          act: prop.act
+        })
+        .from(prop)
+        .where(and(...conditions))
       await this.cache.set(cacheKey, props)
     }
     return props
@@ -93,23 +95,24 @@ export class WorldService {
       await this.cache.get(cacheKey)
     if (page == null) {
       page = {}
-      for (const elev of await this.db.elev.findMany({
-        select: {
-          node_x: true,
-          node_z: true,
-          radius: true,
-          textures: true,
-          heights: true
-        },
-        where: {
-          AND: [{wid}, {page_x: pageX}, {page_z: pageZ}]
-        }
-      })) {
-        const width = elev.radius * 2
-        const textures = (elev.textures ?? '')
+      const elevs = await this.db.db
+        .select({
+          node_x: elev.node_x,
+          node_z: elev.node_z,
+          radius: elev.radius,
+          textures: elev.textures,
+          heights: elev.heights
+        })
+        .from(elev)
+        .where(
+          and(eq(elev.wid, wid), eq(elev.page_x, pageX), eq(elev.page_z, pageZ))
+        )
+      for (const e of elevs) {
+        const width = e.radius * 2
+        const textures = (e.textures ?? '')
           .split(' ')
           .map((n: string) => parseInt(n))
-        const heights = (elev.heights ?? '')
+        const heights = (e.heights ?? '')
           .split(' ')
           .map((n: string) => parseInt(n))
         for (let i = 0; i < width; i++) {
@@ -121,7 +124,7 @@ export class WorldService {
             if (texture === 0 && height === 0) {
               continue
             }
-            const cell = row + j + elev.node_x + elev.node_z * 128
+            const cell = row + j + e.node_x + e.node_z * 128
             page[cell] = [texture, height]
           }
         }

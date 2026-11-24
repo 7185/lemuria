@@ -45,17 +45,16 @@ $ npm run build -w frontend
 ### Install dependencies for the server
 
 > [!NOTE]
-> There are two different implementations for the backend server: Node or Python. **The Python version is deprecated for now because Prisma no longer works with third-party languages.**
+> There are two different implementations for the backend server: Node (recommended) or Python.
 
 #### Node backend
-Nothing more is needed after `npm ci` postinstall.
+Nothing more is needed after `npm ci`.
 
-#### Python backend (deprecated)
+#### Python backend
 ```bash
 $ python -m venv venv
 $ source venv/bin/activate
 $ pip install -r backend-py/requirements.txt
-$ PRISMA_PY_DEBUG_GENERATOR=1 prisma generate --schema backend/prisma/schema.prisma --generator client-py
 ```
 ### Create an empty database and import the dump files
 
@@ -64,17 +63,16 @@ $ PRISMA_PY_DEBUG_GENERATOR=1 prisma generate --schema backend/prisma/schema.pri
 > 
 #### Node backend
 ```bash
-$ npx -w backend prisma db push --skip-generate
+$ npx -w backend drizzle-kit push
 $ cd backend
 $ node --import 'data:text/javascript,import {register} from "node:module"; import {pathToFileURL} from "node:url"; register("ts-node/esm", pathToFileURL("./"));' src/tools/import-lemuria.mts 
 ```
 
-#### Python backend (deprecated)
+#### Python backend
 ```bash
 # See above for the venv setup
-$ PRISMA_PY_DEBUG_GENERATOR=1 prisma db push --schema backend/prisma/schema.prisma
 $ cd backend-py
-$ PRISMA_PY_DEBUG_GENERATOR=1 python tools/import_lemuria.py
+$ PYTHONPATH=. python tools/import_lemuria.py
 ```
 
 This will create and init the database `backend/app.db` using the data in `dumps/atlemuria.txt` and `dumps/proplemuria.txt`.
@@ -111,12 +109,11 @@ By default, the API backend is listening on port `8080`.
 $ npm -w backend run start
 ```
 
-#### Python backend (deprecated)
+#### Python backend
 
 ```bash
-$ PRISMA_PY_DEBUG_GENERATOR=1 prisma generate --schema backend/prisma/schema.prisma --generator client-py # only needed if the prisma version or the schema changed
 $ cd backend-py
-$ PRISMA_PY_DEBUG_GENERATOR=1 python app.py
+$ python app.py
 ```
 
 ## Docker
@@ -126,7 +123,7 @@ You can also generate a docker image to build the project and run the server in 
 ```bash
 # Build with the node backend
 $ docker build --target node -t lemuria .
-# OR with the python backend (deprecated)
+# OR with the python backend
 $ docker build --target python -t lemuria .
 
 $ docker run -it -p 8080:8080 -v $PWD/backend/app.db:/app.db lemuria

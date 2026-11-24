@@ -1,4 +1,4 @@
-import {HealthCheckService, PrismaHealthIndicator} from '@nestjs/terminus'
+import {HealthCheckService, HealthIndicatorService} from '@nestjs/terminus'
 import {Test, TestingModule} from '@nestjs/testing'
 import {DbService} from '../db/db.service.js'
 import {HealthController} from './health.controller.js'
@@ -6,31 +6,29 @@ import {HealthController} from './health.controller.js'
 describe(HealthController.name, () => {
   let controller: HealthController
   let healthCheckService: HealthCheckService
-  let prismaHealthIndicator: PrismaHealthIndicator
+  let dbService: {ping: ReturnType<typeof vi.fn>}
 
   beforeAll(async () => {
     const mockHealthCheckService = {
-      check: vitest.fn()
+      check: vi.fn((checks: (() => unknown)[]) =>
+        Promise.all(checks.map((c) => c()))
+      )
     }
-    const mockPrismaHealthIndicator = {
-      pingCheck: vitest.fn()
+    dbService = {
+      ping: vi.fn()
     }
-    const mockDbService = {}
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HealthController],
       providers: [
         {provide: HealthCheckService, useValue: mockHealthCheckService},
-        {provide: PrismaHealthIndicator, useValue: mockPrismaHealthIndicator},
-        {provide: DbService, useValue: mockDbService}
+        HealthIndicatorService,
+        {provide: DbService, useValue: dbService}
       ]
     }).compile()
 
     controller = module.get<HealthController>(HealthController)
     healthCheckService = module.get<HealthCheckService>(HealthCheckService)
-    prismaHealthIndicator = module.get<PrismaHealthIndicator>(
-      PrismaHealthIndicator
-    )
   })
 
   describe('livenessCheck', () => {
@@ -46,15 +44,26 @@ describe(HealthController.name, () => {
   })
 
   describe('readinessCheck', () => {
-    it('should call health.check with prismaHealth.pingCheck', async () => {
-      const expectedResult = {status: 'ok', info: {database: {status: 'ok'}}}
-      prismaHealthIndicator.pingCheck = vitest.fn()
-      healthCheckService.check = vitest.fn().mockResolvedValue(expectedResult)
+    it('should report database up when ping succeeds', async () => {
+      dbService.ping.mockImplementation(() => undefined)
 
       const result = await controller.readinessCheck()
 
       expect(healthCheckService.check).toHaveBeenCalled()
-      expect(result).toEqual(expectedResult)
+      expect(dbService.ping).toHaveBeenCalled()
+      expect(result).toEqual([{database: {status: 'up'}}])
+    })
+
+    it('should report database down when ping throws', async () => {
+      dbService.ping.mockImplementation(() => {
+        throw new Error('SQLite failure')
+      })
+
+      const result = await controller.readinessCheck()
+
+      expect(result).toEqual([
+        {database: {status: 'down', message: 'SQLite failure'}}
+      ])
     })
   })
 })

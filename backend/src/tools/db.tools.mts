@@ -1,13 +1,10 @@
-import {PrismaBetterSqlite3} from '@prisma/adapter-better-sqlite3'
+import {eq, sql} from 'drizzle-orm'
 import fs from 'fs/promises'
 import readline from 'readline'
-import {PrismaClient} from '../generated/prisma/client.js'
+import {openDatabase} from '../db/db.service.js'
+import {elev, prop, user, world} from '../db/schema.js'
 
-const db = new PrismaClient({
-  adapter: new PrismaBetterSqlite3({
-    url: process.env.ADAPTER_URL
-  })
-})
+const {db} = openDatabase(process.env.ADAPTER_URL ?? 'app.db')
 
 const worldAttr: Record<number, string> = {
   0: 'name',
@@ -191,25 +188,25 @@ const saveElevdump = async (worldName: string, file: string): Promise<void> => {
   const fileHandle = await fs.open(file, 'w')
   await fileHandle.write('elevdump version 1\r\n')
 
-  const worlds: any[] =
-    await db.$queryRaw`SELECT * FROM world WHERE LOWER(name) = ${worldName.toLowerCase()}`
-  const world = worlds[0]
+  const [foundWorld] = await db
+    .select()
+    .from(world)
+    .where(sql`LOWER(${world.name}) = ${worldName.toLowerCase()}`)
+    .limit(1)
 
-  if (!world) {
+  if (!foundWorld) {
     console.log('World not found')
     await fileHandle.close()
     return
   }
 
-  const elevs = await db.elev.findMany({
-    where: {wid: world.id}
-  })
+  const elevs = await db.select().from(elev).where(eq(elev.wid, foundWorld.id))
 
-  for (const elev of elevs) {
+  for (const e of elevs) {
     await fileHandle.write(
-      `${elev.page_x} ${elev.page_z} ${elev.node_x} ${elev.node_z} ` +
-        `${elev.radius} ${elev.textures?.split(' ').length} ` +
-        `${elev.heights?.split(' ').length} ${elev.textures} ${elev.heights}\r\n`
+      `${e.page_x} ${e.page_z} ${e.node_x} ${e.node_z} ` +
+        `${e.radius} ${e.textures?.split(' ').length} ` +
+        `${e.heights?.split(' ').length} ${e.textures} ${e.heights}\r\n`
     )
   }
 
@@ -220,36 +217,38 @@ const savePropdump = async (worldName: string, file: string): Promise<void> => {
   const fileHandle = await fs.open(file, 'w')
   await fileHandle.write('propdump version 3\r\n')
 
-  const worlds: any[] =
-    await db.$queryRaw`SELECT * FROM world WHERE LOWER(name) = ${worldName.toLowerCase()}`
-  const world = worlds[0]
+  const [foundWorld] = await db
+    .select()
+    .from(world)
+    .where(sql`LOWER(${world.name}) = ${worldName.toLowerCase()}`)
+    .limit(1)
 
-  if (!world) {
+  if (!foundWorld) {
     console.log('World not found')
     await fileHandle.close()
     return
   }
 
-  const props = await db.prop.findMany({
-    select: {
-      id: true,
-      uid: true,
-      date: true,
-      name: true,
-      x: true,
-      y: true,
-      z: true,
-      pi: true,
-      ya: true,
-      ro: true,
-      desc: true,
-      act: true
-    },
-    where: {wid: world.id}
-  })
+  const props = await db
+    .select({
+      id: prop.id,
+      uid: prop.uid,
+      date: prop.date,
+      name: prop.name,
+      x: prop.x,
+      y: prop.y,
+      z: prop.z,
+      pi: prop.pi,
+      ya: prop.ya,
+      ro: prop.ro,
+      desc: prop.desc,
+      act: prop.act
+    })
+    .from(prop)
+    .where(eq(prop.wid, foundWorld.id))
 
-  for (const prop of props) {
-    const line = `${prop.uid} ${prop.date} ${prop.x} ${prop.y} ${prop.z} ${prop.ya} ${prop.pi} ${prop.ro} ${prop.name.length} ${prop.desc?.length || 0} ${prop.act?.length || 0} ${prop.name}${(prop.desc ?? '').replace(/\r\n/g, '\x80\x7f').replace(/\n/g, '\x7f')}${(prop.act ?? '').replace(/\r\n/g, '\x80\x7f').replace(/\n/g, '\x7f')}`
+  for (const p of props) {
+    const line = `${p.uid} ${p.date} ${p.x} ${p.y} ${p.z} ${p.ya} ${p.pi} ${p.ro} ${p.name.length} ${p.desc?.length || 0} ${p.act?.length || 0} ${p.name}${(p.desc ?? '').replace(/\r\n/g, '\x80\x7f').replace(/\n/g, '\x7f')}${(p.act ?? '').replace(/\r\n/g, '\x80\x7f').replace(/\n/g, '\x7f')}`
     await fileHandle.write(`${line}\r\n`)
   }
 
@@ -257,16 +256,18 @@ const savePropdump = async (worldName: string, file: string): Promise<void> => {
 }
 
 const saveAtdump = async (worldName: string, file: string): Promise<void> => {
-  const worlds: any[] =
-    await db.$queryRaw`SELECT * FROM world WHERE LOWER(name) = ${worldName.toLowerCase()}`
-  const world = worlds[0]
+  const [foundWorld] = await db
+    .select()
+    .from(world)
+    .where(sql`LOWER(${world.name}) = ${worldName.toLowerCase()}`)
+    .limit(1)
 
-  if (!world) {
+  if (!foundWorld) {
     console.log('World not found')
     return
   }
 
-  const attrDict = JSON.parse(world.data ?? '{}')
+  const attrDict = JSON.parse(foundWorld.data ?? '{}')
   const reverseWorldAttr: Record<string, number> = Object.fromEntries(
     Object.entries(worldAttr).map(([k, v]) => [v, parseInt(k)])
   )
@@ -290,66 +291,81 @@ export const importWorld = async (
   worldName: string,
   path = '../dumps'
 ): Promise<void> => {
-  let admin = await db.user.findFirst({where: {name: 'admin'}})
+  let [admin] = await db
+    .select()
+    .from(user)
+    .where(eq(user.name, 'admin'))
+    .limit(1)
   if (!admin) {
-    admin = await db.user.create({
-      data: {name: 'admin', password: '', email: ''}
-    })
+    ;[admin] = await db
+      .insert(user)
+      .values({name: 'admin', password: '', email: ''})
+      .returning()
   }
 
   const attrDict = await parseAtdump(`${path}/at${worldName}.txt`)
 
-  const worlds: any[] =
-    await db.$queryRaw`SELECT * FROM world WHERE LOWER(name) = ${worldName.toLowerCase()}`
-  let world = worlds[0]
+  let [foundWorld] = await db
+    .select()
+    .from(world)
+    .where(sql`LOWER(${world.name}) = ${worldName.toLowerCase()}`)
+    .limit(1)
 
-  if (world) {
-    world = await db.world.update({
-      where: {id: world.id},
-      data: {name: attrDict.name, data: JSON.stringify(attrDict)}
-    })
+  if (foundWorld) {
+    ;[foundWorld] = await db
+      .update(world)
+      .set({name: attrDict.name, data: JSON.stringify(attrDict)})
+      .where(eq(world.id, foundWorld.id))
+      .returning()
   } else {
-    world = await db.world.create({
-      data: {name: attrDict.name, data: JSON.stringify(attrDict)}
+    ;[foundWorld] = await db
+      .insert(world)
+      .values({name: attrDict.name, data: JSON.stringify(attrDict)})
+      .returning()
+  }
+
+  const elevRows: (typeof elev.$inferInsert)[] = []
+  for await (const e of loadElevdump(`${path}/elev${worldName}.txt`)) {
+    elevRows.push({
+      wid: foundWorld.id,
+      page_x: e[0] as number,
+      page_z: e[1],
+      node_x: e[2],
+      node_z: e[3],
+      radius: e[4],
+      textures: e[5].join(' '),
+      heights: e[6].join(' ')
     })
   }
 
-  await db.prop.deleteMany({where: {wid: world.id}})
-  await db.elev.deleteMany({where: {wid: world.id}})
+  const propRows: (typeof prop.$inferInsert)[] = []
+  for await (const o of loadPropdump(`${path}/prop${worldName}.txt`)) {
+    propRows.push({
+      wid: foundWorld.id,
+      uid: admin.id,
+      date: o[0],
+      name: o[1],
+      x: o[2],
+      y: o[3],
+      z: o[4],
+      pi: o[5],
+      ya: o[6],
+      ro: o[7],
+      desc: o[8],
+      act: o[9]
+    })
+  }
 
-  await db.$transaction(async (prisma) => {
-    for await (const e of loadElevdump(`${path}/elev${worldName}.txt`)) {
-      await prisma.elev.create({
-        data: {
-          wid: world.id,
-          page_x: e[0] as number,
-          page_z: e[1],
-          node_x: e[2],
-          node_z: e[3],
-          radius: e[4],
-          textures: e[5].join(' '),
-          heights: e[6].join(' ')
-        }
-      })
+  db.transaction((tx) => {
+    tx.delete(prop).where(eq(prop.wid, foundWorld.id)).run()
+    tx.delete(elev).where(eq(elev.wid, foundWorld.id)).run()
+
+    for (const row of elevRows) {
+      tx.insert(elev).values(row).run()
     }
 
-    for await (const o of loadPropdump(`${path}/prop${worldName}.txt`)) {
-      await prisma.prop.create({
-        data: {
-          wid: world.id,
-          uid: admin.id,
-          date: o[0],
-          name: o[1],
-          x: o[2],
-          y: o[3],
-          z: o[4],
-          pi: o[5],
-          ya: o[6],
-          ro: o[7],
-          desc: o[8],
-          act: o[9]
-        }
-      })
+    for (const row of propRows) {
+      tx.insert(prop).values(row).run()
     }
   })
 }

@@ -142,18 +142,21 @@ async def load_propdump(file_path):
 
 
 @db_required
-async def save_elevdump(world_name, file):    
+async def save_elevdump(world_name, file):
     async with aiofiles.open(file, 'w', encoding='windows-1252') as f:
         await f.write('elevdump version 1\r\n')
-        for elev in await db.query_raw((
-            "select page_x, page_z, node_x, node_z, radius, textures, heights "
-            "from elev where wid = (SELECT id FROM world WHERE LOWER(name) = "
-            f"'{world_name.lower()}')"
-        )):
+        rows = await db.fetchall(
+            'SELECT page_x, page_z, node_x, node_z, radius, textures, heights '
+            'FROM elev WHERE wid = (SELECT id FROM world WHERE LOWER(name) = ?)',
+            (world_name.lower(),)
+        )
+        for elev in rows:
+            textures = elev['textures'] or ''
+            heights = elev['heights'] or ''
             await f.write((
                 f"{elev['page_x']} {elev['page_z']} {elev['node_x']} {elev['node_z']} "
-                f"{elev['radius']} {len(elev['textures'].split(' '))} "
-                f"{len(elev['heights'].split(' '))} {elev['textures']} {elev['heights']}\r\n"
+                f"{elev['radius']} {len(textures.split(' '))} "
+                f"{len(heights.split(' '))} {textures} {heights}\r\n"
             ))
 
 
@@ -161,25 +164,27 @@ async def save_elevdump(world_name, file):
 async def save_propdump(world_name, file):
     async with aiofiles.open(file, 'w', encoding='windows-1252') as f:
         await f.write('propdump version 3\r\n')
-        for prop in await db.query_raw((
-            "select uid, date, x, y, z, ya, pi, ro, LENGTH(name), coalesce(length(desc), 0), "
+        rows = await db.fetchall(
+            'SELECT uid, date, x, y, z, ya, pi, ro, LENGTH(name), coalesce(length(desc), 0), '
             "coalesce(length(act), 0), name || coalesce(desc, '') || coalesce(act, '') "
-            "from prop where wid = (SELECT id FROM world WHERE LOWER(name) = "
-            f"'{world_name.lower()}')"
-        )):
-            await f.write(f"{' '.join(str(v) for v in prop.values())}\r\n")
+            'FROM prop WHERE wid = (SELECT id FROM world WHERE LOWER(name) = ?)',
+            (world_name.lower(),)
+        )
+        for prop in rows:
+            await f.write(f"{' '.join(str(v) for v in tuple(prop))}\r\n")
 
 
 @db_required
 async def save_atdump(world_name, file):
-    world = await db.query_raw(
-        f"SELECT * FROM world WHERE LOWER(name) = '{world_name.lower()}'"
+    world = await db.fetchone(
+        'SELECT * FROM world WHERE LOWER(name) = ? LIMIT 1',
+        (world_name.lower(),)
     )
     if not world:
         print('World not found')
         return
 
-    attr_dict = json.loads(world[0]['data'])
+    attr_dict = json.loads(world['data'] or '{}')
 
     reverse_world_attr = {value: key for key, value in world_attr.items()}
 
@@ -231,59 +236,75 @@ async def parse_atdump(attr_file):
 
 @db_required
 async def import_world(world_name, path='../dumps'):
-    admin = await db.user.find_first(
-        where={
-            'name': 'admin'
-        }
+    await db.init_schema()
+
+    admin = await db.fetchone(
+        'SELECT id FROM user WHERE name = ? LIMIT 1',
+        ('admin',)
     )
     if admin is None:
-        admin = await db.user.create({'name': 'admin', 'password': '', 'email': ''})
-    attr_dict = await parse_atdump(f'{path}/at{world_name}.txt')
+        cursor = await db.execute(
+            'INSERT INTO user (name, password, email) VALUES (?, ?, ?)',
+            ('admin', '', '')
+        )
+        await db.commit()
+        admin_id = cursor.lastrowid
+    else:
+        admin_id = admin['id']
 
-    world = await db.query_raw(
-        f"SELECT * FROM world WHERE LOWER(name) = '{attr_dict['name'].lower()}'"
+    attr_dict = await parse_atdump(f'{path}/at{world_name}.txt')
+    world_data = json.dumps(attr_dict)
+
+    world = await db.fetchone(
+        'SELECT id FROM world WHERE LOWER(name) = ? LIMIT 1',
+        (attr_dict['name'].lower(),)
     )
 
-    if not world:
-        world = await db.world.create({'name': attr_dict['name'],
-                                       'data': json.dumps(attr_dict)})
-    else:
-        world = await db.world.find_first(where={'id': world[0]['id']})
-        await db.world.update(
-            where={
-                'id': world.id
-            },
-            data={
-                'name': attr_dict['name'],
-                'data': json.dumps(attr_dict)
-            }
+    if world is None:
+        cursor = await db.execute(
+            'INSERT INTO world (name, data) VALUES (?, ?)',
+            (attr_dict['name'], world_data)
         )
-    await db.prop.delete_many(where={
-        'wid': world.id
-    })
+        await db.commit()
+        world_id = cursor.lastrowid
+    else:
+        world_id = world['id']
+        await db.execute(
+            'UPDATE world SET name = ?, data = ? WHERE id = ?',
+            (attr_dict['name'], world_data, world_id)
+        )
+        await db.commit()
 
-    await db.elev.delete_many(where={
-        'wid': world.id
-    })
-
-    await db.query_raw('BEGIN TRANSACTION')
-
-    async for e in load_elevdump(f'{path}/elev{world_name}.txt'):
-        await db.query_raw(
-            ('INSERT INTO elev (wid, page_x, page_z, node_x, node_z, radius, textures, heights) '
-             'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'),
-            world.id, e[0], e[1], e[2], e[3], e[4], ' '.join(str(n) for n in e[5]),
+    elev_rows = [
+        (
+            world_id, e[0], e[1], e[2], e[3], e[4],
+            ' '.join(str(n) for n in e[5]),
             ' '.join(str(n) for n in e[6])
         )
+        async for e in load_elevdump(f'{path}/elev{world_name}.txt')
+    ]
 
-    async for o in load_propdump(f'{path}/prop{world_name}.txt'):
-        await db.query_raw(
-            ('INSERT INTO prop (wid, uid, date, name, x, y, z, pi, ya, ro, desc, act) '
-             'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
-            world.id, admin.id, o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[8], o[9]
+    prop_rows = [
+        (
+            world_id, admin_id, o[0], o[1], o[2], o[3], o[4],
+            o[5], o[6], o[7], o[8], o[9]
         )
+        async for o in load_propdump(f'{path}/prop{world_name}.txt')
+    ]
 
-    await db.query_raw('COMMIT')
+    async with db.transaction():
+        await db.execute('DELETE FROM prop WHERE wid = ?', (world_id,))
+        await db.execute('DELETE FROM elev WHERE wid = ?', (world_id,))
+        await db.executemany(
+            'INSERT INTO elev (wid, page_x, page_z, node_x, node_z, radius, textures, heights) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            elev_rows
+        )
+        await db.executemany(
+            'INSERT INTO prop (wid, uid, date, name, x, y, z, pi, ya, ro, desc, act) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            prop_rows
+        )
 
 
 async def export_world(world_name, path='../dumps'):

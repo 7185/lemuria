@@ -1,5 +1,5 @@
 diff --git a/node_modules/three-rwx-loader/src/RWXLoader.js b/node_modules/three-rwx-loader/src/RWXLoader.js
-index 41e67cd..81393ca 100644
+index 41e67cd..496d150 100644
 --- a/node_modules/three-rwx-loader/src/RWXLoader.js
 +++ b/node_modules/three-rwx-loader/src/RWXLoader.js
 @@ -16,7 +16,8 @@ import {
@@ -695,7 +695,7 @@ index 41e67cd..81393ca 100644
  
  }
  
-@@ -1504,113 +1665,103 @@ function mergeGeometryRecursive( group, ctx, transform = group.matrix ) {
+@@ -1504,113 +1665,104 @@ function mergeGeometryRecursive( group, ctx, transform = group.matrix ) {
  
  		if ( child instanceof Mesh && ctx.meshFilter( child ) ) {
  
@@ -832,6 +832,7 @@ index 41e67cd..81393ca 100644
  
 -			} else {
 +					const bucket = ctx.materialBuckets[ localToGlobal[ g.materialIndex ] ];
++					if ( bucket === undefined ) continue;
 +					const end = Math.min( g.start + g.count, geometryIndices.length );
 +					for ( let k = g.start; k < end; k ++ ) {
  
@@ -864,7 +865,7 @@ index 41e67cd..81393ca 100644
  
  		} else if ( child instanceof Group && ctx.groupFilter( child ) ) {
  
-@@ -1630,8 +1781,9 @@ function flattenGroup( group, meshFilter = () => true, groupFilter = () => true
+@@ -1630,8 +1782,9 @@ function flattenGroup( group, meshFilter = () => true, groupFilter = () => true
  		bufferGeometry: new BufferGeometry(),
  		positions: [],
  		uvs: [],
@@ -875,7 +876,7 @@ index 41e67cd..81393ca 100644
  		taggedMaterials: {},
  		meshFilter: meshFilter,
  		groupFilter: groupFilter,
-@@ -1640,10 +1792,32 @@ function flattenGroup( group, meshFilter = () => true, groupFilter = () => true
+@@ -1640,10 +1793,32 @@ function flattenGroup( group, meshFilter = () => true, groupFilter = () => true
  
  	mergeGeometryRecursive( group, ctx );
  
@@ -909,7 +910,7 @@ index 41e67cd..81393ca 100644
  	ctx.bufferGeometry.uvsNeedUpdate = true;
  	ctx.bufferGeometry.computeVertexNormals();
  
-@@ -1709,33 +1883,13 @@ class RWXMaterial {
+@@ -1709,33 +1884,13 @@ class RWXMaterial {
  
  	getMatSignature() {
  
@@ -950,7 +951,7 @@ index 41e67cd..81393ca 100644
  
  	}
  
-@@ -1750,6 +1904,8 @@ class RWXMaterialManager {
+@@ -1750,6 +1905,8 @@ class RWXMaterialManager {
  	allowURLs = false ) {
  
  		this.threeMaterialMap = new Map();
@@ -959,7 +960,7 @@ index 41e67cd..81393ca 100644
  
  		this.folder = folder;
  		this.textureExtension = textureExtension;
-@@ -1770,7 +1926,7 @@ class RWXMaterialManager {
+@@ -1770,7 +1927,7 @@ class RWXMaterialManager {
  		const threeMaterial = makeThreeMaterial( newRWXMaterial,
  			this.folder, this.textureExtension, this.maskExtension, this.fflate,
  			this.useBasicMaterial, this.textureColorSpace, this.alphaTest,
@@ -968,7 +969,7 @@ index 41e67cd..81393ca 100644
  		threeMaterial.signature = finalSignature;
  
  		this.threeMaterialMap.set( finalSignature, threeMaterial );
-@@ -1799,30 +1955,32 @@ class RWXMaterialManager {
+@@ -1799,30 +1956,32 @@ class RWXMaterialManager {
  
  		this.threeMaterialMap.clear();
  
@@ -1016,7 +1017,7 @@ index 41e67cd..81393ca 100644
  
  		}
  
-@@ -1839,6 +1997,7 @@ class RWXMaterialTracker {
+@@ -1839,6 +1998,7 @@ class RWXMaterialTracker {
  
  		this.currentRWXMaterial = new RWXMaterial();
  		this.currentMaterialID = null;
@@ -1024,7 +1025,7 @@ index 41e67cd..81393ca 100644
  		this.currentMaterialList = [];
  		this.signatureMap = new Map();
  		this.committedMaterialsAmount = 0;
-@@ -1848,13 +2007,20 @@ class RWXMaterialTracker {
+@@ -1848,13 +2008,20 @@ class RWXMaterialTracker {
  
  	getCurrentMaterialID() {
  
@@ -1046,7 +1047,7 @@ index 41e67cd..81393ca 100644
  
  		}
  
-@@ -1886,6 +2052,7 @@ class RWXMaterialTracker {
+@@ -1886,6 +2053,7 @@ class RWXMaterialTracker {
  
  		}
  
@@ -1054,7 +1055,7 @@ index 41e67cd..81393ca 100644
  		return this.currentMaterialID;
  
  	}
-@@ -1905,6 +2072,7 @@ class RWXMaterialTracker {
+@@ -1905,6 +2073,7 @@ class RWXMaterialTracker {
  	clearCurrentMaterialList( currentMat = new RWXMaterial() ) {
  
  		this.currentMaterialID = null;
@@ -1062,7 +1063,7 @@ index 41e67cd..81393ca 100644
  		this.currentMaterialList = [];
  		this.signatureMap.clear();
  		this.currentMaterialSignature = '';
-@@ -1933,48 +2101,50 @@ class RWXLoader extends Loader {
+@@ -1933,48 +2102,50 @@ class RWXLoader extends Loader {
  
  		super( manager );
  
@@ -1153,7 +1154,7 @@ index 41e67cd..81393ca 100644
  
  		this.fflate = null;
  		this.textureExtension = '.jpg';
-@@ -2223,7 +2393,7 @@ class RWXLoader extends Loader {
+@@ -2223,7 +2394,7 @@ class RWXLoader extends Loader {
  		let groupBeforeProto = null;
  		let firstClumpStarted = false;
  
@@ -1162,7 +1163,7 @@ index 41e67cd..81393ca 100644
  
  		// Ready root object group
  		ctx.rootGroup = new Group();
-@@ -2241,21 +2411,182 @@ class RWXLoader extends Loader {
+@@ -2241,21 +2412,182 @@ class RWXLoader extends Loader {
  
  		for ( let i = 0, l = lines.length; i < l; i ++ ) {
  
@@ -1353,7 +1354,7 @@ index 41e67cd..81393ca 100644
  
  				makeMeshToCurrentGroup( ctx );
  				clearGeometry( ctx );
-@@ -2275,8 +2606,7 @@ class RWXLoader extends Loader {
+@@ -2275,8 +2607,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -1363,7 +1364,7 @@ index 41e67cd..81393ca 100644
  
  				makeMeshToCurrentGroup( ctx );
  
-@@ -2289,8 +2619,7 @@ class RWXLoader extends Loader {
+@@ -2289,8 +2620,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -1373,7 +1374,7 @@ index 41e67cd..81393ca 100644
  
  				saveCurrentTransform( ctx );
  
-@@ -2298,8 +2627,7 @@ class RWXLoader extends Loader {
+@@ -2298,8 +2628,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -1383,7 +1384,7 @@ index 41e67cd..81393ca 100644
  
  				loadCurrentTransform( ctx );
  
-@@ -2329,8 +2657,7 @@ class RWXLoader extends Loader {
+@@ -2329,8 +2658,7 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -1393,7 +1394,7 @@ index 41e67cd..81393ca 100644
  
  				makeMeshToCurrentGroup( ctx );
  
-@@ -2593,10 +2920,10 @@ class RWXLoader extends Loader {
+@@ -2593,10 +2921,10 @@ class RWXLoader extends Loader {
  
  			}
  
@@ -1406,7 +1407,7 @@ index 41e67cd..81393ca 100644
  
  			}
  
-@@ -2843,7 +3170,7 @@ class RWXLoader extends Loader {
+@@ -2843,7 +3171,7 @@ class RWXLoader extends Loader {
  			res = this.addtexturemodeRegex.exec( line );
  			if ( res != null ) {
  
@@ -1415,7 +1416,7 @@ index 41e67cd..81393ca 100644
  
  				// Do not push the same texture mode twice
  				if ( ! ctx.materialTracker.currentRWXMaterial.texturemodes.includes( TextureMode[ tm ] ) ) {
-@@ -2860,7 +3187,7 @@ class RWXLoader extends Loader {
+@@ -2860,7 +3188,7 @@ class RWXLoader extends Loader {
  			res = this.removetexturemodeRegex.exec( line );
  			if ( res != null ) {
  
@@ -1424,7 +1425,7 @@ index 41e67cd..81393ca 100644
  
  				// Cannot remove Filter mode when forcing texture filtering
  				if ( this.forceTextureFiltering && TextureMode[ tm ] === TextureMode.FILTER ) continue;
-@@ -3029,6 +3356,6 @@ class RWXLoader extends Loader {
+@@ -3029,6 +3357,6 @@ class RWXLoader extends Loader {
  }
  
  export default RWXLoader;

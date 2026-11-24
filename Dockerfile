@@ -16,17 +16,11 @@ FROM python:3.14-alpine AS python
 EXPOSE 8080
 WORKDIR /backend
 ENV PATH="/venv/bin:$PATH"
-ENV DATABASE_URL="file:/app.db"
-ENV PRISMA_PY_DEBUG_GENERATOR="1"
+ENV ADAPTER_URL="file:/app.db"
 COPY backend-py /backend/
-COPY backend/prisma/schema.prisma /backend/prisma/schema.prisma
 COPY --from=frontend --chown=nobody:nobody /root/static /backend/static
-RUN apk add --update --no-cache icu-libs openssl && \
-    python -m venv /venv && \
+RUN python -m venv /venv && \
     pip install --no-cache-dir -r /backend/requirements.txt && \
-    sed -i 's/provider = "sqlite"/provider = "sqlite"\nurl = env("DATABASE_URL")/' /backend/prisma/schema.prisma && \
-    prisma generate --schema /backend/prisma/schema.prisma --generator client-py && \
-    rm -r /root/.cache/prisma /root/.cache/prisma-python/nodeenv /root/.npm && \
     chown nobody: -R /root /backend
 CMD ["hypercorn", "--config", "hypercorn.toml", "app:app"]
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
@@ -37,7 +31,6 @@ USER nobody
 FROM platformatic/node-caged:26-slim AS node
 EXPOSE 8080
 ENV NODE_PATH="/root/node_modules"
-ENV DATABASE_URL="file:/app.db"
 ENV ADAPTER_URL="file:/app.db"
 WORKDIR /root
 COPY backend /root/backend/
@@ -62,7 +55,6 @@ EXPOSE 8080
 COPY --from=node --chown=nonroot:nonroot /root/node_modules /node_modules
 COPY --from=node --chown=nonroot:nonroot /dist /dist
 COPY --from=node --chown=nonroot:nonroot /static /static
-ENV DATABASE_URL="file:/app.db"
 ENV ADAPTER_URL="file:/app.db"
 WORKDIR /dist/src
 CMD ["main.js"]

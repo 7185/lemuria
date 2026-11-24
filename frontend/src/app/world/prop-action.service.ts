@@ -749,8 +749,10 @@ export class PropActionService {
               this.propSvc.rwxMaterialManager.getThreeMaterialPack(signature)
             newMaterials.push(curMat.threeMat)
             promises.push(forkJoin(curMat.loadingPromises))
+            disposeMaterial(m)
+          } else {
+            newMaterials.push(m)
           }
-          disposeMaterial(m)
         })
         newMaterials.forEach((m: MeshPhongMaterial) => {
           m.visible = !prop.userData.notVisible

@@ -1,12 +1,12 @@
 import {Controller, Get} from '@nestjs/common'
-import {HealthCheckService, PrismaHealthIndicator} from '@nestjs/terminus'
+import {HealthCheckService, HealthIndicatorService} from '@nestjs/terminus'
 import {DbService} from '../db/db.service.js'
 
 @Controller()
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
-    private readonly prismaHealth: PrismaHealthIndicator,
+    private readonly healthIndicator: HealthIndicatorService,
     private readonly db: DbService
   ) {}
 
@@ -23,7 +23,17 @@ export class HealthController {
   @Get('/readyz')
   readinessCheck() {
     return this.health.check([
-      () => this.prismaHealth.pingCheck('database', this.db)
+      () => {
+        const indicator = this.healthIndicator.check('database')
+        try {
+          this.db.ping()
+          return indicator.up()
+        } catch (error) {
+          return indicator.down({
+            message: error instanceof Error ? error.message : String(error)
+          })
+        }
+      }
     ])
   }
 }

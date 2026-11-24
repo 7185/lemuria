@@ -2,7 +2,7 @@
 """Health API routes"""
 
 from quart import Blueprint
-from db import db, db_required
+from db import db
 
 api_health = Blueprint('api_health', __name__, url_prefix='/')
 
@@ -20,6 +20,7 @@ async def check_readiness():
     try:
         if not db.is_connected():
             await db.connect()
+        await db.ping()
         return {
             'status': 'ok',
             'info': {'database': {'status': 'up'}},

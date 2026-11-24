@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """App module"""
 
-import quart_flask_patch
 import asyncio
 import tomllib
 
+from cachelib import SimpleCache
 from quart import Quart, render_template, websocket, request, send_from_directory
 from quart_jwt_extended import JWTManager, decode_token
-from flask_caching import Cache
+from db import db
 from health.api import api_health
 from proxy.api import api_proxy
 from user.api import api_auth
@@ -29,7 +29,10 @@ app.template_folder = config['STATIC_PATH']
 app.secret_key = get_secret_key() or config['SECRET_KEY']
 
 jwt = JWTManager(app)
-app.cache = Cache(app)
+app.cache = SimpleCache(
+    threshold=config['CACHE_THRESHOLD'],
+    default_timeout=config['CACHE_DEFAULT_TIMEOUT']
+)
 app.json = OrJSONProvider(app)
 
 @app.route('/')
@@ -77,6 +80,10 @@ app.register_blueprint(api_health)
 app.register_blueprint(api_auth)
 app.register_blueprint(api_world)
 app.register_blueprint(api_proxy)
+
+@app.after_serving
+async def shutdown():
+    await db.close()
 
 if __name__ == "__main__":
     app.run(host='localhost', port=8080)
