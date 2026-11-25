@@ -296,6 +296,7 @@ export class EngineService {
   }
 
   clearObjects() {
+    this.buildSvc.deselectCell()
     this.buildSvc.deselectProp()
     // Children is a dynamic iterable, we need a copy to get all of them
     for (const prop of [...this.objectsNode.children]) {
@@ -577,6 +578,13 @@ export class EngineService {
       if (!this.buildSvc.buildMode) {
         return
       }
+      if (this.buildSvc.selectedCell().page != null) {
+        this.buildSvc.cellControl.next({
+          action: act,
+          cameraDirection: this.cameraDirection
+        })
+        return
+      }
       if (act === 'delete') {
         // Remove prop from scene and do nothing else
         this.removeObject(this.buildSvc.selectedProp())
@@ -811,7 +819,11 @@ export class EngineService {
   }
 
   private leftClick(_: MouseEvent) {
-    this.buildSvc.deselectCell()
+    if (this.buildSvc.selectedCell().page != null) {
+      this.buildSvc.deselectCell()
+      // Left click to exit buildMode, do nothing else
+      return
+    }
     if (this.buildSvc.selectedProp() != null) {
       this.buildSvc.deselectProp()
       // Left click to exit buildMode, do nothing else

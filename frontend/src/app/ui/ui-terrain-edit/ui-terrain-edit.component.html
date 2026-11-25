@@ -9,7 +9,7 @@
     <button
       mat-icon-button
       type="button"
-      (click)="trigger($event)"
+      (click)="rotate($event, 1)"
       [title]="t('rotateLeft')"
     >
       <fa-icon
@@ -21,7 +21,7 @@
     <button
       mat-icon-button
       type="button"
-      (click)="trigger($event)"
+      (click)="rotate($event, -1)"
       [title]="t('rotateRight')"
     >
       <fa-icon
@@ -33,7 +33,7 @@
     <button
       mat-icon-button
       type="button"
-      (click)="trigger($event)"
+      (click)="copy($event)"
       [title]="t('copy')"
     >
       <fa-icon [icon]="icon.faClone" class="text-red" [fixedWidth]="true" />
@@ -41,7 +41,8 @@
     <button
       mat-icon-button
       type="button"
-      (click)="trigger($event)"
+      (click)="pasteElevation($event)"
+      [disabled]="!terrainSvc.hasCopiedCell()"
       [title]="t('pasteElevation')"
     >
       <fa-layers [fixedWidth]="true">
@@ -57,7 +58,8 @@
     <button
       mat-icon-button
       type="button"
-      (click)="trigger($event)"
+      (click)="pasteTexture($event)"
+      [disabled]="!terrainSvc.hasCopiedCell()"
       [title]="t('pasteTexture')"
     >
       <fa-layers [fixedWidth]="true">
@@ -77,7 +79,8 @@
       <input
         matInput
         type="number"
-        [ngModel]="height() | number: '1.2-2'"
+        [ngModel]="height()"
+        (ngModelChange)="updateHeight($event)"
         min="-328"
         max="328"
         step="0.01"
@@ -88,12 +91,13 @@
       <input
         matInput
         type="number"
-        [(ngModel)]="buildSvc.selectedCell().texture"
+        [ngModel]="texture()"
+        (ngModelChange)="updateTexture($event)"
         min="0"
         max="62"
       />
     </mat-form-field>
-    <mat-checkbox [(ngModel)]="buildSvc.selectedCell().hole">
+    <mat-checkbox [ngModel]="hole()" (ngModelChange)="updateHole($event)">
       {{ t('hole') }}
     </mat-checkbox>
   </div>

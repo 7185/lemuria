@@ -1,10 +1,12 @@
 import type {Observable} from 'rxjs'
-import type {BVHOptions} from 'three-mesh-bvh'
+import type {Vector3} from 'three'
+import type {BVHOptions, MeshBVH} from 'three-mesh-bvh'
 import {HttpClient} from '@angular/common/http'
-import {inject, Service} from '@angular/core'
+import {inject, Service, signal} from '@angular/core'
 import {forkJoin, from, map} from 'rxjs'
 import {
   BufferAttribute,
+  ClampToEdgeWrapping,
   Color,
   Group,
   ImageBitmapLoader,
@@ -16,9 +18,12 @@ import {
   Texture
 } from 'three'
 import {BVHHelper} from 'three-mesh-bvh'
+import type {PropCtl} from './prop.service'
 import {environment} from '../../environments/environment'
+import {BuildService} from '../engine/build.service'
 import {EngineService} from '../engine/engine.service'
-import {TERRAIN_PAGE_SIZE} from '../utils/constants'
+import {InputSystemService} from '../engine/inputsystem.service'
+import {TERRAIN_HOLE_FLAG, TERRAIN_PAGE_SIZE} from '../utils/constants'
 import {rgbToHex} from '../utils/utils'
 import {PropService} from './prop.service'
 
@@ -36,13 +41,25 @@ export interface TerrainData {
   enabled: boolean
   offset: number
 }
+
+interface CopiedCell {
+  height: number
+  texture: number
+  rotation: number
+  hole: boolean
+}
+
 @Service()
 export class TerrainService {
   terrain: Group | null = null
   water: Group | null = null
+  hasCopiedCell = signal(false)
   private readonly http = inject(HttpClient)
+  private readonly buildSvc = inject(BuildService)
   private readonly engineSvc = inject(EngineService)
+  private readonly inputSysSvc = inject(InputSystemService)
   private readonly propSvc = inject(PropService)
+  private copiedCell: CopiedCell | null = null
   private textureLoader = new ImageBitmapLoader().setOptions({
     imageOrientation: 'flipY'
   })
@@ -52,6 +69,12 @@ export class TerrainService {
   private waterBottomMaterials: MeshLambertMaterial[] = []
   private waterTopMaterials: MeshLambertMaterial[] = []
   private loadingPages = new Set()
+
+  constructor() {
+    this.buildSvc.cellControl.subscribe(({action, cameraDirection}) => {
+      this.handleCellControl(action, cameraDirection)
+    })
+  }
 
   getTerrain(worldId: number, pageX: number, pageZ: number) {
     return this.http.get(`${environment.url.server}/world/${worldId}/terrain`, {
@@ -183,11 +206,11 @@ export class TerrainService {
             const baseTexture = new Texture(
               bitmap,
               Texture.DEFAULT_MAPPING,
-              RepeatWrapping,
-              RepeatWrapping
+              ClampToEdgeWrapping,
+              ClampToEdgeWrapping
             )
             baseTexture.colorSpace = SRGBColorSpace
-            baseTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
+            baseTexture.needsUpdate = true
             return baseTexture
           })
         )
@@ -197,13 +220,12 @@ export class TerrainService {
     forkJoin(textureObservables).subscribe((baseTextures) => {
       for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 64; j++) {
-          const terrainTexture = j < 63 ? baseTextures[j].clone() : null
-          if (terrainTexture) {
-            terrainTexture.rotation = (i * Math.PI) / 2
+          const terrainTexture = j < 63 ? baseTextures[j] : null
+          const material = new MeshLambertMaterial({map: terrainTexture})
+          if (terrainTexture != null) {
+            this.applyClampedCellShader(material, i)
           }
-          this.terrainMaterials.push(
-            new MeshLambertMaterial({map: terrainTexture})
-          )
+          this.terrainMaterials.push(material)
         }
       }
 
@@ -213,6 +235,62 @@ export class TerrainService {
       this.engineSvc.addWorldObject(this.terrain)
       this.terrain.updateMatrixWorld()
     })
+  }
+
+  private applyClampedCellShader(
+    material: MeshLambertMaterial,
+    rotation: number
+  ) {
+    material.customProgramCacheKey = () => 'terrain-clamped'
+    material.onBeforeCompile = (shader) => {
+      shader.uniforms['uTerrainRot'] = {value: rotation}
+      shader.vertexShader = shader.vertexShader
+        .replace(
+          '#include <uv_pars_vertex>',
+          `#include <uv_pars_vertex>
+varying vec2 vCellCoord;
+flat varying vec2 vCellOrigin;`
+        )
+        .replace(
+          '#include <uv_vertex>',
+          `#include <uv_vertex>
+vCellCoord = uv * ${TERRAIN_PAGE_SIZE}.0;
+vCellOrigin = vCellCoord - vec2(1.0);`
+        )
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <uv_pars_fragment>',
+          `#include <uv_pars_fragment>
+uniform int uTerrainRot;
+varying vec2 vCellCoord;
+flat varying vec2 vCellOrigin;`
+        )
+        .replace(
+          '#include <map_fragment>',
+          `#ifdef USE_MAP
+  vec2 cellUv = clamp(vCellCoord - vCellOrigin, 0.0, 1.0);
+  vec2 ddx = dFdx(vCellCoord);
+  vec2 ddy = dFdy(vCellCoord);
+  vec2 rotUv = cellUv;
+  vec2 rotDdx = ddx;
+  vec2 rotDdy = ddy;
+  if (uTerrainRot == 1) {
+    rotUv = vec2(cellUv.y, 1.0 - cellUv.x);
+    rotDdx = vec2(ddx.y, -ddx.x);
+    rotDdy = vec2(ddy.y, -ddy.x);
+  } else if (uTerrainRot == 2) {
+    rotUv = vec2(1.0 - cellUv.x, 1.0 - cellUv.y);
+    rotDdx = -ddx;
+    rotDdy = -ddy;
+  } else if (uTerrainRot == 3) {
+    rotUv = vec2(1.0 - cellUv.y, cellUv.x);
+    rotDdx = vec2(-ddx.y, ddx.x);
+    rotDdy = vec2(-ddy.y, ddy.x);
+  }
+  diffuseColor *= textureGrad(map, rotUv, rotDdx, rotDdy);
+#endif`
+        )
+    }
   }
 
   getTerrainPages(
@@ -281,47 +359,29 @@ export class TerrainService {
       )
       geometry.rotateX(-Math.PI / 2)
 
-      const positions = new Float32Array(
-        (geometry.getAttribute('position') as BufferAttribute).array
-      )
-      let gap = 0
-      for (let i = 0, j = 0; i < positions.length; i++, j += 3) {
-        if (i % TERRAIN_PAGE_SIZE == 0) {
-          // skip edge
-          gap++
+      const positions = geometry.getAttribute('position') as BufferAttribute
+      const stride = TERRAIN_PAGE_SIZE + 1
+      for (let z = 0; z < TERRAIN_PAGE_SIZE; z++) {
+        const rowOffset = z * TERRAIN_PAGE_SIZE
+        const vertexRow = z * stride
+        for (let x = 0; x < TERRAIN_PAGE_SIZE; x++) {
+          positions.setY(vertexRow + x, elevData[rowOffset + x]?.[1] / 100 || 0)
         }
-        positions[j - 2 + gap * 3] = elevData[i]?.[1] / 100 || 0
       }
-      geometry.setAttribute('position', new BufferAttribute(positions, 3))
 
-      const indices = new Uint16Array(geometry.getIndex()!.array)
-      let changeTexture = 0
-      let currTexture = 0
+      const textures = new Uint16Array(TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE)
       for (let k = 0; k < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE; k++) {
-        const newTexture = elevData[k] == null ? 0 : elevData[k][0]
-
-        if (elevData[k] != null && elevData[k][0] === 254) {
-          // Empty cell
-          indices.fill(0, k * 6, k * 6 + 6)
-          continue
-        }
-        if (newTexture !== currTexture) {
-          geometry.addGroup(changeTexture, k * 6 - changeTexture, currTexture)
-          changeTexture = k * 6
-          currTexture = newTexture
-        }
+        const raw = elevData[k] == null ? 0 : elevData[k][0]
+        textures[k] = raw === 254 ? TERRAIN_HOLE_FLAG : raw
       }
-
-      geometry.setIndex(new BufferAttribute(indices, 1))
-      geometry.addGroup(
-        changeTexture,
-        geometry.getIndex()!.count - changeTexture,
-        currTexture
-      )
-      geometry.computeVertexNormals()
 
       const terrainMesh = new Mesh(geometry, this.terrainMaterials)
       terrainMesh.name = `${xPage}_${zPage}`
+      terrainMesh.userData.textures = textures
+      terrainMesh.userData.pageX = xPage
+      terrainMesh.userData.pageZ = zPage
+      this.rebuildPageIndices(terrainMesh)
+      geometry.computeVertexNormals()
       terrainMesh.position.set(
         xPage * TERRAIN_PAGE_SIZE * 10,
         0,
@@ -333,12 +393,322 @@ export class TerrainService {
     })
   }
 
-  private getPage(xPage: number, zPage: number) {
-    return this.terrain!.getObjectByName(`${xPage}_${zPage}`) as Mesh
+  setSelectedCellHeight(height: number) {
+    const {page, cellX, cellZ} = this.buildSvc.selectedCell()
+    if (page == null || cellX == null || cellZ == null) {
+      return
+    }
+    const clamped =
+      Math.round(Math.max(-328, Math.min(328, height)) * 100) / 100
+    this.setCellHeight(page, cellX, cellZ, clamped)
+    this.buildSvc.selectedCell.update((cell) => ({...cell, height: clamped}))
+    this.buildSvc.refreshCellSelection()
   }
 
-  private getPosAndIndex(page: Mesh) {
-    return [page.geometry.getAttribute('position'), page.geometry.getIndex()!]
+  setSelectedCellTexture(texture: number) {
+    const {page, cellX, cellZ, rotation, hole} = this.buildSvc.selectedCell()
+    if (page == null || cellX == null || cellZ == null) {
+      return
+    }
+    const clamped = Math.max(0, Math.min(62, Math.trunc(texture)))
+    this.setCellTexture(
+      page,
+      cellX,
+      cellZ,
+      clamped,
+      rotation ?? 0,
+      hole ?? false
+    )
+    this.buildSvc.selectedCell.update((cell) => ({...cell, texture: clamped}))
+  }
+
+  rotateSelectedCell(delta: 1 | -1) {
+    const {page, cellX, cellZ, texture, rotation, hole} =
+      this.buildSvc.selectedCell()
+    if (page == null || cellX == null || cellZ == null) {
+      return
+    }
+    const nextRotation = ((rotation ?? 0) + delta + 4) & 3
+    this.setCellTexture(
+      page,
+      cellX,
+      cellZ,
+      texture ?? 0,
+      nextRotation,
+      hole ?? false
+    )
+    this.buildSvc.selectedCell.update((cell) => ({
+      ...cell,
+      rotation: nextRotation
+    }))
+  }
+
+  setSelectedCellHole(hole: boolean) {
+    const {page, cellX, cellZ, texture, rotation} = this.buildSvc.selectedCell()
+    if (page == null || cellX == null || cellZ == null) {
+      return
+    }
+    this.setCellTexture(page, cellX, cellZ, texture ?? 0, rotation ?? 0, hole)
+    this.buildSvc.selectedCell.update((cell) => ({...cell, hole}))
+  }
+
+  copySelectedCell() {
+    const {height, texture, rotation, hole} = this.buildSvc.selectedCell()
+    if (height == null) {
+      return
+    }
+    this.copiedCell = {
+      height,
+      texture: texture ?? 0,
+      rotation: rotation ?? 0,
+      hole: hole ?? false
+    }
+    this.hasCopiedCell.set(true)
+  }
+
+  pasteElevation() {
+    if (this.copiedCell == null) {
+      return
+    }
+    this.setSelectedCellHeight(this.copiedCell.height)
+  }
+
+  pasteTexture() {
+    if (this.copiedCell == null) {
+      return
+    }
+    const {page, cellX, cellZ} = this.buildSvc.selectedCell()
+    if (page == null || cellX == null || cellZ == null) {
+      return
+    }
+    const {texture, rotation, hole} = this.copiedCell
+    this.setCellTexture(page, cellX, cellZ, texture, rotation, hole)
+    this.buildSvc.selectedCell.update((cell) => ({
+      ...cell,
+      texture,
+      rotation,
+      hole
+    }))
+  }
+
+  private handleCellControl(action: PropCtl, cameraDirection: Vector3) {
+    if (action === 'deselect') {
+      this.buildSvc.deselectCell()
+      return
+    }
+    const {page, cellX, cellZ, height, hole} = this.buildSvc.selectedCell()
+    if (page == null || cellX == null || cellZ == null) {
+      return
+    }
+    let step = 0.5
+    if (this.inputSysSvc.controls['clip']) {
+      step = 0.05
+      if (this.inputSysSvc.controls['run']) {
+        step = 0.01
+      }
+    }
+    let dirX = 0
+    let dirZ = 0
+    if (Math.abs(cameraDirection.x) >= Math.abs(cameraDirection.z)) {
+      dirX = Math.sign(cameraDirection.x)
+    } else {
+      dirZ = Math.sign(cameraDirection.z)
+    }
+    switch (action) {
+      case 'up':
+        this.setSelectedCellHeight((height ?? 0) + step)
+        break
+      case 'down':
+        this.setSelectedCellHeight((height ?? 0) - step)
+        break
+      case 'forward':
+        this.stepSelectedCell(page, cellX, cellZ, dirX, dirZ)
+        break
+      case 'backward':
+        this.stepSelectedCell(page, cellX, cellZ, -dirX, -dirZ)
+        break
+      case 'left':
+        this.stepSelectedCell(page, cellX, cellZ, dirZ, -dirX)
+        break
+      case 'right':
+        this.stepSelectedCell(page, cellX, cellZ, -dirZ, dirX)
+        break
+      case 'rotY':
+        this.rotateSelectedCell(1)
+        break
+      case 'rotnY':
+        this.rotateSelectedCell(-1)
+        break
+      case 'copy':
+        this.copySelectedCell()
+        break
+      case 'delete':
+        this.setSelectedCellHole(!(hole ?? false))
+        break
+      default:
+        break
+    }
+  }
+
+  private stepSelectedCell(
+    page: Mesh,
+    cellX: number,
+    cellZ: number,
+    dx: number,
+    dz: number
+  ) {
+    let nextX = cellX + dx
+    let nextZ = cellZ + dz
+    let pageX = page.userData.pageX as number
+    let pageZ = page.userData.pageZ as number
+
+    if (nextX < 0) {
+      pageX--
+      nextX = TERRAIN_PAGE_SIZE - 1
+    } else if (nextX >= TERRAIN_PAGE_SIZE) {
+      pageX++
+      nextX = 0
+    }
+    if (nextZ < 0) {
+      pageZ--
+      nextZ = TERRAIN_PAGE_SIZE - 1
+    } else if (nextZ >= TERRAIN_PAGE_SIZE) {
+      pageZ++
+      nextZ = 0
+    }
+
+    const targetPage =
+      pageX === page.userData.pageX && pageZ === page.userData.pageZ
+        ? page
+        : this.getPage(pageX, pageZ)
+    if (targetPage != null) {
+      this.buildSvc.selectCellAt(targetPage, nextX, nextZ)
+    }
+  }
+
+  private setCellHeight(
+    page: Mesh,
+    cellX: number,
+    cellZ: number,
+    height: number
+  ) {
+    const stride = TERRAIN_PAGE_SIZE + 1
+    const northRow = TERRAIN_PAGE_SIZE * stride
+    const positions = page.geometry.getAttribute('position') as BufferAttribute
+    positions.setY(cellZ * stride + cellX, height)
+    positions.needsUpdate = true
+    page.geometry.computeVertexNormals()
+    this.refitTerrainBVH(page)
+
+    const xPage = page.userData.pageX as number
+    const zPage = page.userData.pageZ as number
+    if (cellZ === 0) {
+      const south = this.getPage(xPage, zPage - 1)
+      if (south != null) {
+        const southPos = south.geometry.getAttribute(
+          'position'
+        ) as BufferAttribute
+        southPos.setY(northRow + cellX, height)
+        southPos.needsUpdate = true
+        south.geometry.computeVertexNormals()
+        this.refitTerrainBVH(south)
+      }
+    }
+    if (cellX === 0) {
+      const east = this.getPage(xPage - 1, zPage)
+      if (east != null) {
+        const eastPos = east.geometry.getAttribute(
+          'position'
+        ) as BufferAttribute
+        eastPos.setY(cellZ * stride + TERRAIN_PAGE_SIZE, height)
+        eastPos.needsUpdate = true
+        east.geometry.computeVertexNormals()
+        this.refitTerrainBVH(east)
+      }
+    }
+    if (cellX === 0 && cellZ === 0) {
+      const southEast = this.getPage(xPage - 1, zPage - 1)
+      if (southEast != null) {
+        const sePos = southEast.geometry.getAttribute(
+          'position'
+        ) as BufferAttribute
+        sePos.setY(northRow + TERRAIN_PAGE_SIZE, height)
+        sePos.needsUpdate = true
+        southEast.geometry.computeVertexNormals()
+        this.refitTerrainBVH(southEast)
+      }
+    }
+  }
+
+  private setCellTexture(
+    page: Mesh,
+    cellX: number,
+    cellZ: number,
+    texture: number,
+    rotation: number,
+    hole: boolean
+  ) {
+    const textures = page.userData.textures as Uint16Array
+    const idx = cellZ * TERRAIN_PAGE_SIZE + cellX
+    const prevHole = (textures[idx] & TERRAIN_HOLE_FLAG) !== 0
+    const nextValue =
+      ((rotation & 3) << 6) | (texture & 63) | (hole ? TERRAIN_HOLE_FLAG : 0)
+    if (textures[idx] === nextValue) {
+      return
+    }
+    textures[idx] = nextValue
+    this.rebuildPageIndices(page)
+    if (prevHole !== hole) {
+      page.geometry.computeVertexNormals()
+    }
+    this.updateTerrainBVH(page)
+  }
+
+  private rebuildPageIndices(terrainMesh: Mesh) {
+    const geometry = terrainMesh.geometry
+    const textures = terrainMesh.userData.textures as Uint16Array
+    const stride = TERRAIN_PAGE_SIZE + 1
+    const buckets = new Map<number, number[]>()
+    let totalIndices = 0
+
+    for (let z = 0; z < TERRAIN_PAGE_SIZE; z++) {
+      const rowOffset = z * TERRAIN_PAGE_SIZE
+      const vertexRow = z * stride
+      for (let x = 0; x < TERRAIN_PAGE_SIZE; x++) {
+        const raw = textures[rowOffset + x]
+        if ((raw & TERRAIN_HOLE_FLAG) !== 0) {
+          // Empty cell
+          continue
+        }
+        const texture = raw & 0xff
+        let bucket = buckets.get(texture)
+        if (bucket === undefined) {
+          bucket = []
+          buckets.set(texture, bucket)
+        }
+        const a = vertexRow + x
+        const b = a + stride
+        const c = b + 1
+        const d = a + 1
+        bucket.push(a, b, d, b, c, d)
+        totalIndices += 6
+      }
+    }
+
+    const groupedIndices = new Uint16Array(totalIndices)
+    geometry.clearGroups()
+    let offset = 0
+    for (const [texture, bucket] of buckets) {
+      groupedIndices.set(bucket, offset)
+      geometry.addGroup(offset, bucket.length, texture)
+      offset += bucket.length
+    }
+
+    geometry.setIndex(new BufferAttribute(groupedIndices, 1))
+  }
+
+  private getPage(xPage: number, zPage: number) {
+    return this.terrain!.getObjectByName(`${xPage}_${zPage}`) as Mesh
   }
 
   /**
@@ -359,107 +729,65 @@ export class TerrainService {
       southEast: this.getPage(xPage - 1, zPage - 1)
     }
 
-    const lastFaceIndex = TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE * 2 - 1
-    const [positions, indices] = this.getPosAndIndex(page)
+    const stride = TERRAIN_PAGE_SIZE + 1
+    const northRow = TERRAIN_PAGE_SIZE * stride
+    const nwCorner = northRow + TERRAIN_PAGE_SIZE
+    const positions = page.geometry.getAttribute('position')
+    let pageModified = false
 
     if (pages.north) {
-      const [northPositions, northIndices] = this.getPosAndIndex(pages.north)
-      // Get north page's south
-      const south = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
-        northPositions.getY(northIndices.getX(i * 2 * 3))
-      )
-      // Update current page's north
-      let southIndex = 0
-      for (
-        let i = (TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE - TERRAIN_PAGE_SIZE) * 2;
-        i < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE * 2;
-        i += 2
-      ) {
-        positions.setY(indices.getY(i * 3), south[southIndex])
-        southIndex++
+      const northPositions = pages.north.geometry.getAttribute('position')
+      for (let i = 0; i < TERRAIN_PAGE_SIZE; i++) {
+        positions.setY(northRow + i, northPositions.getY(i))
       }
-      positions.needsUpdate = true
-      page.geometry.computeVertexNormals()
+      pageModified = true
     }
     if (pages.west) {
-      const [westPositions, westIndices] = this.getPosAndIndex(pages.west)
-      // Get west page's east
-      const east = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
-        westPositions.getY(westIndices.getX(i * TERRAIN_PAGE_SIZE * 2 * 3))
-      )
-      // Update current page's west
-      let eastIndex = 0
-      for (
-        let i = (TERRAIN_PAGE_SIZE - 1) * 2;
-        i < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE * 2;
-        i += TERRAIN_PAGE_SIZE * 2
-      ) {
-        positions.setY(indices.getZ(i * 3), east[eastIndex])
-        eastIndex++
+      const westPositions = pages.west.geometry.getAttribute('position')
+      for (let i = 0; i < TERRAIN_PAGE_SIZE; i++) {
+        positions.setY(
+          i * stride + TERRAIN_PAGE_SIZE,
+          westPositions.getY(i * stride)
+        )
       }
-      positions.needsUpdate = true
-      page.geometry.computeVertexNormals()
+      pageModified = true
     }
     if (pages.south) {
-      const [southPositions, southIndices] = this.getPosAndIndex(pages.south)
-      // Get current south
-      const south = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
-        positions.getY(indices.getX(i * 2 * 3))
-      )
-      // Update south page's north
-      let southIndex = 0
-      for (
-        let i = (TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE - TERRAIN_PAGE_SIZE) * 2;
-        i < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE * 2;
-        i += 2
-      ) {
-        southPositions.setY(southIndices.getY(i * 3), south[southIndex])
-        southIndex++
+      const southPositions = pages.south.geometry.getAttribute('position')
+      for (let i = 0; i < TERRAIN_PAGE_SIZE; i++) {
+        southPositions.setY(northRow + i, positions.getY(i))
       }
       southPositions.needsUpdate = true
       pages.south.geometry.computeVertexNormals()
       this.updateTerrainBVH(pages.south)
     }
     if (pages.east) {
-      const [eastPositions, eastIndices] = this.getPosAndIndex(pages.east)
-      // Get current east
-      const east = Array.from({length: TERRAIN_PAGE_SIZE}, (_, i) =>
-        positions.getY(indices.getX(i * TERRAIN_PAGE_SIZE * 2 * 3))
-      )
-      // Update east page's west
-      let eastIndex = 0
-      for (
-        let i = (TERRAIN_PAGE_SIZE - 1) * 2;
-        i < TERRAIN_PAGE_SIZE * TERRAIN_PAGE_SIZE * 2;
-        i += TERRAIN_PAGE_SIZE * 2
-      ) {
-        eastPositions.setY(eastIndices.getZ(i * 3), east[eastIndex])
-        eastIndex++
+      const eastPositions = pages.east.geometry.getAttribute('position')
+      for (let i = 0; i < TERRAIN_PAGE_SIZE; i++) {
+        eastPositions.setY(
+          i * stride + TERRAIN_PAGE_SIZE,
+          positions.getY(i * stride)
+        )
       }
       eastPositions.needsUpdate = true
       pages.east.geometry.computeVertexNormals()
       this.updateTerrainBVH(pages.east)
     }
     if (pages.northWest) {
-      // We can fix current north-west corner
-      const [nwPositions, nwIndices] = this.getPosAndIndex(pages.northWest)
-      // Get north-west page's south-east corner (0 = first face)
-      const seCorner = nwPositions.getY(nwIndices.getX(0))
-      // Set corner
-      positions.setY(indices.getY(lastFaceIndex * 3), seCorner)
-      positions.needsUpdate = true
-      page.geometry.computeVertexNormals()
+      const nwPositions = pages.northWest.geometry.getAttribute('position')
+      positions.setY(nwCorner, nwPositions.getY(0))
+      pageModified = true
     }
     if (pages.southEast) {
-      // We can fix south-east page's north-west corner
-      const [sePositions, seIndices] = this.getPosAndIndex(pages.southEast)
-      // Get current south-east corner (0 = first face)
-      const seCorner = positions.getY(indices.getX(0))
-      // Set corner
-      sePositions.setY(seIndices.getY(lastFaceIndex * 3), seCorner)
+      const sePositions = pages.southEast.geometry.getAttribute('position')
+      sePositions.setY(nwCorner, positions.getY(0))
       sePositions.needsUpdate = true
       pages.southEast.geometry.computeVertexNormals()
       this.updateTerrainBVH(pages.southEast)
+    }
+    if (pageModified) {
+      positions.needsUpdate = true
+      page.geometry.computeVertexNormals()
     }
     this.updateTerrainBVH(page)
   }
@@ -482,6 +810,21 @@ export class TerrainService {
       zPage * TERRAIN_PAGE_SIZE * 10
     )
     this.water.add(waterPage)
+  }
+
+  private refitTerrainBVH(terrainMesh: Mesh) {
+    if (terrainMesh == null) {
+      return
+    }
+    const boundsTree = terrainMesh.geometry.boundsTree as MeshBVH | undefined
+    if (boundsTree == null) {
+      this.updateTerrainBVH(terrainMesh)
+      return
+    }
+    boundsTree.refit()
+    if (environment.debug && terrainMesh.userData.bvhHelper != null) {
+      terrainMesh.userData.bvhHelper.update()
+    }
   }
 
   private updateTerrainBVH(terrainMesh: Mesh) {

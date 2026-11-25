@@ -1,5 +1,6 @@
-import type {Material, Mesh, Object3D} from 'three'
+import type {BufferAttribute, Material, Mesh, Object3D} from 'three'
 import {inject, Service, signal} from '@angular/core'
+import {Subject} from 'rxjs'
 import {
   AxesHelper,
   BoxGeometry,
@@ -12,20 +13,34 @@ import {
   Vector3
 } from 'three'
 import type {PropCtl} from '../world/prop.service'
-import {X_AXIS, Y_AXIS, Z_AXIS} from '../utils/constants'
+import {
+  TERRAIN_HOLE_FLAG,
+  TERRAIN_PAGE_SIZE,
+  X_AXIS,
+  Y_AXIS,
+  Z_AXIS
+} from '../utils/constants'
 import {PropActionService} from '../world/prop-action.service'
 import {InputSystemService} from './inputsystem.service'
+
+export interface SelectedCell {
+  page?: Mesh
+  cellX?: number
+  cellZ?: number
+  height?: number
+  texture?: number
+  rotation?: number
+  hole?: boolean
+}
 
 @Service()
 export class BuildService {
   buildMode = false
-  selectedCell = signal<{
-    height?: number
-    texture?: number
-    hole?: boolean
-  }>({})
+  selectedCell = signal<SelectedCell>({})
   selectedProp = signal<Group>(null)
+  cellControl = new Subject<{action: PropCtl; cameraDirection: Vector3}>()
   private axesHelper: AxesHelper | null = null
+  private cellBuildNode: Group | null = null
   private cellSelection: Group | null = null
   private propSelection: Group | null = null
   private propSelectionBox: LineSegments | null = null
@@ -263,35 +278,45 @@ export class BuildService {
      *  | /   |   N
      * seZ---seX
      */
-    this.deselectProp()
-    if (this.cellSelection != null) {
-      this.deselectCell()
-    }
-
-    this.cellSelection = new Group()
-
-    const {position} = (terrainPage as Mesh).geometry.attributes
-    const localPos = (terrainPage as Mesh).getWorldPosition(new Vector3())
-    const seIndex = faceIndex & ~1
-    const nwIndex = seIndex + 1
-    const index = (terrainPage as Mesh).geometry.getIndex()
+    const mesh = terrainPage as Mesh
+    const index = mesh.geometry.getIndex()
 
     if (index == null) {
       return
     }
 
-    const cellSE = new Vector3()
-      .fromBufferAttribute(position, index.getX(seIndex * 3))
-      .add(localPos)
-    const cellNE = new Vector3()
-      .fromBufferAttribute(position, index.getY(seIndex * 3))
-      .add(localPos)
-    const cellSW = new Vector3()
-      .fromBufferAttribute(position, index.getZ(seIndex * 3))
-      .add(localPos)
-    const cellNW = new Vector3()
-      .fromBufferAttribute(position, index.getY(nwIndex * 3))
-      .add(localPos)
+    const seVertex = index.getX((faceIndex & ~1) * 3)
+    const stride = TERRAIN_PAGE_SIZE + 1
+    const cellX = seVertex % stride
+    const cellZ = Math.floor(seVertex / stride)
+    this.selectCellAt(mesh, cellX, cellZ, buildNode)
+  }
+
+  selectCellAt(
+    terrainPage: Mesh,
+    cellX: number,
+    cellZ: number,
+    buildNode?: Group
+  ) {
+    this.deselectProp()
+    if (this.cellSelection != null) {
+      this.clearCellSelection()
+    }
+    if (buildNode != null) {
+      this.cellBuildNode = buildNode
+    }
+    if (this.cellBuildNode == null) {
+      return
+    }
+
+    this.buildMode = true
+    this.cellSelection = new Group()
+
+    const {cellSE, cellNE, cellNW, cellSW} = this.getCellCorners(
+      terrainPage,
+      cellX,
+      cellZ
+    )
 
     const square = new Line(
       new BufferGeometry().setFromPoints([
@@ -315,11 +340,76 @@ export class BuildService {
       new LineBasicMaterial({color: 0xff0000, depthTest: false})
     )
     this.cellSelection.add(cell, square)
-    buildNode.add(this.cellSelection)
-    this.selectedCell.set({height: cellSE.y})
+    this.cellBuildNode.add(this.cellSelection)
+
+    const stride = TERRAIN_PAGE_SIZE + 1
+    const position = terrainPage.geometry.getAttribute(
+      'position'
+    ) as BufferAttribute
+    const height = Math.round(position.getY(cellZ * stride + cellX) * 100) / 100
+    const textures = terrainPage.userData.textures as Uint16Array | undefined
+    const raw = textures ? textures[cellZ * TERRAIN_PAGE_SIZE + cellX] : 0
+    const hole = (raw & TERRAIN_HOLE_FLAG) !== 0
+    const texture = raw & 63
+    const rotation = (raw >> 6) & 3
+
+    this.selectedCell.set({
+      page: terrainPage,
+      cellX,
+      cellZ,
+      height,
+      texture,
+      rotation,
+      hole
+    })
+  }
+
+  refreshCellSelection() {
+    const {page, cellX, cellZ} = this.selectedCell()
+    if (
+      page == null ||
+      cellX == null ||
+      cellZ == null ||
+      this.cellSelection == null
+    ) {
+      return
+    }
+    const {cellSE, cellNE, cellNW, cellSW} = this.getCellCorners(
+      page,
+      cellX,
+      cellZ
+    )
+    const [cell, square] = this.cellSelection.children as Line[]
+    const cellPos = cell.geometry.getAttribute('position') as BufferAttribute
+    cellPos.setXYZ(0, cellSE.x, cellSE.y, cellSE.z)
+    cellPos.setXYZ(1, cellNE.x, cellNE.y, cellNE.z)
+    cellPos.setXYZ(2, cellNW.x, cellNW.y, cellNW.z)
+    cellPos.setXYZ(3, cellSW.x, cellSW.y, cellSW.z)
+    cellPos.setXYZ(4, cellSE.x, cellSE.y, cellSE.z)
+    cellPos.needsUpdate = true
+
+    const squarePos = square.geometry.getAttribute(
+      'position'
+    ) as BufferAttribute
+    squarePos.setXYZ(0, cellSE.x - 0.5, cellSE.y, cellSE.z - 0.5)
+    squarePos.setXYZ(1, cellSE.x - 0.5, cellSE.y, cellSE.z + 0.5)
+    squarePos.setXYZ(2, cellSE.x + 0.5, cellSE.y, cellSE.z + 0.5)
+    squarePos.setXYZ(3, cellSE.x + 0.5, cellSE.y, cellSE.z - 0.5)
+    squarePos.setXYZ(4, cellSE.x - 0.5, cellSE.y, cellSE.z - 0.5)
+    squarePos.needsUpdate = true
   }
 
   deselectCell() {
+    if (this.cellSelection == null) {
+      return
+    }
+    this.clearCellSelection()
+    this.cellBuildNode = null
+    this.buildMode = false
+    this.selectedCell.set({})
+  }
+
+  private clearCellSelection() {
     if (this.cellSelection == null) {
       return
     }
@@ -327,8 +417,25 @@ export class BuildService {
       line.geometry.dispose()
       ;(line.material as Material).dispose()
     }
-    this.cellSelection.parent.remove(this.cellSelection)
+    this.cellSelection.parent?.remove(this.cellSelection)
     this.cellSelection = null
-    this.selectedCell.set({})
+  }
+
+  private getCellCorners(terrainPage: Mesh, cellX: number, cellZ: number) {
+    const position = terrainPage.geometry.getAttribute(
+      'position'
+    ) as BufferAttribute
+    const localPos = terrainPage.getWorldPosition(new Vector3())
+    const stride = TERRAIN_PAGE_SIZE + 1
+    const a = cellZ * stride + cellX
+    const b = a + stride
+    const c = b + 1
+    const d = a + 1
+
+    const cellSE = new Vector3().fromBufferAttribute(position, a).add(localPos)
+    const cellNE = new Vector3().fromBufferAttribute(position, b).add(localPos)
+    const cellNW = new Vector3().fromBufferAttribute(position, c).add(localPos)
+    const cellSW = new Vector3().fromBufferAttribute(position, d).add(localPos)
+    return {cellSE, cellNE, cellNW, cellSW}
   }
 }

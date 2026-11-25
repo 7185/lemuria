@@ -376,13 +376,7 @@ export class PropActionService {
         target.userData.notVisible = !(command.value ?? true)
         target.traverse((child: Object3D) => {
           if (child instanceof Mesh) {
-            child.material.forEach((m: MeshPhongMaterial, i: number) => {
-              // Clone in order to not hide shared materials
-              child.material[i] = m.clone()
-              // Keep the material from the loader (not serializable)
-              child.material[i].userData.rwx.material = m.userData.rwx.material
-              child.material[i].visible = !target.userData.notVisible
-            })
+            child.visible = !target.userData.notVisible
           }
         })
       })
@@ -638,11 +632,9 @@ export class PropActionService {
           }
           disposeMaterial(child.material[i])
         }
-        newMaterials.forEach((m: MeshPhongMaterial) => {
-          m.visible = !prop.userData.notVisible
-        })
         child.material = newMaterials
         child.material.needsUpdate = true
+        child.visible = !prop.userData.notVisible
       }
     })
   }
@@ -695,11 +687,9 @@ export class PropActionService {
           }
           disposeMaterial(child.material[i])
         }
-        newMaterials.forEach((m: MeshPhongMaterial) => {
-          m.visible = !prop.userData.notVisible
-        })
         child.material = newMaterials
         child.material.needsUpdate = true
+        child.visible = !prop.userData.notVisible
       }
     })
   }
@@ -754,11 +744,9 @@ export class PropActionService {
             newMaterials.push(m)
           }
         })
-        newMaterials.forEach((m: MeshPhongMaterial) => {
-          m.visible = !prop.userData.notVisible
-        })
         child.material = newMaterials
         child.material.needsUpdate = true
+        child.visible = !prop.userData.notVisible
       }
     })
     return forkJoin(promises)
