@@ -131,6 +131,7 @@ describe(WorldController.name, () => {
     it('should return world 1', async () => {
       expect(await controller.worldGet('cookie', '1')).toStrictEqual({
         entry: '0N 0W',
+        gravity: 1,
         id: 1,
         name: 'Lemuria',
         welcome: 'Bienvenue sur Lemuria',

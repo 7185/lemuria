@@ -10,6 +10,7 @@
   "enableWater": "Activer l'eau",
   "fogMax": "Visibilité maximum brume",
   "fogMin": "Altitude min. de la brume",
+  "gravity": "Gravité",
   "ground": "Terrain",
   "lightDir": "Direction de la lumière",
   "lighting": "Lumière",

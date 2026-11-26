@@ -27,6 +27,11 @@ export const environment = {
       groundAdjust: 0.00001,
       maxStepLength: 0.2,
       maxNbSteps: 30
+    },
+    physics: {
+      baseGravity: 9.81,
+      jumpVelocity: 5,
+      maxFallSpeed: 40
     }
   },
   debug: false

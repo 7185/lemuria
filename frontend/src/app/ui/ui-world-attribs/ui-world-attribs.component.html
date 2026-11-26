@@ -19,6 +19,10 @@
           <mat-label>{{ t('terrainOffset') }}</mat-label>
           <input matInput type="number" [(ngModel)]="terrainOffset" />
         </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ t('gravity') }}</mat-label>
+          <input matInput type="number" step="0.1" [(ngModel)]="gravity" />
+        </mat-form-field>
       </div>
     </mat-tab>
     <mat-tab>

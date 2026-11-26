@@ -10,6 +10,7 @@
   "enableWater": "Enable water",
   "fogMax": "Fog distance",
   "fogMin": "Fog Min",
+  "gravity": "Gravity",
   "ground": "Ground",
   "lightDir": "Light Direction",
   "lighting": "Lighting",

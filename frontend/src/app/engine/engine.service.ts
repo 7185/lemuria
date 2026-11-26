@@ -355,6 +355,14 @@ export class EngineService {
     return this.tmpPositionTuple
   }
 
+  get gravity(): number {
+    return this.player.gravity
+  }
+
+  set gravity(value: number) {
+    this.player.gravity = Number.isFinite(value) ? value : 1
+  }
+
   get yaw(): number {
     return Math.round(this.compass.theta / DEG)
   }
@@ -631,7 +639,6 @@ export class EngineService {
 
   setPlayerPos(pos: Vector3Like | string, yaw = 0): void {
     this.player.setPos(pos, yaw)
-    this.player.isOnFloor = true
   }
 
   setPlayerYaw(yaw: number) {
@@ -746,7 +753,7 @@ export class EngineService {
       return
     }
     this.fps.set(Math.round(1 / this.deltaFps))
-    this.deltaSinceLastFrame = this.deltaFps
+    this.deltaSinceLastFrame = Math.min(this.deltaFps, 0.1)
     this.deltaFps = (this.deltaFps % 1) / this.maxFps()
     this.renderer.clear()
     this.renderer.info.reset()
@@ -928,103 +935,11 @@ export class EngineService {
 
   private moveCamera() {
     this.activeCamera.getWorldDirection(this.cameraDirection)
-    let movSteps = 12 * this.deltaSinceLastFrame
-    let rotSteps = 1.5 * this.deltaSinceLastFrame
     const reverse = this.activeCamera === this.thirdFrontCamera ? -1 : 1
-    if (this.inputSysSvc.controls['run']) {
-      movSteps = this.player.isFlying
-        ? 72 * this.deltaSinceLastFrame
-        : 24 * this.deltaSinceLastFrame
-      rotSteps *= 3
-    }
-    if (this.inputSysSvc.controls['moveFwd']) {
-      this.player.velocity.add({
-        x: reverse * movSteps * this.cameraDirection.x,
-        y: 0,
-        z: reverse * movSteps * this.cameraDirection.z
-      })
-    }
-    if (this.inputSysSvc.controls['moveBck']) {
-      this.player.velocity.add({
-        x: reverse * movSteps * -this.cameraDirection.x,
-        y: 0,
-        z: reverse * movSteps * -this.cameraDirection.z
-      })
-    }
-    if (this.inputSysSvc.controls['turnLft']) {
-      if (this.inputSysSvc.controls['clip']) {
-        this.player.velocity.add({
-          x: reverse * movSteps * this.cameraDirection.z,
-          y: 0,
-          z: reverse * movSteps * -this.cameraDirection.x
-        })
-      } else {
-        this.player.rotation.y = radNormalized(
-          this.player.rotation.y + reverse * rotSteps
-        )
-      }
-    }
-    if (this.inputSysSvc.controls['turnRgt']) {
-      if (this.inputSysSvc.controls['clip']) {
-        this.player.velocity.add({
-          x: reverse * movSteps * -this.cameraDirection.z,
-          y: 0,
-          z: reverse * movSteps * this.cameraDirection.x
-        })
-      } else {
-        this.player.rotation.y = radNormalized(
-          this.player.rotation.y - reverse * rotSteps
-        )
-      }
-    }
-    if (this.inputSysSvc.controls['moveLft']) {
-      this.player.velocity.add({
-        x: reverse * movSteps * this.cameraDirection.z,
-        y: 0,
-        z: reverse * movSteps * -this.cameraDirection.x
-      })
-    }
-    if (this.inputSysSvc.controls['moveRgt']) {
-      this.player.velocity.add({
-        x: reverse * movSteps * -this.cameraDirection.z,
-        y: 0,
-        z: reverse * movSteps * this.cameraDirection.x
-      })
-    }
-    if (
-      this.inputSysSvc.controls['lookUp'] &&
-      this.player.rotation.x < Math.PI / 2
-    ) {
-      this.player.rotation.x += rotSteps
-    }
-    if (
-      this.inputSysSvc.controls['lookDwn'] &&
-      this.player.rotation.x > -Math.PI / 2
-    ) {
-      this.player.rotation.x -= rotSteps
-    }
-    if (this.inputSysSvc.controls['moveUp']) {
-      this.player.isFlying = true
-      this.player.velocity.add({x: 0, y: movSteps, z: 0})
-    }
-    if (this.inputSysSvc.controls['moveDwn']) {
-      this.player.isFlying = true
-      this.player.velocity.add({x: 0, y: -movSteps, z: 0})
-    }
-    if (this.inputSysSvc.controls['jmp'] && this.player.isOnFloor) {
-      this.player.position.setY(this.player.position.y + Player.CLIMB_HEIGHT)
-    }
-    const damping = Math.exp(-3 * this.deltaSinceLastFrame) - 1
-    if (this.player.isOnFloor) {
-      this.player.velocity.addScaledVector(this.player.velocity, damping)
-    } else if (!this.player.isFlying && !this.inputSysSvc.controls['clip']) {
-      this.player.velocity.y -= 30 * this.deltaSinceLastFrame
-    } else {
-      this.player.velocity.addScaledVector(this.player.velocity, damping)
-    }
-
     this.player.updatePosition(
       this.deltaSinceLastFrame,
+      this.cameraDirection,
+      reverse,
       this.getNearestChunks(),
       this.terrain
     )

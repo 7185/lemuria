@@ -13,6 +13,7 @@ export class World {
     bottom_color?: number[]
   }
   entry?: string = '0N 0W'
+  gravity?: number = 1
   light?: {
     fog?: {
       color?: number[]
@@ -42,6 +43,7 @@ export class World {
 
   constructor(params: World = {}) {
     this.entry = '0N 0W'
+    this.gravity = 1
     this.light = {
       fog: {
         color: [0, 0, 127],

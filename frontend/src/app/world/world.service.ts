@@ -63,6 +63,7 @@ interface WorldData {
   welcome?: string
   terrain?: TerrainData
   entry?: string
+  gravity?: number
   water?: WaterData
   light: LightData
 }
@@ -630,6 +631,7 @@ export class WorldService {
       Cache.clear()
     }
     this.propSvc.path.set(world.path)
+    this.engineSvc.gravity = world.gravity ?? 1
     this.terrainSvc.setTerrain(world?.terrain)
     this.terrainSvc.setWater(world?.water)
     this.skySvc.setSkybox(world.sky)

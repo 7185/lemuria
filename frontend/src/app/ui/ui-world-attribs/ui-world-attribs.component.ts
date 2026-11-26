@@ -14,6 +14,7 @@ import {
   faWater
 } from '@fortawesome/free-solid-svg-icons'
 import {provideTranslocoScope, TranslocoDirective} from '@jsverse/transloco'
+import {EngineService} from '../../engine/engine.service'
 import {colorHexToStr, colorStrToHex, hexToRgb} from '../../utils/utils'
 import {LightingService} from '../../world/lighting.service'
 import {SkyService} from '../../world/sky.service'
@@ -49,9 +50,11 @@ import {TerrainService} from '../../world/terrain.service'
 export class UiWorldAttribsComponent {
   protected readonly icon = {faMound, faPanorama, faSun, faWater}
   protected readonly skySvc = inject(SkyService)
+  private readonly engineSvc = inject(EngineService)
   private readonly terrainSvc = inject(TerrainService)
   private readonly lightingSvc = inject(LightingService)
 
+  protected gravity = signal(this.engineSvc.gravity)
   protected terrain = signal(this.terrainSvc.terrain != null)
   protected fog = signal(this.lightingSvc.worldFog?.enabled ?? false)
   protected terrainOffset = signal(this.terrainSvc.terrain?.position.y ?? 0)
@@ -104,6 +107,9 @@ export class UiWorldAttribsComponent {
         this.lightDirY(),
         this.lightDirZ()
       ]
+    })
+    effect(() => {
+      this.engineSvc.gravity = this.gravity()
     })
     effect(() => {
       this.terrainSvc.setTerrain({

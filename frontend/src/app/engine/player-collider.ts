@@ -18,60 +18,68 @@ const playerClimbHeight = environment.world.collider.climbHeight
 
 export class PlayerCollider {
   boxHeight: number
-  mainBox: Box3
-  topBox: Box3
-  bottomBox: Box3
   colliderBox: Group
   boxMaterial = new MeshBasicMaterial({
     color: 0x00ff00,
     wireframe: true
   })
 
+  boxCollision = false
+  feetCollision = false
+  climbHeight: number | null = null
+
+  private mainBox = new Box3()
+  private topBox = new Box3()
+  private bottomBox = new Box3()
   private rays: Ray[]
   private currentPos = new Vector3()
+  private stepPosY = 0
+  private currentOffsetY = 0
 
+  private tmpLocalPos = new Vector3()
   private tmpIntersect = new Vector3()
   private tmpBestIntersect = new Vector3()
+
+  private readonly shapecastCallbacks = {
+    intersectsBounds: (box: Box3) => box.intersectsBox(this.mainBox),
+    intersectsTriangle: (tri: Triangle) => {
+      if (this.topBox.intersectsTriangle(tri)) {
+        this.boxCollision = true
+        this.boxMaterial.color.setHex(0xff0000)
+      }
+
+      if (this.bottomBox.intersectsTriangle(tri)) {
+        this.feetCollision = true
+      }
+
+      const rayHit = this.raysIntersectTriangle(tri)
+      if (rayHit != null) {
+        const worldY = rayHit.y + this.currentOffsetY
+        if (worldY > this.stepPosY) {
+          if (!this.boxCollision) {
+            this.boxMaterial.color.setHex(0xffff00)
+          }
+          if (this.climbHeight == null || this.climbHeight < worldY) {
+            this.climbHeight = worldY
+          }
+        }
+      }
+    }
+  }
 
   constructor(boxHeight: number, pos = new Vector3()) {
     // We need to ensure the total collider height doesn't go too low
     this.boxHeight = Math.max(boxHeight, playerClimbHeight + 0.1)
 
-    this.mainBox = new Box3(
-      new Vector3(-playerHalfSide, 0, -playerHalfSide),
-      new Vector3(playerHalfSide, this.boxHeight, playerHalfSide)
-    )
-    this.topBox = new Box3(
-      new Vector3(-playerHalfSide, playerClimbHeight, -playerHalfSide),
-      new Vector3(playerHalfSide, this.boxHeight, playerHalfSide)
-    )
-    this.bottomBox = new Box3(
-      new Vector3(-playerHalfSide, 0, -playerHalfSide),
-      new Vector3(playerHalfSide, playerClimbHeight, playerHalfSide)
-    )
     const downward = new Vector3(0, -1, 0)
     this.rays = [
-      new Ray(new Vector3(0, this.boxHeight, 0), new Vector3(0, -1, 0)),
-      new Ray(
-        new Vector3(-playerHalfSide, this.boxHeight, -playerHalfSide),
-        downward
-      ),
-      new Ray(
-        new Vector3(-playerHalfSide, this.boxHeight, playerHalfSide),
-        downward
-      ),
-      new Ray(
-        new Vector3(playerHalfSide, this.boxHeight, playerHalfSide),
-        downward
-      ),
-      new Ray(
-        new Vector3(playerHalfSide, this.boxHeight, -playerHalfSide),
-        downward
-      )
+      new Ray(new Vector3(), downward),
+      new Ray(new Vector3(), downward),
+      new Ray(new Vector3(), downward),
+      new Ray(new Vector3(), downward),
+      new Ray(new Vector3(), downward)
     ]
-    this.currentPos.copy(pos)
-
-    this.translate(this.currentPos)
+    this.copyPos(pos)
   }
 
   static updateChunkBVH(chunk: Group) {
@@ -127,9 +135,58 @@ export class PlayerCollider {
     this.colliderBox = boundingBox
   }
 
-  raysIntersectTriangle(tri: Triangle): Vector3 {
+  resetStep(pos: Vector3): void {
+    this.currentPos.copy(pos)
+    this.stepPosY = pos.y
+    this.boxCollision = false
+    this.feetCollision = false
+    this.climbHeight = null
+    this.boxMaterial.color.setHex(0x00ff00)
+  }
+
+  testBoundsTree(
+    boundsTree: MeshBVH | null | undefined,
+    offset: Vector3
+  ): void {
+    if (boundsTree == null) {
+      return
+    }
+    this.currentOffsetY = offset.y
+    this.tmpLocalPos.subVectors(this.currentPos, offset)
+    this.setBoxesAt(this.tmpLocalPos)
+    boundsTree.shapecast(this.shapecastCallbacks)
+  }
+
+  copyPos(pos: Vector3): void {
+    this.currentPos.copy(pos)
+    this.setBoxesAt(this.currentPos)
+  }
+
+  private setBoxesAt(pos: Vector3): void {
+    const minX = pos.x - playerHalfSide
+    const maxX = pos.x + playerHalfSide
+    const minZ = pos.z - playerHalfSide
+    const maxZ = pos.z + playerHalfSide
+    const topY = pos.y + this.boxHeight
+    const climbY = pos.y + playerClimbHeight
+
+    this.mainBox.min.set(minX, pos.y, minZ)
+    this.mainBox.max.set(maxX, topY, maxZ)
+    this.topBox.min.set(minX, climbY, minZ)
+    this.topBox.max.set(maxX, topY, maxZ)
+    this.bottomBox.min.set(minX, pos.y, minZ)
+    this.bottomBox.max.set(maxX, climbY, maxZ)
+
+    this.rays[0].origin.set(pos.x, topY, pos.z)
+    this.rays[1].origin.set(minX, topY, minZ)
+    this.rays[2].origin.set(minX, topY, maxZ)
+    this.rays[3].origin.set(maxX, topY, maxZ)
+    this.rays[4].origin.set(maxX, topY, minZ)
+  }
+
+  private raysIntersectTriangle(tri: Triangle): Vector3 | null {
     let hasIntersection = false
-    this.rays.forEach((ray) => {
+    for (const ray of this.rays) {
       // If intersection occurs, result is stored in tmpIntersect
       if (
         ray.intersectTriangle(tri.a, tri.b, tri.c, true, this.tmpIntersect) &&
@@ -139,33 +196,9 @@ export class PlayerCollider {
         this.tmpBestIntersect.copy(this.tmpIntersect)
         hasIntersection = true
       }
-    })
+    }
     // Critical to only return the best intersect if the intersection
     // actually happened during this call
     return hasIntersection ? this.tmpBestIntersect : null
-  }
-
-  checkBoundsTree(
-    boundsTree: MeshBVH,
-    intersectsTriangle: (_: Triangle) => void
-  ): void {
-    boundsTree?.shapecast({
-      intersectsBounds: (box: Box3) => box.intersectsBox(this.mainBox),
-      intersectsTriangle
-    })
-  }
-
-  translate(delta: Vector3): void {
-    this.mainBox.translate(delta)
-    this.topBox.translate(delta)
-    this.bottomBox.translate(delta)
-    this.rays.forEach((ray) => {
-      ray.origin.add(delta)
-    })
-  }
-
-  copyPos(pos: Vector3): void {
-    this.translate(this.currentPos.subVectors(pos, this.currentPos))
-    this.currentPos.copy(pos)
   }
 }

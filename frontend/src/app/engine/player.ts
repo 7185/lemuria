@@ -1,4 +1,4 @@
-import type {LOD, Mesh, Triangle, Vector3Like} from 'three'
+import type {LOD, Mesh, Vector3Like} from 'three'
 import type {MeshBVH} from 'three-mesh-bvh'
 import {inject, signal} from '@angular/core'
 import {Group, Object3D, Vector3} from 'three'
@@ -10,22 +10,30 @@ import {InputSystemService} from './inputsystem.service'
 import {PlayerCollider} from './player-collider'
 
 export class Player {
-  static readonly CLIMB_HEIGHT = environment.world.collider.climbHeight
-  static readonly GROUND_ADJUST = environment.world.collider.groundAdjust
-  static readonly MAX_STEP_LENGTH = environment.world.collider.maxStepLength
-  static readonly MAX_NB_STEPS = environment.world.collider.maxNbSteps
+  private static readonly GROUND_ADJUST =
+    environment.world.collider.groundAdjust
+  private static readonly MAX_STEP_LENGTH =
+    environment.world.collider.maxStepLength
+  private static readonly MAX_NB_STEPS = environment.world.collider.maxNbSteps
+  private static readonly BASE_GRAVITY = environment.world.physics.baseGravity
+  private static readonly JUMP_VELOCITY = environment.world.physics.jumpVelocity
+  private static readonly MAX_FALL_SPEED =
+    environment.world.physics.maxFallSpeed
 
   private readonly inputSysSvc = inject(InputSystemService)
 
   avatar: Group
   state = 'idle'
   gesture: string | null = null
-  isFlying = false
-  isOnFloor = true
+  gravity = 1
   inWater = signal(false)
   collider: PlayerCollider
   entity: Object3D
-  velocity = new Vector3()
+
+  private isFlying = false
+  private isOnFloor = true
+  private wasJumping = false
+  private velocity = new Vector3()
 
   private tmpNewPosition = new Vector3()
   private tmpTerrainPageOffset = new Vector3()
@@ -68,23 +76,22 @@ export class Player {
     }
     this.position.copy(pos)
     this.setYaw(yaw)
+    this.velocity.set(0, 0, 0)
+    this.isOnFloor = true
   }
 
   setYaw(yaw: number) {
     this.entity.rotation.y = radNormalized(yaw * DEG + Math.PI)
   }
 
-  async updatePosition(
+  updatePosition(
     deltaSinceLastFrame: number,
+    cameraDirection: Vector3,
+    reverse: number,
     chunksToCheck: LOD[],
     terrain: Group
   ) {
-    this.velocity.setY(
-      this.isOnFloor && !this.isFlying
-        ? 0
-        : deltaSinceLastFrame * 0.01 + this.velocity.y
-    )
-
+    this.applyControls(deltaSinceLastFrame, cameraDirection, reverse)
     this.entity.updateMatrixWorld()
 
     const boxHeight: number = this.collider?.boxHeight
@@ -94,29 +101,30 @@ export class Player {
       .multiplyScalar(deltaSinceLastFrame)
     this.tmpNewPosition.copy(this.position).add(this.tmpDeltaPosition)
 
-    const animation: Promise<AvatarAnimationPlayer> =
+    const animation: AvatarAnimationPlayer | undefined =
       this.avatar.userData.animationPlayer
-    const velocity = this.inputSysSvc.controls['moveBck']
-      ? -this.velocity.length()
-      : this.velocity.length()
+    const totalSpeed = this.velocity.length()
+    const horizontalSpeed = Math.hypot(this.velocity.x, this.velocity.z)
+    const speed = this.inWater() || this.isFlying ? totalSpeed : horizontalSpeed
+    const velocity = this.inputSysSvc.controls['moveBck'] ? -speed : speed
 
     this.state = 'idle'
 
     if (this.inWater()) {
-      this.state = Math.abs(velocity) > 0.5 ? 'swim' : 'float'
+      this.state = totalSpeed > 0.5 ? 'swim' : 'float'
     } else if (this.isFlying) {
-      this.state = Math.abs(velocity) > 0.5 ? 'fly' : 'hover'
+      this.state = totalSpeed > 0.5 ? 'fly' : 'hover'
     } else if (this.velocity.y < -10 && !this.isOnFloor) {
       this.state = 'fall'
-    } else if (Math.abs(velocity) > 5.5) {
+    } else if (horizontalSpeed > 5.5) {
       this.state = 'run'
-    } else if (Math.abs(velocity) > 0.1) {
+    } else if (horizontalSpeed > 0.1) {
       this.state = 'walk'
     }
 
     // When applicable: reset gesture on completion
     if (
-      (await animation)?.animate(
+      animation?.animate(
         deltaSinceLastFrame,
         this.state,
         this.gesture,
@@ -166,6 +174,96 @@ export class Player {
     }
   }
 
+  private applyControls(
+    deltaSinceLastFrame: number,
+    cameraDirection: Vector3,
+    reverse: number
+  ) {
+    const controls = this.inputSysSvc.controls
+    let movSteps = 12 * deltaSinceLastFrame
+    let rotSteps = 1.5 * deltaSinceLastFrame
+    if (controls['run']) {
+      movSteps = this.isFlying
+        ? 72 * deltaSinceLastFrame
+        : 24 * deltaSinceLastFrame
+      rotSteps *= 3
+    }
+    const dirX = reverse * movSteps * cameraDirection.x
+    const dirZ = reverse * movSteps * cameraDirection.z
+    const sideX = reverse * movSteps * cameraDirection.z
+    const sideZ = reverse * movSteps * -cameraDirection.x
+
+    if (controls['moveFwd']) {
+      this.velocity.x += dirX
+      this.velocity.z += dirZ
+    }
+    if (controls['moveBck']) {
+      this.velocity.x -= dirX
+      this.velocity.z -= dirZ
+    }
+    if (controls['turnLft']) {
+      if (controls['clip']) {
+        this.velocity.x += sideX
+        this.velocity.z += sideZ
+      } else {
+        this.rotation.y = radNormalized(this.rotation.y + reverse * rotSteps)
+      }
+    }
+    if (controls['turnRgt']) {
+      if (controls['clip']) {
+        this.velocity.x -= sideX
+        this.velocity.z -= sideZ
+      } else {
+        this.rotation.y = radNormalized(this.rotation.y - reverse * rotSteps)
+      }
+    }
+    if (controls['moveLft']) {
+      this.velocity.x += sideX
+      this.velocity.z += sideZ
+    }
+    if (controls['moveRgt']) {
+      this.velocity.x -= sideX
+      this.velocity.z -= sideZ
+    }
+    if (controls['lookUp'] && this.rotation.x < Math.PI / 2) {
+      this.rotation.x += rotSteps
+    }
+    if (controls['lookDwn'] && this.rotation.x > -Math.PI / 2) {
+      this.rotation.x -= rotSteps
+    }
+    if (controls['moveUp']) {
+      this.isFlying = true
+      this.velocity.y += movSteps
+    }
+    if (controls['moveDwn']) {
+      this.isFlying = true
+      this.velocity.y -= movSteps
+    }
+
+    const isJumping = controls['jmp']
+    if (isJumping && !this.wasJumping && this.isOnFloor) {
+      this.velocity.y = Player.JUMP_VELOCITY
+      this.isOnFloor = false
+    }
+    this.wasJumping = isJumping
+
+    const damping = Math.exp(-3 * deltaSinceLastFrame) - 1
+    this.velocity.x += this.velocity.x * damping
+    this.velocity.z += this.velocity.z * damping
+    if (this.isFlying || controls['clip']) {
+      this.velocity.y += this.velocity.y * damping
+    } else if (!this.isOnFloor || this.gravity < 0) {
+      const gravityAccel = Player.BASE_GRAVITY * this.gravity
+      this.velocity.y = Math.max(
+        -Player.MAX_FALL_SPEED,
+        Math.min(
+          Player.MAX_FALL_SPEED,
+          this.velocity.y - gravityAccel * deltaSinceLastFrame
+        )
+      )
+    }
+  }
+
   private stepPosition(
     delta: Vector3,
     originalDelta: Vector3,
@@ -174,94 +272,51 @@ export class Player {
   ): boolean {
     this.tmpOldPosition.copy(this.position)
     this.tmpNewPosition.copy(this.tmpOldPosition).add(delta)
-
-    this.collider.copyPos(this.tmpNewPosition)
-    this.collider.boxMaterial?.color.setHex(0x00ff00)
-
-    let climbHeight = null
-    let minHeight = null
-    let boxCollision = false
-    let feetCollision = false
-    // Terrain is not being checked for collision yet
-    let checkTerrain = 0
-
-    const intersectsTriangle = (tri: Triangle) => {
-      // Check if the triangle is intersecting the boundingBox and later adjust the
-      // boundingBox position if it is.
-
-      const collision = this.collider.topBox.intersectsTriangle(tri)
-      const rayIntersectionPoint = this.collider.raysIntersectTriangle(tri)
-
-      feetCollision = this.collider.bottomBox.intersectsTriangle(tri)
-
-      if (collision) {
-        boxCollision = true
-        this.collider.boxMaterial?.color.setHex(0xff0000)
-      }
-
-      if (
-        rayIntersectionPoint != null &&
-        // Add terrain offset if needed
-        rayIntersectionPoint.y + checkTerrain * (terrain?.position.y ?? 0) >
-          this.tmpNewPosition.y
-      ) {
-        this.collider.boxMaterial?.color.setHex(0xffff00)
-
-        if (climbHeight == null || climbHeight < rayIntersectionPoint.y) {
-          climbHeight = rayIntersectionPoint.y
-        }
-
-        if (minHeight == null || minHeight < rayIntersectionPoint.y) {
-          minHeight = rayIntersectionPoint.y
-        }
-      }
-    }
+    this.collider.resetStep(this.tmpNewPosition)
 
     // We expect maximum 9 LODs to be available to test collision: the one the player
     // stands in and the 8 neighbouring ones (sides and corners)
     for (const lod of chunksToCheck) {
-      const lodOffset = lod.position
-      this.collider.translate(lodOffset.negate())
-      this.collider.checkBoundsTree(lod.userData.boundsTree, intersectsTriangle)
-      this.collider.translate(lodOffset.negate())
+      this.collider.testBoundsTree(lod.userData.boundsTree, lod.position)
+      if (this.collider.boxCollision) {
+        break
+      }
     }
 
-    // Since the pages are centered, we need to add an offset
-    const centerOffset = (TERRAIN_PAGE_SIZE * 10) / 2
-    const pageX = Math.floor(
-      (this.tmpNewPosition.x + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
-    )
-    const pageZ = Math.floor(
-      (this.tmpNewPosition.z + centerOffset) / (TERRAIN_PAGE_SIZE * 10)
-    )
-    const terrainPage = terrain?.getObjectByName(`${pageX}_${pageZ}`) as Mesh
-
-    if (climbHeight == null && terrainPage != null) {
-      // Terrain is now being checked for collision
-      checkTerrain = +!!terrain
-      this.tmpTerrainPageOffset
-        .copy(terrainPage.position)
-        .setY(terrain.position.y)
-      this.collider.translate(this.tmpTerrainPageOffset.negate())
-      this.collider.checkBoundsTree(
-        terrainPage.geometry.boundsTree as MeshBVH,
-        intersectsTriangle
+    if (!this.collider.boxCollision && terrain != null) {
+      // Since the pages are centered, we need to add an offset
+      const pageSize = TERRAIN_PAGE_SIZE * 10
+      const centerOffset = pageSize / 2
+      const pageX = Math.floor(
+        (this.tmpNewPosition.x + centerOffset) / pageSize
       )
-      this.collider.translate(this.tmpTerrainPageOffset.negate())
+      const pageZ = Math.floor(
+        (this.tmpNewPosition.z + centerOffset) / pageSize
+      )
+      const terrainPage = terrain.getObjectByName(`${pageX}_${pageZ}`) as Mesh
+      if (terrainPage != null) {
+        this.tmpTerrainPageOffset
+          .copy(terrainPage.position)
+          .setY(terrain.position.y)
+        this.collider.testBoundsTree(
+          terrainPage.geometry.boundsTree as MeshBVH,
+          this.tmpTerrainPageOffset
+        )
+      }
     }
 
-    if (boxCollision) {
+    if (this.collider.boxCollision) {
       this.velocity.set(0, 0, 0)
       this.collider.copyPos(this.tmpOldPosition)
       this.position.copy(this.tmpOldPosition)
       return false
     }
 
-    if (this.velocity.y <= 0 && climbHeight !== null) {
+    const {climbHeight, feetCollision} = this.collider
+
+    if (this.velocity.y <= 0 && climbHeight != null) {
       // Player is on floor
       this.velocity.setY(0)
-      // Add terrain offset if needed
-      climbHeight += checkTerrain * terrain.position.y
       this.tmpNewPosition.setY(climbHeight - Player.GROUND_ADJUST)
       this.isOnFloor = true
       this.isFlying = false
@@ -270,17 +325,7 @@ export class Player {
     }
 
     if (
-      this.velocity.y > 0 &&
-      minHeight !== null &&
-      climbHeight !== minHeight
-    ) {
-      // Player hits the ceiling
-      this.velocity.setY(0)
-      this.tmpNewPosition.setY(minHeight - Player.GROUND_ADJUST)
-    }
-
-    if (
-      climbHeight === null &&
+      climbHeight == null &&
       feetCollision &&
       this.tmpNewPosition.y + Player.GROUND_ADJUST < this.tmpOldPosition.y
     ) {
@@ -289,7 +334,7 @@ export class Player {
       this.tmpNewPosition.setY(this.tmpOldPosition.y)
     }
 
-    if (feetCollision) {
+    if (feetCollision && this.velocity.y <= 0) {
       this.isFlying = false
       if (originalDelta.y < 0) {
         originalDelta.setY(0)

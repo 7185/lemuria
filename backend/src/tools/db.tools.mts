@@ -58,6 +58,7 @@ const worldAttr: Record<number, string> = {
   130: 'terrain.ambient',
   131: 'terrain.diffuse',
   132: 'water.under_view',
+  139: 'gravity',
   141: 'terrain.offset'
 }
 
