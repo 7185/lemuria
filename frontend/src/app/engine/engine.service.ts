@@ -4,6 +4,7 @@ import {inject, Service, signal} from '@angular/core'
 import {toObservable} from '@angular/core/rxjs-interop'
 import {fromEvent, timer} from 'rxjs'
 import {
+  Box3,
   BufferGeometry,
   Cache,
   Color,
@@ -38,7 +39,7 @@ import type {PressedKey} from './inputsystem.service'
 import {environment} from '../../environments/environment'
 import {PropAnimationService} from '../animation'
 import {UserService} from '../user'
-import {DEG, EYE_LEVEL, ZERO_VEC} from '../utils/constants'
+import {DEG, ZERO_VEC} from '../utils/constants'
 import {
   disposeGroupGeometries,
   disposeGroupMaterials,
@@ -151,9 +152,13 @@ export class EngineService {
   private animatedObjects = new Set<Group>()
   private litObjects = new Set<Group>()
   private sonicObjects = new Set<Group>()
+  private bumpObjects = new Set<Group>()
+  private bumpedObjects = new Set<Group>()
   private pointLights: PointLight[] = []
 
   private mouseIdle = 0
+  private pointerDirty = true
+  private lastPointedProp: Group | null = null
   private labelDesc: HTMLDivElement | undefined
 
   private chunkTile: [number, number] = [0, 0]
@@ -188,6 +193,8 @@ export class EngineService {
   private tmpPrevUserPos = new Vector3()
   private tmpSpritePos = new Vector3()
   private tmpCamToSprite = new Vector3()
+  private tmpPlayerBumpBox = new Box3()
+  private tmpPropBumpBox = new Box3()
 
   constructor() {
     this.raycaster.firstHitOnly = true
@@ -298,6 +305,10 @@ export class EngineService {
   clearObjects() {
     this.buildSvc.deselectCell()
     this.buildSvc.deselectProp()
+    this.bumpObjects.clear()
+    this.bumpedObjects.clear()
+    this.lastPointedProp = null
+    this.pointerDirty = true
     // Children is a dynamic iterable, we need a copy to get all of them
     for (const prop of [...this.objectsNode.children]) {
       this.removeObject(prop as Group)
@@ -324,8 +335,11 @@ export class EngineService {
     }
   }
 
-  updateBoundingBox() {
-    const boxHeight = this.camera.position.y / EYE_LEVEL
+  updateBoundingBox(height?: number) {
+    const boxHeight =
+      height ??
+      (this.player.avatar.userData.height as number | undefined) ??
+      1.7
     this.player.resetCollider(boxHeight)
 
     if (!environment.debug) {
@@ -419,6 +433,7 @@ export class EngineService {
       `${chunk.userData.world.chunk.x}_${chunk.userData.world.chunk.z}`,
       chunk
     )
+    this.pointerDirty = true
   }
 
   setChunksDistance(meters: number) {
@@ -480,6 +495,7 @@ export class EngineService {
       // Regenerate boundsTree
       chunk.userData.bvhUpdate.next()
     }
+    this.pointerDirty = true
   }
 
   removeLight(light: PointLight) {
@@ -560,6 +576,7 @@ export class EngineService {
     )
     fromEvent(this.canvas, 'mousemove').subscribe((e: MouseEvent) => {
       this.mouseIdle = 0
+      this.pointerDirty = true
       this.mouse.x = (e.clientX / globalThis.innerWidth) * 2 - 1
       this.mouse.y = -(e.clientY / globalThis.innerHeight) * 2 + 1
     })
@@ -603,11 +620,15 @@ export class EngineService {
     })
     timer(0, 100).subscribe(() => {
       this.mouseIdle++
-      document.body.style.cursor = 'default'
-      const prop = this.pointedProp().obj
-      if (prop?.userData?.activate != null) {
-        document.body.style.cursor = 'pointer'
+      if (this.pointerDirty) {
+        this.pointerDirty = false
+        this.lastPointedProp = this.pointedProp().obj
+        document.body.style.cursor =
+          this.lastPointedProp?.userData?.activate != null
+            ? 'pointer'
+            : 'default'
       }
+      const prop = this.lastPointedProp
       if (this.mouseIdle >= 10) {
         if (prop !== this.hoveredObject) {
           this.labelDesc.style.display = 'none'
@@ -635,6 +656,7 @@ export class EngineService {
       this.activeCamera = this.cameras[cameraType]
     }
     this.player.avatar.visible = this.activeCamera !== this.camera
+    this.pointerDirty = true
   }
 
   setPlayerPos(pos: Vector3Like | string, yaw = 0): void {
@@ -671,6 +693,9 @@ export class EngineService {
     this.animatedObjects.delete(group)
     this.litObjects.delete(group)
     this.sonicObjects.delete(group)
+    this.bumpObjects.delete(group)
+    this.bumpedObjects.delete(group)
+    delete group.userData.bumpBox
   }
 
   private handleShownProp(group: Group) {
@@ -693,6 +718,14 @@ export class EngineService {
     }
     if (group.userData.sound != null) {
       this.sonicObjects.add(group)
+    }
+    if (group.userData.bump != null) {
+      this.bumpObjects.add(group)
+      delete group.userData.bumpBox
+    } else {
+      this.bumpObjects.delete(group)
+      this.bumpedObjects.delete(group)
+      delete group.userData.bumpBox
     }
     if (group.userData.notSolid === true) {
       // Regenerate boundsTree
@@ -798,10 +831,17 @@ export class EngineService {
 
   private pointedProp() {
     this.raycaster.setFromCamera(this.mouse, this.activeCamera)
-    const intersects = this.raycaster.intersectObjects(
-      this.objectsNode.children.concat(this.terrain ?? []),
-      true
-    )
+    const targets: Object3D[] = []
+    for (const lod of this.objectsNode.children as LOD[]) {
+      const chunk = lod.levels[0]?.object
+      if (chunk?.visible) {
+        targets.push(chunk)
+      }
+    }
+    if (this.terrain != null) {
+      targets.push(this.terrain)
+    }
+    const intersects = this.raycaster.intersectObjects(targets, true)
     for (const i of intersects) {
       let obj = i.object
       while (
@@ -867,6 +907,76 @@ export class EngineService {
     } else {
       this.buildSvc.selectProp(obj, this.buildNode)
     }
+  }
+
+  private checkBumps() {
+    if (this.bumpObjects.size === 0 || this.player.collider == null) {
+      return
+    }
+    if (this.inputSysSvc.controls['clip']) {
+      this.bumpedObjects.clear()
+      return
+    }
+
+    const halfSide = environment.world.collider.boxSide / 2 + 0.05
+    const pos = this.player.position
+    this.tmpPlayerBumpBox.min.set(
+      pos.x - halfSide,
+      pos.y - 0.05,
+      pos.z - halfSide
+    )
+    this.tmpPlayerBumpBox.max.set(
+      pos.x + halfSide,
+      pos.y + this.player.collider.boxHeight,
+      pos.z + halfSide
+    )
+
+    for (const prop of this.bumpObjects) {
+      if (prop.parent == null || !prop.parent.visible) {
+        this.bumpedObjects.delete(prop)
+        continue
+      }
+      let propBox = prop.userData.bumpBox as Box3 | undefined
+      const isMoving = prop.userData.animation?.move != null
+      if (propBox == null || isMoving) {
+        this.tmpPropBumpBox.setFromObject(prop)
+        if (!isMoving) {
+          propBox = this.tmpPropBumpBox.clone()
+          prop.userData.bumpBox = propBox
+        } else {
+          propBox = this.tmpPropBumpBox
+        }
+      }
+      if (this.tmpPlayerBumpBox.intersectsBox(propBox)) {
+        if (!this.bumpedObjects.has(prop)) {
+          this.bumpedObjects.add(prop)
+          this.triggerBump(prop)
+          if (prop.userData.bump?.teleport != null) {
+            break
+          }
+        }
+      } else {
+        this.bumpedObjects.delete(prop)
+      }
+    }
+  }
+
+  private triggerBump(prop: Group) {
+    const bump = prop.userData.bump
+    if (bump == null) {
+      return
+    }
+    if (bump.teleport != null) {
+      this.propActionSvc.teleportPlayer(
+        bump.teleport,
+        this.player.position,
+        this.yaw
+      )
+    }
+    prop.userData.onBump(() => {
+      // Needed since the prop's state might have just changed
+      this.handleShownProp(prop)
+    })
   }
 
   private updateSound() {
@@ -943,6 +1053,7 @@ export class EngineService {
       this.getNearestChunks(),
       this.terrain
     )
+    this.checkBumps()
     if (
       Math.abs(this.playerPosition().x - this.player.position.x) > 1e-3 ||
       Math.abs(this.playerPosition().y - this.player.position.y) > 1e-3 ||
@@ -953,6 +1064,7 @@ export class EngineService {
         y: this.player.position.y,
         z: this.player.position.z
       })
+      this.pointerDirty = true
       this.updateLODs()
     }
     this.rotateSprites()
@@ -992,7 +1104,7 @@ export class EngineService {
     }
   }
 
-  private async moveUsers() {
+  private moveUsers() {
     for (const u of this.userSvc.userList()) {
       const user = this.usersNode.getObjectByName(u.id)
       if (user == null) {
@@ -1005,17 +1117,13 @@ export class EngineService {
         u.oldY + (u.y - u.oldY) * u.completion,
         u.oldZ + (u.z - u.oldZ) * u.completion
       )
-      if (user.userData.offsetY != null) {
-        // when the avatar is not loaded yet, the position should not be corrected
-        user.position.setY(user.position.y + user.userData.offsetY)
-      }
       user.rotation.set(
         u.oldRoll + shortestAngle(u.oldRoll, u.roll) * u.completion,
         u.oldYaw + shortestAngle(u.oldYaw, u.yaw) * u.completion,
         0,
         'YZX'
       )
-      const animation: Promise<AvatarAnimationPlayer> =
+      const animation: AvatarAnimationPlayer | undefined =
         user.userData.animationPlayer
       // Velocity is 0 if completion is done
       const velocity =
@@ -1025,7 +1133,7 @@ export class EngineService {
           : 0
       // Disable gesture if animation is complete
       if (
-        (await animation)?.animate(
+        animation?.animate(
           this.deltaSinceLastFrame,
           u.state,
           u.gesture,
@@ -1040,10 +1148,7 @@ export class EngineService {
         return
       }
       div.position.copy(user.position)
-      div.position.y +=
-        user.userData.height > 1.1
-          ? user.userData.height / 2
-          : user.userData.height
+      div.position.y += user.userData.height ?? 0
     }
   }
 
@@ -1074,6 +1179,7 @@ export class EngineService {
 
     this.spriteRotation.y = targetY
     this.spriteRotationXYZ.set(targetX, targetY, 0)
+    this.pointerDirty = true
 
     for (const prop of this.sprites) {
       this.alignSprite(prop, prop.userData.rwx.axisAlignment)

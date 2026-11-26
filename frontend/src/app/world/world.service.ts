@@ -17,7 +17,7 @@ import {
   throwError,
   toArray
 } from 'rxjs'
-import {Box3, Cache, Euler, Group, LOD, Vector3} from 'three'
+import {Box3, Cache, Group, LOD, Vector3} from 'three'
 import type {AvatarAnimationManager} from '../animation'
 import type {User} from '../user'
 import type {LightData} from './lighting.service'
@@ -390,25 +390,44 @@ export class WorldService {
     }
     name = modelName(name)
     this.propSvc.loadAvatar(name).subscribe(async (o) => {
-      o.rotation.copy(new Euler(0, Math.PI, 0))
-      group.parent!.updateMatrixWorld()
-      group.position.setY(group.parent!.position.y)
+      o.rotation.set(0, Math.PI, 0)
+      o.updateMatrixWorld(true)
+
+      const box = new Box3().setFromObject(o)
+      const height = box.max.y - box.min.y
+      // Anchor feet at y = 0 and center horizontally on group origin
+      o.position.set(
+        -(box.min.x + box.max.x) / 2,
+        -box.min.y,
+        -(box.min.z + box.max.z) / 2
+      )
+      o.updateMatrixWorld(true)
+
+      let eyeHeight = height * EYE_LEVEL
+      let headGroup: Object3D | null = null
+      o.traverse((child) => {
+        if (Number(child.userData?.rwx?.tag) === 4) {
+          headGroup = child
+        }
+      })
+      if (headGroup != null) {
+        const headBox = new Box3().setFromObject(headGroup)
+        if (!headBox.isEmpty() && headBox.max.y > 0) {
+          eyeHeight = (headBox.min.y + headBox.max.y) / 2
+        }
+      }
+
       disposeGroupMaterials(group)
       disposeGroupGeometries(group)
-      group.clear().add(o.clone())
-      const box = new Box3().setFromObject(group)
-      group.userData.height = box.max.y - box.min.y
-      group.userData.offsetY = group.position.y - box.min.y
+      group.clear().add(o)
+      group.userData.height = height
       group.userData.animationPlayer = (
         await animationMgr
       ).spawnAnimationPlayer(group)
       if (group.name === 'avatar') {
-        this.engineSvc.setCameraOffset(group.userData.height * EYE_LEVEL)
-        this.engineSvc.updateBoundingBox()
-        group.position.setY(group.position.y + group.userData.offsetY)
-      } else {
-        const user = this.userSvc.getUser(group.name)
-        group.position.setY(user.y + group.userData.offsetY)
+        group.position.set(0, 0, 0)
+        this.engineSvc.setCameraOffset(eyeHeight)
+        this.engineSvc.updateBoundingBox(height)
       }
     })
   }

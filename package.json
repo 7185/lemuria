@@ -12,7 +12,7 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^24.19.2",
+    "@types/node": "^24.19.4",
     "eslint": "^10.15.0",
     "oxfmt": "^0.75.0",
     "typescript": "^6.0.3",

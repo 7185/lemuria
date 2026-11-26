@@ -60,6 +60,10 @@ export class BuildService {
       this.propActionSvc.clickProp(prop)
       clicked()
     }
+    prop.userData.onBump = (bumped: () => void) => {
+      this.propActionSvc.bumpProp(prop)
+      bumped()
+    }
     prop.userData.onUpdate = () => Function.prototype
   }
 

@@ -15,7 +15,8 @@ interface Frame {
 const transitionDuration = 0.1
 
 export class AvatarAnimationPlayer {
-  private avatarView = {}
+  private avatarView: Record<string, Group> = {}
+  private restPositions: Record<string, Vector3> = {}
   private currentState: AnimationEntry = {
     name: 'idle',
     velocityMultiplier: 1
@@ -196,11 +197,13 @@ export class AvatarAnimationPlayer {
 
   reset() {
     // Reset the state of the avatar
-    for (const entry of Object.entries<Group>(this.avatarView)) {
-      entry[1].setRotationFromQuaternion(new Quaternion())
+    for (const [tag, joint] of Object.entries(this.avatarView)) {
+      joint.setRotationFromQuaternion(new Quaternion())
+      const restPos = this.restPositions[tag]
+      if (restPos != null) {
+        joint.position.copy(restPos)
+      }
     }
-
-    this.avatarView['1']?.position.set(0, 0, 0)
   }
 
   makeNullFrame(): Frame {
@@ -327,7 +330,12 @@ export class AvatarAnimationPlayer {
     }
 
     if (updateLocation && this.avatarView[rootJointTag] !== undefined) {
-      this.avatarView[rootJointTag].position.copy(frame.location)
+      const restPos = this.restPositions[rootJointTag]
+      if (restPos != null) {
+        this.avatarView[rootJointTag].position.copy(restPos).add(frame.location)
+      } else {
+        this.avatarView[rootJointTag].position.copy(frame.location)
+      }
     }
 
     return false
@@ -335,7 +343,9 @@ export class AvatarAnimationPlayer {
 
   private populateAvatarViewRecursive(threeNode: Group) {
     if (threeNode.userData?.rwx?.tag) {
-      this.avatarView[threeNode.userData.rwx.tag] = threeNode
+      const tag = threeNode.userData.rwx.tag
+      this.avatarView[tag] = threeNode
+      this.restPositions[tag] = threeNode.position.clone()
     }
 
     threeNode.children.forEach((child) => {

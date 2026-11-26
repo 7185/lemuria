@@ -105,6 +105,14 @@ export class PropActionService {
     this.triggerAction(prop, 'activate')
   }
 
+  /**
+   * Called once a prop is bumped by the player
+   * @param prop
+   */
+  bumpProp(prop: Group) {
+    this.triggerAction(prop, 'bump')
+  }
+
   async parseActions(prop: Group) {
     this.resetActions(prop)
     try {
