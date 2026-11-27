@@ -12,12 +12,19 @@
         {{ t('ground') }}
       </ng-template>
       <div class="tab-content">
-        <mat-checkbox [(ngModel)]="terrain">{{
-          t('enableTerrain')
-        }}</mat-checkbox>
+        <mat-checkbox
+          [ngModel]="terrain()"
+          (ngModelChange)="updateTerrainEnabled($event)"
+          >{{ t('enableTerrain') }}</mat-checkbox
+        >
         <mat-form-field appearance="outline">
           <mat-label>{{ t('terrainOffset') }}</mat-label>
-          <input matInput type="number" [(ngModel)]="terrainOffset" />
+          <input
+            matInput
+            type="number"
+            [ngModel]="terrainOffset()"
+            (ngModelChange)="updateTerrainOffset($event)"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ t('gravity') }}</mat-label>
@@ -116,18 +123,37 @@
         {{ t('water') }}
       </ng-template>
       <div class="tab-content">
-        <mat-checkbox [(ngModel)]="water">{{ t('enableWater') }}</mat-checkbox>
+        <mat-checkbox
+          [ngModel]="water()"
+          (ngModelChange)="water.set($event); updateWater()"
+          >{{ t('enableWater') }}</mat-checkbox
+        >
         <mat-form-field appearance="outline">
           <mat-label>{{ t('topTexture') }}</mat-label>
-          <input matInput type="text" [(ngModel)]="waterTextureTop" />
+          <input
+            matInput
+            type="text"
+            [ngModel]="waterTextureTop()"
+            (ngModelChange)="waterTextureTop.set($event); updateWater()"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ t('bottomTexture') }}</mat-label>
-          <input matInput type="text" [(ngModel)]="waterTextureBottom" />
+          <input
+            matInput
+            type="text"
+            [ngModel]="waterTextureBottom()"
+            (ngModelChange)="waterTextureBottom.set($event); updateWater()"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ t('color') }}</mat-label>
-          <input matInput type="color" [(ngModel)]="waterColor" />
+          <input
+            matInput
+            type="color"
+            [ngModel]="waterColor()"
+            (ngModelChange)="waterColor.set($event); updateWater()"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ t('opacity') }}</mat-label>
@@ -136,16 +162,27 @@
             type="number"
             min="0"
             max="255"
-            [(ngModel)]="waterOpacity"
+            [ngModel]="waterOpacity()"
+            (ngModelChange)="waterOpacity.set($event); updateWater()"
           />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ t('waterLevel') }}</mat-label>
-          <input matInput type="number" [(ngModel)]="waterLevel" />
+          <input
+            matInput
+            type="number"
+            [ngModel]="waterLevel()"
+            (ngModelChange)="waterLevel.set($event); updateWater()"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ t('waterUnderView') }}</mat-label>
-          <input matInput type="number" [(ngModel)]="waterUnderView" />
+          <input
+            matInput
+            type="number"
+            [ngModel]="waterUnderView()"
+            (ngModelChange)="waterUnderView.set($event); updateWater()"
+          />
         </mat-form-field>
       </div>
     </mat-tab>

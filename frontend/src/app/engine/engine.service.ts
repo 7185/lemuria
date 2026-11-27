@@ -134,6 +134,7 @@ export class EngineService {
   private player = new Player()
 
   private frameId: number = null
+  private coronaFrameCount = 0
   private deltaFps = 0
   private deltaSinceLastFrame = 0
   private animationElapsed = 0
@@ -1078,7 +1079,7 @@ export class EngineService {
       10 + this.player.position.z
     )
 
-    if (this.frameId % 3 === 0 && this.coronaObjects.size > 0) {
+    if (++this.coronaFrameCount % 3 === 0 && this.coronaObjects.size > 0) {
       // Skip some frames because this causes heavy
       // raycasting just to check corona visibility
       this.updateCoronas()
@@ -1202,6 +1203,8 @@ export class EngineService {
       targets.push(this.terrain)
     }
 
+    this.raycaster.camera = this.activeCamera
+
     for (const prop of this.coronaObjects) {
       const corona = prop.userData.coronaObj as Sprite | undefined
       if (corona == null) {
@@ -1229,14 +1232,14 @@ export class EngineService {
     this.raycaster.set(this.cameraPosition, this.tmpCamToSprite)
     this.raycaster.far = distance
 
-    // Ignore the current prop and corona during raycasting to prevent self-intersection
+    // Ignore sprites and the corona's own prop
     const ignoreList = getMeshes(corona.parent!)
     const intersects = this.raycaster
       .intersectObjects(targets, true)
       .filter(
         (intersect) =>
-          intersect.object !== corona &&
-          !ignoreList.includes(intersect.object as Mesh)
+          intersect.object instanceof Mesh &&
+          !ignoreList.includes(intersect.object)
       )
 
     this.raycaster.far = Infinity

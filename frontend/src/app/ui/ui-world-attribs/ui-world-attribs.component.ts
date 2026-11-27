@@ -19,6 +19,7 @@ import {colorHexToStr, colorStrToHex, hexToRgb} from '../../utils/utils'
 import {LightingService} from '../../world/lighting.service'
 import {SkyService} from '../../world/sky.service'
 import {TerrainService} from '../../world/terrain.service'
+import {WorldService} from '../../world/world.service'
 
 @Component({
   imports: [
@@ -53,6 +54,7 @@ export class UiWorldAttribsComponent {
   private readonly engineSvc = inject(EngineService)
   private readonly terrainSvc = inject(TerrainService)
   private readonly lightingSvc = inject(LightingService)
+  private readonly worldSvc = inject(WorldService)
 
   protected gravity = signal(this.engineSvc.gravity)
   protected terrain = signal(this.terrainSvc.terrain != null)
@@ -111,22 +113,36 @@ export class UiWorldAttribsComponent {
     effect(() => {
       this.engineSvc.gravity = this.gravity()
     })
-    effect(() => {
-      this.terrainSvc.setTerrain({
-        enabled: this.terrain(),
-        offset: this.terrainOffset()
-      })
+  }
+
+  updateTerrainEnabled(enabled: boolean) {
+    this.terrain.set(enabled)
+    this.terrainSvc.setTerrain({enabled, offset: this.terrainOffset()})
+    if (enabled) {
+      const pos = this.engineSvc.playerPosition()
+      this.terrainSvc.getTerrainPages(pos.x, pos.z, 1, this.worldSvc.worldId())
+    }
+  }
+
+  updateTerrainOffset(offset: number) {
+    this.terrainOffset.set(offset)
+    this.terrainSvc.setTerrainOffset(offset)
+  }
+
+  updateWater() {
+    const wasDisabled = this.terrainSvc.water == null
+    this.terrainSvc.setWater({
+      enabled: this.water(),
+      color: hexToRgb(colorStrToHex(this.waterColor())),
+      offset: this.waterLevel(),
+      opacity: this.waterOpacity(),
+      texture_bottom: this.waterTextureBottom(),
+      texture_top: this.waterTextureTop(),
+      under_view: this.waterUnderView()
     })
-    effect(() => {
-      this.terrainSvc.setWater({
-        enabled: this.water(),
-        color: hexToRgb(colorStrToHex(this.waterColor())),
-        offset: this.waterLevel(),
-        opacity: this.waterOpacity(),
-        texture_bottom: this.waterTextureBottom(),
-        texture_top: this.waterTextureTop(),
-        under_view: this.waterUnderView()
-      })
-    })
+    if (wasDisabled && this.water()) {
+      const pos = this.engineSvc.playerPosition()
+      this.terrainSvc.getTerrainPages(pos.x, pos.z, 1, this.worldSvc.worldId())
+    }
   }
 }

@@ -7,7 +7,6 @@ import {forkJoin, from, map} from 'rxjs'
 import {
   BufferAttribute,
   ClampToEdgeWrapping,
-  Color,
   Group,
   ImageBitmapLoader,
   Mesh,
@@ -68,7 +67,7 @@ export class TerrainService {
   private waterTopGeom: PlaneGeometry | null = null
   private waterBottomMaterials: MeshLambertMaterial[] = []
   private waterTopMaterials: MeshLambertMaterial[] = []
-  private loadingPages = new Set()
+  private loadingPages = new Set<string>()
 
   constructor() {
     this.buildSvc.cellControl.subscribe(({action, cameraDirection}) => {
@@ -82,112 +81,132 @@ export class TerrainService {
     })
   }
 
-  setWater(water: WaterData | null = null) {
-    if (this.water != null) {
+  setWater(water: WaterData | null = null, reset = false) {
+    if ((!water?.enabled || reset) && this.water != null) {
       this.engineSvc.removeWorldObject(this.water)
+      this.water = null
     }
     if (!water?.enabled) {
-      this.water = null
       return
     }
-    this.water = new Group()
-    this.water.name = 'water'
-    this.water.userData.under_view = water.under_view ?? 120
-    this.water.userData.color = rgbToHex(
-      ...((water?.color || [0, 255, 255]) as [number, number, number])
+
+    const color = rgbToHex(
+      ...((water.color || [0, 255, 255]) as [number, number, number])
     )
+    const opacity = water.opacity ?? 128
+
+    if (this.water == null) {
+      this.water = new Group()
+      this.water.name = 'water'
+
+      this.waterTopGeom = new PlaneGeometry(
+        TERRAIN_PAGE_SIZE * 10,
+        TERRAIN_PAGE_SIZE * 10
+      )
+      this.waterTopGeom.rotateX(-Math.PI / 2)
+      this.waterTopGeom.addGroup(0, this.waterTopGeom.getIndex()!.count, 0)
+      this.waterBottomGeom = new PlaneGeometry(
+        TERRAIN_PAGE_SIZE * 10,
+        TERRAIN_PAGE_SIZE * 10
+      )
+      this.waterBottomGeom.rotateX(Math.PI / 2)
+      this.waterBottomGeom.addGroup(
+        0,
+        this.waterBottomGeom.getIndex()!.count,
+        0
+      )
+
+      this.waterBottomMaterials = [new MeshLambertMaterial({transparent: true})]
+      this.waterTopMaterials = [new MeshLambertMaterial({transparent: true})]
+      this.engineSvc.addWorldObject(this.water)
+    }
+
+    this.water.userData.under_view = water.under_view ?? 120
+    this.water.userData.color = color
+    this.water.userData.opacity = opacity
     this.water.userData.texture_bottom = water.texture_bottom
     this.water.userData.texture_top = water.texture_top
-    this.water.userData.opacity = water?.opacity ?? 128
 
-    this.waterTopGeom = new PlaneGeometry(
-      TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE * 10
-    )
-    this.waterTopGeom.rotateX(-Math.PI / 2)
-    this.waterTopGeom.addGroup(0, this.waterTopGeom.getIndex()!.count, 0)
-    this.waterBottomGeom = new PlaneGeometry(
-      TERRAIN_PAGE_SIZE * 10,
-      TERRAIN_PAGE_SIZE * 10
-    )
-    this.waterBottomGeom.rotateX(Math.PI / 2)
-    this.waterBottomGeom.addGroup(0, this.waterBottomGeom.getIndex()!.count, 0)
-
-    const waterMaterialBottom = new MeshLambertMaterial({
-      transparent: true,
-      color: new Color(this.water.userData.color),
-      opacity: this.water.userData.opacity / 255
-    })
-    this.waterBottomMaterials = [waterMaterialBottom]
-
-    const waterMaterialTop = new MeshLambertMaterial({
-      transparent: true,
-      color: new Color(this.water.userData.color),
-      opacity: this.water.userData.opacity / 255
-    })
-    this.waterTopMaterials = [waterMaterialTop]
-
-    if (water?.texture_bottom) {
-      this.textureLoader.load(
-        `${this.propSvc.path()}/textures/${water.texture_bottom}.jpg`,
-        (bitmap) => {
-          if (!bitmap || bitmap.width === 0 || bitmap.height === 0) {
-            return
-          }
-          const bottomTexture = new Texture(
-            bitmap,
-            Texture.DEFAULT_MAPPING,
-            RepeatWrapping,
-            RepeatWrapping
-          )
-          bottomTexture.colorSpace = SRGBColorSpace
-          bottomTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
-          bottomTexture.needsUpdate = true
-          waterMaterialBottom.map = bottomTexture
-          waterMaterialBottom.needsUpdate = true
-        }
-      )
-    }
-
-    if (water?.texture_top) {
-      this.textureLoader.load(
-        `${this.propSvc.path()}/textures/${water.texture_top}.jpg`,
-        (bitmap) => {
-          if (!bitmap || bitmap.width === 0 || bitmap.height === 0) {
-            return
-          }
-          const topTexture = new Texture(
-            bitmap,
-            Texture.DEFAULT_MAPPING,
-            RepeatWrapping,
-            RepeatWrapping
-          )
-          topTexture.colorSpace = SRGBColorSpace
-          topTexture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
-          topTexture.needsUpdate = true
-          waterMaterialTop.map = topTexture
-          waterMaterialTop.needsUpdate = true
-        }
-      )
-    }
-
-    if (water?.offset != null) {
+    if (water.offset != null && Number.isFinite(water.offset)) {
       this.water.position.setY(water.offset)
+      this.water.updateMatrixWorld()
     }
-    this.engineSvc.addWorldObject(this.water)
+    for (const mat of [
+      ...this.waterTopMaterials,
+      ...this.waterBottomMaterials
+    ]) {
+      mat.color.setHex(color)
+      mat.opacity = opacity / 255
+      mat.needsUpdate = true
+    }
+
+    this.loadWaterTexture(this.waterBottomMaterials[0], water.texture_bottom)
+    this.loadWaterTexture(this.waterTopMaterials[0], water.texture_top)
+    this.engineSvc.updateFog()
+  }
+
+  setTerrainOffset(offset: number) {
+    if (this.terrain == null || !Number.isFinite(offset)) {
+      return
+    }
+    this.terrain.position.setY(offset)
+    this.terrain.updateMatrixWorld()
+  }
+
+  private loadWaterTexture(
+    material: MeshLambertMaterial,
+    textureName?: string
+  ) {
+    const url = textureName
+      ? `${this.propSvc.path()}/textures/${textureName}.jpg`
+      : ''
+    if (material.userData.textureUrl === url) {
+      return
+    }
+    material.userData.textureUrl = url
+    if (!url) {
+      material.map?.dispose()
+      material.map = null
+      material.needsUpdate = true
+      return
+    }
+    this.textureLoader.load(url, (bitmap) => {
+      if (
+        material.userData.textureUrl !== url ||
+        !bitmap ||
+        bitmap.width === 0 ||
+        bitmap.height === 0
+      ) {
+        return
+      }
+      material.map?.dispose()
+      const texture = new Texture(
+        bitmap,
+        Texture.DEFAULT_MAPPING,
+        RepeatWrapping,
+        RepeatWrapping
+      )
+      texture.colorSpace = SRGBColorSpace
+      texture.repeat.set(TERRAIN_PAGE_SIZE, TERRAIN_PAGE_SIZE)
+      texture.needsUpdate = true
+      material.map = texture
+      material.needsUpdate = true
+    })
   }
 
   setTerrain(terrain: TerrainData | null = null) {
     if (this.terrain != null) {
       this.engineSvc.removeWorldObject(this.terrain)
     }
+    this.loadingPages.clear()
     if (!terrain?.enabled) {
       this.terrain = null
       return
     }
 
-    this.terrain = new Group()
-    this.terrain.name = 'terrain'
+    const terrainGroup = new Group()
+    terrainGroup.name = 'terrain'
+    this.terrain = terrainGroup
     this.terrainMaterials = []
 
     const textureObservables: Observable<Texture>[] = []
@@ -218,6 +237,9 @@ export class TerrainService {
     }
 
     forkJoin(textureObservables).subscribe((baseTextures) => {
+      if (this.terrain !== terrainGroup) {
+        return
+      }
       for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 64; j++) {
           const terrainTexture = j < 63 ? baseTextures[j] : null
@@ -348,9 +370,14 @@ flat varying vec2 vCellOrigin;`
       return
     }
 
+    const terrainGroup = this.terrain
     this.loadingPages.add(`${xPage}_${zPage}`)
 
     this.getTerrain(worldId, xPage, zPage).subscribe((elevData) => {
+      if (this.terrain !== terrainGroup) {
+        this.loadingPages.delete(`${xPage}_${zPage}`)
+        return
+      }
       const geometry = new PlaneGeometry(
         TERRAIN_PAGE_SIZE * 10,
         TERRAIN_PAGE_SIZE * 10,

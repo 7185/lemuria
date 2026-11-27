@@ -382,9 +382,10 @@ export class PropActionService {
     if (action.visible != null) {
       this.applyCommand(prop, action.visible, (target: Group, command) => {
         target.userData.notVisible = !(command.value ?? true)
+        const layer = target.userData.notVisible ? 1 : 0
         target.traverse((child: Object3D) => {
           if (child instanceof Mesh) {
-            child.visible = !target.userData.notVisible
+            child.layers.set(layer)
           }
         })
       })
@@ -642,7 +643,6 @@ export class PropActionService {
         }
         child.material = newMaterials
         child.material.needsUpdate = true
-        child.visible = !prop.userData.notVisible
       }
     })
   }
@@ -697,7 +697,6 @@ export class PropActionService {
         }
         child.material = newMaterials
         child.material.needsUpdate = true
-        child.visible = !prop.userData.notVisible
       }
     })
   }
@@ -754,7 +753,6 @@ export class PropActionService {
         })
         child.material = newMaterials
         child.material.needsUpdate = true
-        child.visible = !prop.userData.notVisible
       }
     })
     return forkJoin(promises)
