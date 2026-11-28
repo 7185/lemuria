@@ -36,13 +36,13 @@ WORKDIR /root
 COPY backend /root/backend/
 COPY --from=frontend --chown=nobody:nobody /root/static /static
 COPY package.json package-lock.json /root/
-RUN npm -w backend ci --include-workspace-root && \
+RUN npm -w backend ci --include-workspace-root --ignore-scripts && \
     npm -w backend run build && \
     mv backend/dist / && \
     npm -w backend prune --omit=dev && \
     npx -y nm-prune --force && \
     rm package*json && \
-    rm -r .cache .npm backend && \
+    rm -rf .cache .npm backend && \
     chown nobody: -R /root /dist /static
 CMD ["node", "/dist/src/main"]
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \

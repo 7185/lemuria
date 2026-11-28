@@ -22,7 +22,7 @@ export const posToString = (pos: Vector3Like): string => {
  * @returns Position string with optional yaw
  */
 export const posToStringYaw = (pos: Vector3Like, yaw = 0): string => {
-  const position = `${posToString(pos)} ${(Math.abs(pos.y) / 10).toFixed(2)}a`
+  const position = `${posToString(pos)} ${(pos.y / 10).toFixed(2)}a`
   return yaw ? `${position} ${yaw}` : position
 }
 

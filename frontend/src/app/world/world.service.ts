@@ -199,10 +199,10 @@ export class WorldService {
     })
 
     // own avatar
-    toObservable(this.ownAvatar).subscribe((avatarId: number) => {
-      if (avatarId == null) return
-      this.gestures.set(this.avatarList[avatarId].explicit)
-      const avatarEntry = this.avatarList[avatarId]
+    toObservable(this.ownAvatar).subscribe((avatarId: number | null) => {
+      if (avatarId == null || this.avatarList.length === 0) return
+      const avatarEntry = this.avatarList[avatarId] ?? this.avatarList[0]
+      this.gestures.set(avatarEntry.explicit)
       const animationManager: Promise<AvatarAnimationManager> =
         this.anmSvc.getAvatarAnimationManager(
           avatarEntry.name,
@@ -705,6 +705,11 @@ export class WorldService {
     this.anmSvc.cleanCache()
     if (this.propSvc.path() && this.propSvc.path() !== world.path) {
       Cache.clear()
+      this.avatarList = []
+      this.ownAvatar.set(null)
+      for (const user of [...this.engineSvc.users()]) {
+        this.engineSvc.removeUser(user)
+      }
     }
     this.propSvc.path.set(world.path)
     this.engineSvc.gravity = world.gravity ?? 1
@@ -737,9 +742,9 @@ export class WorldService {
     group.position.set(user.x, user.y, user.z)
     group.rotation.set(user.roll, user.yaw, user.pitch)
     group.userData.player = true
-    const avatarEntry = this.avatarList[user.avatar]
+    const avatarEntry = this.avatarList[user.avatar] ?? this.avatarList[0]
     this.setAvatar(
-      this.avatarList[user.avatar].geometry,
+      avatarEntry.geometry,
       this.anmSvc.getAvatarAnimationManager(
         avatarEntry.name,
         avatarEntry.implicit,

@@ -908,23 +908,17 @@ export class PropActionService {
       return
     }
 
-    let newX: number, newZ: number
-    let newY = 0
+    let newX: number, newY: number, newZ: number
     let newYaw = teleport?.direction || 0
 
-    if (teleport.altitude != null) {
-      if (teleport.type === 'absolute') {
-        newY = teleport.altitude * 10
-      } else {
-        newY = playerPosition.y + teleport.altitude * 10
-      }
-    }
     if (teleport.type === 'absolute') {
       newX = teleport.ew * -10
+      newY = (teleport.altitude ?? 0) * 10
       newZ = teleport.ns * 10
     } else {
       newYaw += playerYaw
       newX = playerPosition.x + teleport.x * -10
+      newY = playerPosition.y + (teleport.altitude ?? 0) * 10
       newZ = playerPosition.z + teleport.y * 10
     }
     this.teleportSvc.teleport.set({
