@@ -3,13 +3,15 @@ import {computed, effect, inject, Service, signal} from '@angular/core'
 import * as fflate from 'fflate'
 import {map, Observable, shareReplay, Subject} from 'rxjs'
 import {
+  Box3,
   BufferAttribute,
   BufferGeometry,
   Group,
   LoadingManager,
   Mesh,
   MeshBasicMaterial,
-  type Object3D
+  type Object3D,
+  Vector3
 } from 'three'
 import RWXLoader, {flattenGroup, RWXMaterialManager} from 'three-rwx-loader'
 import {environment} from '../../environments/environment'
@@ -175,7 +177,19 @@ export class PropService {
     )
     unknown.userData.isError = true
     unknown.userData.rwx = {axisAlignment: 'zorienty'}
+    this.setRwxBounds(unknown)
     return unknown
+  }
+
+  private setRwxBounds(rwx: Object3D) {
+    const box = new Box3().setFromObject(rwx)
+    const center = box.getCenter(new Vector3())
+    rwx.userData.box = {
+      x: box.max.x - box.min.x,
+      y: box.max.y - box.min.y,
+      z: box.max.z - box.min.z
+    }
+    rwx.userData.boxCenter = {x: center.x, y: center.y, z: center.z}
   }
 
   private cloneRwx(rwx: Group): Group {
@@ -221,6 +235,7 @@ export class PropService {
           if (!hasTag) {
             rwx = flattenGroup(rwx)
           }
+          this.setRwxBounds(rwx)
           observer.next(rwx)
           observer.complete()
         },

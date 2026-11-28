@@ -5,19 +5,19 @@ import {inject, Service, signal} from '@angular/core'
 import {toObservable} from '@angular/core/rxjs-interop'
 import {
   catchError,
-  concatMap,
   debounceTime,
   EMPTY,
+  finalize,
   firstValueFrom,
   from,
   map,
   mergeMap,
   Subject,
-  takeUntil,
+  take,
   throwError,
   toArray
 } from 'rxjs'
-import {Box3, Cache, Group, LOD, Vector3} from 'three'
+import {Box3, Cache, Group, LOD} from 'three'
 import type {AvatarAnimationManager} from '../animation'
 import type {User} from '../user'
 import type {LightData} from './lighting.service'
@@ -42,6 +42,7 @@ import {
   posToStringYaw,
   stringToPos
 } from '../utils/utils'
+import {WorkerService} from '../worker/worker.service'
 import {LightingService} from './lighting.service'
 import {PropActionService} from './prop-action.service'
 import {PropService} from './prop.service'
@@ -90,15 +91,21 @@ export class WorldService {
   private readonly socket = inject(SocketService)
   private readonly teleportSvc = inject(TeleportService)
   private readonly buildSvc = inject(BuildService)
+  private readonly workerSvc = inject(WorkerService)
 
-  private cancelPropsLoading = new Subject<void>()
+  private readonly maxActiveChunks = 3
+  private chunkSubs = new Set<Subscription>()
+  private pendingChunks: [number, number][] = []
+  private lastDir = {x: 0, z: -1}
+  private yieldPromise: Promise<void> | null = null
+  private lastYieldTime = 0
   private worldName = 'Nowhere'
   private lastChunk: number[] = []
 
   private chunkWidth: number = environment.world.chunk.width // in cm
   private chunkDepth: number = environment.world.chunk.depth // in cm
   private chunkMap = new Map<number, Set<number>>()
-  private chunkLoadingLayout = []
+  private chunkLoadingLayout: [number, number][] = []
   private chunkLoadCircular: boolean = environment.world.chunk.loadCircular
   private chunkLoadRadius: number = environment.world.chunk.loadRadius
 
@@ -135,6 +142,7 @@ export class WorldService {
           return
         }
 
+        this.cancelChunkLoading()
         this.getWorld(targetWorld.id).subscribe((w: WorldData) => {
           this.teleportSvc.teleportFrom(this.worldName, currentPos, isNew)
           this.setWorld(w, position)
@@ -158,14 +166,6 @@ export class WorldService {
         }
       }
     }
-
-    // For extra comfort: we can sort each chunk in the layout based on there distance to the center,
-    // this ought to make the client load and display nearest chunks first
-    this.chunkLoadingLayout.sort(([x0, z0], [x1, z1]) => {
-      const d0 = x0 * x0 + z0 * z0
-      const d1 = x1 * x1 + z1 * z1
-      return d0 - d1
-    })
 
     // Register chunk updater to the engine
     toObservable(this.engineSvc.playerPosition).subscribe((position) => {
@@ -315,7 +315,7 @@ export class WorldService {
   }
 
   destroyWorld() {
-    this.cancelPropsLoading.next()
+    this.cancelChunkLoading()
     this.resetChunks()
     this.engineSvc.resetChunkLODMap()
     this.uAvatarListener?.unsubscribe()
@@ -338,6 +338,23 @@ export class WorldService {
     this.chunkMap.clear()
   }
 
+  private yieldToMain(): Promise<void> {
+    if (this.yieldPromise != null) {
+      return this.yieldPromise
+    }
+    if (performance.now() - this.lastYieldTime < 8) {
+      return Promise.resolve()
+    }
+    this.yieldPromise = new Promise((resolve) =>
+      setTimeout(() => {
+        this.lastYieldTime = performance.now()
+        this.yieldPromise = null
+        resolve()
+      }, 0)
+    )
+    return this.yieldPromise
+  }
+
   private async loadProp(
     id: number,
     prop: string,
@@ -349,19 +366,12 @@ export class WorldService {
   ): Promise<Object3D> {
     prop = modelName(prop)
     const g = await firstValueFrom(this.propSvc.loadModel(prop))
+    await this.yieldToMain()
     g.name = prop
     g.userData.id = id
     g.userData.date = date
     g.userData.desc = desc
     g.userData.act = act
-    const box = new Box3().setFromObject(g)
-    const center = box.getCenter(new Vector3())
-    g.userData.box = {
-      x: box.max.x - box.min.x,
-      y: box.max.y - box.min.y,
-      z: box.max.z - box.min.z
-    }
-    g.userData.boxCenter = {x: center.x, y: center.y, z: center.z}
     g.position.set(pos.x / 100, pos.y / 100, pos.z / 100)
     g.rotation.set(
       (rot.x * DEG) / 10,
@@ -444,6 +454,14 @@ export class WorldService {
     return [tileX, tileZ]
   }
 
+  private cancelChunkLoading() {
+    this.pendingChunks.length = 0
+    for (const sub of [...this.chunkSubs]) {
+      sub.unsubscribe()
+    }
+    this.chunkSubs.clear()
+  }
+
   // this method is to be called on each position change to update the state of chunks if needed
   private autoUpdateChunks(pos: Vector3Like) {
     if (this.worldId() === 0) {
@@ -452,36 +470,61 @@ export class WorldService {
     }
     const [chunkX, chunkZ] = this.getChunkTile(pos)
     this.engineSvc.currentChunk = [chunkX, chunkZ]
+    const dir = this.engineSvc.viewDirection
 
-    // Do nothing if the current chunk didn't change
-    if (
-      this.lastChunk.length &&
+    const sameChunk =
+      this.lastChunk.length > 0 &&
       this.lastChunk[0] === chunkX &&
       this.lastChunk[1] === chunkZ
-    ) {
+    const turned = dir.x * this.lastDir.x + dir.z * this.lastDir.z < 0.7
+
+    // Do nothing if the chunk didn't change and we didn't turn while chunks remain pending
+    if (sameChunk && (!turned || this.pendingChunks.length === 0)) {
       return
     }
 
     this.lastChunk = [chunkX, chunkZ]
+    this.lastDir = dir
 
-    // For clarity: we get an Observable from loadChunk, if it produces anything: we take care of it
-    // in subscribe() (note that if the chunk has already been loaded, it won't reach the operator).
-    // We also tag the chunk as not being loaded if any error were to happen (like a failed http request)
-    from(this.chunkLoadingLayout)
-      .pipe(
-        concatMap((val) => this.loadChunk(chunkX + val[0], chunkZ + val[1]))
-      )
-      .subscribe({
+    // Prioritize chunk under feet, then chunks directly in front of the view direction
+    this.pendingChunks = this.chunkLoadingLayout
+      .map(([dx, dz]): [number, number, number] => {
+        const dist = Math.hypot(dx, dz)
+        const dot = dist === 0 ? 1 : (dx * dir.x + dz * dir.z) / dist
+        return [chunkX + dx, chunkZ + dz, dist * (2 - dot)]
+      })
+      .filter(([x, z]) => !this.chunkMap.get(x)?.has(z))
+      .sort((a, b) => a[2] - b[2])
+      .map(([x, z]) => [x, z])
+
+    this.pumpChunks()
+  }
+
+  private pumpChunks() {
+    while (
+      this.chunkSubs.size < this.maxActiveChunks &&
+      this.pendingChunks.length > 0
+    ) {
+      const [x, z] = this.pendingChunks.shift()!
+      if (this.chunkMap.get(x)?.has(z)) {
+        continue
+      }
+      const sub = this.loadChunk(x, z).subscribe({
         next: (chunk: LOD) => {
           this.engineSvc.addChunk(chunk)
         },
         error: (val) => {
           console.error(val.err)
-          if (this.chunkMap.get(val.x)?.has(val.z)) {
-            this.chunkMap.get(val.x)!.delete(val.z)
-          }
         }
       })
+      if (!sub.closed) {
+        this.chunkSubs.add(sub)
+        sub.add(() => {
+          this.chunkSubs.delete(sub)
+          this.pumpChunks()
+        })
+      }
+    }
   }
 
   private loadChunk(x: number, z: number): Observable<LOD> {
@@ -495,6 +538,7 @@ export class WorldService {
       this.chunkMap.set(x, new Set<number>())
     }
     this.chunkMap.get(x)!.add(z)
+    let loaded = false
 
     const chunkPos = {
       x: (x * this.chunkWidth) / 100,
@@ -515,24 +559,29 @@ export class WorldService {
         z * this.chunkDepth + this.chunkDepth / 2
       )
       .pipe(
-        takeUntil(this.cancelPropsLoading),
         mergeMap((props: {entries: PropEntry[]}) => {
           if (props.entries.length === 0) {
+            loaded = true
             return EMPTY
           }
+          // Pre-trigger all unique models upfront so .rwx requests queue ahead of textures
+          for (const name of new Set(props.entries.map((p) => p[2]))) {
+            this.propSvc.loadModel(name).pipe(take(1)).subscribe()
+          }
           return from(props.entries).pipe(
-            mergeMap((prop: PropEntry) =>
-              this.loadProp(
-                prop[0],
-                prop[2],
-                {x: prop[3], y: prop[4], z: prop[5]},
-                {x: prop[6], y: prop[7], z: prop[8]},
-                prop[1],
-                prop[9],
-                prop[10]
-              )
+            mergeMap(
+              (prop: PropEntry) =>
+                this.loadProp(
+                  prop[0],
+                  prop[2],
+                  {x: prop[3], y: prop[4], z: prop[5]},
+                  {x: prop[6], y: prop[7], z: prop[8]},
+                  prop[1],
+                  prop[9],
+                  prop[10]
+                ),
+              16
             ),
-            takeUntil(this.cancelPropsLoading),
             map((prop: Object3D) => {
               // Adjust the position of objects relative to the center of the block
               prop.position.sub(chunkPos)
@@ -541,18 +590,20 @@ export class WorldService {
             }),
             toArray(), // Wait for all props to be loaded before proceeding
             map((objs: Object3D[]) => {
+              loaded = true
               const chunkGroup = new Group().add(...objs)
               // Set metadata on the chunk
               chunkGroup.userData.world = {
                 chunk: {x: chunkPos.x, z: chunkPos.z}
               }
+              chunkGroup.userData.bvhInit = () =>
+                PlayerCollider.queueChunkBVH(chunkGroup, this.workerSvc)
               chunkGroup.userData.bvhUpdate = new Subject()
               chunkGroup.userData.bvhUpdate
                 .pipe(debounceTime(200))
                 .subscribe(() => {
-                  PlayerCollider.updateChunkBVH(chunkGroup)
+                  PlayerCollider.queueChunkBVH(chunkGroup, this.workerSvc)
                 })
-              chunkGroup.userData.bvhUpdate.next()
               const lod = new LOD()
               lod.userData.world = {chunk: {x, z}}
               lod.addLevel(chunkGroup, this.maxLodDistance)
@@ -565,7 +616,12 @@ export class WorldService {
             })
           )
         }),
-        catchError((err) => throwError(() => ({x, z, err})))
+        catchError((err) => throwError(() => ({x, z, err}))),
+        finalize(() => {
+          if (!loaded) {
+            this.chunkMap.get(x)?.delete(z)
+          }
+        })
       )
   }
 
@@ -617,8 +673,8 @@ export class WorldService {
     }
 
     // Load a few chunks on world initialization
-    this.autoUpdateChunks(entryPoint)
     this.engineSvc.setPlayerPos(entryPoint, entryYaw)
+    this.autoUpdateChunks(entryPoint)
     this.engineSvc.updateBoundingBox()
   }
 
@@ -641,6 +697,7 @@ export class WorldService {
 
     this.socket.messages.next({type: 'info', data: world.welcome ?? ''})
 
+    this.cancelChunkLoading()
     this.worldId.set(world.id)
     this.worldName = world.name
     this.engineSvc.clearObjects()

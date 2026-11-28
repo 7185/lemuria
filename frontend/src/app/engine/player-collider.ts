@@ -1,15 +1,21 @@
-import type {Triangle} from 'three'
+import type {
+  BufferAttribute,
+  InterleavedBufferAttribute,
+  Object3D,
+  Triangle
+} from 'three'
 import type {MeshBVH} from 'three-mesh-bvh'
 import {
   Box3,
   BoxGeometry,
   Group,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
   Ray,
   Vector3
 } from 'three'
-import {flattenGroup} from 'three-rwx-loader'
+import type {WorkerService} from '../worker/worker.service'
 import {environment} from '../../environments/environment'
 
 const playerBoxSide = environment.world.collider.boxSide
@@ -17,6 +23,11 @@ const playerHalfSide = environment.world.collider.boxSide / 2
 const playerClimbHeight = environment.world.collider.climbHeight
 
 export class PlayerCollider {
+  private static bvhQueue: Group[] = []
+  private static bvhRunning = false
+  private static bvhMatrixStack: Matrix4[] = []
+  private static bvhTmpVec = new Vector3()
+
   boxHeight: number
   colliderBox: Group
   boxMaterial = new MeshBasicMaterial({
@@ -82,24 +93,18 @@ export class PlayerCollider {
     this.copyPos(pos)
   }
 
-  static updateChunkBVH(chunk: Group) {
-    // Regenerate boundsTree for associated LOD
-    const bvhMesh = flattenGroup(
-      chunk,
-      (mesh: Mesh) => mesh.userData?.notSolid !== true
-    ) as Mesh
-
-    // If the mesh is empty (no faces): we don't need a bounds tree
-    if (bvhMesh.geometry.getIndex()!.count === 0) {
-      chunk.parent!.userData.boundsTree = null
-      chunk.parent!.visible = true
+  static async queueChunkBVH(chunk: Group, workerSvc: WorkerService) {
+    if (!this.bvhQueue.includes(chunk)) {
+      this.bvhQueue.push(chunk)
+    }
+    if (this.bvhRunning) {
       return
     }
-    chunk.parent!.userData.boundsTree = bvhMesh.geometry.computeBoundsTree({
-      onProgress: (progress: number) => {
-        chunk.parent!.visible = progress === 1
-      }
-    })
+    this.bvhRunning = true
+    while (this.bvhQueue.length > 0) {
+      await this.updateChunkBVH(this.bvhQueue.shift()!, workerSvc)
+    }
+    this.bvhRunning = false
   }
 
   createBoundingBox(boxHeight: number, position: Vector3) {
@@ -160,6 +165,111 @@ export class PlayerCollider {
   copyPos(pos: Vector3): void {
     this.currentPos.copy(pos)
     this.setBoxesAt(this.currentPos)
+  }
+
+  private static async updateChunkBVH(chunk: Group, workerSvc: WorkerService) {
+    if (!chunk.parent?.parent) {
+      return
+    }
+    const buffers = this.extractCollisionBuffers(chunk)
+    // If the mesh is empty (no faces): we don't need a bounds tree
+    if (!buffers) {
+      chunk.parent.userData.boundsTree = null
+      chunk.parent.visible = true
+      return
+    }
+    try {
+      const boundsTree = await workerSvc.computeBVH(
+        buffers.positions,
+        buffers.indices
+      )
+      if (!chunk.parent?.parent) {
+        return
+      }
+      chunk.parent.userData.boundsTree = boundsTree
+      chunk.parent.visible = true
+    } catch (error) {
+      console.error('Error computing chunk BVH:', error)
+    }
+  }
+
+  private static extractCollisionBuffers(chunk: Group): {
+    positions: Float32Array
+    indices: Uint16Array | Uint32Array
+  } | null {
+    let totalVertices = 0
+    let totalIndices = 0
+    this.visitSolidMeshes(chunk, null, 0, (posAttr, idxAttr) => {
+      totalVertices += posAttr.count
+      totalIndices += idxAttr.count
+    })
+    if (totalIndices === 0) {
+      return null
+    }
+
+    const positions = new Float32Array(totalVertices * 3)
+    const indices =
+      totalVertices > 65535
+        ? new Uint32Array(totalIndices)
+        : new Uint16Array(totalIndices)
+    let vertexOffset = 0
+    let indexOffset = 0
+
+    chunk.updateMatrix()
+    this.visitSolidMeshes(chunk, chunk.matrix, 0, (posAttr, idxAttr, mat) => {
+      const srcPos = posAttr.array
+      let pOut = vertexOffset * 3
+      for (let i = 0; i < posAttr.count; i++) {
+        const pIn = i * 3
+        this.bvhTmpVec
+          .set(srcPos[pIn], srcPos[pIn + 1], srcPos[pIn + 2])
+          .applyMatrix4(mat!)
+        positions[pOut++] = this.bvhTmpVec.x
+        positions[pOut++] = this.bvhTmpVec.y
+        positions[pOut++] = this.bvhTmpVec.z
+      }
+      const srcIdx = idxAttr.array
+      for (let i = 0; i < idxAttr.count; i++) {
+        indices[indexOffset++] = srcIdx[i] + vertexOffset
+      }
+      vertexOffset += posAttr.count
+    })
+    return {positions, indices}
+  }
+
+  private static visitSolidMeshes(
+    obj: Object3D,
+    parentMatrix: Matrix4 | null,
+    depth: number,
+    onMesh: (
+      posAttr: BufferAttribute | InterleavedBufferAttribute,
+      idxAttr: BufferAttribute,
+      matrix: Matrix4 | null
+    ) => void
+  ) {
+    const localMatrix = parentMatrix
+      ? (this.bvhMatrixStack[depth] ??= new Matrix4())
+      : null
+    for (const child of obj.children) {
+      if (child.userData?.notSolid === true) {
+        continue
+      }
+      if (localMatrix) {
+        if (child.matrixAutoUpdate) {
+          child.updateMatrix()
+        }
+        localMatrix.multiplyMatrices(parentMatrix!, child.matrix)
+      }
+      if (child instanceof Mesh) {
+        const posAttr = child.geometry.getAttribute('position')
+        const idxAttr = child.geometry.getIndex()
+        if (posAttr && idxAttr?.count) {
+          onMesh(posAttr, idxAttr, localMatrix)
+        }
+      } else if (child instanceof Group) {
+        this.visitSolidMeshes(child, localMatrix, depth + 1, onMesh)
+      }
+    }
   }
 
   private setBoxesAt(pos: Vector3): void {

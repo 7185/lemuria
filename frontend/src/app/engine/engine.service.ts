@@ -382,6 +382,14 @@ export class EngineService {
     return Math.round(this.compass.theta / DEG)
   }
 
+  get viewDirection(): {x: number; z: number} {
+    const len = Math.hypot(this.cameraDirection.x, this.cameraDirection.z)
+    if (len > 1e-3) {
+      return {x: this.cameraDirection.x / len, z: this.cameraDirection.z / len}
+    }
+    return {x: 0, z: -1}
+  }
+
   set gesture(gesture: string) {
     this.player.gesture = gesture
   }
@@ -662,6 +670,8 @@ export class EngineService {
 
   setPlayerPos(pos: Vector3Like | string, yaw = 0): void {
     this.player.setPos(pos, yaw)
+    this.player.entity.updateMatrixWorld()
+    this.activeCamera?.getWorldDirection(this.cameraDirection)
   }
 
   setPlayerYaw(yaw: number) {
@@ -728,9 +738,9 @@ export class EngineService {
       this.bumpedObjects.delete(group)
       delete group.userData.bumpBox
     }
-    if (group.userData.notSolid === true) {
+    if (group.userData.notSolid === true && group.parent?.parent?.visible) {
       // Regenerate boundsTree
-      group.parent!.userData.bvhUpdate.next()
+      group.parent.userData.bvhUpdate.next()
     }
   }
 
@@ -759,12 +769,16 @@ export class EngineService {
       }
       if (newLevel === 0) {
         // We display a previously hidden chunk
-        lod.levels[0].object.children.forEach((child: Object3D) => {
+        const chunk = lod.levels[0].object
+        chunk.children.forEach((child: Object3D) => {
           child.userData.onShow(() => {
             this.handleShownProp(child as Group)
           })
           child.userData.onUpdate = () => this.handleShownProp(child as Group)
         })
+        if (!lod.visible) {
+          chunk.userData.bvhInit?.()
+        }
       } else {
         // The chunk is being hidden
         lod.levels[0].object.children.forEach((child: Object3D) => {
